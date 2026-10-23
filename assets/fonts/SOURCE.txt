@@ -1,0 +1,8 @@
+Where the files in assets/fonts/ come from (copied 2026-10-23).
+
+Vazirmatn-Regular.ttf, Vazirmatn-Medium.ttf, Vazirmatn-SemiBold.ttf, Vazirmatn-Bold.ttf, OFL.txt
+  Vazirmatn v33.003, the latest official release of rastikerdar/vazirmatn
+  (https://github.com/rastikerdar/vazirmatn/releases/tag/v33.003, published 2022-06-22),
+  file vazirmatn-v33.003.zip (sha256 0a9afd41967e6f57096a56a181a23f81a2b999b62f1f2a4e4b26736580854fdb),
+  paths fonts/ttf/*.ttf and OFL.txt. Copied unchanged.
+  SIL Open Font License 1.1 (OFL.txt). The fonts and OFL.txt are embedded in Cpfs.exe; the About page shows the licence.

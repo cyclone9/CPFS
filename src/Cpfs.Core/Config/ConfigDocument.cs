@@ -1,0 +1,195 @@
+using System;
+using System.Collections.Generic;
+using System.Text.Json.Nodes;
+
+namespace Cpfs.Core.Config;
+
+// What kind of install wrote the file, decided by its shape, never by "Version" (the scripts wrote 0.2.0, 0.2.1 and
+// 0.2.3 for the same format, and 0.1's string is unknown).
+public enum ConfigShape
+{
+    // No "Tracked": written by 0.1.
+    V01,
+
+    // "Tracked" present: written by 0.2.x or the app.
+    V02,
+}
+
+public enum BackupState
+{
+    Absent,
+    Null,
+    Present,
+}
+
+public sealed class ConfigDocument
+{
+    internal ConfigDocument(JsonObject root, TextEncoding encoding)
+    {
+        Root = root;
+        Encoding = encoding;
+    }
+
+    public JsonObject Root { get; }
+
+    public TextEncoding Encoding { get; }
+
+    public ConfigShape Shape => ConfigJson.Has(Root, "Tracked") ? ConfigShape.V02 : ConfigShape.V01;
+
+    public BackupState Backup => ConfigJson.Get(Root, "Backup") switch
+    {
+        JsonObject => BackupState.Present,
+        null when ConfigJson.Has(Root, "Backup") => BackupState.Null,
+        null => BackupState.Absent,
+        _ => BackupState.Null,
+    };
+
+    // The first Setup run saved its backup and stopped before the final save.
+    public bool Partial => ConfigJson.GetBool(Root, "Partial") == true;
+
+    public string? Version => ConfigJson.GetString(Root, "Version");
+
+    public string? HostName => ConfigJson.GetString(Root, "HostName");
+
+    public string? SmbUser => ConfigJson.GetString(Root, "SmbUser");
+
+    public string? SharePath => ConfigJson.GetString(Root, "SharePath");
+
+    public string? ShareName => ConfigJson.GetString(Root, "ShareName");
+
+    public bool? Strict => ConfigJson.GetBool(Root, "Strict");
+
+    public bool? AutoPrivate => ConfigJson.GetBool(Root, "AutoPrivate");
+
+    // Bit 1 drive, bit 2 shortcut.
+    public long? Access => ConfigJson.GetInt(Root, "Access");
+
+    public string? DriveLetter => ConfigJson.GetString(Root, "DriveLetter");
+
+    public string? Shortcut => ConfigJson.GetString(Root, "Shortcut");
+
+    // The drive's name in Explorer, written by the 0.2.3 scripts.
+    public string? DriveLabel => ConfigJson.GetString(Root, "DriveLabel");
+
+    public string? Updated => ConfigJson.GetString(Root, "Updated");
+
+    public IReadOnlyList<TrackedUser> TrackedUsers
+    {
+        get
+        {
+            var list = new List<TrackedUser>();
+            foreach (var node in ConfigJson.GetArray(ConfigJson.GetObject(Root, "Tracked"), "Users"))
+            {
+                if (node is JsonObject user)
+                {
+                    list.Add(new TrackedUser(
+                        ConfigJson.GetString(user, "Name"),
+                        ConfigJson.GetBool(user, "Existed"),
+                        ConfigJson.GetBool(user, "WasAdmin")));
+                }
+                else if (ConfigJson.AsString(node) is { } name)
+                {
+                    list.Add(new TrackedUser(name, null, null));
+                }
+            }
+
+            return list;
+        }
+    }
+
+    public IReadOnlyList<string> TrackedNetworks => Strings(ConfigJson.GetObject(Root, "Tracked"), "Networks");
+
+    // Built-in rules (by their non-localized rule name) that Setup disabled; CPFS's own rules are found by name prefix.
+    public IReadOnlyList<string> TrackedFirewallRules => Strings(ConfigJson.GetObject(Root, "Tracked"), "FirewallRules");
+
+    public IReadOnlyList<RegistryBackup> BackupRegistry
+    {
+        get
+        {
+            var list = new List<RegistryBackup>();
+            foreach (var node in ConfigJson.GetArray(ConfigJson.GetObject(Root, "Backup"), "Registry"))
+            {
+                if (node is not JsonObject entry)
+                {
+                    continue;
+                }
+
+                list.Add(new RegistryBackup(
+                    ConfigJson.GetString(entry, "Path"),
+                    ConfigJson.GetString(entry, "Name"),
+                    ConfigJson.GetBool(entry, "Exists"),
+                    ConfigJson.GetInt(entry, "Value")));
+            }
+
+            return list;
+        }
+    }
+
+    private static List<string> Strings(JsonObject? obj, string name)
+    {
+        var list = new List<string>();
+        foreach (var node in ConfigJson.GetArray(obj, name))
+        {
+            if (ConfigJson.AsString(node) is { Length: > 0 } s)
+            {
+                list.Add(s);
+            }
+        }
+
+        return list;
+    }
+}
+
+public sealed record TrackedUser(string? Name, bool? Existed, bool? WasAdmin);
+
+public sealed record RegistryBackup(string? Path, string? Name, bool? Exists, long? Value)
+{
+    public RegistryLocation? Location => Path is null ? null : RegistryLocation.FromProviderPath(Path);
+}
+
+// Backup.Registry[].Path is a PowerShell provider path ("HKLM:\SYSTEM\..."). The app opens it in the 64-bit view.
+public sealed record RegistryLocation(RegistryRoot Root, string SubKey)
+{
+    public static RegistryLocation? FromProviderPath(string path)
+    {
+        if (path is null)
+        {
+            return null;
+        }
+
+        var trimmed = path.Trim();
+        var known = new[]
+        {
+            ("HKLM:", RegistryRoot.LocalMachine),
+            ("HKEY_LOCAL_MACHINE", RegistryRoot.LocalMachine),
+            ("HKCU:", RegistryRoot.CurrentUser),
+            ("HKEY_CURRENT_USER", RegistryRoot.CurrentUser),
+            ("Microsoft.PowerShell.Core\\Registry::HKEY_LOCAL_MACHINE", RegistryRoot.LocalMachine),
+        };
+
+        foreach (var (prefix, root) in known)
+        {
+            if (!trimmed.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var rest = trimmed.Substring(prefix.Length);
+            if (rest.Length > 0 && rest[0] != '\\')
+            {
+                continue;
+            }
+
+            rest = rest.Trim('\\');
+            return rest.Length == 0 ? null : new RegistryLocation(root, rest);
+        }
+
+        return null;
+    }
+}
+
+public enum RegistryRoot
+{
+    LocalMachine,
+    CurrentUser,
+}

@@ -1,0 +1,101 @@
+﻿{
+    "HostName":  "HOST-01",
+    "SmbUser":  "ShareUser",
+    "SharePath":  "D:\\Shared",
+    "ShareName":  "Shared",
+    "Strict":  false,
+    "AutoPrivate":  true,
+    "Access":  3,
+    "DriveLetter":  "X",
+    "Shortcut":  "C:\\Users\\Public\\Desktop\\Shared (CPFS).lnk",
+    "Product":  "CPFS - CyClone Power File Share",
+    "Version":  "0.2.1",
+    "Updated":  "2000-01-05T06:00:00",
+    "Backup":  {
+                   "Taken":  "2000-01-01T10:00:00",
+                   "HostName":  "HOST-01",
+                   "Registry":  {
+                                    "value":  [
+                                                  {
+                                                      "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                                      "Name":  "forceguest",
+                                                      "Exists":  true,
+                                                      "Value":  0
+                                                  },
+                                                  {
+                                                      "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                                      "Name":  "LmCompatibilityLevel",
+                                                      "Exists":  false,
+                                                      "Value":  null
+                                                  },
+                                                  {
+                                                      "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                                      "Name":  "NoLMHash",
+                                                      "Exists":  true,
+                                                      "Value":  1
+                                                  },
+                                                  {
+                                                      "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                                      "Name":  "RestrictAnonymous",
+                                                      "Exists":  true,
+                                                      "Value":  0
+                                                  },
+                                                  {
+                                                      "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                                      "Name":  "RestrictAnonymousSAM",
+                                                      "Exists":  true,
+                                                      "Value":  1
+                                                  },
+                                                  {
+                                                      "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                                      "Name":  "EveryoneIncludesAnonymous",
+                                                      "Exists":  true,
+                                                      "Value":  0
+                                                  },
+                                                  {
+                                                      "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters",
+                                                      "Name":  "RestrictNullSessAccess",
+                                                      "Exists":  true,
+                                                      "Value":  1
+                                                  },
+                                                  {
+                                                      "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters",
+                                                      "Name":  "AutoShareWks",
+                                                      "Exists":  false,
+                                                      "Value":  null
+                                                  }
+                                              ],
+                                    "Count":  8
+                                },
+                   "Smb2":  true,
+                   "RejectUnencrypted":  false,
+                   "ServerStart":  "Manual",
+                   "Lockout":  10
+               },
+    "tracked":  {
+                    "users":  {
+                                  "value":  [
+                                                {
+                                                    "name":  "ShareUser",
+                                                    "existed":  false,
+                                                    "wasAdmin":  false
+                                                }
+                                            ],
+                                  "Count":  1
+                              },
+                    "networks":  {
+                                     "value":  [
+                                                   "Network",
+                                                   "Network 3"
+                                               ],
+                                     "Count":  2
+                                 },
+                    "firewallRules":  {
+                                          "value":  [
+                                                        "FPS-SMB-In-TCP",
+                                                        "FPS-SMB-In-TCP-NoScope"
+                                                    ],
+                                          "Count":  2
+                                      }
+                }
+}

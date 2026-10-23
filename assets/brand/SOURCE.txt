@@ -1,0 +1,15 @@
+Where the files in assets/brand/ come from (copied 2026-10-23). Use them as they are; never redraw them.
+
+Logo/cpfs-symbol-favicon.svg
+Logo/cpfs-symbol-on-dark.svg
+Logo/cpfs-symbol-on-light.svg
+  From the CyClone Power brand project (CPBS), folder cpfs/logo/. Copied byte for byte.
+  Path logo, palette and dark theme approved by the owner on 2026-10-23.
+  src/Cpfs/Brand.xaml transcribes these three SVGs into XAML drawings with the same coordinates, colours and strokes.
+
+cpfs.ico
+  Rendered from Logo/cpfs-symbol-favicon.svg at 16, 20, 24, 32, 40, 48, 64 and 256 px with a build-time tool
+  (Svg.Skia 5.2.3 and SkiaSharp, both MIT) that is not part of this repository and not shipped.
+  Entries below 256 px are 32-bit DIBs; the 256 px entry is PNG.
+
+These files, and the drawing in src/Cpfs/Brand.xaml, are not covered by the MIT licence (see README.md in this folder).

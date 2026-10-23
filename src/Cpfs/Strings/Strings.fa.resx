@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- Persian. UNTRANSLATED: every entry marked so still holds the English text until the writer translates it. -->
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Meta_Translated" xml:space="preserve"><value>false</value><comment>Set to true when every string below is translated.</comment></data>
+  <data name="App_Title" xml:space="preserve"><value>CPFS</value><comment>Same in every language.</comment></data>
+  <data name="App_TitleAdmin" xml:space="preserve"><value>CPFS (administrator)</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="App_ErrorTitle" xml:space="preserve"><value>CPFS error</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Nav_Setup" xml:space="preserve"><value>Setup</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Nav_Monitor" xml:space="preserve"><value>Monitor</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Nav_Sync" xml:space="preserve"><value>Sync</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Nav_Connect" xml:space="preserve"><value>Connect</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Nav_Uninstall" xml:space="preserve"><value>Uninstall</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Nav_Preferences" xml:space="preserve"><value>Preferences</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Nav_About" xml:space="preserve"><value>About</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Common_Yes" xml:space="preserve"><value>Yes</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Common_No" xml:space="preserve"><value>No</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="State_NotSet" xml:space="preserve"><value>Not set</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="State_Unknown" xml:space="preserve"><value>Unknown</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="State_Raw" xml:space="preserve"><value>Value {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Badge_NeedsAdmin" xml:space="preserve"><value>Needs administrator to read</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Badge_NotFound" xml:space="preserve"><value>Not found</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Placeholder_Title" xml:space="preserve"><value>Coming in a later version</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Placeholder_Monitor_Desc" xml:space="preserve"><value>Connected devices, transfers, open files and failed sign-ins will be shown here.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Placeholder_Sync_Desc" xml:space="preserve"><value>Keeping one subfolder of the share in sync with your Linux server will be set up here.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Placeholder_Connect_Desc" xml:space="preserve"><value>Addresses, QR codes and step-by-step guides for each kind of device will be shown here.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Placeholder_Uninstall_Desc" xml:space="preserve"><value>Removing CPFS and restoring the original Windows settings will be done here.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="LangNative_en" xml:space="preserve"><value>English</value><comment>Same in every language.</comment></data>
+  <data name="LangNative_fa" xml:space="preserve"><value>فارسی</value><comment>Same in every language.</comment></data>
+  <data name="LangNative_ar" xml:space="preserve"><value>العربية</value><comment>Same in every language.</comment></data>
+  <data name="LangNative_tr" xml:space="preserve"><value>Türkçe</value><comment>Same in every language.</comment></data>
+  <data name="Lang_en" xml:space="preserve"><value>English</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Lang_fa" xml:space="preserve"><value>Persian</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Lang_ar" xml:space="preserve"><value>Arabic</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Lang_tr" xml:space="preserve"><value>Turkish</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Lang_NotTranslated_Title" xml:space="preserve"><value>Translation not available yet</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Lang_NotTranslated_Msg" xml:space="preserve"><value>{0} can be selected, but it isn't translated yet, so the English text is shown.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Theme_System" xml:space="preserve"><value>System</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Theme_Light" xml:space="preserve"><value>Light</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Theme_Dark" xml:space="preserve"><value>Dark</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Font_SegoeUiVariable" xml:space="preserve"><value>Segoe UI Variable</value><comment>Same in every language.</comment></data>
+  <data name="Font_SegoeUi" xml:space="preserve"><value>Segoe UI</value><comment>Same in every language.</comment></data>
+  <data name="Font_Tahoma" xml:space="preserve"><value>Tahoma</value><comment>Same in every language.</comment></data>
+  <data name="Font_Vazirmatn" xml:space="preserve"><value>Vazirmatn</value><comment>Same in every language.</comment></data>
+  <data name="Pref_Theme_Title" xml:space="preserve"><value>Theme</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Theme_Desc" xml:space="preserve"><value>System follows the Windows light or dark setting.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Lang_Title" xml:space="preserve"><value>Language</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Lang_Desc" xml:space="preserve"><value>The language of the app.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Font_Title" xml:space="preserve"><value>Font</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Font_Desc" xml:space="preserve"><value>The font for the current language. Each language keeps its own choice.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Stored" xml:space="preserve"><value>Your preferences are saved for your Windows account in:</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Title" xml:space="preserve"><value>Setup</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_ReadOnly_Title" xml:space="preserve"><value>This version only reads</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_ReadOnly_Msg" xml:space="preserve"><value>This page shows your current CPFS install and Windows settings. It changes nothing: no setting, file, account, share or firewall rule.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Admin_Title" xml:space="preserve"><value>Some items need administrator rights to read</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Admin_Desc" xml:space="preserve"><value>Continue as administrator to read them too. Windows asks for permission once. Nothing is changed.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Admin_Button" xml:space="preserve"><value>Continue as administrator</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Admin_ElevatedTitle" xml:space="preserve"><value>Running as administrator</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Admin_ElevatedDesc" xml:space="preserve"><value>Everything below was read with administrator rights. Nothing is changed.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Admin_CancelledTitle" xml:space="preserve"><value>Administrator rights were not granted</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Admin_CancelledMsg" xml:space="preserve"><value>The Windows prompt was declined, so CPFS continues without administrator rights.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Admin_FailedTitle" xml:space="preserve"><value>CPFS could not restart as administrator</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_HandOver_Title" xml:space="preserve"><value>Handed over from your session</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_HandOver_Desc" xml:space="preserve"><value>What the window you started passed to this one. Your account is checked against the desktop's owner; drive letters can only mark more letters as in use.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_HandOver_State" xml:space="preserve"><value>Account check</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_HandOver_NotPassed" xml:space="preserve"><value>Nothing was handed over: CPFS was started as administrator directly.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_HandOver_PassedSid" xml:space="preserve"><value>Account passed (SID)</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_HandOver_DerivedSid" xml:space="preserve"><value>Desktop owner found (SID)</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_HandOver_PassedDesktop" xml:space="preserve"><value>Desktop passed</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_HandOver_DerivedDesktop" xml:space="preserve"><value>Desktop found</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_HandOver_Letters" xml:space="preserve"><value>Drive letters in use in your session</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_HandOver_LettersNotChecked" xml:space="preserve"><value>Not checked: letters used only in your own session may be shown as free.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_HandOver_LettersRefused" xml:space="preserve"><value>Not used, because the account check failed.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_HandOver_Rejected" xml:space="preserve"><value>Values refused</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_HandOver_MismatchTitle" xml:space="preserve"><value>The hand-over does not match this desktop</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_HandOver_MismatchMsg" xml:space="preserve"><value>The account or Desktop passed on the command line is not the owner of this desktop, so none of the passed values are used. If you didn't start this yourself, close this window.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Identity_Match" xml:space="preserve"><value>Matches the desktop's owner</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Identity_NotPassed" xml:space="preserve"><value>Nothing passed</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Identity_Unconfirmed" xml:space="preserve"><value>Could not be confirmed: the desktop's owner was not found</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Identity_Mismatch" xml:space="preserve"><value>Does not match: the hand-over is refused</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Refresh" xml:space="preserve"><value>Read again</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Reading" xml:space="preserve"><value>Reading…</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_ReadFailed" xml:space="preserve"><value>Reading failed</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_SectionFailed" xml:space="preserve"><value>Could not be read: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_NoConfigValue" xml:space="preserve"><value>Not in config.json</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_Title" xml:space="preserve"><value>CPFS settings file</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_Desc" xml:space="preserve"><value>config.json as the scripts or the app saved it, every field as found.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_Path" xml:space="preserve"><value>Location</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_State" xml:space="preserve"><value>State</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_NotFound" xml:space="preserve"><value>Not found</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_Modified" xml:space="preserve"><value>Last changed</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_Size" xml:space="preserve"><value>Size in bytes</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_Encoding" xml:space="preserve"><value>Encoding</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_Shape" xml:space="preserve"><value>Written by</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_ShapeV01" xml:space="preserve"><value>CPFS 0.1</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_ShapeV02" xml:space="preserve"><value>CPFS 0.2 or later</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_Version" xml:space="preserve"><value>Version field</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_Backup" xml:space="preserve"><value>Backup of original settings</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_BackupPresent" xml:space="preserve"><value>Present</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_BackupNull" xml:space="preserve"><value>Empty (installed before 0.2)</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_BackupAbsent" xml:space="preserve"><value>None</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Config_Partial" xml:space="preserve"><value>First Setup run interrupted</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Encoding_Utf8" xml:space="preserve"><value>UTF-8</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Encoding_Utf8Bom" xml:space="preserve"><value>UTF-8 with byte order mark</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Encoding_Utf16LeBom" xml:space="preserve"><value>UTF-16 LE</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Encoding_Utf16BeBom" xml:space="preserve"><value>UTF-16 BE</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Encoding_Fallback" xml:space="preserve"><value>Not UTF-8; read in the Windows code page</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Computer_Title" xml:space="preserve"><value>Computer name</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Computer_Desc" xml:space="preserve"><value>The name devices use to find this PC (name.local).</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Computer_Current" xml:space="preserve"><value>Current name</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Computer_Pending" xml:space="preserve"><value>Name after restart</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Computer_RenamePending" xml:space="preserve"><value>Rename waiting for a restart</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Computer_Configured" xml:space="preserve"><value>Name in config.json</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_User_Title" xml:space="preserve"><value>SMB account</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_User_Desc" xml:space="preserve"><value>The Windows account other devices sign in with.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_User_Name" xml:space="preserve"><value>Account name</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_User_Exists" xml:space="preserve"><value>Exists</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_User_Sid" xml:space="preserve"><value>SID</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_User_Enabled" xml:space="preserve"><value>Enabled</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_User_PasswordNeverExpires" xml:space="preserve"><value>Password never expires</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_User_Admin" xml:space="preserve"><value>Member of Administrators</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_User_Users" xml:space="preserve"><value>Member of Users</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_User_Hidden" xml:space="preserve"><value>Hidden from the sign-in screen (UserList value)</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_User_Tracked" xml:space="preserve"><value>Recorded by Setup</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_User_TrackedValue" xml:space="preserve"><value>{0}: existed before CPFS {1}, was an administrator {2}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Share_Title" xml:space="preserve"><value>Share</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Share_Desc" xml:space="preserve"><value>The shared folder and its settings.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Share_Name" xml:space="preserve"><value>Share name in config.json</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Share_ConfigPath" xml:space="preserve"><value>Folder in config.json</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Share_FolderExists" xml:space="preserve"><value>Folder exists</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Share_State" xml:space="preserve"><value>Share</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Share_NotFound" xml:space="preserve"><value>No share with this name</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Share_Found" xml:space="preserve"><value>{0}; encryption required {1}; folder listing {2}; offline files {3}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Firewall_Title" xml:space="preserve"><value>Firewall rules</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Firewall_Desc" xml:space="preserve"><value>CPFS's own rules, and the built-in rules Setup turned off.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Firewall_OwnRule" xml:space="preserve"><value>CPFS rule: enabled {0}; networks {1}; direction {2}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Firewall_TrackedRule" xml:space="preserve"><value>Built-in rule turned off by Setup: enabled {0}; networks {1}; direction {2}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Firewall_TrackedMissing" xml:space="preserve"><value>Built-in rule recorded by Setup, not found</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Firewall_State" xml:space="preserve"><value>Rules</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Firewall_None" xml:space="preserve"><value>No CPFS rules found</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Tasks_Title" xml:space="preserve"><value>Scheduled tasks</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Tasks_Desc" xml:space="preserve"><value>The tasks CPFS creates.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Tasks_Found" xml:space="preserve"><value>Enabled {0}; state {1}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Tasks_NotFound" xml:space="preserve"><value>Not found</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="TaskState_0" xml:space="preserve"><value>Unknown</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="TaskState_1" xml:space="preserve"><value>Disabled</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="TaskState_2" xml:space="preserve"><value>Queued</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="TaskState_3" xml:space="preserve"><value>Ready</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="TaskState_4" xml:space="preserve"><value>Running</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Hardening_Title" xml:space="preserve"><value>Security settings</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Hardening_Desc" xml:space="preserve"><value>The Windows settings CPFS hardens: current value, CPFS's value, and the original from the backup (- means not present).</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Hardening_Value" xml:space="preserve"><value>Now {0}; CPFS sets {1}; original {2}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Hardening_ServerStart" xml:space="preserve"><value>File sharing service (Server) start</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="StartType_0" xml:space="preserve"><value>Boot</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="StartType_1" xml:space="preserve"><value>System</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="StartType_2" xml:space="preserve"><value>Automatic</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="StartType_3" xml:space="preserve"><value>Manual</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="StartType_4" xml:space="preserve"><value>Disabled</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="StartType_Unknown" xml:space="preserve"><value>Unknown</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Networks_Title" xml:space="preserve"><value>Networks</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Networks_Desc" xml:space="preserve"><value>Connected networks, and the networks Setup switched to Private.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Networks_Connected" xml:space="preserve"><value>Connected through {0}; {1}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Networks_ConnectedLabel" xml:space="preserve"><value>Connected networks</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Networks_Tracked" xml:space="preserve"><value>Switched to Private by Setup</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Networks_TrackedNone" xml:space="preserve"><value>None</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Networks_TrackedValue" xml:space="preserve"><value>Recorded by Setup; now {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Networks_TrackedUnknown" xml:space="preserve"><value>Recorded by Setup; not known to Windows any more</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Drive_Title" xml:space="preserve"><value>Drive letters</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Drive_Desc" xml:space="preserve"><value>The CPFS drive, and every letter in use with where it was seen.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Drive_Configured" xml:space="preserve"><value>CPFS drive letter in config.json</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Drive_Label" xml:space="preserve"><value>Drive name in config.json</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Drive_DosDevice" xml:space="preserve"><value>Permanent drive mapping</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Drive_ExplorerLabel" xml:space="preserve"><value>Name shown in File Explorer</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Drive_SourceDetail" xml:space="preserve"><value>{0}: {1}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Drive_Free" xml:space="preserve"><value>Free letters</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Drive_Default" xml:space="preserve"><value>Letter Setup would suggest</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Source_SystemDrive" xml:space="preserve"><value>Windows drive</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Source_ThisProcess" xml:space="preserve"><value>In use in this window's session</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Source_UserSessionReceived" xml:space="preserve"><value>In use in your session (handed over)</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Source_UserNetwork" xml:space="preserve"><value>Your saved network drive</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Source_DosDevices" xml:space="preserve"><value>Permanent drive mapping</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Source_MountedDevices" xml:space="preserve"><value>Disk or partition</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Shortcut_Title" xml:space="preserve"><value>Desktop shortcut</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Shortcut_Desc" xml:space="preserve"><value>The shortcut Setup put on the Public Desktop.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Shortcut_Path" xml:space="preserve"><value>Shortcut in config.json</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Shortcut_Exists" xml:space="preserve"><value>File exists</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_DataFolder_Title" xml:space="preserve"><value>CPFS data folder</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_DataFolder_Desc" xml:space="preserve"><value>Who owns the folder that holds config.json, and who may change it. Only SYSTEM and Administrators should be able to write here.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_DataFolder_Path" xml:space="preserve"><value>Location</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_DataFolder_State" xml:space="preserve"><value>State</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_DataFolder_Owner" xml:space="preserve"><value>Owner</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_DataFolder_OwnerIsAdmins" xml:space="preserve"><value>Owned by Administrators</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_DataFolder_Protected" xml:space="preserve"><value>Permissions not inherited</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Brand_Name" xml:space="preserve"><value>CPFS - CyClone Power File Share</value><comment>Same in every language.</comment></data>
+  <data name="About_Brand_Tagline" xml:space="preserve"><value>پوشه‌ی کامپیوتر شما، در دسترس هر دستگاه.</value><comment>From the CPBS brand (brand.json text.fa).</comment></data>
+  <data name="About_Brand_Description" xml:space="preserve"><value>برنامه‌ی CPFS یک پوشه از کامپیوتر ویندوز ۱۰ یا ۱۱ را برای دستگاه‌های ویندوز، مک، لینوکس، اندروید و iOS باز می‌کند. دستگاه‌ها با نام کامپیوتر (ComputerName.local)، با نشانی وای‌فای یا شبکه‌ی محلی، یا با نشانی وی‌پی‌ان وصل می‌شوند و گوشی را می‌شود با کد QR وصل کرد. اشتراک فقط به همان پوشه محدود است، با حساب جدا و تنظیمات سخت‌گیرانه‌تر ویندوز، و حذف برنامه تنظیمات اولیه را برمی‌گرداند. اگر سرور لینوکسی دارید، CPFS می‌تواند یک زیرپوشه را هم با آن، از راه کانالی رمزگذاری‌شده، همگام کند. فایلی که در یک طرف پاک یا جایگزین شود، در پوشه‌ی نسخه‌ها در طرف دیگر می‌ماند.</value><comment>From the CPBS brand (brand.json text.fa).</comment></data>
+  <data name="About_Brand_SymbolName" xml:space="preserve"><value>CPFS logo</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Version" xml:space="preserve"><value>Version</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Windows" xml:space="preserve"><value>Windows</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Framework" xml:space="preserve"><value>.NET Framework</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Backdrop" xml:space="preserve"><value>Window background</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Backdrop_Value" xml:space="preserve"><value>{1} (requested {0}; DWM {2})</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Backdrop_Solid" xml:space="preserve"><value>Solid colour</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Backdrop_HighContrast" xml:space="preserve"><value>High contrast</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_CurrentTheme" xml:space="preserve"><value>Theme</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_CurrentFont" xml:space="preserve"><value>Font</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Elevated" xml:space="preserve"><value>Running as administrator</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Exe" xml:space="preserve"><value>Program file</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Libraries" xml:space="preserve"><value>Built-in libraries</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Libraries_Loaded" xml:space="preserve"><value>Loaded:</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_LogPath" xml:space="preserve"><value>Log file</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_LogSize" xml:space="preserve"><value>Log size</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_LogSize_Value" xml:space="preserve"><value>{0:N0} bytes</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_LogSize_Failures" xml:space="preserve"><value>{0}; {1} writes failed, the last with {2}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Log_Title" xml:space="preserve"><value>Log</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Log_Desc" xml:space="preserve"><value>If something goes wrong, send the log or the report. They contain no passwords.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Log_Open" xml:space="preserve"><value>Open log</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Log_Copy" xml:space="preserve"><value>Copy report</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Log_None" xml:space="preserve"><value>No log file could be created.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Log_OpenFailed" xml:space="preserve"><value>The log could not be opened: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Log_Copied" xml:space="preserve"><value>The report is on the clipboard.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Log_CopyFailed" xml:space="preserve"><value>The report could not be copied: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Licence_Title" xml:space="preserve"><value>Licences</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Licence_Code" xml:space="preserve"><value>The CPFS program code is free software under the MIT licence.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Licence_Brand" xml:space="preserve"><value>The CPFS name, logo, symbols, wordmark and app icon are not covered by the MIT licence and may not be used without permission.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Licence_ThirdParty" xml:space="preserve"><value>CPFS includes WPF-UI and System.Text.Json (MIT licence) and the Vazirmatn font (SIL Open Font License 1.1).</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Licence_Mit" xml:space="preserve"><value>CPFS licence (MIT)</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Licence_Notices" xml:space="preserve"><value>Third-party notices</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Licence_Ofl" xml:space="preserve"><value>Vazirmatn font licence (SIL OFL 1.1)</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Bidi_Title" xml:space="preserve"><value>Text direction check</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Bidi_Desc" xml:space="preserve"><value>Paths, addresses and names keep their own direction inside the text of every language.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Bidi_Sample" xml:space="preserve"><value>The folder {0} is shared as {1}, also at {2}. Language names: {3}, {4}.</value><comment>UNTRANSLATED: English text</comment></data>
+</root>

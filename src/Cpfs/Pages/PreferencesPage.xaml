@@ -1,0 +1,90 @@
+<Page
+  x:Class="Cpfs.Pages.PreferencesPage"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:local="clr-namespace:Cpfs"
+  xmlns:pages="clr-namespace:Cpfs.Pages"
+  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+  Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+  <Page.Resources>
+    <!--
+      Each language as two separately directed texts: its own name in its own direction and language, then its name
+      in the UI language. No brackets around a foreign-script name, so nothing lands on the wrong side in RTL.
+    -->
+    <DataTemplate x:Key="LanguageItem" DataType="{x:Type pages:LanguageOption}">
+      <StackPanel Orientation="Horizontal">
+        <TextBlock
+          FlowDirection="{Binding NativeFlow}"
+          Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+          Language="{Binding NativeLanguage}"
+          Text="{Binding NativeName}" />
+        <TextBlock
+          Margin="8,0,0,0"
+          Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+          Text="{Binding UiName}"
+          Visibility="{Binding UiNameVisibility}" />
+      </StackPanel>
+    </DataTemplate>
+  </Page.Resources>
+
+  <StackPanel Margin="24,16,24,24">
+    <TextBlock Style="{StaticResource PageTitle}" Text="{Binding [Nav_Preferences], Source={x:Static local:Loc.Instance}}" />
+
+    <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon DarkTheme24}">
+      <ui:CardControl.Header>
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Pref_Theme_Title], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Pref_Theme_Desc], Source={x:Static local:Loc.Instance}}" />
+        </StackPanel>
+      </ui:CardControl.Header>
+      <ComboBox
+        x:Name="ThemeBox"
+        MinWidth="180"
+        AutomationProperties.Name="{Binding [Pref_Theme_Title], Source={x:Static local:Loc.Instance}}"
+        SelectionChanged="OnThemeSelected">
+        <ComboBoxItem Content="{Binding [Theme_System], Source={x:Static local:Loc.Instance}}" Tag="{x:Static local:ThemeChoice.System}" />
+        <ComboBoxItem Content="{Binding [Theme_Light], Source={x:Static local:Loc.Instance}}" Tag="{x:Static local:ThemeChoice.Light}" />
+        <ComboBoxItem Content="{Binding [Theme_Dark], Source={x:Static local:Loc.Instance}}" Tag="{x:Static local:ThemeChoice.Dark}" />
+      </ComboBox>
+    </ui:CardControl>
+
+    <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon Translate24}">
+      <ui:CardControl.Header>
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Pref_Lang_Title], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Pref_Lang_Desc], Source={x:Static local:Loc.Instance}}" />
+        </StackPanel>
+      </ui:CardControl.Header>
+      <ComboBox
+        x:Name="LanguageBox"
+        MinWidth="180"
+        AutomationProperties.Name="{Binding [Pref_Lang_Title], Source={x:Static local:Loc.Instance}}"
+        ItemTemplate="{StaticResource LanguageItem}"
+        SelectionChanged="OnLanguageSelected" />
+    </ui:CardControl>
+
+    <ui:InfoBar
+      x:Name="LanguageInfo"
+      Margin="0,0,0,4"
+      IsClosable="True"
+      IsOpen="False"
+      Severity="Informational" />
+
+    <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon TextFont24}">
+      <ui:CardControl.Header>
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Pref_Font_Title], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Pref_Font_Desc], Source={x:Static local:Loc.Instance}}" />
+        </StackPanel>
+      </ui:CardControl.Header>
+      <ComboBox
+        x:Name="FontBox"
+        MinWidth="180"
+        AutomationProperties.Name="{Binding [Pref_Font_Title], Source={x:Static local:Loc.Instance}}"
+        SelectionChanged="OnFontSelected" />
+    </ui:CardControl>
+
+    <TextBlock Margin="0,8,0,0" Style="{StaticResource CardDescription}" Text="{Binding [Pref_Stored], Source={x:Static local:Loc.Instance}}" />
+    <TextBlock x:Name="StoredPath" Margin="0,2,0,0" Style="{StaticResource DataValue}" />
+  </StackPanel>
+</Page>

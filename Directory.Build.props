@@ -1,0 +1,20 @@
+<Project>
+  <PropertyGroup>
+    <Version>0.3.0</Version>
+    <Company>CyClone</Company>
+    <Product>CPFS - CyClone Power File Share</Product>
+    <Copyright>Copyright (c) 2026 CyClone (https://cyclone9.ir)</Copyright>
+    <NeutralLanguage>en</NeutralLanguage>
+    <LangVersion>14</LangVersion>
+    <Nullable>enable</Nullable>
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- Globalization rules as errors: ordinal/invariant comparisons everywhere. -->
+    <WarningsAsErrors>$(WarningsAsErrors);CA1304;CA1305;CA1307;CA1309;CA1310;CA1311</WarningsAsErrors>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+</Project>

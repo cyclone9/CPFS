@@ -1,0 +1,356 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using Cpfs.Core.Drives;
+using Cpfs.Core.Elevation;
+using Cpfs.Core.Text;
+using Cpfs.Windows;
+using Wpf.Ui.Controls;
+
+namespace Cpfs.Pages;
+
+public sealed class RowView
+{
+    public string Label { get; init; } = "";
+
+    public bool LabelIsData { get; init; }
+
+    public bool LabelIsText => !LabelIsData;
+
+    public string Value { get; init; } = "";
+
+    public bool ValueIsData { get; init; }
+
+    public bool ValueIsText => !ValueIsData && Value.Length > 0;
+
+    public string Badge { get; init; } = "";
+
+    public bool HasBadge => Badge.Length > 0;
+
+    public string Error { get; init; } = "";
+
+    public bool HasError => Error.Length > 0;
+}
+
+public sealed class SectionView
+{
+    public string Title { get; init; } = "";
+
+    public string Description { get; init; } = "";
+
+    public string Badge { get; init; } = "";
+
+    public bool HasBadge => Badge.Length > 0;
+
+    public string Error { get; init; } = "";
+
+    public bool HasError => Error.Length > 0;
+
+    public List<RowView> Rows { get; } = new();
+}
+
+// The read-only Setup page of 0.3.0: config.json as found and the Windows state this process may read. It changes
+// nothing on Windows; the only writes anywhere in the app are its own log and preferences under %LOCALAPPDATA%\CPFS.
+public partial class SetupPage : Page
+{
+    private List<StateSection>? _sections;
+    private List<StateRow>? _handOver;
+    private bool _loaded;
+    private bool _reading;
+
+    public SetupPage()
+    {
+        InitializeComponent();
+        Loaded += OnLoaded;
+        Loc.Instance.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(Loc.Culture))
+            {
+                Render();
+            }
+        };
+    }
+
+    private async void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        if (_loaded)
+        {
+            return;
+        }
+
+        _loaded = true;
+        RenderAdminCard();
+        await ReadAsync();
+    }
+
+    private async void OnRefresh(object sender, RoutedEventArgs e) => await ReadAsync();
+
+    // WMI, the registry, Task Scheduler and the account store run off the UI thread; the results come back here.
+    private async Task ReadAsync()
+    {
+        if (_reading)
+        {
+            return;
+        }
+
+        _reading = true;
+        RefreshButton.IsEnabled = false;
+        Busy.Visibility = Visibility.Visible;
+        BusyText.Visibility = Visibility.Visible;
+        try
+        {
+            var (sections, handOver) = await Task.Run(ReadAll);
+            _sections = sections;
+            _handOver = handOver;
+            Render();
+        }
+        catch (Exception ex) when (State.IsExpected(ex))
+        {
+            AppLog.Exception("setup", ex);
+            Show(AdminResult, InfoBarSeverity.Error, Loc.Instance["Setup_ReadFailed"], ex.Message);
+        }
+        finally
+        {
+            _reading = false;
+            RefreshButton.IsEnabled = true;
+            Busy.Visibility = Visibility.Collapsed;
+            BusyText.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private static (List<StateSection>, List<StateRow>?) ReadAll()
+    {
+        List<StateRow>? handOver = null;
+        string? networkSid = null;
+        string received = "";
+        if (Startup.IsElevated)
+        {
+            // Elevated, the desktop user comes from explorer's token; what was passed is only compared with it.
+            var user = DesktopUser.Current;
+            AppLog.Write("elevation", "Desktop user: " + user.Describe());
+            networkSid = user.Sid;
+            handOver = BuildHandOver(user, out received);
+        }
+
+        var letters = DriveLetters.Scan(networkSid);
+        if (received.Length > 0)
+        {
+            letters.AddAll(received, LetterSource.UserSessionReceived);
+        }
+
+        var sections = new StateReader().ReadAll(letters);
+        return (sections, handOver);
+    }
+
+    private static List<StateRow> BuildHandOver(DesktopUser user, out string acceptedLetters)
+    {
+        var rows = new List<StateRow>();
+        var args = Startup.Arguments;
+        acceptedLetters = "";
+        if (!Startup.IsHandOver)
+        {
+            rows.Add(StateRow.Word("Setup_HandOver_State", "Setup_HandOver_NotPassed"));
+            rows.Add(StateRow.Word("Setup_HandOver_Letters", "Setup_HandOver_LettersNotChecked"));
+            rows.Add(StateRow.Data("Setup_HandOver_DerivedSid", user.Sid));
+            return rows;
+        }
+
+        var check = Identity.Compare(args, user.Sid, user.Desktop);
+        AppLog.Write("elevation", "Identity check " + check + "; passed SID " + (args.DesktopSid ?? "none") + ", derived " + (user.Sid ?? "none"));
+        rows.Add(StateRow.Word("Setup_HandOver_State", "Identity_" + check));
+        rows.Add(StateRow.Data("Setup_HandOver_PassedSid", args.DesktopSid));
+        rows.Add(StateRow.Data("Setup_HandOver_DerivedSid", user.Sid));
+        rows.Add(StateRow.Data("Setup_HandOver_PassedDesktop", args.DesktopPath));
+        rows.Add(StateRow.Data("Setup_HandOver_DerivedDesktop", user.Desktop));
+        if (user.Error is not null)
+        {
+            rows.Add(new StateRow { LabelKey = "Setup_HandOver_DerivedSid", Status = ReadStatus.Failed, Error = user.Error });
+        }
+
+        // A forged hand-over is refused whole, letters included.
+        if (check == IdentityCheck.Mismatch)
+        {
+            rows.Add(StateRow.Word("Setup_HandOver_Letters", "Setup_HandOver_LettersRefused"));
+        }
+        else if (!args.LettersPassed)
+        {
+            rows.Add(StateRow.Word("Setup_HandOver_Letters", "Setup_HandOver_LettersNotChecked"));
+        }
+        else
+        {
+            acceptedLetters = args.Letters;
+            rows.Add(StateRow.Data("Setup_HandOver_Letters", args.Letters.Length == 0 ? "-" : string.Join(" ", args.Letters.ToCharArray())));
+        }
+
+        if (args.Rejected.Count > 0)
+        {
+            rows.Add(StateRow.Data("Setup_HandOver_Rejected", string.Join(" ", args.Rejected)));
+        }
+
+        return rows;
+    }
+
+    private void Render()
+    {
+        var loc = Loc.Instance;
+        RenderAdminCard();
+
+        if (_handOver is not null)
+        {
+            HandOverCard.Visibility = Visibility.Visible;
+            var rows = new List<RowView>();
+            foreach (var row in _handOver)
+            {
+                rows.Add(ToView(row));
+            }
+
+            HandOverRows.ItemsSource = rows;
+        }
+
+        if (_sections is null)
+        {
+            return;
+        }
+
+        var views = new List<SectionView>();
+        foreach (var section in _sections)
+        {
+            var view = new SectionView
+            {
+                Title = loc["Setup_" + section.Id + "_Title"],
+                Description = loc["Setup_" + section.Id + "_Desc"],
+                Badge = section.Status switch
+                {
+                    ReadStatus.NeedsAdmin => loc["Badge_NeedsAdmin"],
+                    ReadStatus.Missing => loc["Badge_NotFound"],
+                    _ => "",
+                },
+                Error = section.Status == ReadStatus.Failed ? loc.FormatValues("Setup_SectionFailed", section.Error) : "",
+            };
+            foreach (var row in section.Rows)
+            {
+                view.Rows.Add(ToView(row));
+            }
+
+            views.Add(view);
+        }
+
+        Sections.ItemsSource = views;
+    }
+
+    private void RenderAdminCard()
+    {
+        var loc = Loc.Instance;
+        if (Startup.IsElevated)
+        {
+            AdminTitle.Text = loc["Setup_Admin_ElevatedTitle"];
+            AdminDescription.Text = loc["Setup_Admin_ElevatedDesc"];
+            ElevateButton.Visibility = Visibility.Collapsed;
+            if (_handOver is not null && Startup.IsHandOver
+                && Identity.Compare(Startup.Arguments, DesktopUser.Current.Sid, DesktopUser.Current.Desktop) == IdentityCheck.Mismatch)
+            {
+                Show(AdminResult, InfoBarSeverity.Error, loc["Setup_HandOver_MismatchTitle"], loc["Setup_HandOver_MismatchMsg"]);
+            }
+        }
+        else
+        {
+            AdminTitle.Text = loc["Setup_Admin_Title"];
+            AdminDescription.Text = loc["Setup_Admin_Desc"];
+        }
+    }
+
+    private static RowView ToView(StateRow row)
+    {
+        var loc = Loc.Instance;
+        var label = row.LabelKey is not null ? loc[row.LabelKey] : row.Label ?? "";
+        var badge = row.Status == ReadStatus.NeedsAdmin ? loc["Badge_NeedsAdmin"] : "";
+        var error = row.Status == ReadStatus.Failed ? row.Error ?? "" : "";
+        string value;
+        var isData = false;
+        if (row.Value is not null)
+        {
+            value = row.Value;
+            isData = true;
+        }
+        else if (row.ValueKey is not null)
+        {
+            value = Resolve(row.ValueKey, row.ValueArgs);
+        }
+        else
+        {
+            value = "";
+        }
+
+        return new RowView
+        {
+            Label = label,
+            LabelIsData = row.LabelKey is null,
+            Value = value,
+            ValueIsData = isData,
+            Badge = badge,
+            Error = error,
+        };
+    }
+
+    // Arguments that are words are translated; data arguments keep their own direction inside the sentence.
+    private static string Resolve(string key, object[] args)
+    {
+        var loc = Loc.Instance;
+        if (args.Length == 0)
+        {
+            return loc[key];
+        }
+
+        var resolved = new object[args.Length];
+        for (var i = 0; i < args.Length; i++)
+        {
+            resolved[i] = args[i] switch
+            {
+                LocKey word => Resolve(word.Key, word.Args),
+                string s => Bidi.Embed(s, loc.IsRtl),
+                IFormattable f => Bidi.Embed(f.ToString(null, CultureInfo.InvariantCulture), loc.IsRtl),
+                var other => other?.ToString() ?? "",
+            };
+        }
+
+        return string.Format(loc.Culture, loc[key], resolved);
+    }
+
+    private async void OnContinueAsAdministrator(object sender, RoutedEventArgs e)
+    {
+        ElevateButton.IsEnabled = false;
+        try
+        {
+            // Only this session's letters are handed over; the elevated instance can't see them itself.
+            var letters = await Task.Run(() => DriveLetters.SessionLetters(DriveLetters.Scan(null)));
+            var result = Relaunch.Start(Core.Elevation.Pages.Setup, letters, out var error);
+            switch (result)
+            {
+                case RelaunchResult.Started:
+                    Application.Current.Shutdown();
+                    break;
+                case RelaunchResult.Cancelled:
+                    Show(AdminResult, InfoBarSeverity.Warning, Loc.Instance["Setup_Admin_CancelledTitle"], Loc.Instance["Setup_Admin_CancelledMsg"]);
+                    break;
+                default:
+                    Show(AdminResult, InfoBarSeverity.Error, Loc.Instance["Setup_Admin_FailedTitle"], error ?? "");
+                    break;
+            }
+        }
+        finally
+        {
+            ElevateButton.IsEnabled = true;
+        }
+    }
+
+    private static void Show(InfoBar bar, InfoBarSeverity severity, string title, string message)
+    {
+        bar.Severity = severity;
+        bar.Title = title;
+        bar.Message = message;
+        bar.IsOpen = true;
+    }
+}

@@ -1,0 +1,78 @@
+<!--
+  Path symbol and favicon, transcribed from the brand SVGs in assets/brand/Logo (see assets/brand/SOURCE.txt).
+  Like those files, this drawing is part of the CPFS brand and is not covered by the MIT licence.
+  Coordinates, colours and stroke values are the SVGs' own. The transparent rectangle in each drawing
+  holds the SVG viewBox, so the image keeps the same frame and padding as the SVG.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!--  cpfs-symbol-on-dark.svg, viewBox 0 0 24 24  -->
+  <DrawingImage x:Key="CpfsSymbolOnDark">
+    <DrawingImage.Drawing>
+      <DrawingGroup>
+        <GeometryDrawing Brush="Transparent" Geometry="M0,0 H24 V24 H0 Z" />
+        <GeometryDrawing Geometry="M3 4.5L7 19.5">
+          <GeometryDrawing.Pen>
+            <Pen Brush="#F6F2EE" EndLineCap="Round" LineJoin="Round" StartLineCap="Round" Thickness="3" />
+          </GeometryDrawing.Pen>
+        </GeometryDrawing>
+        <GeometryDrawing Geometry="M10 4.5L14 19.5">
+          <GeometryDrawing.Pen>
+            <Pen Brush="#F6F2EE" EndLineCap="Round" LineJoin="Round" StartLineCap="Round" Thickness="3" />
+          </GeometryDrawing.Pen>
+        </GeometryDrawing>
+        <GeometryDrawing Brush="#FF7F45" Geometry="M18.0 9H21.0A1.5 1.5 0 0 1 22.5 10.5V13.5A1.5 1.5 0 0 1 21.0 15H18.0A1.5 1.5 0 0 1 16.5 13.5V10.5A1.5 1.5 0 0 1 18.0 9Z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+
+  <!--  cpfs-symbol-on-light.svg, viewBox 0 0 24 24  -->
+  <DrawingImage x:Key="CpfsSymbolOnLight">
+    <DrawingImage.Drawing>
+      <DrawingGroup>
+        <GeometryDrawing Brush="Transparent" Geometry="M0,0 H24 V24 H0 Z" />
+        <GeometryDrawing Geometry="M3 4.5L7 19.5">
+          <GeometryDrawing.Pen>
+            <Pen Brush="#1A1512" EndLineCap="Round" LineJoin="Round" StartLineCap="Round" Thickness="3" />
+          </GeometryDrawing.Pen>
+        </GeometryDrawing>
+        <GeometryDrawing Geometry="M10 4.5L14 19.5">
+          <GeometryDrawing.Pen>
+            <Pen Brush="#1A1512" EndLineCap="Round" LineJoin="Round" StartLineCap="Round" Thickness="3" />
+          </GeometryDrawing.Pen>
+        </GeometryDrawing>
+        <GeometryDrawing Brush="#B9440D" Geometry="M18.0 9H21.0A1.5 1.5 0 0 1 22.5 10.5V13.5A1.5 1.5 0 0 1 21.0 15H18.0A1.5 1.5 0 0 1 16.5 13.5V10.5A1.5 1.5 0 0 1 18.0 9Z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+
+  <!--  cpfs-symbol-favicon.svg, viewBox 0 0 20 20: the title bar icon, drawn as vectors so it is sharp at every DPI  -->
+  <DrawingImage x:Key="CpfsFavicon">
+    <DrawingImage.Drawing>
+      <DrawingGroup>
+        <GeometryDrawing Brush="#FF7F45">
+          <GeometryDrawing.Geometry>
+            <RectangleGeometry RadiusX="4" RadiusY="4" Rect="0,0,20,20" />
+          </GeometryDrawing.Geometry>
+        </GeometryDrawing>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <TranslateTransform X="2" Y="2" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Geometry="M1 2L4 14">
+            <GeometryDrawing.Pen>
+              <Pen Brush="#1A1512" EndLineCap="Round" LineJoin="Round" StartLineCap="Round" Thickness="2" />
+            </GeometryDrawing.Pen>
+          </GeometryDrawing>
+          <GeometryDrawing Geometry="M6 2L9 14">
+            <GeometryDrawing.Pen>
+              <Pen Brush="#1A1512" EndLineCap="Round" LineJoin="Round" StartLineCap="Round" Thickness="2" />
+            </GeometryDrawing.Pen>
+          </GeometryDrawing>
+          <GeometryDrawing Brush="#1A1512" Geometry="M12 6H14A1 1 0 0 1 15 7V9A1 1 0 0 1 14 10H12A1 1 0 0 1 11 9V7A1 1 0 0 1 12 6Z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+
+</ResourceDictionary>

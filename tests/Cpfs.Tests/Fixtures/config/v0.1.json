@@ -1,0 +1,8 @@
+﻿{
+    "SmbUser":  "ShareUser",
+    "SharePath":  "D:\\Shared",
+    "ShareName":  "Shared",
+    "Strict":  false,
+    "AutoPrivate":  false,
+    "HostName":  "HOST-01"
+}

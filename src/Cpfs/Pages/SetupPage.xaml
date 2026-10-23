@@ -1,0 +1,126 @@
+<Page
+  x:Class="Cpfs.Pages.SetupPage"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:local="clr-namespace:Cpfs"
+  xmlns:pages="clr-namespace:Cpfs.Pages"
+  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+  Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+  <Page.Resources>
+    <BooleanToVisibilityConverter x:Key="Visible" />
+
+    <DataTemplate x:Key="RowTemplate" DataType="{x:Type pages:RowView}">
+      <Grid Margin="0,0,0,6">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="2*" MinWidth="120" />
+          <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+        <TextBlock
+          Margin="0,0,12,0"
+          Style="{StaticResource CardTitle}"
+          FontWeight="Normal"
+          Text="{Binding Label}"
+          Visibility="{Binding LabelIsText, Converter={StaticResource Visible}}" />
+        <TextBlock
+          Margin="0,0,12,0"
+          Style="{StaticResource DataValue}"
+          Text="{Binding Label}"
+          Visibility="{Binding LabelIsData, Converter={StaticResource Visible}}" />
+        <StackPanel Grid.Column="1">
+          <TextBlock Style="{StaticResource CardValue}" Text="{Binding Value}" Visibility="{Binding ValueIsText, Converter={StaticResource Visible}}" />
+          <TextBlock Style="{StaticResource DataValue}" Text="{Binding Value}" Visibility="{Binding ValueIsData, Converter={StaticResource Visible}}" />
+          <Border Style="{StaticResource Badge}" Visibility="{Binding HasBadge, Converter={StaticResource Visible}}">
+            <TextBlock Style="{StaticResource BadgeText}" Text="{Binding Badge}" />
+          </Border>
+          <TextBlock Style="{StaticResource ErrorText}" Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
+        </StackPanel>
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="SectionTemplate" DataType="{x:Type pages:SectionView}">
+      <ui:Card Margin="0,0,0,4">
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Description}" />
+          <Border Style="{StaticResource Badge}" Margin="0,8,0,0" Visibility="{Binding HasBadge, Converter={StaticResource Visible}}">
+            <TextBlock Style="{StaticResource BadgeText}" Text="{Binding Badge}" />
+          </Border>
+          <TextBlock Margin="0,4,0,0" Style="{StaticResource ErrorText}" Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
+          <!--  An ItemsControl has no ScrollViewer of its own: the page scrolls, not the card.  -->
+          <ItemsControl
+            Margin="0,12,0,0"
+            Focusable="False"
+            ItemTemplate="{StaticResource RowTemplate}"
+            ItemsSource="{Binding Rows}" />
+        </StackPanel>
+      </ui:Card>
+    </DataTemplate>
+  </Page.Resources>
+
+  <StackPanel Margin="24,16,24,24">
+    <TextBlock Style="{StaticResource PageTitle}" Text="{Binding [Setup_Title], Source={x:Static local:Loc.Instance}}" />
+
+    <ui:InfoBar
+      Margin="0,0,0,8"
+      IsClosable="False"
+      IsOpen="True"
+      Message="{Binding [Setup_ReadOnly_Msg], Source={x:Static local:Loc.Instance}}"
+      Severity="Informational"
+      Title="{Binding [Setup_ReadOnly_Title], Source={x:Static local:Loc.Instance}}" />
+
+    <ui:CardControl x:Name="AdminCard" Margin="0,0,0,4" Icon="{ui:SymbolIcon Shield24}">
+      <ui:CardControl.Header>
+        <StackPanel>
+          <TextBlock x:Name="AdminTitle" Style="{StaticResource CardTitle}" />
+          <TextBlock x:Name="AdminDescription" Style="{StaticResource CardDescription}" />
+        </StackPanel>
+      </ui:CardControl.Header>
+      <ui:Button
+        x:Name="ElevateButton"
+        Appearance="Primary"
+        AutomationProperties.Name="{Binding [Setup_Admin_Button], Source={x:Static local:Loc.Instance}}"
+        Click="OnContinueAsAdministrator"
+        Content="{Binding [Setup_Admin_Button], Source={x:Static local:Loc.Instance}}"
+        Icon="{ui:SymbolIcon Shield24}" />
+    </ui:CardControl>
+
+    <ui:InfoBar x:Name="AdminResult" Margin="0,0,0,4" IsClosable="True" IsOpen="False" />
+
+    <ui:Card x:Name="HandOverCard" Margin="0,0,0,4" Visibility="Collapsed">
+      <StackPanel>
+        <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Setup_HandOver_Title], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_HandOver_Desc], Source={x:Static local:Loc.Instance}}" />
+        <ItemsControl
+          x:Name="HandOverRows"
+          Margin="0,12,0,0"
+          Focusable="False"
+          ItemTemplate="{StaticResource RowTemplate}" />
+      </StackPanel>
+    </ui:Card>
+
+    <WrapPanel Margin="0,8,0,8">
+      <ui:Button
+        x:Name="RefreshButton"
+        Margin="0,0,12,0"
+        AutomationProperties.Name="{Binding [Setup_Refresh], Source={x:Static local:Loc.Instance}}"
+        Click="OnRefresh"
+        Content="{Binding [Setup_Refresh], Source={x:Static local:Loc.Instance}}"
+        Icon="{ui:SymbolIcon ArrowClockwise24}" />
+      <ui:ProgressRing
+        x:Name="Busy"
+        Width="20"
+        Height="20"
+        IsIndeterminate="True"
+        Visibility="Collapsed" />
+      <TextBlock
+        x:Name="BusyText"
+        Margin="8,0,0,0"
+        VerticalAlignment="Center"
+        Style="{StaticResource CardValue}"
+        Text="{Binding [Setup_Reading], Source={x:Static local:Loc.Instance}}"
+        Visibility="Collapsed" />
+    </WrapPanel>
+
+    <ItemsControl x:Name="Sections" Focusable="False" ItemTemplate="{StaticResource SectionTemplate}" />
+  </StackPanel>
+</Page>

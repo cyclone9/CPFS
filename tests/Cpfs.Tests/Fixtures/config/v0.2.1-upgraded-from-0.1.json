@@ -1,0 +1,30 @@
+﻿{
+    "HostName":  "HOST-01",
+    "SmbUser":  "ShareUser",
+    "SharePath":  "D:\\Shared",
+    "ShareName":  "Shared",
+    "Strict":  false,
+    "AutoPrivate":  true,
+    "Access":  0,
+    "DriveLetter":  null,
+    "Shortcut":  null,
+    "Product":  "CPFS - CyClone Power File Share",
+    "Version":  "0.2.1",
+    "Updated":  "2000-01-02T09:00:00",
+    "Backup":  null,
+    "Tracked":  {
+                    "Users":  [
+                                  {
+                                      "Name":  "ShareUser",
+                                      "Existed":  false,
+                                      "WasAdmin":  true
+                                  }
+                              ],
+                    "Networks":  [
+
+                                 ],
+                    "FirewallRules":  [
+
+                                      ]
+                }
+}
