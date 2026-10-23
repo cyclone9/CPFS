@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up .NET 10 SDK
+        uses: actions/setup-dotnet@v6.0.0
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore Cpfs.sln
+
+      - name: Build (Release)
+        run: dotnet build Cpfs.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test tests/Cpfs.Tests/Cpfs.Tests.csproj -c Release --no-build --logger "console;verbosity=normal"
+
+      # Cpfs.exe is a windowed program: it is started with its output redirected and waited for, and its exit code
+      # decides the step. The self-test only reads Windows; it changes nothing on the runner.
+      - name: Self-test (headless)
+        shell: pwsh
+        run: |
+          $exe = Join-Path $PWD 'src\Cpfs\bin\Release\net48\Cpfs.exe'
+          $out = Join-Path $env:RUNNER_TEMP 'selftest-out.txt'
+          $err = Join-Path $env:RUNNER_TEMP 'selftest-err.txt'
+          $p = Start-Process -FilePath $exe -ArgumentList '--selftest' -NoNewWindow -Wait -PassThru `
+            -RedirectStandardOutput $out -RedirectStandardError $err
+          Get-Content -LiteralPath $out
+          if ((Test-Path -LiteralPath $err) -and (Get-Item -LiteralPath $err).Length -gt 0) { Get-Content -LiteralPath $err }
+          $log = Join-Path $env:LOCALAPPDATA 'CPFS\cpfs-log.txt'
+          if (Test-Path -LiteralPath $log) { Write-Host '--- log ---'; Get-Content -LiteralPath $log }
+          Write-Host "Exit code $($p.ExitCode)"
+          exit $p.ExitCode
+
+      # Changes the runner and undoes it: Setup with test values (an account with a random password that is never
+      # printed, a share, firewall rules, security settings), checks, Uninstall, and checks everything is back.
+      # Cpfs.exe refuses this verb outside GitHub Actions and on a domain member.
+      - name: Apply test (Setup, Uninstall, verify)
+        shell: pwsh
+        run: |
+          $exe = Join-Path $PWD 'src\Cpfs\bin\Release\net48\Cpfs.exe'
+          $out = Join-Path $env:RUNNER_TEMP 'apply-out.txt'
+          $err = Join-Path $env:RUNNER_TEMP 'apply-err.txt'
+          $p = Start-Process -FilePath $exe -ArgumentList '--ci-apply-test' -NoNewWindow -Wait -PassThru `
+            -RedirectStandardOutput $out -RedirectStandardError $err
+          Get-Content -LiteralPath $out
+          if ((Test-Path -LiteralPath $err) -and (Get-Item -LiteralPath $err).Length -gt 0) { Get-Content -LiteralPath $err }
+          $log = Join-Path $env:LOCALAPPDATA 'CPFS\cpfs-log.txt'
+          if (Test-Path -LiteralPath $log) { Write-Host '--- log ---'; Get-Content -LiteralPath $log }
+          Write-Host "Exit code $($p.ExitCode)"
+          exit $p.ExitCode
+
+      # The 0.2.0 Uninstall script reads config.json with Windows PowerShell 5.1: the file the app wrote must give it
+      # every field it reads, with the same type.
+      - name: config.json read by Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          Write-Host "PowerShell $($PSVersionTable.PSVersion)"
+          $c = Get-Content -Path (Join-Path $env:RUNNER_TEMP 'cpfs-config-after-setup.json') -Raw | ConvertFrom-Json
+          $fail = @()
+          foreach ($n in 'HostName', 'SmbUser', 'SharePath', 'ShareName', 'Product', 'Version', 'Updated') {
+            if (-not ($c.$n -is [string])) { $fail += $n }
+          }
+          if (-not ($c.Access -is [int])) { $fail += 'Access' }
+          foreach ($n in 'DriveLetter', 'Shortcut') {
+            if (($c.PSObject.Properties.Name -notcontains $n) -or -not ($null -eq $c.$n -or $c.$n -is [string])) { $fail += $n }
+          }
+          $b = $c.Backup
+          if (-not ($b.Taken -is [string])) { $fail += 'Backup.Taken' }
+          if (-not ($b.ServerStart -is [string])) { $fail += 'Backup.ServerStart' }
+          if (-not ($b.Smb2 -is [bool])) { $fail += 'Backup.Smb2' }
+          if (-not ($b.RejectUnencrypted -is [bool])) { $fail += 'Backup.RejectUnencrypted' }
+          if (-not ($null -eq $b.Lockout -or $b.Lockout -is [int])) { $fail += 'Backup.Lockout' }
+          $reg = @($b.Registry)
+          if ($reg.Count -ne 8) { $fail += 'Backup.Registry count' }
+          foreach ($r in $reg) {
+            if (-not ($r.Path -is [string]) -or -not $r.Path.StartsWith('HKLM:\')) { $fail += "Registry.Path $($r.Name)" }
+            if (-not ($r.Name -is [string])) { $fail += 'Registry.Name' }
+            if (-not ($r.Exists -is [bool])) { $fail += "Registry.Exists $($r.Name)" }
+            if ($r.Exists -and -not ($r.Value -is [int])) { $fail += "Registry.Value $($r.Name)" }
+          }
+          $users = @($c.Tracked.Users)
+          if ($users.Count -lt 1) { $fail += 'Tracked.Users' }
+          foreach ($u in $users) {
+            if (-not ($u.Name -is [string]) -or -not ($u.Existed -is [bool]) -or -not ($u.WasAdmin -is [bool])) { $fail += 'Tracked.Users entry' }
+          }
+          foreach ($n in 'Networks', 'FirewallRules') {
+            if ($c.Tracked.PSObject.Properties.Name -notcontains $n) { $fail += "Tracked.$n" }
+          }
+          if ($fail) { Write-Host ('FAIL: ' + ($fail -join ', ')); exit 1 }
+          Write-Host 'PASS: every field the 0.2.0 Uninstall reads is there with its type'
+
+      - name: Upload the exe
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: Cpfs-${{ github.sha }}
+          path: src/Cpfs/bin/Release/net48/Cpfs.exe
+          if-no-files-found: error
+          retention-days: 30

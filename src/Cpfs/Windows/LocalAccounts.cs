@@ -20,6 +20,8 @@ internal sealed class LocalUser
     public bool Enabled => (Flags & LocalAccounts.UfAccountDisable) == 0;
 
     public bool PasswordNeverExpires => (Flags & LocalAccounts.UfDontExpirePasswd) != 0;
+
+    public bool Locked => (Flags & LocalAccounts.UfLockout) != 0;
 }
 
 // The local SAM through netapi32, which answers from this machine alone. System.DirectoryServices.AccountManagement
@@ -28,6 +30,7 @@ internal sealed class LocalUser
 internal static class LocalAccounts
 {
     internal const uint UfAccountDisable = 0x2;
+    internal const uint UfLockout = 0x10;
     internal const uint UfDontExpirePasswd = 0x10000;
 
     private const int NerrSuccess = 0;

@@ -90,6 +90,12 @@ public class StringsTests
         {
             foreach (Match m in keyLike.Matches(File.ReadAllText(file)))
             {
+                // Environment variable names (GITHUB_ACTIONS) are all capitals; resource keys never are.
+                if (!m.Groups[1].Value.Any(char.IsLower))
+                {
+                    continue;
+                }
+
                 Assert.True(english.ContainsKey(m.Groups[1].Value), Path.GetFileName(file) + " names a missing key " + m.Groups[1].Value);
             }
         }
@@ -113,6 +119,11 @@ public class StringsTests
         built.AddRange(new[] { "Sync", "Uninstall" }.Select(p => "Placeholder_" + p + "_Desc"));
         built.AddRange(Enumerable.Range(0, 5).Select(u => "Size_" + u));
         built.AddRange(Cpfs.Core.Monitor.FailedLogon.KnownReasonKeys);
+        built.AddRange(System.Enum.GetNames<Cpfs.Core.Validation.ValidationError>().Where(e => e != "None").Select(e => "Setup_Form_Error_" + e));
+        built.AddRange(System.Enum.GetNames<Cpfs.Core.Planning.PlanAction>().Select(a => "Plan_Badge_" + a));
+        built.AddRange(System.Enum.GetNames<Cpfs.Core.Apply.StepOutcome>().Select(o => "Apply_State_" + o));
+        built.AddRange(System.Enum.GetNames<Cpfs.Core.Planning.PlanCause>().Where(c => c != "None").Select(c => "Plan_Cause_" + c));
+        built.AddRange(new[] { "SmbUser", "SharePath", "ShareName", "DriveLetter", "DriveName", "ShortcutName", "Password" }.Select(f => "Setup_Form_" + f));
         Assert.DoesNotContain(built, k => !english.ContainsKey(k));
     }
 

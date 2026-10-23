@@ -51,8 +51,8 @@
   <data name="Pref_Font_Desc" xml:space="preserve"><value>The font for the current language. Each language keeps its own choice.</value></data>
   <data name="Pref_Stored" xml:space="preserve"><value>Your preferences are saved for your Windows account in:</value></data>
   <data name="Setup_Title" xml:space="preserve"><value>Setup</value></data>
-  <data name="Setup_ReadOnly_Title" xml:space="preserve"><value>This version only reads</value></data>
-  <data name="Setup_ReadOnly_Msg" xml:space="preserve"><value>This page shows your current CPFS install and Windows settings. It changes nothing: no setting, file, account, share or firewall rule.</value></data>
+  <data name="Setup_ReadOnly_Title" xml:space="preserve"><value>Nothing changes until you press Apply</value></data>
+  <data name="Setup_ReadOnly_Msg" xml:space="preserve"><value>This page shows your CPFS install, the Windows settings and what Setup would change. Windows is changed only after you press Apply and confirm, and a restore point comes first.</value></data>
   <data name="Setup_Admin_Title" xml:space="preserve"><value>Some items need administrator rights to read</value></data>
   <data name="Setup_Admin_Desc" xml:space="preserve"><value>Continue as administrator to read them too. Windows asks for permission once. Nothing is changed.</value></data>
   <data name="Setup_Admin_Button" xml:space="preserve"><value>Continue as administrator</value></data>
@@ -432,4 +432,323 @@
   <data name="Setup_Shortcut_SummaryMissing" xml:space="preserve"><value>{0}, not found</value></data>
   <data name="Setup_DataFolder_SummaryAdmins" xml:space="preserve"><value>Exists, owned by Administrators</value></data>
   <data name="Setup_DataFolder_SummaryOther" xml:space="preserve"><value>Exists, owned by {0}</value></data>
+  <data name="Setup_Plan_Title" xml:space="preserve"><value>What Setup would do</value></data>
+  <data name="Setup_Plan_Desc" xml:space="preserve"><value>Your answers, starting from what the existing install saved. The plan below compares them with this PC as it is now. Nothing changes until you press Apply.</value></data>
+  <data name="Setup_State_Title" xml:space="preserve"><value>What is on this PC now</value></data>
+  <data name="Setup_Form_SharePath" xml:space="preserve"><value>Shared folder</value></data>
+  <data name="Setup_Form_SharePath_Desc" xml:space="preserve"><value>The folder phones and other devices will see. Files in it are never deleted.</value></data>
+  <data name="Setup_Form_ShareName" xml:space="preserve"><value>Share name</value></data>
+  <data name="Setup_Form_SmbUser" xml:space="preserve"><value>SMB account</value></data>
+  <data name="Setup_Form_SmbUser_Desc" xml:space="preserve"><value>A separate account used only for file sharing, not your Windows sign-in.</value></data>
+  <data name="Setup_Form_Password" xml:space="preserve"><value>Password</value></data>
+  <data name="Setup_Form_PasswordRepeat" xml:space="preserve"><value>Repeat password</value></data>
+  <data name="Setup_Form_Password_Desc" xml:space="preserve"><value>At least 8 characters. Leave both empty to keep the current password of an existing account. The password is never saved, logged or shown.</value></data>
+  <data name="Setup_Form_PasswordShort" xml:space="preserve"><value>The password needs at least {0} characters.</value></data>
+  <data name="Setup_Form_PasswordMismatch" xml:space="preserve"><value>The two passwords are not the same.</value></data>
+  <data name="Setup_Form_Strict" xml:space="preserve"><value>Strict mode</value></data>
+  <data name="Setup_Form_Strict_Desc" xml:space="preserve"><value>Require SMB3 encryption. Some older devices can no longer connect.</value></data>
+  <data name="Setup_Form_AutoPrivate" xml:space="preserve"><value>Make new networks Private</value></data>
+  <data name="Setup_Form_AutoPrivate_Desc" xml:space="preserve"><value>Convenient at home, but it also trusts cafe and hotel Wi-Fi.</value></data>
+  <data name="Setup_Form_Drive" xml:space="preserve"><value>Drive letter</value></data>
+  <data name="Setup_Form_Drive_Desc" xml:space="preserve"><value>Show the shared folder as a drive in File Explorer. Only free letters are offered.</value></data>
+  <data name="Setup_Form_DriveLetter" xml:space="preserve"><value>Drive letter</value></data>
+  <data name="Setup_Form_DriveName" xml:space="preserve"><value>Drive name</value></data>
+  <data name="Setup_Form_Shortcut" xml:space="preserve"><value>Desktop shortcut</value></data>
+  <data name="Setup_Form_ShortcutName" xml:space="preserve"><value>Shortcut name</value></data>
+  <data name="Setup_Form_NoFreeLetter" xml:space="preserve"><value>No drive letter is free.</value></data>
+  <data name="Setup_Form_Error_Empty" xml:space="preserve"><value>Enter a value.</value></data>
+  <data name="Setup_Form_Error_TooLong" xml:space="preserve"><value>This is too long.</value></data>
+  <data name="Setup_Form_Error_TooShort" xml:space="preserve"><value>This is too short.</value></data>
+  <data name="Setup_Form_Error_InvalidCharacters" xml:space="preserve"><value>This contains characters that are not allowed here.</value></data>
+  <data name="Setup_Form_Error_AllDigits" xml:space="preserve"><value>A name made only of digits is not allowed.</value></data>
+  <data name="Setup_Form_Error_SameAsWindowsUser" xml:space="preserve"><value>This is a Windows sign-in name. Use a separate account, for example the name with -SMB added.</value></data>
+  <data name="Setup_Form_Error_SameAsComputerName" xml:space="preserve"><value>The account cannot have the same name as this PC.</value></data>
+  <data name="Setup_Form_Error_NotFullPath" xml:space="preserve"><value>Enter a full path that starts with a drive, such as D:\Shared.</value></data>
+  <data name="Setup_Form_Error_DriveRoot" xml:space="preserve"><value>A whole drive cannot be shared. Choose a folder on it.</value></data>
+  <data name="Setup_Form_Error_ProtectedFolder" xml:space="preserve"><value>This is a Windows or user folder and cannot be shared. Choose another folder.</value></data>
+  <data name="Setup_Form_Error_PasswordsDiffer" xml:space="preserve"><value>The two passwords are not the same.</value></data>
+  <data name="Setup_Form_Error_ReservedName" xml:space="preserve"><value>Windows reserves this name. Choose another.</value></data>
+  <data name="Setup_Form_Error_TrailingDotOrSpace" xml:space="preserve"><value>A file name cannot end with a dot or a space.</value></data>
+  <data name="Setup_Form_Error_ControlCharacters" xml:space="preserve"><value>This contains control characters.</value></data>
+  <data name="Setup_Form_Error_LetterReserved" xml:space="preserve"><value>A and B are never used.</value></data>
+  <data name="Setup_Form_Error_LetterNotFree" xml:space="preserve"><value>This drive letter is in use.</value></data>
+  <data name="Setup_Plan_Summary" xml:space="preserve"><value>{0} keep, {1} change, {2} create, {3} remove, {4} ask, {5} cannot be planned</value></data>
+  <data name="Setup_Plan_GroupSummary" xml:space="preserve"><value>{0} keep, {1} to look at</value></data>
+  <data name="Setup_Plan_Apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="Setup_Plan_AskDo" xml:space="preserve"><value>Do this</value></data>
+  <data name="Setup_Plan_AskName" xml:space="preserve"><value>Do this: {0}</value></data>
+  <data name="Setup_Plan_Arrow" xml:space="preserve"><value>{0} → {1}</value></data>
+  <data name="Setup_Plan_Backup" xml:space="preserve"><value>The original value is saved in the backup first.</value></data>
+  <data name="Setup_Plan_NotElevatedTitle" xml:space="preserve"><value>Some items need administrator rights</value></data>
+  <data name="Setup_Plan_NotElevated" xml:space="preserve"><value>Use Continue as administrator to read them and complete the plan.</value></data>
+  <data name="Plan_Badge_Keep" xml:space="preserve"><value>Keep</value></data>
+  <data name="Plan_Badge_Change" xml:space="preserve"><value>Change</value></data>
+  <data name="Plan_Badge_Create" xml:space="preserve"><value>Create</value></data>
+  <data name="Plan_Badge_RemoveIfOurs" xml:space="preserve"><value>Remove</value></data>
+  <data name="Plan_Badge_Ask" xml:space="preserve"><value>Ask</value></data>
+  <data name="Plan_Badge_CannotPlan" xml:space="preserve"><value>Cannot plan</value></data>
+  <data name="Plan_Cause_NeedsAdmin" xml:space="preserve"><value>Needs administrator to plan</value></data>
+  <data name="Plan_Cause_ReadFailed" xml:space="preserve"><value>Could not be read</value></data>
+  <data name="Plan_Cause_InvalidAnswer" xml:space="preserve"><value>Check the answer</value></data>
+  <data name="Plan_Section_Backup" xml:space="preserve"><value>Backup</value></data>
+  <data name="Plan_Section_User" xml:space="preserve"><value>SMB account</value></data>
+  <data name="Plan_Section_Folder" xml:space="preserve"><value>Shared folder</value></data>
+  <data name="Plan_Section_Share" xml:space="preserve"><value>Share</value></data>
+  <data name="Plan_Section_Server" xml:space="preserve"><value>SMB server</value></data>
+  <data name="Plan_Section_Hardening" xml:space="preserve"><value>Security settings</value></data>
+  <data name="Plan_Section_Firewall" xml:space="preserve"><value>Firewall</value></data>
+  <data name="Plan_Section_Networks" xml:space="preserve"><value>Networks</value></data>
+  <data name="Plan_Section_AutoPrivate" xml:space="preserve"><value>Auto-Private</value></data>
+  <data name="Plan_Section_Drive" xml:space="preserve"><value>Drive</value></data>
+  <data name="Plan_Section_Shortcut" xml:space="preserve"><value>Shortcut</value></data>
+  <data name="Plan_Section_DataFolder" xml:space="preserve"><value>Data folder</value></data>
+  <data name="Plan_S_Backup" xml:space="preserve"><value>Backup of the original settings</value></data>
+  <data name="Plan_S_Account" xml:space="preserve"><value>SMB account</value></data>
+  <data name="Plan_S_TakeOver" xml:space="preserve"><value>Use the existing account</value></data>
+  <data name="Plan_S_AccountEnabled" xml:space="preserve"><value>Account enabled</value></data>
+  <data name="Plan_S_NeverExpires" xml:space="preserve"><value>Password never expires</value></data>
+  <data name="Plan_S_AccountLockout" xml:space="preserve"><value>Account locked out</value></data>
+  <data name="Plan_S_Users" xml:space="preserve"><value>Member of Users</value></data>
+  <data name="Plan_S_Admins" xml:space="preserve"><value>Member of Administrators</value></data>
+  <data name="Plan_S_Hidden" xml:space="preserve"><value>Hidden from the sign-in screen</value></data>
+  <data name="Plan_S_Password" xml:space="preserve"><value>Password</value></data>
+  <data name="Plan_S_Folder" xml:space="preserve"><value>Shared folder</value></data>
+  <data name="Plan_S_Ace" xml:space="preserve"><value>Folder access</value></data>
+  <data name="Plan_S_Share" xml:space="preserve"><value>Share</value></data>
+  <data name="Plan_S_AdminShares" xml:space="preserve"><value>Administrative shares</value></data>
+  <data name="Plan_S_ServerStart" xml:space="preserve"><value>Server service start</value></data>
+  <data name="Plan_S_Smb2" xml:space="preserve"><value>SMB2 and SMB3</value></data>
+  <data name="Plan_S_Reject" xml:space="preserve"><value>Reject unencrypted access</value></data>
+  <data name="Plan_S_Smb1" xml:space="preserve"><value>SMB1 protocol</value></data>
+  <data name="Plan_S_Smb1Feature" xml:space="preserve"><value>SMB1 Windows feature</value></data>
+  <data name="Plan_S_Guest" xml:space="preserve"><value>Guest account</value></data>
+  <data name="Plan_S_LockoutThreshold" xml:space="preserve"><value>Account lockout threshold</value></data>
+  <data name="Plan_S_Audit" xml:space="preserve"><value>Audit of failed sign-ins</value></data>
+  <data name="Plan_S_BuiltIn" xml:space="preserve"><value>Built-in File and Printer Sharing rules</value></data>
+  <data name="Plan_S_VpnAdapter" xml:space="preserve"><value>VPN adapter</value></data>
+  <data name="Plan_S_Drive" xml:space="preserve"><value>Drive letter</value></data>
+  <data name="Plan_S_OldDrive" xml:space="preserve"><value>Previous drive letter</value></data>
+  <data name="Plan_S_Label" xml:space="preserve"><value>Drive name</value></data>
+  <data name="Plan_S_OldLabel" xml:space="preserve"><value>Previous drive name</value></data>
+  <data name="Plan_S_Shortcut" xml:space="preserve"><value>Desktop shortcut</value></data>
+  <data name="Plan_S_OldShortcut" xml:space="preserve"><value>Previous shortcut</value></data>
+  <data name="Plan_S_DataFolder" xml:space="preserve"><value>CPFS data folder</value></data>
+  <data name="Plan_V_Absent" xml:space="preserve"><value>not present</value></data>
+  <data name="Plan_V_Exists" xml:space="preserve"><value>present</value></data>
+  <data name="Plan_V_On" xml:space="preserve"><value>on</value></data>
+  <data name="Plan_V_Off" xml:space="preserve"><value>off</value></data>
+  <data name="Plan_V_Public" xml:space="preserve"><value>Public</value></data>
+  <data name="Plan_V_Private" xml:space="preserve"><value>Private</value></data>
+  <data name="Plan_V_Domain" xml:space="preserve"><value>Domain</value></data>
+  <data name="Plan_V_Automatic" xml:space="preserve"><value>Automatic</value></data>
+  <data name="Plan_V_Manual" xml:space="preserve"><value>Manual</value></data>
+  <data name="Plan_V_Disabled" xml:space="preserve"><value>disabled</value></data>
+  <data name="Plan_V_Enabled" xml:space="preserve"><value>enabled</value></data>
+  <data name="Plan_V_Locked" xml:space="preserve"><value>locked</value></data>
+  <data name="Plan_V_Unlocked" xml:space="preserve"><value>not locked</value></data>
+  <data name="Plan_V_Member" xml:space="preserve"><value>member</value></data>
+  <data name="Plan_V_NotMember" xml:space="preserve"><value>not a member</value></data>
+  <data name="Plan_V_Modify" xml:space="preserve"><value>Modify</value></data>
+  <data name="Plan_V_NoAccess" xml:space="preserve"><value>no access</value></data>
+  <data name="Plan_V_LockedDown" xml:space="preserve"><value>SYSTEM and Administrators only</value></data>
+  <data name="Plan_V_NotLockedDown" xml:space="preserve"><value>writable by others</value></data>
+  <data name="Plan_V_SetPassword" xml:space="preserve"><value>set password</value></data>
+  <data name="Plan_V_KeepPassword" xml:space="preserve"><value>keep password</value></data>
+  <data name="Plan_V_Taken" xml:space="preserve"><value>taken</value></data>
+  <data name="Plan_V_WillTake" xml:space="preserve"><value>taken now</value></data>
+  <data name="Plan_V_None" xml:space="preserve"><value>none</value></data>
+  <data name="Plan_V_Success" xml:space="preserve"><value>success</value></data>
+  <data name="Plan_V_Failure" xml:space="preserve"><value>failure</value></data>
+  <data name="Plan_V_SuccessFailure" xml:space="preserve"><value>success and failure</value></data>
+  <data name="Plan_R_NeedsAdmin" xml:space="preserve"><value>Needs administrator rights to read. Use Continue as administrator.</value></data>
+  <data name="Plan_R_ReadFailed" xml:space="preserve"><value>Could not be read: {0}</value></data>
+  <data name="Plan_R_Invalid" xml:space="preserve"><value>Fix this answer in the form first: {0}.</value></data>
+  <data name="Plan_R_AtTarget" xml:space="preserve"><value>Already as Setup sets it.</value></data>
+  <data name="Plan_R_Stricter" xml:space="preserve"><value>Already stricter than Setup's value ({0}), so it is left as it is.</value></data>
+  <data name="Plan_R_BackupFresh" xml:space="preserve"><value>First Setup on this PC: the original value of every setting marked below is saved in config.json before it changes.</value></data>
+  <data name="Plan_R_BackupTaken" xml:space="preserve"><value>Taken at the first Setup ({0}) and never taken again, so Uninstall restores the values from before CPFS.</value></data>
+  <data name="Plan_R_BackupNone" xml:space="preserve"><value>This install has no backup (it began before version 0.2). None is taken now, since today's values may be CPFS's own; Uninstall uses Windows defaults instead.</value></data>
+  <data name="Plan_R_AccountCreate" xml:space="preserve"><value>Creates the file-sharing account: password never expires, hidden from the sign-in screen, member of Users.</value></data>
+  <data name="Plan_R_AccountForeign" xml:space="preserve"><value>An account named {0} already exists and CPFS did not create it. Tick to use it for file sharing; its current settings are saved first so Uninstall can put them back.</value></data>
+  <data name="Plan_R_AccountTakenOver" xml:space="preserve"><value>The account CPFS uses for file sharing.</value></data>
+  <data name="Plan_R_AccountEnable" xml:space="preserve"><value>The account must be enabled for devices to sign in.</value></data>
+  <data name="Plan_R_NeverExpires" xml:space="preserve"><value>An expired password would lock every device out.</value></data>
+  <data name="Plan_R_Unlock" xml:space="preserve"><value>The account is locked after wrong passwords; Setup unlocks it.</value></data>
+  <data name="Plan_R_UsersGroup" xml:space="preserve"><value>Added to Users so it can sign in over the network.</value></data>
+  <data name="Plan_R_Admin" xml:space="preserve"><value>The account is an administrator. Removing these rights is recommended: a leaked file-sharing password then cannot change Windows.</value></data>
+  <data name="Plan_R_Hidden" xml:space="preserve"><value>Hides the account from the sign-in screen.</value></data>
+  <data name="Plan_R_PasswordKeep" xml:space="preserve"><value>The password fields are empty, so the current password stays.</value></data>
+  <data name="Plan_R_PasswordSet" xml:space="preserve"><value>Sets the password you typed. It is not saved anywhere.</value></data>
+  <data name="Plan_R_PasswordNeeded" xml:space="preserve"><value>A new account needs a password: type it twice in the form.</value></data>
+  <data name="Plan_R_FolderCreate" xml:space="preserve"><value>The folder does not exist yet and is created.</value></data>
+  <data name="Plan_R_AceGrant" xml:space="preserve"><value>Gives {0} Modify rights on the folder and everything in it.</value></data>
+  <data name="Plan_R_AceAfterAccount" xml:space="preserve"><value>Gives {0} Modify rights on the folder once the account exists.</value></data>
+  <data name="Plan_R_ShareCreate" xml:space="preserve"><value>Creates the share: only the SMB account has access, folders it cannot open stay hidden, no offline copies.</value></data>
+  <data name="Plan_R_ShareChange" xml:space="preserve"><value>The share's settings differ from Setup's: {0}.</value></data>
+  <data name="Plan_R_ShareMove" xml:space="preserve"><value>The share moves to the new folder (removed and created again). Files stay where they are.</value></data>
+  <data name="Plan_R_ShareForeignName" xml:space="preserve"><value>A share named {0} already exists on {1} and CPFS did not create it. Tick to replace it; what it was is recorded first.</value></data>
+  <data name="Plan_R_ShareForeignPath" xml:space="preserve"><value>Another share, {0}, points to the same folder ({1}). Tick to remove it; otherwise it stays.</value></data>
+  <data name="Plan_R_ShareOld" xml:space="preserve"><value>The share CPFS made under the previous name. Its files stay.</value></data>
+  <data name="Plan_R_AdminShares" xml:space="preserve"><value>Windows' administrative shares. With AutoShareWks 0 they do not come back after a restart; tick to remove them now.</value></data>
+  <data name="Plan_R_ServerStart" xml:space="preserve"><value>The Server service must start automatically for sharing to work.</value></data>
+  <data name="Plan_R_Smb2" xml:space="preserve"><value>Every current client needs SMB2 or SMB3.</value></data>
+  <data name="Plan_R_Reject" xml:space="preserve"><value>Refuses a client that asked for encryption and then tries without it.</value></data>
+  <data name="Plan_R_Smb1" xml:space="preserve"><value>SMB1 is old and unsafe, and stays off.</value></data>
+  <data name="Plan_R_Smb1Feature" xml:space="preserve"><value>Removes the SMB1 Windows feature, which also removes the SMB1 client for very old network drives. Needs a restart.</value></data>
+  <data name="Plan_R_Smb1FeatureGone" xml:space="preserve"><value>The SMB1 feature is not installed.</value></data>
+  <data name="Plan_R_Hardening" xml:space="preserve"><value>Blocks anonymous and weak sign-ins.</value></data>
+  <data name="Plan_R_Guest" xml:space="preserve"><value>The Guest account is turned off and stays off.</value></data>
+  <data name="Plan_R_NoGuest" xml:space="preserve"><value>This PC has no Guest account.</value></data>
+  <data name="Plan_R_LockoutSet" xml:space="preserve"><value>Account lockout is off. Setup locks an account after 10 wrong passwords.</value></data>
+  <data name="Plan_R_LockoutKept" xml:space="preserve"><value>Account lockout is already on; your threshold stays.</value></data>
+  <data name="Plan_R_Audit" xml:space="preserve"><value>Failed sign-ins are recorded in the Security log, which the Monitor reads.</value></data>
+  <data name="Plan_R_RuleCreate" xml:space="preserve"><value>The rule is missing and is created. CPFS rules never open a port on Public networks.</value></data>
+  <data name="Plan_R_RuleChange" xml:space="preserve"><value>The rule differs from Setup's: {0}.</value></data>
+  <data name="Plan_R_RuleDuplicate" xml:space="preserve"><value>Several rules have this name; they are replaced by one.</value></data>
+  <data name="Plan_R_RuleRemove" xml:space="preserve"><value>A CPFS rule Setup no longer uses.</value></data>
+  <data name="Plan_R_RuleLegacy" xml:space="preserve"><value>A rule from CyShare, the earlier name of CPFS.</value></data>
+  <data name="Plan_R_VpnNone" xml:space="preserve"><value>No VPN adapter is used, so there is no VPN rule. Connect Tailscale or Headscale and plan again to use SMB over the VPN.</value></data>
+  <data name="Plan_R_VpnAdapter" xml:space="preserve"><value>{0} has a Tailscale or Headscale address; the VPN rule applies only through it.</value></data>
+  <data name="Plan_R_VpnAdapterPublic" xml:space="preserve"><value>{0} has a VPN-range address ({1}) but is on a Public network, and some hotel and mobile networks hand out the same range. Tick only if it is your Tailscale or Headscale adapter.</value></data>
+  <data name="Plan_R_BuiltInDisable" xml:space="preserve"><value>This built-in rule opens port 445 on Public networks. Setup turns it off and records it, so Uninstall turns it back on.</value></data>
+  <data name="Plan_R_BuiltInPortUnknown" xml:space="preserve"><value>Its port could not be read, so Setup cannot tell whether it opens port 445.</value></data>
+  <data name="Plan_R_BuiltInNone" xml:space="preserve"><value>No built-in rule opens port 445 on Public networks.</value></data>
+  <data name="Plan_R_NetworkPublic" xml:space="preserve"><value>Public network on {0}: the CPFS rules do not apply to it. Tick to make it Private, only for a network you trust.</value></data>
+  <data name="Plan_R_NetworkPrivate" xml:space="preserve"><value>A trusted network: the CPFS rules apply.</value></data>
+  <data name="Plan_R_AutoCreate" xml:space="preserve"><value>Creates the task that makes each new network Private.</value></data>
+  <data name="Plan_R_AutoRemove" xml:space="preserve"><value>Auto-Private is off in your answers, so the CPFS task is removed.</value></data>
+  <data name="Plan_R_AutoOff" xml:space="preserve"><value>Auto-Private is off.</value></data>
+  <data name="Plan_R_LegacyTask" xml:space="preserve"><value>A task from CyShare, the earlier name of CPFS.</value></data>
+  <data name="Plan_R_StaleTask" xml:space="preserve"><value>Left over from an interrupted run; Setup creates this task only for a moment.</value></data>
+  <data name="Plan_R_DriveCreate" xml:space="preserve"><value>Maps the drive for every session.</value></data>
+  <data name="Plan_R_DriveMove" xml:space="preserve"><value>The letter points somewhere else and is pointed at the shared folder.</value></data>
+  <data name="Plan_R_DriveOldRemove" xml:space="preserve"><value>The drive letter CPFS mapped before.</value></data>
+  <data name="Plan_R_DriveOldForeign" xml:space="preserve"><value>The previous letter now points somewhere CPFS did not set, so it is left alone.</value></data>
+  <data name="Plan_R_DriveOff" xml:space="preserve"><value>No drive letter.</value></data>
+  <data name="Plan_R_LabelSet" xml:space="preserve"><value>The drive's name in File Explorer.</value></data>
+  <data name="Plan_R_LabelForeign" xml:space="preserve"><value>The letter already has a name CPFS did not set. It is saved first so Uninstall can put it back.</value></data>
+  <data name="Plan_R_LabelOldRemove" xml:space="preserve"><value>The name CPFS gave the previous letter.</value></data>
+  <data name="Plan_R_ShortcutCreate" xml:space="preserve"><value>Creates the shortcut on the desktop of every user.</value></data>
+  <data name="Plan_R_ShortcutRetarget" xml:space="preserve"><value>The shortcut is pointed at the new folder.</value></data>
+  <data name="Plan_R_ShortcutForeign" xml:space="preserve"><value>A file named {0} is already on the Public Desktop and CPFS did not create it. Choose another name; it is never overwritten.</value></data>
+  <data name="Plan_R_ShortcutOldRemove" xml:space="preserve"><value>The shortcut CPFS made before.</value></data>
+  <data name="Plan_R_ShortcutOff" xml:space="preserve"><value>No desktop shortcut.</value></data>
+  <data name="Plan_R_DataCreate" xml:space="preserve"><value>Creates the CPFS data folder, owned by Administrators and writable only by SYSTEM and Administrators.</value></data>
+  <data name="Plan_R_DataLock" xml:space="preserve"><value>Others can write to the CPFS data folder. It is locked to SYSTEM and Administrators and owned by Administrators.</value></data>
+  <data name="Plan_Section_Computer" xml:space="preserve"><value>Computer name</value></data>
+  <data name="Plan_S_ShareAccess" xml:space="preserve"><value>Share permissions</value></data>
+  <data name="Plan_S_ComputerName" xml:space="preserve"><value>Computer name</value></data>
+  <data name="Plan_V_RightFull" xml:space="preserve"><value>full control</value></data>
+  <data name="Plan_V_RightChange" xml:space="preserve"><value>change</value></data>
+  <data name="Plan_V_RightRead" xml:space="preserve"><value>read</value></data>
+  <data name="Plan_V_RightCustom" xml:space="preserve"><value>custom</value></data>
+  <data name="Plan_V_Denied" xml:space="preserve"><value>denied</value></data>
+  <data name="Plan_R_ShareAccessGrant" xml:space="preserve"><value>Gives the SMB account {0} full control of the share, the only permission CPFS sets.</value></data>
+  <data name="Plan_R_ShareAccessOther" xml:space="preserve"><value>{0} also has access to the share. Tick to remove it, so only the SMB account has access.</value></data>
+  <data name="Plan_R_ShareAccessDeny" xml:space="preserve"><value>A deny entry keeps the SMB account {0} out of the share. Tick to remove it.</value></data>
+  <data name="Plan_R_ComputerSavedDiffers" xml:space="preserve"><value>Saved name differs: {0}; the computer is now called {1}. Setup keeps the current name.</value></data>
+  <data name="Plan_S_SavedComputerName" xml:space="preserve"><value>Saved computer name</value></data>
+  <data name="Plan_R_ComputerPending" xml:space="preserve"><value>Windows takes the name {0} after the next restart.</value></data>
+  <data name="App_TitleVersion" xml:space="preserve"><value>CPFS {0}</value></data>
+  <data name="App_TitleAdminVersion" xml:space="preserve"><value>CPFS {0} (administrator)</value></data>
+  <data name="About_CopyVersion" xml:space="preserve"><value>Copy version</value></data>
+  <data name="Plan_R_ShortcutGone" xml:space="preserve"><value>The shortcut the earlier install made is gone. Create it again?</value></data>
+  <data name="Plan_R_DriveGone" xml:space="preserve"><value>The drive {0} the earlier install made is gone. Create it again?</value></data>
+  <data name="Apply_RestorePoint" xml:space="preserve"><value>Create a restore point first</value></data>
+  <data name="Apply_RestorePointStep" xml:space="preserve"><value>Restore point</value></data>
+  <data name="Apply_NeedsAdmin" xml:space="preserve"><value>Applying needs administrator rights. Use Continue as administrator above.</value></data>
+  <data name="Apply_Running" xml:space="preserve"><value>Applying the changes...</value></data>
+  <data name="Apply_Blocked" xml:space="preserve"><value>Some items cannot be planned. Correct the answers marked in red, or read the items marked as not planned.</value></data>
+  <data name="Apply_Nothing" xml:space="preserve"><value>Nothing to change: this PC already matches the plan.</value></data>
+  <data name="Apply_Ready" xml:space="preserve"><value>You see a summary to confirm before anything changes.</value></data>
+  <data name="Apply_ConfirmTitle" xml:space="preserve"><value>Apply these changes?</value></data>
+  <data name="Apply_ConfirmMsg" xml:space="preserve"><value>{0} changes will be made to Windows.</value></data>
+  <data name="Apply_ConfirmDeferred" xml:space="preserve"><value>{0} items come in 0.6.0 and are skipped.</value></data>
+  <data name="Apply_ConfirmRestorePoint" xml:space="preserve"><value>A restore point is created first.</value></data>
+  <data name="Apply_ConfirmNoRestorePoint" xml:space="preserve"><value>No restore point is created.</value></data>
+  <data name="Apply_ConfirmButton" xml:space="preserve"><value>Apply changes</value></data>
+  <data name="Apply_ConfirmLine" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="Apply_ProgressTitle" xml:space="preserve"><value>Progress</value></data>
+  <data name="Apply_State_Pending" xml:space="preserve"><value>Waiting</value></data>
+  <data name="Apply_State_Running" xml:space="preserve"><value>Working</value></data>
+  <data name="Apply_State_Done" xml:space="preserve"><value>Done</value></data>
+  <data name="Apply_State_Kept" xml:space="preserve"><value>Already done</value></data>
+  <data name="Apply_State_Deferred" xml:space="preserve"><value>Comes in 0.6.0</value></data>
+  <data name="Apply_State_Unsupported" xml:space="preserve"><value>Refused by Windows</value></data>
+  <data name="Apply_State_Partial" xml:space="preserve"><value>Partly done</value></data>
+  <data name="Apply_State_Failed" xml:space="preserve"><value>Failed</value></data>
+  <data name="Apply_State_NotRun" xml:space="preserve"><value>Not run</value></data>
+  <data name="Apply_RpTitle" xml:space="preserve"><value>No new restore point</value></data>
+  <data name="Apply_RpSkippedMsg" xml:space="preserve"><value>Windows did not create a new restore point, most likely because one was made in the last 24 hours. The newest one is from {0}. Continue without a new one?</value></data>
+  <data name="Apply_RpUnavailableMsg" xml:space="preserve"><value>No restore point could be created ({0}). System Protection may be off for the system drive. Continue without a restore point?</value></data>
+  <data name="Apply_RpNoneMsg" xml:space="preserve"><value>Windows reported no error, but no restore point exists. System Protection may be off for the system drive. Continue without a restore point?</value></data>
+  <data name="Apply_RpContinue" xml:space="preserve"><value>Continue without it</value></data>
+  <data name="Apply_RpOpenSettings" xml:space="preserve"><value>Open System Protection</value></data>
+  <data name="Apply_RpStop" xml:space="preserve"><value>Stop</value></data>
+  <data name="Apply_StoppedTitle" xml:space="preserve"><value>Nothing was changed</value></data>
+  <data name="Apply_StoppedMsg" xml:space="preserve"><value>Setup stopped before changing Windows.</value></data>
+  <data name="Apply_DoneTitle" xml:space="preserve"><value>Setup applied</value></data>
+  <data name="Apply_DoneMsg" xml:space="preserve"><value>{0} done, {1} already done, {2} left for 0.6.0.</value></data>
+  <data name="Apply_DoneRefused" xml:space="preserve"><value>{0} not done: Windows refused the change.</value></data>
+  <data name="Apply_DonePartial" xml:space="preserve"><value>{0} done only in part; the item shows what was left.</value></data>
+  <data name="Apply_RefusedReason" xml:space="preserve"><value>Windows refused this change: {0}</value></data>
+  <data name="Apply_RestartMsg" xml:space="preserve"><value>Restart Windows to finish removing SMB1.</value></data>
+  <data name="Apply_FailedTitle" xml:space="preserve"><value>Stopped at: {0}</value></data>
+  <data name="Apply_FailedMsg" xml:space="preserve"><value>{0}. What was done before this item is recorded in config.json, so Uninstall can undo it.</value></data>
+  <data name="Apply_ErrorTitle" xml:space="preserve"><value>Apply failed</value></data>
+  <data name="Uninst_Intro_Title" xml:space="preserve"><value>What Uninstall would undo</value></data>
+  <data name="Uninst_Intro_Desc" xml:space="preserve"><value>Read from the backup in config.json and from what Setup recorded. Your files are never deleted. Nothing changes until you press Uninstall and confirm.</value></data>
+  <data name="Uninst_Admin_Title" xml:space="preserve"><value>Administrator rights needed</value></data>
+  <data name="Uninst_Admin_Desc" xml:space="preserve"><value>Uninstall reads and changes settings only an administrator can. Restart CPFS as administrator to see the plan.</value></data>
+  <data name="Uninst_Apply" xml:space="preserve"><value>Uninstall</value></data>
+  <data name="Uninst_ConfirmTitle" xml:space="preserve"><value>Uninstall CPFS?</value></data>
+  <data name="Uninst_ConfirmMsg" xml:space="preserve"><value>{0} changes will be made to Windows. Files in the shared folder are not deleted.</value></data>
+  <data name="Uninst_StoppedMsg" xml:space="preserve"><value>Uninstall stopped before changing Windows.</value></data>
+  <data name="Uninst_DoneTitle" xml:space="preserve"><value>CPFS was uninstalled</value></data>
+  <data name="Uninst_CopySaved" xml:space="preserve"><value>A copy of the backup is in {0}.</value></data>
+  <data name="Uninst_FailedTitle" xml:space="preserve"><value>Uninstall stopped at: {0}</value></data>
+  <data name="Uninst_FailedMsg" xml:space="preserve"><value>{0}. config.json is still there, so you can run Uninstall again.</value></data>
+  <data name="Uninst_R_NoConfig" xml:space="preserve"><value>There is no config.json, so CPFS knows of nothing it set up here except its own firewall rules.</value></data>
+  <data name="Uninst_R_RefuseUser" xml:space="preserve"><value>{0} signs in to Windows on this PC. Uninstall stops to protect that account.</value></data>
+  <data name="Uninst_R_RefusePath" xml:space="preserve"><value>config.json names {0} as the shared folder, a folder Setup would refuse (a drive root or a Windows folder). Uninstall stops and changes nothing.</value></data>
+  <data name="Uninst_R_ShareRemove" xml:space="preserve"><value>CPFS made this share. It is removed after the devices connected to it are disconnected. The folder and its files stay.</value></data>
+  <data name="Uninst_R_ShareForeign" xml:space="preserve"><value>This share has the name CPFS used but points to {1}, not the folder CPFS shared. It is removed only if you tick it.</value></data>
+  <data name="Uninst_R_ShareReplaced" xml:space="preserve"><value>Setup removed the share {0} on {1} when you ticked it. Create it again yourself if you need it.</value></data>
+  <data name="Uninst_R_Owner" xml:space="preserve"><value>Files and folders owned by {0} are given to {1}. Nothing else is changed.</value></data>
+  <data name="Uninst_R_AceRemove" xml:space="preserve"><value>The permission Setup gave {0} on the shared folder is removed. The files stay.</value></data>
+  <data name="Uninst_R_UserDelete" xml:space="preserve"><value>CPFS created this account. It is deleted unless you untick it.</value></data>
+  <data name="Uninst_R_UserDeleteExisted" xml:space="preserve"><value>This account existed before CPFS. It is kept unless you tick it.</value></data>
+  <data name="Uninst_R_UserDeleteUntracked" xml:space="preserve"><value>CPFS has no record of creating this account. It is kept unless you tick it.</value></data>
+  <data name="Uninst_R_UserDeleteAdmin" xml:space="preserve"><value>This account is an administrator. It is kept unless you tick it.</value></data>
+  <data name="Uninst_R_Profile" xml:space="preserve"><value>The account’s profile folder {0} and everything in it. Kept unless you tick it.</value></data>
+  <data name="Uninst_R_UserBefore" xml:space="preserve"><value>The account gets back the settings it had before Setup took it over.</value></data>
+  <data name="Uninst_R_UserAdmin" xml:space="preserve"><value>The account was an administrator before CPFS. Tick to give the rights back.</value></data>
+  <data name="Uninst_R_UserHidden" xml:space="preserve"><value>The account shows on the sign-in screen again, as it did before CPFS.</value></data>
+  <data name="Uninst_R_UserGone" xml:space="preserve"><value>This account no longer exists.</value></data>
+  <data name="Uninst_R_RuleRemove" xml:space="preserve"><value>CPFS made this firewall rule. It is removed.</value></data>
+  <data name="Uninst_R_BuiltInEnable" xml:space="preserve"><value>A Windows rule that Setup turned off. It is turned back on.</value></data>
+  <data name="Uninst_R_BuiltInMissing" xml:space="preserve"><value>A Windows rule that Setup turned off is no longer on this PC.</value></data>
+  <data name="Uninst_R_Restore" xml:space="preserve"><value>Put the Windows settings back as they were before CPFS (backup taken {0}).</value></data>
+  <data name="Uninst_R_RestoreValue" xml:space="preserve"><value>Back to the value from before CPFS.</value></data>
+  <data name="Uninst_R_RestoreUnknown" xml:space="preserve"><value>The backup has no original value for this setting, so it is left as it is.</value></data>
+  <data name="Uninst_R_SettingsKept" xml:space="preserve"><value>The security settings stay as they are.</value></data>
+  <data name="Uninst_R_Revert" xml:space="preserve"><value>There is no backup (installed with 0.1). Tick to set admin shares, the NTLM level and anonymous access back to the Windows defaults.</value></data>
+  <data name="Uninst_R_AlwaysKept" xml:space="preserve"><value>Always kept, because it is safer: SMB1 off, the Guest account off, failed sign-ins audited.</value></data>
+  <data name="Uninst_R_NetworkPublic" xml:space="preserve"><value>CPFS made this network Private. Tick to make it Public again.</value></data>
+  <data name="Uninst_R_NetworkSaved" xml:space="preserve"><value>CPFS made this network Private. It is not connected now; tick to make it Public in the saved network list.</value></data>
+  <data name="Uninst_R_SaveCopy" xml:space="preserve"><value>Before anything changes, a copy of config.json with the backup of your original settings goes to your Documents folder. It holds no password.</value></data>
+  <data name="Uninst_R_DataRemove" xml:space="preserve"><value>The CPFS data folder with config.json. Removed last.</value></data>
+  <data name="Uninst_R_DataKept" xml:space="preserve"><value>Kept, because it records a drive, shortcut or task that Uninstall removes only from 0.6.0 on.</value></data>
+  <data name="Uninst_R_Later" xml:space="preserve"><value>Uninstall removes this from 0.6.0 on.</value></data>
+  <data name="Uninst_S_Owner" xml:space="preserve"><value>Owner of uploaded files</value></data>
+  <data name="Uninst_S_Ace" xml:space="preserve"><value>Folder permission</value></data>
+  <data name="Uninst_S_Delete" xml:space="preserve"><value>Delete the account</value></data>
+  <data name="Uninst_S_Profile" xml:space="preserve"><value>Profile folder</value></data>
+  <data name="Uninst_S_Before" xml:space="preserve"><value>Account settings</value></data>
+  <data name="Uninst_S_Restore" xml:space="preserve"><value>Restore settings</value></data>
+  <data name="Uninst_S_Revert" xml:space="preserve"><value>Windows defaults</value></data>
+  <data name="Uninst_S_SaveCopy" xml:space="preserve"><value>Copy of the backup</value></data>
+  <data name="Uninst_S_Config" xml:space="preserve"><value>config.json</value></data>
+  <data name="Uninst_S_Kept" xml:space="preserve"><value>Always kept</value></data>
+  <data name="Apply_ConfigUnreadable" xml:space="preserve"><value>config.json exists but could not be read. Apply stays off, so the backup in it is not replaced.</value></data>
 </root>

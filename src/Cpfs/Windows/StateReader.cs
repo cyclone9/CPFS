@@ -713,7 +713,7 @@ internal sealed class StateReader
         }
     }
 
-    private static List<ManagementBaseObject> Query(string scope, string wql)
+    internal static List<ManagementBaseObject> Query(string scope, string wql)
     {
         var list = new List<ManagementBaseObject>();
         using var searcher = new ManagementObjectSearcher(new ManagementScope(scope), new ObjectQuery(wql));
@@ -726,7 +726,7 @@ internal sealed class StateReader
         return list;
     }
 
-    private static object? Prop(ManagementBaseObject obj, params string[] names)
+    internal static object? Prop(ManagementBaseObject obj, params string[] names)
     {
         foreach (var name in names)
         {
@@ -742,13 +742,13 @@ internal sealed class StateReader
         return null;
     }
 
-    private static object? Invoke(object target, string method, params object[] args) =>
+    internal static object? Invoke(object target, string method, params object[] args) =>
         target.GetType().InvokeMember(method, BindingFlags.InvokeMethod, null, target, args, CultureInfo.InvariantCulture);
 
-    private static object? Get(object target, string property) =>
+    internal static object? Get(object target, string property) =>
         target.GetType().InvokeMember(property, BindingFlags.GetProperty, null, target, null, CultureInfo.InvariantCulture);
 
-    private static void Release(object? com)
+    internal static void Release(object? com)
     {
         if (com is not null && Marshal.IsComObject(com))
         {

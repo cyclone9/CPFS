@@ -33,9 +33,7 @@ public partial class AboutPage : Page
         };
     }
 
-    public static string Version =>
-        typeof(AboutPage).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-        ?? typeof(AboutPage).Assembly.GetName().Version?.ToString() ?? "?";
+    public static string Version => AppLog.VersionText();
 
     private static string Embedded(string name)
     {
@@ -112,6 +110,9 @@ public partial class AboutPage : Page
             ShowLogResult(InfoBarSeverity.Error, Loc.Instance.Format("Log_OpenFailed", ex.Message));
         }
     }
+
+    // "0.5.0-dev3 (3d20e71)": the version with its commit, for a bug report.
+    private void OnCopyVersion(object sender, RoutedEventArgs e) => Feedback.Copy("version", Version);
 
     private void OnCopyReport(object sender, RoutedEventArgs e)
     {

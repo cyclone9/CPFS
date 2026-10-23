@@ -27,6 +27,9 @@ internal sealed class DesktopUser
 
     public string? Desktop { get; private set; }
 
+    // Where Uninstall leaves a copy of the backup when the settings are not restored.
+    public string? Documents { get; private set; }
+
     public int ExplorerPid { get; private set; }
 
     public string? Error { get; private set; }
@@ -99,7 +102,8 @@ internal sealed class DesktopUser
         {
             Sid = ReadTokenUser(token);
             ElevationType = ReadElevationType(token);
-            Desktop = ReadDesktop(token);
+            Desktop = ReadFolder(token, Native.FolderIdDesktop);
+            Documents = ReadFolder(token, Native.FolderIdDocuments);
         }
     }
 
@@ -136,9 +140,9 @@ internal sealed class DesktopUser
         }
     }
 
-    private static string? ReadDesktop(Native.SafeKernelHandle token)
+    private static string? ReadFolder(Native.SafeKernelHandle token, Guid folder)
     {
-        if (Native.SHGetKnownFolderPath(Native.FolderIdDesktop, 0, token, out var path) != 0)
+        if (Native.SHGetKnownFolderPath(folder, 0, token, out var path) != 0)
         {
             return null;
         }

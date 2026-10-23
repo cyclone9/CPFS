@@ -133,6 +133,12 @@
       <WrapPanel>
         <ui:Button
           Margin="0,0,8,0"
+          AutomationProperties.Name="{Binding [About_CopyVersion], Source={x:Static local:Loc.Instance}}"
+          Click="OnCopyVersion"
+          Content="{Binding [About_CopyVersion], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon Copy24}" />
+        <ui:Button
+          Margin="0,0,8,0"
           AutomationProperties.Name="{Binding [About_Log_Open], Source={x:Static local:Loc.Instance}}"
           Click="OnOpenLog"
           Content="{Binding [About_Log_Open], Source={x:Static local:Loc.Instance}}"

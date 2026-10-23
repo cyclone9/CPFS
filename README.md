@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| Version | 0.3.0 (in development) |
+| Version | 0.5.0 (in development) |
 | Platform | Windows 10 and 11 (Home or Pro) |
 | Requires | .NET Framework 4.8 (built into Windows 10 1903 and later and Windows 11), Administrator rights |
 | Homepage | https://cyclone9.ir/cpfs.html |

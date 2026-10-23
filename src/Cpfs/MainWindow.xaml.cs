@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Windows;
-using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -32,12 +31,14 @@ public partial class MainWindow : FluentWindow
         Theming.LoadPreferences();
 
         InitializeComponent();
-        if (Startup.IsElevated)
+        UpdateTitle();
+        Loc.Instance.PropertyChanged += (_, e) =>
         {
-            var title = new Binding("[App_TitleAdmin]") { Source = Loc.Instance };
-            SetBinding(TitleProperty, title);
-            AppTitleBar.SetBinding(Wpf.Ui.Controls.TitleBar.TitleProperty, title);
-        }
+            if (e.PropertyName == nameof(Loc.Culture))
+            {
+                UpdateTitle();
+            }
+        };
 
         Theming.InstallFontResources(this);
         ApplyFlowDirection();
@@ -52,6 +53,14 @@ public partial class MainWindow : FluentWindow
     }
 
     public SnackbarPresenter Snackbars => SnackbarHost;
+
+    // "CPFS 0.5.0-dev3", without the commit (About shows that).
+    private void UpdateTitle()
+    {
+        var title = Loc.Instance.FormatValues(Startup.IsElevated ? "App_TitleAdminVersion" : "App_TitleVersion", AppLog.VersionNumber());
+        Title = title;
+        AppTitleBar.Title = title;
+    }
 
     private static Type StartPage() => Startup.IsHandOver ? Startup.Arguments.Page switch
     {

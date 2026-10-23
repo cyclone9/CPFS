@@ -30,6 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Cpfs.Core\Cpfs.Core.csproj" />
     <Reference Include="System.Management" />
+    <Reference Include="System.ServiceProcess" />
   </ItemGroup>
 
   <ItemGroup>

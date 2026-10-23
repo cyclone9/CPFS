@@ -20,8 +20,9 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
-        AppLog.Start();
+        // The resolver comes first: the log's first line formats the version with Cpfs.Core.
         AppDomain.CurrentDomain.AssemblyResolve += OnAssemblyResolve;
+        AppLog.Start();
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             AppLog.Write("unhandled", "AppDomain, terminating " + e.IsTerminating + ": " + (e.ExceptionObject?.ToString() ?? "null"));
         return Run(args);
@@ -30,6 +31,16 @@ internal static class Program
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static int Run(string[] args)
     {
+        if (Array.IndexOf(args, SelfTest.Verb) >= 0)
+        {
+            return SelfTest.Run();
+        }
+
+        if (Array.IndexOf(args, CiApplyTest.Verb) >= 0)
+        {
+            return CiApplyTest.Run();
+        }
+
         Startup.Init(args);
         var app = new App();
         app.InitializeComponent();

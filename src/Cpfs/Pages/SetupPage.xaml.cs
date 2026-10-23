@@ -96,8 +96,8 @@ public sealed class SectionView : INotifyPropertyChanged
     }
 }
 
-// The read-only Setup page of 0.3.0: config.json as found and the Windows state this process may read. It changes
-// nothing on Windows; the only writes anywhere in the app are its own log and preferences under %LOCALAPPDATA%\CPFS.
+// The Setup page: the plan (SetupPage.Plan.cs) and Apply (SetupPage.Apply.cs), then config.json as found and the
+// Windows state this process may read. Windows changes only through Apply, after the user confirmed.
 public partial class SetupPage : Page
 {
     // Open and closed sections are remembered for as long as the app runs.
@@ -112,6 +112,8 @@ public partial class SetupPage : Page
     public SetupPage()
     {
         InitializeComponent();
+        InitPlan();
+        InitApply();
         Sections.ItemsSource = _views;
         Loaded += OnLoaded;
         Loc.Instance.PropertyChanged += (_, e) =>
@@ -119,6 +121,7 @@ public partial class SetupPage : Page
             if (e.PropertyName == nameof(Loc.Culture))
             {
                 Render();
+                RenderPlan();
             }
         };
     }
@@ -156,7 +159,8 @@ public partial class SetupPage : Page
             var dispatcher = Dispatcher;
             var context = Task.Run(ReadContext);
             var letters = LettersOf(context);
-            var sections = Task.Run(() => new StateReader().ReadAllAsync(letters, (index, section) =>
+            var reader = new StateReader();
+            var sections = Task.Run(() => reader.ReadAllAsync(letters, (index, section) =>
                 dispatcher.BeginInvoke(new Action(() =>
                 {
                     _sections[index] = section;
@@ -166,6 +170,7 @@ public partial class SetupPage : Page
             _handOver = (await context).HandOver;
             Render();
             await sections;
+            await PreparePlanAsync(reader.Config, await letters);
         }
         catch (Exception ex) when (State.IsExpected(ex))
         {

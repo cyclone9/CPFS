@@ -33,6 +33,21 @@ internal static class AppLog
 
     // %LOCALAPPDATA%\CPFS, or beside the exe when that fails. Appends rather than truncates, so the
     // elevated instance can't wipe what the unelevated one wrote.
+    // "0.5.0-dev1 (3d20e71)", the form About and Copy report show. Kept out of Start so that Cpfs.Core is loaded
+    // only when this runs, after Program has registered the resolver.
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    public static string VersionText() => Cpfs.Core.Text.VersionText.Display(
+        (System.Attribute.GetCustomAttribute(typeof(AppLog).Assembly, typeof(System.Reflection.AssemblyInformationalVersionAttribute))
+            as System.Reflection.AssemblyInformationalVersionAttribute)?.InformationalVersion
+        ?? typeof(AppLog).Assembly.GetName().Version?.ToString());
+
+    // "0.5.0-dev3", without the commit.
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    public static string VersionNumber() => Cpfs.Core.Text.VersionText.Number(
+        (System.Attribute.GetCustomAttribute(typeof(AppLog).Assembly, typeof(System.Reflection.AssemblyInformationalVersionAttribute))
+            as System.Reflection.AssemblyInformationalVersionAttribute)?.InformationalVersion
+        ?? typeof(AppLog).Assembly.GetName().Version?.ToString());
+
     public static void Start()
     {
         string? firstError = null;
@@ -44,7 +59,7 @@ internal static class AppLog
 
         StartError = firstError;
 
-        Write("start", "==== CPFS " + typeof(AppLog).Assembly.GetName().Version + ", log " + (FilePath ?? "(no file)")
+        Write("start", "==== CPFS " + VersionText() + ", log " + (FilePath ?? "(no file)")
             + ", process " + System.Diagnostics.Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture));
         Write("start", "Local time " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss zzz", CultureInfo.InvariantCulture));
         Write("start", "Exe " + typeof(AppLog).Assembly.Location);

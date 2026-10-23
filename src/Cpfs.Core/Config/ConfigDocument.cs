@@ -73,6 +73,87 @@ public sealed class ConfigDocument
 
     public string? Updated => ConfigJson.GetString(Root, "Updated");
 
+    public string? BackupTaken => ConfigJson.GetString(ConfigJson.GetObject(Root, "Backup"), "Taken");
+
+    // Null both when the scripts could not read the threshold and when there is no backup.
+    public long? BackupLockout => ConfigJson.GetInt(ConfigJson.GetObject(Root, "Backup"), "Lockout");
+
+    public string? BackupHostName => ConfigJson.GetString(ConfigJson.GetObject(Root, "Backup"), "HostName");
+
+    public bool? BackupSmb2 => ConfigJson.GetBool(ConfigJson.GetObject(Root, "Backup"), "Smb2");
+
+    public bool? BackupRejectUnencrypted => ConfigJson.GetBool(ConfigJson.GetObject(Root, "Backup"), "RejectUnencrypted");
+
+    // A ServiceStartMode name as PowerShell wrote it: Automatic, Manual, Disabled (Boot and System are never restored).
+    public string? BackupServerStart => ConfigJson.GetString(ConfigJson.GetObject(Root, "Backup"), "ServerStart");
+
+    // Added by the app; absent in the scripts' backups.
+    public long? BackupLockoutDuration => ConfigJson.GetInt(ConfigJson.GetObject(Root, "Backup"), "LockoutDuration");
+
+    public long? BackupLockoutWindow => ConfigJson.GetInt(ConfigJson.GetObject(Root, "Backup"), "LockoutWindow");
+
+    // Shares a Setup removed when the user ticked it, recorded before the removal.
+    public IReadOnlyList<TrackedShare> TrackedReplacedShares
+    {
+        get
+        {
+            var list = new List<TrackedShare>();
+            foreach (var node in ConfigJson.GetArray(ConfigJson.GetObject(Root, "Tracked"), "ReplacedShares"))
+            {
+                if (node is JsonObject share && ConfigJson.GetString(share, "Name") is { } name)
+                {
+                    list.Add(new TrackedShare(name, ConfigJson.GetString(share, "Path")));
+                }
+            }
+
+            return list;
+        }
+    }
+
+    // Networks the app switched to Private, with the profile's id; Tracked.Networks keeps the names for 0.2.0.
+    public IReadOnlyList<TrackedNetwork> TrackedNetworkProfiles
+    {
+        get
+        {
+            var list = new List<TrackedNetwork>();
+            foreach (var node in ConfigJson.GetArray(ConfigJson.GetObject(Root, "Tracked"), "NetworkProfiles"))
+            {
+                if (node is JsonObject n && ConfigJson.GetString(n, "Name") is { } name)
+                {
+                    list.Add(new TrackedNetwork(ConfigJson.GetString(n, "Id"), name));
+                }
+            }
+
+            return list;
+        }
+    }
+
+    // What an account looked like before Setup first took it over; null when nothing was recorded.
+    public UserBefore? TrackedUserBefore(string name)
+    {
+        foreach (var node in ConfigJson.GetArray(ConfigJson.GetObject(Root, "Tracked"), "Users"))
+        {
+            if (node is JsonObject user && string.Equals(ConfigJson.GetString(user, "Name"), name, StringComparison.OrdinalIgnoreCase)
+                && ConfigJson.GetObject(user, "Before") is { } before)
+            {
+                var groups = new List<string>();
+                foreach (var g in ConfigJson.GetArray(before, "Groups"))
+                {
+                    if (ConfigJson.AsString(g) is { Length: > 0 } sid)
+                    {
+                        groups.Add(sid);
+                    }
+                }
+
+                var hidden = ConfigJson.GetInt(before, "HiddenValue");
+                return new UserBefore(ConfigJson.GetBool(before, "Enabled"), ConfigJson.GetBool(before, "PasswordNeverExpires"), groups,
+                    hidden is { } h ? (int)h : null);
+            }
+        }
+
+        return null;
+    }
+
     public IReadOnlyList<TrackedUser> TrackedUsers
     {
         get
@@ -141,6 +222,13 @@ public sealed class ConfigDocument
 }
 
 public sealed record TrackedUser(string? Name, bool? Existed, bool? WasAdmin);
+
+public sealed record TrackedShare(string Name, string? Path);
+
+public sealed record TrackedNetwork(string? Id, string Name);
+
+// Groups holds the SIDs of Administrators and Users when the account was a member.
+public sealed record UserBefore(bool? Enabled, bool? PasswordNeverExpires, IReadOnlyList<string> Groups, int? HiddenValue);
 
 public sealed record RegistryBackup(string? Path, string? Name, bool? Exists, long? Value)
 {

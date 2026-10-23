@@ -175,7 +175,7 @@ internal static class SmbMonitor
     }
 
     // Property names and CIM types only: values could carry a user or client name.
-    private static string DescribeOutput(ManagementBaseObject? output)
+    internal static string DescribeOutput(ManagementBaseObject? output)
     {
         if (output is null)
         {

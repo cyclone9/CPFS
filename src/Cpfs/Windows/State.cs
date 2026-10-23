@@ -88,18 +88,22 @@ internal sealed class StateSection
 internal static class State
 {
     private const int EAccessDenied = unchecked((int)0x80070005);
+    private const int EPrivilegeNotHeld = unchecked((int)0x80070522);
     private const int ErrorAccessDenied = 5;
+    private const int ErrorPrivilegeNotHeld = 1314;
     private const int WbemAccessDenied = unchecked((int)0x80041003);
+    private const int WbemPrivilegeNotHeld = unchecked((int)0x80041062);
 
+    // Access denied or a missing privilege: both mean "an administrator can read this".
     public static bool IsAccessDenied(Exception? ex) => ex switch
     {
         null => false,
         UnauthorizedAccessException or SecurityException => true,
-        ManagementException m => m.ErrorCode == ManagementStatus.AccessDenied,
-        COMException c => c.HResult is EAccessDenied or WbemAccessDenied,
+        ManagementException m => m.ErrorCode is ManagementStatus.AccessDenied or ManagementStatus.PrivilegeNotHeld,
+        COMException c => c.HResult is EAccessDenied or EPrivilegeNotHeld or WbemAccessDenied or WbemPrivilegeNotHeld,
         TargetInvocationException t => IsAccessDenied(t.InnerException),
-        System.ComponentModel.Win32Exception w => w.NativeErrorCode == ErrorAccessDenied,
-        IOException io => io.HResult == EAccessDenied,
+        System.ComponentModel.Win32Exception w => w.NativeErrorCode is ErrorAccessDenied or ErrorPrivilegeNotHeld,
+        IOException io => io.HResult is EAccessDenied or EPrivilegeNotHeld,
         _ => false,
     };
 

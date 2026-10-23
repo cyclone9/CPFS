@@ -1,0 +1,292 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json.Nodes;
+using Cpfs.Core.Apply;
+using Cpfs.Core.Config;
+using Cpfs.Core.Drives;
+using Cpfs.Core.Planning;
+using Cpfs.Core.Validation;
+using Xunit;
+
+namespace Cpfs.Tests;
+
+public class UninstallPlannerTests
+{
+    private const string UserSid = "S-1-5-21-1-2-3-1005";
+
+    private static ConfigDocument Fixture() => ConfigReader.Parse(TestFiles.ConfigBytes("v0.2.3-anonymised.json"));
+
+    // The machine the 0.2.3 fixture describes after Setup: CPFS's share and account, its two LAN rules, hardening at
+    // CPFS's values, no shortcut on the desktop.
+    private static SystemSnapshot Installed() => new()
+    {
+        Elevated = true,
+        WindowsUserNames = new[] { "Owner" },
+        ComputerName = "HOST-01",
+        ComputerNames = Reading.Ok(new ComputerNameInfo("HOST-01", null)),
+        Shares = Reading.Ok<IReadOnlyList<ShareInfo>>(new[]
+        {
+            new ShareInfo("Shared", @"D:\Shared", Planner.ShareDescription, false, 0, 0, false),
+            new ShareInfo("Media", @"E:\Media", "Mine", false, 1, 0, false),
+            new ShareInfo("IPC$", null, "Remote IPC", false, 1, 0, true),
+        }),
+        SmbServer = Reading.Ok(new SmbServerInfo(false, true, true)),
+        ServerStart = Reading.Ok<int?>(2),
+        Hardening = Planner.Hardening.ToDictionary(h => h.Name, h => Reading.Ok<int?>(h.Target)),
+        Lockout = Reading.Ok(new LockoutInfo(10, 600, 600)),
+        AuditLogon = Reading.Ok(new AuditSetting(true, true)),
+        Smb1Feature = Reading.Ok<int?>(2),
+        GuestEnabled = Reading.Ok<bool?>(false),
+        OwnRules = Reading.Ok<IReadOnlyList<FirewallRuleInfo>>(new[]
+        {
+            new FirewallRuleInfo(FirewallRules.LanRule, true, 1, 1, 6, "445", 2, "LocalSubnet", Array.Empty<string>()),
+            new FirewallRuleInfo(FirewallRules.MdnsRule, true, 1, 1, 17, "5353", 2, "*", Array.Empty<string>()),
+        }),
+        BuiltInRules = Reading.Ok<IReadOnlyList<BuiltInRuleInfo>>(new[]
+        {
+            new BuiltInRuleInfo("FPS-SMB-In-TCP", "File and Printer Sharing (SMB-In)", false, 1, 4, new[] { "445" }),
+        }),
+        Networks = Reading.Ok<IReadOnlyList<NetworkInfo>>(new[] { new NetworkInfo("Home", "Wi-Fi", 1) }),
+        Tasks = Reading.Ok<IReadOnlyDictionary<string, bool>>(new Dictionary<string, bool>
+        {
+            [Planner.AutoPrivateTask] = false, [Planner.RunAsUserTask] = false, [Planner.LegacyAutoPrivateTask] = false,
+        }),
+        DataFolder = Reading.Ok(new DataFolderInfo(true, true, true, false)),
+        DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+        DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+        Letters = new LetterScan(),
+        PublicDesktopFiles = Reading.Ok<IReadOnlyList<string>>(new[] { "desktop.ini" }),
+        User = Reading.Ok<UserInfo?>(new UserInfo(UserSid, true, true, false, false, true, 0)),
+        Folder = Reading.Ok(new FolderInfo(true, true)),
+        ShareAccess = Reading.Ok<IReadOnlyList<ShareAccessEntry>?>(Array.Empty<ShareAccessEntry>()),
+    };
+
+    // The fixture with a built-in rule and a network recorded, as a 0.2.x Setup on a Public Wi-Fi leaves it.
+    private static ConfigDocument WithTracked()
+    {
+        var doc = Fixture();
+        var tracked = (JsonObject)ConfigJson.Get(doc.Root, "Tracked")!;
+        tracked["FirewallRules"] = new JsonArray("FPS-SMB-In-TCP");
+        tracked["Networks"] = new JsonArray("Home");
+        return ConfigReader.Parse(ConfigWriter.Serialize(doc.Root));
+    }
+
+    private static Plan PlanFor(SystemSnapshot s, ConfigDocument? c, params (string Key, bool Ticked)[] choices) =>
+        UninstallPlanner.Uninstall(new UninstallInput
+        {
+            Snapshot = s,
+            Config = c,
+            DesktopUser = @"HOST-01\Owner",
+            ProfilePath = @"C:\Users\ShareUser",
+            Choices = choices.ToDictionary(c => c.Key, c => c.Ticked),
+        });
+
+    private static PlanItem Item(Plan plan, string key) => plan.Find(key) ?? throw new InvalidOperationException("No plan item " + key);
+
+    [Fact]
+    public void AScriptInstallIsUndoneInTheScriptsOrderWithTheDataFolderLast()
+    {
+        var plan = PlanFor(Installed(), WithTracked());
+        var run = ApplyList.Uninstall(plan).Select(e => e.Item.Key).ToList();
+
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(plan, "u.share:Shared").Action);
+        Assert.Null(plan.Find("u.share:Media"));
+        Assert.True(Item(plan, "u.owner").Ticked);
+        Assert.True(Item(plan, "u.user.delete").Ticked);
+        Assert.False(Item(plan, "u.user.profile").Ticked);
+        Assert.Equal(PlanAction.Change, Item(plan, "u.builtin:FPS-SMB-In-TCP").Action);
+        Assert.True(Item(plan, "u.net:Home").Ticked);
+        Assert.Equal("u.data", run[^1]);
+        Assert.DoesNotContain(UninstallPlanner.RestoreKey, run);
+        Assert.True(run.IndexOf("u.share:Shared") < run.IndexOf("u.owner"));
+        Assert.True(run.IndexOf("u.owner") < run.IndexOf("u.user.delete"));
+        Assert.True(run.IndexOf("u.user.profile") < 0);
+
+        // The fixture's original values: Smb2 on, RejectUnencrypted off, Manual start, AutoShareWks absent.
+        Assert.Equal(PlanAction.Change, Item(plan, "u.reject").Action);
+        Assert.Equal(PlanAction.Keep, Item(plan, "u.smb2").Action);
+        Assert.Equal(PlanAction.Change, Item(plan, "u.serverstart").Action);
+        Assert.Equal(PlanAction.Change, Item(plan, "u.reg:AutoShareWks").Action);
+        Assert.Equal(PlanAction.Keep, Item(plan, "u.reg:NoLMHash").Action);
+        Assert.Null(plan.Find("u.lockout"));
+        Assert.Equal(PlanAction.Keep, Item(plan, "u.keep").Action);
+        Assert.Empty(ApplyList.Blocking(plan));
+    }
+
+    [Fact]
+    public void DecliningTheRestoreKeepsTheSettingsSavesACopyAndStillTurnsTheBuiltInRulesOn()
+    {
+        var plan = PlanFor(Installed(), WithTracked(), (UninstallPlanner.RestoreKey, false));
+
+        Assert.DoesNotContain(plan.Items, i => i.Key.StartsWith("u.reg:", StringComparison.Ordinal));
+        Assert.Equal(PlanAction.Keep, Item(plan, "u.settings").Action);
+        Assert.Equal(PlanAction.Create, Item(plan, "u.savecopy").Action);
+        Assert.Equal(PlanAction.Change, Item(plan, "u.builtin:FPS-SMB-In-TCP").Action);
+        Assert.False(Item(plan, "u.net:Home").Ticked);
+        var run = ApplyList.Uninstall(plan).Select(e => e.Item.Key).ToList();
+        Assert.True(run.IndexOf("u.savecopy") < run.IndexOf("u.data"));
+    }
+
+    [Fact]
+    public void AnAccountThatSignsInToWindowsStopsTheWholeUninstall()
+    {
+        var plan = PlanFor(Installed() with { WindowsUserNames = new[] { "ShareUser" } }, Fixture());
+
+        Assert.Equal(PlanAction.CannotPlan, Item(plan, "u.guard").Action);
+        Assert.Single(plan.Items);
+        Assert.NotEmpty(ApplyList.Blocking(plan));
+    }
+
+    [Fact]
+    public void AnAccountThatExistedBeforeIsKeptByDefaultAndItsProfileIsNeverOffered()
+    {
+        var doc = Fixture();
+        var users = (JsonArray)ConfigJson.Get((JsonObject)ConfigJson.Get(doc.Root, "Tracked")!, "Users")!;
+        ((JsonObject)users[0]!)["Existed"] = true;
+        ((JsonObject)users[0]!)["WasAdmin"] = true;
+        var config = ConfigReader.Parse(ConfigWriter.Serialize(doc.Root));
+
+        var plan = PlanFor(Installed(), config);
+        Assert.False(Item(plan, "u.user.delete").Ticked);
+        Assert.False(Item(plan, "u.user.admin").Ticked);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(plan, "u.user.hidden").Action);
+
+        var deleting = PlanFor(Installed(), config, ("u.user.delete", true));
+        Assert.Null(deleting.Find("u.user.profile"));
+    }
+
+    [Fact]
+    public void WithoutABackupWindowsDefaultsAreOfferedUnticked()
+    {
+        var plan = PlanFor(Installed(), ConfigReader.Parse(TestFiles.ConfigBytes("v0.1.json")));
+
+        Assert.Equal(PlanAction.Ask, Item(plan, "u.revert").Action);
+        Assert.False(Item(plan, "u.revert").Ticked);
+        Assert.Equal(PlanAction.Create, Item(plan, "u.savecopy").Action);
+        Assert.Null(plan.Find(UninstallPlanner.RestoreKey));
+
+        // A 0.1 install's configured account counts as created by CPFS.
+        Assert.NotNull(plan.Find("u.user.profile"));
+    }
+
+    [Fact]
+    public void TheDataFolderStaysWhileAShortcutOnlyALaterVersionRemovesIsThere()
+    {
+        var s = Installed() with { PublicDesktopFiles = Reading.Ok<IReadOnlyList<string>>(new[] { "Shared (CPFS).lnk" }) };
+        var plan = PlanFor(s, Fixture());
+
+        Assert.True(ApplyList.Uninstall(plan).Single(e => e.Item.Key == "u.shortcut").Deferred);
+        Assert.Equal(PlanAction.Keep, Item(plan, "u.data").Action);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ACopyOfConfigJsonIsSavedFirstWhetherOrNotTheSettingsAreRestored(bool restore)
+    {
+        var plan = PlanFor(Installed(), WithTracked(), (UninstallPlanner.RestoreKey, restore));
+
+        Assert.Equal("u.savecopy", ApplyList.Uninstall(plan)[0].Item.Key);
+    }
+
+    [Fact]
+    public void AShareWithCpfsNameOnAnotherFolderIsRemovedOnlyWhenTicked()
+    {
+        var s = Installed() with
+        {
+            Shares = Reading.Ok<IReadOnlyList<ShareInfo>>(new[] { new ShareInfo("Shared", @"E:\Other", "Mine", false, 1, 0, false) }),
+        };
+
+        var plan = PlanFor(s, Fixture());
+        Assert.Equal(PlanAction.Ask, Item(plan, "u.share:Shared").Action);
+        Assert.False(Item(plan, "u.share:Shared").Ticked);
+        Assert.DoesNotContain(ApplyList.Uninstall(plan), e => e.Item.Key == "u.share:Shared");
+
+        // CPFS's own folder under the same name, or CPFS's description on any share, is CPFS's.
+        var own = Installed() with
+        {
+            Shares = Reading.Ok<IReadOnlyList<ShareInfo>>(new[]
+            {
+                new ShareInfo("Shared", @"D:\Shared\", "Mine", false, 1, 0, false),
+                new ShareInfo("Old", @"E:\Old", Planner.ShareDescription, false, 1, 0, false),
+            }),
+        };
+        var ownPlan = PlanFor(own, Fixture());
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(ownPlan, "u.share:Shared").Action);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(ownPlan, "u.share:Old").Action);
+    }
+
+    [Fact]
+    public void AnAccountConfigJsonNeverRecordedIsKeptByDefault()
+    {
+        var doc = Fixture();
+        ((JsonObject)ConfigJson.Get(doc.Root, "Tracked")!)["Users"] = new JsonArray();
+        var plan = PlanFor(Installed(), ConfigReader.Parse(ConfigWriter.Serialize(doc.Root)));
+
+        Assert.Equal(PlanAction.Ask, Item(plan, "u.user.delete").Action);
+        Assert.False(Item(plan, "u.user.delete").Ticked);
+        Assert.Equal("Uninst_R_UserDeleteUntracked", Item(plan, "u.user.delete").ReasonKey);
+        Assert.Null(plan.Find("u.user.profile"));
+
+        // Recorded as created by CPFS: deleted unless unticked.
+        Assert.True(Item(PlanFor(Installed(), Fixture()), "u.user.delete").Ticked);
+    }
+
+    [Fact]
+    public void ABackedUpValueWithoutAValueIsLeftAsItIsNeverWrittenAsZero()
+    {
+        var doc = Fixture();
+        var registry = (JsonArray)ConfigJson.Get((JsonObject)ConfigJson.Get(doc.Root, "Backup")!, "Registry")!;
+        var entry = registry.OfType<JsonObject>().Single(e => (string?)e["Name"] == "RestrictAnonymous");
+        entry["Exists"] = true;
+        entry["Value"] = null;
+        var s = Installed();
+        s = s with { Hardening = new Dictionary<string, Reading<int?>>(s.Hardening) { ["RestrictAnonymous"] = Reading.Ok<int?>(1) } };
+
+        var plan = PlanFor(s, ConfigReader.Parse(ConfigWriter.Serialize(doc.Root)));
+        var item = Item(plan, "u.reg:RestrictAnonymous");
+        Assert.Equal(PlanAction.Keep, item.Action);
+        Assert.True(UninstallPlanner.IsUnknownOriginal(item));
+        Assert.DoesNotContain(ApplyList.Uninstall(plan), e => e.Item.Key == "u.reg:RestrictAnonymous");
+        Assert.Empty(ApplyList.Blocking(plan));
+    }
+
+    [Theory]
+    [InlineData(@"C:\ProgramData\CPFS")]
+    [InlineData(@"C:\Windows\Temp\Shared")]
+    [InlineData(@"C:\Program Files")]
+    [InlineData(@"D:\")]
+    [InlineData(@"C:\Users")]
+    [InlineData(@"Shared")]
+    public void ASharePathSetupWouldRefuseStopsTheWholeUninstall(string path)
+    {
+        var doc = Fixture();
+        doc.Root["SharePath"] = path;
+        var plan = UninstallPlanner.Uninstall(new UninstallInput
+        {
+            Snapshot = Installed(),
+            Config = ConfigReader.Parse(ConfigWriter.Serialize(doc.Root)),
+            ProtectedFolders = new ProtectedFolders
+            {
+                Trees = { @"C:\Windows", @"C:\Program Files", @"C:\ProgramData" },
+                Exact = { @"C:\Users", @"C:\Users\Public" },
+            },
+        });
+
+        Assert.Equal(PlanAction.CannotPlan, Item(plan, "u.guard").Action);
+        Assert.Single(plan.Items);
+        Assert.NotEmpty(ApplyList.Blocking(plan));
+    }
+
+    [Fact]
+    public void ARestoredLockoutUsesTheBackedUpThreshold()
+    {
+        var doc = Fixture();
+        ((JsonObject)ConfigJson.Get(doc.Root, "Backup")!)["Lockout"] = 0;
+        var plan = PlanFor(Installed(), ConfigReader.Parse(ConfigWriter.Serialize(doc.Root)));
+
+        Assert.Equal(PlanAction.Change, Item(plan, "u.lockout").Action);
+        Assert.Equal("0", Item(plan, "u.lockout").Target!.Data);
+    }
+}

@@ -1,0 +1,358 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Management;
+using System.Security;
+using System.Security.Cryptography;
+using System.Security.Principal;
+using System.Text;
+using Cpfs.Core.Apply;
+using Cpfs.Core.Config;
+using Cpfs.Core.Drives;
+using Cpfs.Core.Planning;
+using Cpfs.Windows;
+using Cpfs.Windows.Apply;
+
+namespace Cpfs;
+
+// "Cpfs.exe --ci-apply-test": Setup with test values, checks, Uninstall, and checks that everything is back, on a
+// disposable GitHub Actions runner only. It refuses anywhere else: it creates an account, a share and firewall rules
+// and changes security settings. The password is random and never printed. Exit 0 when every check passed, 1 when
+// one failed, 2 when it refused to run.
+internal static class CiApplyTest
+{
+    public const string Verb = "--ci-apply-test";
+
+    private const string TestUser = "CpfsCiUser";
+    private const string TestShare = "CPFS-CI";
+
+    private static readonly List<(bool Pass, string Check, string Detail)> Rows = new();
+
+    public static int Run()
+    {
+        SelfTest.AttachToParentConsole();
+        var o = Console.Out;
+        try
+        {
+            o.WriteLine("CPFS apply test " + AppLog.VersionText());
+            if (!string.Equals(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"), "true", StringComparison.Ordinal))
+            {
+                return Refuse(o, "GITHUB_ACTIONS is not true: this test runs only on a GitHub Actions runner.");
+            }
+
+            if (PartOfDomain())
+            {
+                return Refuse(o, "This machine is a domain member.");
+            }
+
+            Startup.Init(Array.Empty<string>());
+            if (!Startup.IsElevated)
+            {
+                return Refuse(o, "Not elevated.");
+            }
+
+            if (Directory.Exists(StateReader.DataFolder) || LocalAccounts.GetUser(TestUser) is not null)
+            {
+                return Refuse(o, "Not a clean machine: ProgramData\\CPFS or the test account already exists.");
+            }
+
+            var before = Machine.Read();
+            var temp = Environment.GetEnvironmentVariable("RUNNER_TEMP") is { Length: > 0 } t ? t : Path.GetTempPath();
+            var folder = Path.Combine(temp, "cpfs-ci", "Shared");
+            try
+            {
+                SetupPhase(o, folder, temp);
+            }
+            finally
+            {
+                if (File.Exists(StateReader.ConfigPath))
+                {
+                    UninstallPhase(o);
+                }
+            }
+
+            Compare(before, Machine.Read(), folder);
+            o.WriteLine();
+            o.WriteLine("Result:");
+            foreach (var (pass, check, detail) in Rows)
+            {
+                o.WriteLine((pass ? "PASS  " : "FAIL  ") + check + (detail.Length == 0 ? "" : "  (" + detail + ")"));
+            }
+
+            var failed = Rows.Count(r => !r.Pass);
+            o.WriteLine(failed == 0 ? "All " + Rows.Count + " checks passed" : failed + " of " + Rows.Count + " checks failed");
+            return failed == 0 ? 0 : 1;
+        }
+        catch (Exception ex)
+        {
+            o.WriteLine("Result: unexpected exception");
+            o.WriteLine(ex.ToString());
+            AppLog.Exception("ci-apply", ex);
+            return 1;
+        }
+        finally
+        {
+            o.Flush();
+        }
+    }
+
+    private static int Refuse(TextWriter o, string why)
+    {
+        o.WriteLine("Refused: " + why);
+        return 2;
+    }
+
+    private static void Check(bool pass, string check, string detail = "") => Rows.Add((pass, check, detail));
+
+    private static bool PartOfDomain()
+    {
+        using var searcher = new ManagementObjectSearcher(@"root\cimv2", "SELECT PartOfDomain FROM Win32_ComputerSystem");
+        using var results = searcher.Get();
+        foreach (ManagementBaseObject cs in results)
+        {
+            using (cs)
+            {
+                return cs["PartOfDomain"] as bool? ?? true;
+            }
+        }
+
+        return true;
+    }
+
+    private static SystemSnapshot Read(string user, string path, string share) =>
+        PlanReader.ReadAnswerParts(PlanReader.ReadStatic(DriveLetters.Scan(null), null), user, path, share);
+
+    private static void SetupPhase(TextWriter o, string folder, string temp)
+    {
+        var answers = new SetupAnswers
+        {
+            SharePath = folder,
+            ShareName = TestShare,
+            SmbUser = TestUser,
+            Password = PasswordEntry.Valid,
+        };
+
+        var snapshot = Read(TestUser, folder, TestShare);
+        var plan = Planner.Setup(snapshot, answers, null, PlanReader.ProtectedFolders());
+
+        // Public networks are ticked, so switching to Private and back is exercised too.
+        var choices = new Dictionary<string, bool>(StringComparer.Ordinal);
+        foreach (var item in plan.Items)
+        {
+            if (item.Action == PlanAction.Ask && item.Key.StartsWith("net:", StringComparison.Ordinal))
+            {
+                choices[item.Key] = true;
+            }
+        }
+
+        answers = answers with { Choices = choices };
+        plan = Planner.Setup(snapshot, answers, null, PlanReader.ProtectedFolders());
+        o.WriteLine("Setup plan:");
+        foreach (var line in plan.LogLines())
+        {
+            o.WriteLine("  " + line);
+        }
+
+        var blocking = ApplyList.Blocking(plan);
+        Check(blocking.Count == 0, "Setup plan has nothing that cannot be planned", string.Join(", ", blocking.Select(b => b.Key)));
+        if (blocking.Count > 0)
+        {
+            return;
+        }
+
+        using var password = RandomPassword();
+        var run = new SetupRun(answers, password, plan, ConfigBook.ForSetup(null));
+        var result = run.Execute(r =>
+        {
+            if (r.Outcome != StepOutcome.Running)
+            {
+                o.WriteLine("  setup " + r.Outcome + " " + r.Key + (r.Error is null ? "" : ": " + r.Error));
+            }
+        });
+        Check(result.Completed, "Setup ran to the end", result.Error ?? "");
+
+        var bytes = File.Exists(StateReader.ConfigPath) ? File.ReadAllBytes(StateReader.ConfigPath) : null;
+        Check(bytes is not null, "config.json written");
+        if (bytes is null)
+        {
+            return;
+        }
+
+        File.WriteAllBytes(Path.Combine(temp, "cpfs-config-after-setup.json"), bytes);
+        var config = ConfigReader.Parse(bytes);
+        Check(config.Encoding == TextEncoding.Utf8Bom, "config.json is UTF-8 with a BOM");
+        Check(config.Backup == BackupState.Present && config.BackupRegistry.Count == Planner.Hardening.Count, "config.json has the backup");
+        Check(!config.Partial, "config.json is not marked Partial");
+        Check(config.TrackedUsers.Any(u => u.Name == TestUser && u.Existed == false), "the account is tracked as created by CPFS");
+
+        var user = LocalAccounts.GetUser(TestUser);
+        Check(user is not null && user.Enabled && user.PasswordNeverExpires, "the account exists, enabled, password never expires");
+        Check(Reg.ReadDword(Reg.UserList, TestUser) == 0, "the account is hidden from the sign-in screen");
+        if (user is not null)
+        {
+            Check(LocalAccounts.IsMember(user.Sid, Accounts.UsersSid) == true, "the account is in Users");
+            Check(PlanReader.Folder(folder, user.Sid.Value).UserHasModify, "the account can modify the folder");
+        }
+
+        var share = PlanReader.Shares().FirstOrDefault(s => s.Name == TestShare);
+        Check(share is not null && string.Equals(share.Path?.TrimEnd('\\'), folder, StringComparison.OrdinalIgnoreCase)
+            && share.FolderEnumerationMode == 0 && share.CachingMode == 0 && share.EncryptData == false, "the share exists as planned");
+        var data = PlanReader.DataFolder();
+        Check(data.Exists && data.OwnerIsAdministrators && data.Protected && !data.OthersCanWrite, "ProgramData\\CPFS is locked");
+        foreach (var h in Planner.Hardening)
+        {
+            var v = Reg.ReadDword(h.Key, h.Name);
+            Check(v == h.Target || (v is { } c && h.IsStricter(c)), "hardening " + h.Name, v?.ToString(CultureInfo.InvariantCulture) ?? "absent");
+        }
+
+        Check(PlanReader.Lockout().Threshold != 0, "account lockout is on");
+        Check(PlanReader.AuditLogon().Failure, "failed logons are audited");
+        var rules = PlanReader.OwnRules();
+        Check(rules.Count(r => r.Name == FirewallRules.LanRule) == 1 && rules.Count(r => r.Name == FirewallRules.MdnsRule) == 1, "the CPFS LAN rules exist");
+
+        // Re-running with the same answers changes nothing.
+        var again = Planner.Setup(Read(TestUser, folder, TestShare), answers with { Password = PasswordEntry.Empty, Choices = new Dictionary<string, bool>() },
+            config, PlanReader.ProtectedFolders());
+        var left = ApplyList.Setup(again).Where(e => !e.Deferred).Select(e => e.Item.Key).ToList();
+        Check(left.Count == 0, "a second Setup with the same answers plans no change", string.Join(", ", left));
+    }
+
+    private static void UninstallPhase(TextWriter o)
+    {
+        var bytes = File.ReadAllBytes(StateReader.ConfigPath);
+        var config = ConfigReader.Parse(bytes);
+        var snapshot = Read(config.SmbUser ?? "", config.SharePath ?? "", config.ShareName ?? "");
+        string self;
+        using (var identity = WindowsIdentity.GetCurrent())
+        {
+            self = identity.User!.Value;
+        }
+
+        var plan = UninstallPlanner.Uninstall(new UninstallInput
+        {
+            Snapshot = snapshot,
+            Config = config,
+            ProtectedSids = new[] { self },
+            DesktopUser = self,
+            ProtectedFolders = PlanReader.ProtectedFolders(),
+        });
+        o.WriteLine("Uninstall plan:");
+        foreach (var line in plan.LogLines())
+        {
+            o.WriteLine("  " + line);
+        }
+
+        var userSid = snapshot.User.IsOk ? snapshot.User.Value?.Sid : null;
+        var run = new UninstallRun(plan, config, bytes, userSid, self, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+        var result = run.Execute(r =>
+        {
+            if (r.Outcome != StepOutcome.Running)
+            {
+                o.WriteLine("  uninstall " + r.Outcome + " " + r.Key + (r.Error is null ? "" : ": " + r.Error));
+            }
+        });
+        Check(ApplyList.Blocking(plan).Count == 0, "Uninstall plan has nothing that cannot be planned");
+        Check(result.Completed, "Uninstall ran to the end", result.Error ?? "");
+    }
+
+    private static void Compare(Machine before, Machine after, string folder)
+    {
+        Check(LocalAccounts.GetUser(TestUser) is null, "the account is gone");
+        Check(!Reg.Exists(Reg.UserList, TestUser), "the sign-in screen entry is gone");
+        Check(PlanReader.Shares().All(s => s.Name != TestShare), "the share is gone");
+        Check(PlanReader.OwnRules().Count == 0, "the CPFS firewall rules are gone");
+        Check(!Directory.Exists(StateReader.DataFolder), "ProgramData\\CPFS is gone");
+        Check(Directory.Exists(folder), "the shared folder is still there");
+        foreach (var pair in before.Hardening)
+        {
+            Check(after.Hardening[pair.Key] == pair.Value, "restored " + pair.Key, Show(pair.Value) + " -> " + Show(after.Hardening[pair.Key]));
+        }
+
+        Check(after.Smb2 == before.Smb2 && after.Reject == before.Reject, "restored SMB2 and RejectUnencryptedAccess");
+        Check(after.ServerStart == before.ServerStart, "restored the Server service start type", Show(before.ServerStart) + " -> " + Show(after.ServerStart));
+        Check(after.Lockout == before.Lockout, "restored the lockout policy", before.Lockout + " -> " + after.Lockout);
+        foreach (var pair in before.BuiltIn)
+        {
+            Check(after.BuiltIn.TryGetValue(pair.Key, out var now) && now == pair.Value, "restored built-in rule " + pair.Key);
+        }
+
+        foreach (var pair in before.Networks)
+        {
+            Check(!after.Networks.TryGetValue(pair.Key, out var now) || now == pair.Value, "restored network " + pair.Key);
+        }
+    }
+
+    private static string Show(int? value) => value?.ToString(CultureInfo.InvariantCulture) ?? "absent";
+
+    // 24 characters with every character class, so a Windows Server password policy accepts it.
+    private static SecureString RandomPassword()
+    {
+        const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        const string lower = "abcdefghijkmnopqrstuvwxyz";
+        const string digits = "23456789";
+        const string symbols = "!#%+-=?";
+        var all = upper + lower + digits + symbols;
+        var secret = new SecureString();
+        var bytes = new byte[24];
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(bytes);
+        }
+
+        for (var i = 0; i < bytes.Length; i++)
+        {
+            var set = i switch { 0 => upper, 1 => lower, 2 => digits, 3 => symbols, _ => all };
+            secret.AppendChar(set[bytes[i] % set.Length]);
+        }
+
+        Array.Clear(bytes, 0, bytes.Length);
+        secret.MakeReadOnly();
+        return secret;
+    }
+
+    // The settings Uninstall must put back exactly.
+    private sealed class Machine
+    {
+        public Dictionary<string, int?> Hardening { get; } = new(StringComparer.Ordinal);
+
+        public bool? Smb2 { get; private set; }
+
+        public bool? Reject { get; private set; }
+
+        public int? ServerStart { get; private set; }
+
+        public LockoutInfo? Lockout { get; private set; }
+
+        public Dictionary<string, bool> BuiltIn { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public Dictionary<string, int> Networks { get; } = new(StringComparer.Ordinal);
+
+        public static Machine Read()
+        {
+            var m = new Machine();
+            foreach (var h in Planner.Hardening)
+            {
+                m.Hardening[h.Name] = Reg.Exists(h.Key, h.Name) ? Reg.ReadDword(h.Key, h.Name) ?? -1 : null;
+            }
+
+            var smb = PlanReader.SmbServer();
+            m.Smb2 = smb.Smb2;
+            m.Reject = smb.RejectUnencrypted;
+            m.ServerStart = PlanReader.ServerStart();
+            m.Lockout = PlanReader.Lockout();
+            foreach (var r in PlanReader.BuiltInRules())
+            {
+                m.BuiltIn[r.Id] = r.Enabled;
+            }
+
+            foreach (var n in PlanReader.Networks())
+            {
+                m.Networks[n.Name] = n.Category;
+            }
+
+            return m;
+        }
+    }
+}

@@ -17,6 +17,7 @@ internal static class Native
     internal const int ErrorCancelled = 1223;
 
     internal static readonly Guid FolderIdDesktop = new("B4BFCC3A-DB2C-424C-B029-7FE99A87C641");
+    internal static readonly Guid FolderIdDocuments = new("FDD39AD0-238F-46AF-ADB4-6C85480369C7");
 
     [DllImport("kernel32.dll", SetLastError = true)]
     internal static extern SafeKernelHandle OpenProcess(uint access, bool inherit, int processId);
