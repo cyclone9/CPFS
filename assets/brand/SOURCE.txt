@@ -5,11 +5,21 @@ Logo/cpfs-symbol-on-dark.svg
 Logo/cpfs-symbol-on-light.svg
   From the CyClone Power brand project (CPBS), folder cpfs/logo/. Copied byte for byte.
   Path logo, palette and dark theme approved by the owner on 2026-10-23.
-  src/Cpfs/Brand.xaml transcribes these three SVGs into XAML drawings with the same coordinates, colours and strokes.
+  src/Cpfs/Brand.xaml transcribes the two symbol SVGs into XAML drawings with the same coordinates, colours and strokes.
+
+Logo/cpfs-app-icon.svg
+Logo/cpfs-app-icon-16.svg
+Logo/cpfs-app-icon-20.svg
+Logo/cpfs-app-icon-24.svg
+  The app icon source ("Tile": the Path mark in Ink on a Tangerine rounded square), from CPBS cpfs/logo/,
+  copied byte for byte. Approved by the brand (CPBS) on 2026-10-23. cpfs-app-icon.svg is the 256 px master;
+  the 16, 20 and 24 px files are hand-tuned frames for those sizes.
+  src/Cpfs/Brand.xaml transcribes cpfs-app-icon-20.svg for the title bar icon.
 
 cpfs.ico
-  Rendered from Logo/cpfs-symbol-favicon.svg at 16, 20, 24, 32, 40, 48, 64 and 256 px with a build-time tool
-  (Svg.Skia 5.2.3 and SkiaSharp, both MIT) that is not part of this repository and not shipped.
+  The 16, 20 and 24 px entries rendered from their own frames (Logo/cpfs-app-icon-16.svg, -20.svg, -24.svg), and
+  the 32, 40, 48, 64 and 256 px entries from Logo/cpfs-app-icon.svg, with a build-time tool (Svg.Skia 5.2.3 and
+  SkiaSharp, both MIT) that is not part of this repository and not shipped.
   Entries below 256 px are 32-bit DIBs; the 256 px entry is PNG.
 
 These files, and the drawing in src/Cpfs/Brand.xaml, are not covered by the MIT licence (see README.md in this folder).

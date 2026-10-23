@@ -37,6 +37,15 @@ internal static class Native
     [DllImport("kernel32.dll")]
     internal static extern bool CloseHandle(IntPtr handle);
 
+    internal const ushort AfUnspec = 0;
+
+    // Returns a Win32 error code (NO_ERROR, ERROR_NOT_FOUND when the table is empty); the table is freed with FreeMibTable.
+    [DllImport("iphlpapi.dll")]
+    internal static extern uint GetIpNetTable2(ushort family, out IntPtr table);
+
+    [DllImport("iphlpapi.dll")]
+    internal static extern void FreeMibTable(IntPtr memory);
+
     [DllImport("dwmapi.dll")]
     internal static extern int DwmGetWindowAttribute(IntPtr hwnd, int attribute, out int value, int size);
 

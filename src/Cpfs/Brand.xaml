@@ -1,5 +1,5 @@
 <!--
-  Path symbol and favicon, transcribed from the brand SVGs in assets/brand/Logo (see assets/brand/SOURCE.txt).
+  Path symbol and app icon, transcribed from the brand SVGs in assets/brand/Logo (see assets/brand/SOURCE.txt).
   Like those files, this drawing is part of the CPFS brand and is not covered by the MIT licence.
   Coordinates, colours and stroke values are the SVGs' own. The transparent rectangle in each drawing
   holds the SVG viewBox, so the image keeps the same frame and padding as the SVG.
@@ -46,8 +46,8 @@
     </DrawingImage.Drawing>
   </DrawingImage>
 
-  <!--  cpfs-symbol-favicon.svg, viewBox 0 0 20 20: the title bar icon, drawn as vectors so it is sharp at every DPI  -->
-  <DrawingImage x:Key="CpfsFavicon">
+  <!--  cpfs-app-icon-20.svg, viewBox 0 0 20 20: the title bar icon, the app icon's hand-tuned 20 px frame as vectors  -->
+  <DrawingImage x:Key="CpfsAppIcon">
     <DrawingImage.Drawing>
       <DrawingGroup>
         <GeometryDrawing Brush="#FF7F45">
@@ -55,22 +55,17 @@
             <RectangleGeometry RadiusX="4" RadiusY="4" Rect="0,0,20,20" />
           </GeometryDrawing.Geometry>
         </GeometryDrawing>
-        <DrawingGroup>
-          <DrawingGroup.Transform>
-            <TranslateTransform X="2" Y="2" />
-          </DrawingGroup.Transform>
-          <GeometryDrawing Geometry="M1 2L4 14">
-            <GeometryDrawing.Pen>
-              <Pen Brush="#1A1512" EndLineCap="Round" LineJoin="Round" StartLineCap="Round" Thickness="2" />
-            </GeometryDrawing.Pen>
-          </GeometryDrawing>
-          <GeometryDrawing Geometry="M6 2L9 14">
-            <GeometryDrawing.Pen>
-              <Pen Brush="#1A1512" EndLineCap="Round" LineJoin="Round" StartLineCap="Round" Thickness="2" />
-            </GeometryDrawing.Pen>
-          </GeometryDrawing>
-          <GeometryDrawing Brush="#1A1512" Geometry="M12 6H14A1 1 0 0 1 15 7V9A1 1 0 0 1 14 10H12A1 1 0 0 1 11 9V7A1 1 0 0 1 12 6Z" />
-        </DrawingGroup>
+        <GeometryDrawing Geometry="M3 4L6 16">
+          <GeometryDrawing.Pen>
+            <Pen Brush="#1A1512" EndLineCap="Round" LineJoin="Round" StartLineCap="Round" Thickness="2" />
+          </GeometryDrawing.Pen>
+        </GeometryDrawing>
+        <GeometryDrawing Geometry="M8 4L11 16">
+          <GeometryDrawing.Pen>
+            <Pen Brush="#1A1512" EndLineCap="Round" LineJoin="Round" StartLineCap="Round" Thickness="2" />
+          </GeometryDrawing.Pen>
+        </GeometryDrawing>
+        <GeometryDrawing Brush="#1A1512" Geometry="M15 8H17A1 1 0 0 1 18 9V11A1 1 0 0 1 17 12H15A1 1 0 0 1 14 11V9A1 1 0 0 1 15 8Z" />
       </DrawingGroup>
     </DrawingImage.Drawing>
   </DrawingImage>

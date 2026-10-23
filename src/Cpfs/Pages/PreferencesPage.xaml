@@ -84,7 +84,28 @@
         SelectionChanged="OnFontSelected" />
     </ui:CardControl>
 
-    <TextBlock Margin="0,8,0,0" Style="{StaticResource CardDescription}" Text="{Binding [Pref_Stored], Source={x:Static local:Loc.Instance}}" />
-    <TextBlock x:Name="StoredPath" Margin="0,2,0,0" Style="{StaticResource DataValue}" />
+    <!--  A card like the others; the path wraps anywhere (TextWrapping=Wrap breaks inside a word when it must).  -->
+    <ui:Card Margin="0,0,0,4">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <ui:SymbolIcon
+          Margin="0,0,16,0"
+          VerticalAlignment="Top"
+          FontSize="24"
+          Symbol="Folder24" />
+        <StackPanel Grid.Column="1">
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Pref_Stored_Title], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Pref_Stored], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock
+            x:Name="StoredPath"
+            Margin="0,8,0,0"
+            AutomationProperties.Name="{Binding [Pref_Stored_Title], Source={x:Static local:Loc.Instance}}"
+            Style="{StaticResource DataValue}" />
+        </StackPanel>
+      </Grid>
+    </ui:Card>
   </StackPanel>
 </Page>

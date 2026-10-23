@@ -67,6 +67,17 @@ internal sealed class StateSection
 
     public string? Error { get; set; }
 
+    // The one-line summary in the collapsed header; resolved like a row's ValueKey and ValueArgs.
+    public string? SummaryKey { get; private set; }
+
+    public object[] SummaryArgs { get; private set; } = Array.Empty<object>();
+
+    public void Summarize(string key, params object[] args)
+    {
+        SummaryKey = key;
+        SummaryArgs = args;
+    }
+
     public void Fail(Exception ex)
     {
         Status = State.IsAccessDenied(ex) ? ReadStatus.NeedsAdmin : ReadStatus.Failed;

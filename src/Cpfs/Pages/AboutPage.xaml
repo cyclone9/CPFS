@@ -45,6 +45,7 @@
           Height="64"
           Margin="0,0,16,0"
           VerticalAlignment="Top"
+          FlowDirection="LeftToRight"
           AutomationProperties.Name="{Binding [About_Brand_SymbolName], Source={x:Static local:Loc.Instance}}"
           Source="{StaticResource CpfsSymbolOnDark}" />
         <StackPanel Grid.Column="1">
@@ -55,8 +56,22 @@
             Foreground="{DynamicResource TextFillColorPrimaryBrush}"
             Text="{Binding [About_Brand_Name], Source={x:Static local:Loc.Instance}}"
             TextWrapping="Wrap" />
-          <TextBlock Margin="0,2,0,0" Style="{StaticResource CardValue}" Text="{Binding [About_Brand_Tagline], Source={x:Static local:Loc.Instance}}" />
-          <TextBlock Margin="0,8,0,0" Style="{StaticResource Body}" Text="{Binding [About_Brand_Description], Source={x:Static local:Loc.Instance}}" />
+          <!--  Both brand lines carry their label, so a reader can tell the tagline from the motto.  -->
+          <Grid Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Style="{StaticResource InfoName}" Text="{Binding [About_Brand_TaglineLabel], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock Grid.Row="0" Style="{StaticResource InfoValue}" Text="{Binding [About_Brand_Tagline], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock Grid.Row="1" Style="{StaticResource InfoName}" Text="{Binding [About_Brand_MottoLabel], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock Grid.Row="1" Style="{StaticResource InfoValue}" Text="{Binding [About_Brand_Motto], Source={x:Static local:Loc.Instance}}" />
+          </Grid>
+          <TextBlock Margin="0,4,0,0" Style="{StaticResource Body}" Text="{Binding [About_Brand_Description], Source={x:Static local:Loc.Instance}}" />
         </StackPanel>
       </Grid>
     </ui:Card>

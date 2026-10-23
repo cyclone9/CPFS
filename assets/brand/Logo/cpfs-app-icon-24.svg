@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="CPFS app icon, 24 px frame">
+<rect width="24" height="24" rx="5" fill="#FF7F45"/>
+<path fill="none" stroke="#1A1512" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 6L8 18"/>
+<path fill="none" stroke="#1A1512" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 6L13 18"/>
+<path fill="#1A1512" d="M17 10H19A1 1 0 0 1 20 11V13A1 1 0 0 1 19 14H17A1 1 0 0 1 16 13V11A1 1 0 0 1 17 10Z"/>
+</svg>

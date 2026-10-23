@@ -127,6 +127,7 @@ internal sealed class StateReader
         {
             s.Status = ReadStatus.Missing;
             s.Rows.Add(StateRow.Word("Setup_Config_State", "Setup_Config_NotFound"));
+            s.Summarize("Setup_Config_NotFound");
             return;
         }
 
@@ -169,6 +170,7 @@ internal sealed class StateReader
         s.Rows.Add(StateRow.Data("Setup_Config_Version", doc.Version));
         s.Rows.Add(StateRow.Word("Setup_Config_Backup", "Setup_Config_Backup" + doc.Backup));
         s.Rows.Add(StateRow.YesNo("Setup_Config_Partial", doc.Partial));
+        s.Summarize("Setup_Config_Summary", (object?)doc.Version ?? new LocKey("State_NotSet"), new LocKey("Setup_Config_Backup" + doc.Backup));
         foreach (var pair in ConfigJson.Flatten(doc.Root))
         {
             s.Rows.Add(new StateRow { Label = pair.Key, Value = pair.Value });
@@ -189,6 +191,15 @@ internal sealed class StateReader
         {
             s.Rows.Add(StateRow.Data("Setup_Computer_Configured", configured));
         }
+
+        if (current is not null && pending is not null && !string.Equals(current, pending, StringComparison.OrdinalIgnoreCase))
+        {
+            s.Summarize("Setup_Computer_SummaryRename", current, pending);
+        }
+        else
+        {
+            s.Summarize("Setup_Computer_Summary", (object?)current ?? new LocKey("State_Unknown"));
+        }
     }
 
     private void ReadSmbUser(StateSection s)
@@ -198,6 +209,7 @@ internal sealed class StateReader
         {
             s.Status = ReadStatus.Missing;
             s.Rows.Add(StateRow.Word("Setup_User_Name", "Setup_NoConfigValue"));
+            s.Summarize("Setup_NoConfigValue");
             return;
         }
 
@@ -207,6 +219,7 @@ internal sealed class StateReader
         {
             s.Status = ReadStatus.Missing;
             s.Rows.Add(StateRow.Word("Setup_User_Exists", "Common_No"));
+            s.Summarize("Setup_User_SummaryMissing", name);
         }
         else
         {
@@ -214,8 +227,15 @@ internal sealed class StateReader
             s.Rows.Add(StateRow.Data("Setup_User_Sid", user.Sid.Value));
             s.Rows.Add(StateRow.YesNo("Setup_User_Enabled", user.Enabled));
             s.Rows.Add(StateRow.YesNo("Setup_User_PasswordNeverExpires", user.PasswordNeverExpires));
-            s.Rows.Add(Membership(user, "Setup_User_Admin", "S-1-5-32-544"));
-            s.Rows.Add(Membership(user, "Setup_User_Users", "S-1-5-32-545"));
+            s.Rows.Add(Membership(user, "Setup_User_Admin", "S-1-5-32-544", out var admin));
+            s.Rows.Add(Membership(user, "Setup_User_Users", "S-1-5-32-545", out var users));
+            s.Summarize(
+                user.Enabled == false ? "Setup_User_SummaryDisabled"
+                    : admin == true ? "Setup_User_SummaryAdmin"
+                    : users == true ? "Setup_User_SummaryUsers"
+                    : users == false ? "Setup_User_SummaryNotUsers"
+                    : "Setup_User_SummaryExists",
+                name);
         }
 
         try
@@ -237,11 +257,12 @@ internal sealed class StateReader
         }
     }
 
-    private static StateRow Membership(LocalUser user, string labelKey, string groupSid)
+    private static StateRow Membership(LocalUser user, string labelKey, string groupSid, out bool? member)
     {
+        member = null;
         try
         {
-            var member = LocalAccounts.IsMember(user.Sid, groupSid);
+            member = LocalAccounts.IsMember(user.Sid, groupSid);
             return member is null ? StateRow.Word(labelKey, "State_Unknown") : StateRow.YesNo(labelKey, member);
         }
         catch (Exception ex) when (State.IsExpected(ex) || ex is IdentityNotMappedException)
@@ -262,6 +283,7 @@ internal sealed class StateReader
         }
 
         var found = false;
+        string? foundPath = null;
         foreach (var share in Query(@"root\Microsoft\Windows\SMB", "SELECT Name, Path, Description, EncryptData, FolderEnumerationMode, CachingMode, Special FROM MSFT_SmbShare"))
         {
             using (share)
@@ -275,7 +297,11 @@ internal sealed class StateReader
                     continue;
                 }
 
-                found |= sameName;
+                if (sameName)
+                {
+                    found = true;
+                    foundPath = sharePath;
+                }
                 s.Rows.Add(new StateRow
                 {
                     Label = shareName,
@@ -296,12 +322,26 @@ internal sealed class StateReader
             s.Status = ReadStatus.Missing;
             s.Rows.Add(StateRow.Word("Setup_Share_State", "Setup_Share_NotFound"));
         }
+
+        if (name is null)
+        {
+            s.Summarize("Setup_NoConfigValue");
+        }
+        else if (found)
+        {
+            s.Summarize("Setup_Share_SummaryFound", name, foundPath ?? "?");
+        }
+        else
+        {
+            s.Summarize("Setup_Share_SummaryMissing", name);
+        }
     }
 
     private void ReadFirewall(StateSection s)
     {
         var tracked = new HashSet<string>(Config?.TrackedFirewallRules ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
         var seenTracked = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        int own = 0, ownEnabled = 0;
         foreach (var rule in Query(@"root\StandardCimv2", "SELECT * FROM MSFT_NetFirewallRule"))
         {
             using (rule)
@@ -321,9 +361,9 @@ internal sealed class StateReader
 
                 var id = Prop(rule, "InstanceID", "Name") as string;
                 var display = Prop(rule, "DisplayName", "ElementName") as string;
-                var own = display is not null && (display.StartsWith("CPFS", StringComparison.OrdinalIgnoreCase) || display.StartsWith("CyShare", StringComparison.OrdinalIgnoreCase));
+                var isOwn = display is not null && (display.StartsWith("CPFS", StringComparison.OrdinalIgnoreCase) || display.StartsWith("CyShare", StringComparison.OrdinalIgnoreCase));
                 var isTracked = id is not null && tracked.Contains(id);
-                if (!own && !isTracked)
+                if (!isOwn && !isTracked)
                 {
                     continue;
                 }
@@ -331,6 +371,14 @@ internal sealed class StateReader
                 if (isTracked)
                 {
                     seenTracked.Add(id!);
+                }
+                else
+                {
+                    own++;
+                    if (Prop(rule, "Enabled") is { } enabled && Convert.ToInt32(enabled, CultureInfo.InvariantCulture) == 1)
+                    {
+                        ownEnabled++;
+                    }
                 }
 
                 s.Rows.Add(new StateRow
@@ -354,7 +402,11 @@ internal sealed class StateReader
         {
             s.Status = ReadStatus.Missing;
             s.Rows.Add(StateRow.Word("Setup_Firewall_State", "Setup_Firewall_None"));
+            s.Summarize("Setup_Firewall_None");
+            return;
         }
+
+        s.Summarize("Setup_Firewall_Summary", own, ownEnabled, seenTracked.Count);
     }
 
     private static void ReadTasks(StateSection s)
@@ -367,6 +419,7 @@ internal sealed class StateReader
             var folder = Invoke(service, "GetFolder", @"\")!;
             try
             {
+                var found = 0;
                 foreach (var name in TaskNames)
                 {
                     object? task = null;
@@ -375,6 +428,7 @@ internal sealed class StateReader
                         task = Invoke(folder, "GetTask", name);
                         var enabled = Get(task!, "Enabled") as bool?;
                         var state = Convert.ToInt32(Get(task!, "State"), CultureInfo.InvariantCulture);
+                        found++;
                         s.Rows.Add(new StateRow
                         {
                             Label = name,
@@ -400,6 +454,8 @@ internal sealed class StateReader
                         Release(task);
                     }
                 }
+
+                s.Summarize("Setup_Tasks_Summary", found, TaskNames.Length);
             }
             finally
             {
@@ -424,13 +480,20 @@ internal sealed class StateReader
         }
 
         using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+        int atCpfs = 0, total = 0;
         foreach (var (keyPath, name, cpfsValue) in Hardening)
         {
+            total++;
             try
             {
                 using var key = hklm.OpenSubKey(keyPath);
                 var value = key?.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
                 var current = value is null ? null : Convert.ToString(value, CultureInfo.InvariantCulture);
+                if (string.Equals(current, cpfsValue.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal))
+                {
+                    atCpfs++;
+                }
+
                 var original = backup.TryGetValue(name, out var b) ? (b.Exists == false ? "-" : b.Value?.ToString(CultureInfo.InvariantCulture) ?? "?") : "";
                 s.Rows.Add(new StateRow
                 {
@@ -445,6 +508,7 @@ internal sealed class StateReader
             }
         }
 
+        s.Summarize("Setup_Hardening_Summary", atCpfs, total);
         try
         {
             using var server = hklm.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\LanmanServer");
@@ -458,12 +522,14 @@ internal sealed class StateReader
 
     private void ReadNetworks(StateSection s)
     {
+        var connected = 0;
         try
         {
             foreach (var profile in Query(@"root\StandardCimv2", "SELECT Name, InterfaceAlias, NetworkCategory FROM MSFT_NetConnectionProfile"))
             {
                 using (profile)
                 {
+                    connected++;
                     s.Rows.Add(new StateRow
                     {
                         Label = Prop(profile, "Name") as string,
@@ -479,6 +545,7 @@ internal sealed class StateReader
         }
 
         var tracked = Config?.TrackedNetworks ?? Array.Empty<string>();
+        s.Summarize("Setup_Networks_Summary", connected, tracked.Count);
         if (tracked.Count == 0)
         {
             s.Rows.Add(StateRow.Word("Setup_Networks_Tracked", "Setup_Networks_TrackedNone"));
@@ -566,16 +633,30 @@ internal sealed class StateReader
         var own = configured is { Length: 1 } c ? c[0] : (char?)null;
         s.Rows.Add(StateRow.Data("Setup_Drive_Free", string.Join(" ", letters.Free(own))));
         s.Rows.Add(StateRow.Data("Setup_Drive_Default", letters.DefaultLetter(own)?.ToString() ?? "-"));
+        var free = letters.Free(own).Count;
+        if (own is { } d)
+        {
+            s.Summarize(letters.Taken.ContainsKey(char.ToUpperInvariant(d)) ? "Setup_Drive_SummaryInUse" : "Setup_Drive_SummaryFree", char.ToUpperInvariant(d) + ":", free);
+        }
+        else
+        {
+            s.Summarize("Setup_Drive_SummaryNone", free);
+        }
     }
 
     private void ReadShortcut(StateSection s)
     {
         var path = Config?.Shortcut;
         s.Rows.Add(StateRow.Data("Setup_Shortcut_Path", path));
-        if (path is not null)
+        if (path is null)
         {
-            s.Rows.Add(StateRow.YesNo("Setup_Shortcut_Exists", File.Exists(path)));
+            s.Summarize("Setup_NoConfigValue");
+            return;
         }
+
+        var exists = File.Exists(path);
+        s.Rows.Add(StateRow.YesNo("Setup_Shortcut_Exists", exists));
+        s.Summarize(exists ? "Setup_Shortcut_SummaryExists" : "Setup_Shortcut_SummaryMissing", Path.GetFileName(path));
     }
 
     private static void ReadDataFolder(StateSection s)
@@ -586,13 +667,23 @@ internal sealed class StateReader
         {
             s.Status = ReadStatus.Missing;
             s.Rows.Add(StateRow.Word("Setup_DataFolder_State", "Setup_Config_NotFound"));
+            s.Summarize("Setup_Config_NotFound");
             return;
         }
 
         var security = dir.GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
         var owner = security.GetOwner(typeof(SecurityIdentifier)) as SecurityIdentifier;
         s.Rows.Add(StateRow.Data("Setup_DataFolder_Owner", Describe(owner)));
-        s.Rows.Add(StateRow.YesNo("Setup_DataFolder_OwnerIsAdmins", owner is null ? null : owner.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid)));
+        var ownedByAdmins = owner?.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid);
+        s.Rows.Add(StateRow.YesNo("Setup_DataFolder_OwnerIsAdmins", ownedByAdmins));
+        if (ownedByAdmins == true)
+        {
+            s.Summarize("Setup_DataFolder_SummaryAdmins");
+        }
+        else
+        {
+            s.Summarize("Setup_DataFolder_SummaryOther", Describe(owner));
+        }
         s.Rows.Add(StateRow.YesNo("Setup_DataFolder_Protected", security.AreAccessRulesProtected));
         foreach (FileSystemAccessRule rule in security.GetAccessRules(true, true, typeof(SecurityIdentifier)))
         {

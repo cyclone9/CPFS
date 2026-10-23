@@ -37,16 +37,59 @@
       </Grid>
     </DataTemplate>
 
+    <!--
+      A collapsible section: the header shows the name, a one-line summary (or "Reading..." until the section is
+      read) and its status badge; the rows are inside. The header's toggle button is the one tab stop.
+    -->
     <DataTemplate x:Key="SectionTemplate" DataType="{x:Type pages:SectionView}">
-      <ui:Card Margin="0,0,0,4">
+      <ui:CardExpander
+        Margin="0,0,0,4"
+        AutomationProperties.HelpText="{Binding HelpText}"
+        AutomationProperties.Name="{Binding Title}"
+        Focusable="False"
+        IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
+        Loaded="OnSectionLoaded"
+        PreviewKeyDown="OnSectionKeyDown">
+        <ui:CardExpander.Header>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
+              <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Summary}" Visibility="{Binding HasSummary, Converter={StaticResource Visible}}" />
+            </StackPanel>
+            <Border
+              Grid.Column="1"
+              Margin="12,0,8,0"
+              VerticalAlignment="Center"
+              Visibility="{Binding HasBadge, Converter={StaticResource Visible}}">
+              <Border.Style>
+                <Style BasedOn="{StaticResource Badge}" TargetType="Border">
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding BadgeKind}" Value="Ok">
+                      <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBackgroundBrush}" />
+                      <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding BadgeKind}" Value="Missing">
+                      <Setter Property="Background" Value="{DynamicResource SystemFillColorNeutralBackgroundBrush}" />
+                      <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorNeutralBrush}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding BadgeKind}" Value="Failed">
+                      <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}" />
+                      <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </Border.Style>
+              <TextBlock Style="{StaticResource BadgeText}" Text="{Binding Badge}" />
+            </Border>
+          </Grid>
+        </ui:CardExpander.Header>
         <StackPanel>
-          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
-          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Description}" />
-          <TextBlock Margin="0,8,0,0" Style="{StaticResource CardValue}" Text="{Binding Pending}" Visibility="{Binding IsPending, Converter={StaticResource Visible}}" />
-          <Border Style="{StaticResource Badge}" Margin="0,8,0,0" Visibility="{Binding HasBadge, Converter={StaticResource Visible}}">
-            <TextBlock Style="{StaticResource BadgeText}" Text="{Binding Badge}" />
-          </Border>
-          <TextBlock Margin="0,4,0,0" Style="{StaticResource ErrorText}" Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
+          <TextBlock Margin="0" Style="{StaticResource CardDescription}" Text="{Binding Description}" />
+          <TextBlock Margin="0,8,0,0" Style="{StaticResource ErrorText}" Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
           <!--  An ItemsControl has no ScrollViewer of its own: the page scrolls, not the card.  -->
           <ItemsControl
             Margin="0,12,0,0"
@@ -54,7 +97,7 @@
             ItemTemplate="{StaticResource RowTemplate}"
             ItemsSource="{Binding Rows}" />
         </StackPanel>
-      </ui:Card>
+      </ui:CardExpander>
     </DataTemplate>
   </Page.Resources>
 
@@ -107,6 +150,20 @@
         Click="OnRefresh"
         Content="{Binding [Setup_Refresh], Source={x:Static local:Loc.Instance}}"
         Icon="{ui:SymbolIcon ArrowClockwise24}" />
+      <ui:Button
+        x:Name="ExpandAllButton"
+        Margin="0,0,8,0"
+        AutomationProperties.Name="{Binding [Setup_ExpandAll], Source={x:Static local:Loc.Instance}}"
+        Click="OnExpandAll"
+        Content="{Binding [Setup_ExpandAll], Source={x:Static local:Loc.Instance}}"
+        Icon="{ui:SymbolIcon ArrowMaximizeVertical24}" />
+      <ui:Button
+        x:Name="CollapseAllButton"
+        Margin="0,0,12,0"
+        AutomationProperties.Name="{Binding [Setup_CollapseAll], Source={x:Static local:Loc.Instance}}"
+        Click="OnCollapseAll"
+        Content="{Binding [Setup_CollapseAll], Source={x:Static local:Loc.Instance}}"
+        Icon="{ui:SymbolIcon ArrowMinimizeVertical24}" />
       <ui:ProgressRing
         x:Name="Busy"
         Width="20"

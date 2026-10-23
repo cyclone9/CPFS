@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="CPFS app icon: the Path symbol in Ink on a Tangerine rounded square, 256 px master">
+<rect width="256" height="256" rx="52" fill="#FF7F45"/>
+<path fill="none" stroke="#1A1512" stroke-width="27" stroke-linecap="round" stroke-linejoin="round" d="M47 60.5L83 195.5"/>
+<path fill="none" stroke="#1A1512" stroke-width="27" stroke-linecap="round" stroke-linejoin="round" d="M110 60.5L146 195.5"/>
+<path fill="#1A1512" d="M182 101H209A13.5 13.5 0 0 1 222.5 114.5V141.5A13.5 13.5 0 0 1 209 155H182A13.5 13.5 0 0 1 168.5 141.5V114.5A13.5 13.5 0 0 1 182 101Z"/>
+</svg>

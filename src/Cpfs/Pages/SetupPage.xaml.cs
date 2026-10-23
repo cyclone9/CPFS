@@ -1,13 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Data;
+using System.Windows.Input;
 using Cpfs.Core.Drives;
 using Cpfs.Core.Elevation;
+using Cpfs.Core.Layout;
 using Cpfs.Core.Text;
 using Cpfs.Windows;
 using Wpf.Ui.Controls;
@@ -37,31 +43,66 @@ public sealed class RowView
     public bool HasError => Error.Length > 0;
 }
 
-public sealed class SectionView
+public sealed class SectionView : INotifyPropertyChanged
 {
+    private readonly Action<bool> _expandedChanged;
+    private bool _isExpanded;
+
+    public SectionView(bool isExpanded, Action<bool> expandedChanged)
+    {
+        _isExpanded = isExpanded;
+        _expandedChanged = expandedChanged;
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
     public string Title { get; init; } = "";
 
     public string Description { get; init; } = "";
 
+    public string Summary { get; init; } = "";
+
+    public bool HasSummary => Summary.Length > 0;
+
     public string Badge { get; init; } = "";
 
+    // Ok, Missing, NeedsAdmin or Failed: picks the badge colour.
+    public string BadgeKind { get; init; } = "";
+
     public bool HasBadge => Badge.Length > 0;
+
+    public string HelpText { get; init; } = "";
 
     public string Error { get; init; } = "";
 
     public bool HasError => Error.Length > 0;
 
-    public string Pending { get; init; } = "";
-
-    public bool IsPending => Pending.Length > 0;
-
     public List<RowView> Rows { get; } = new();
+
+    public bool IsExpanded
+    {
+        get => _isExpanded;
+        set
+        {
+            if (_isExpanded == value)
+            {
+                return;
+            }
+
+            _isExpanded = value;
+            _expandedChanged(value);
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsExpanded)));
+        }
+    }
 }
 
 // The read-only Setup page of 0.3.0: config.json as found and the Windows state this process may read. It changes
 // nothing on Windows; the only writes anywhere in the app are its own log and preferences under %LOCALAPPDATA%\CPFS.
 public partial class SetupPage : Page
 {
+    // Open and closed sections are remembered for as long as the app runs.
+    private static readonly SectionExpansion Expansion = new();
+
     private readonly StateSection?[] _sections = new StateSection?[StateReader.SectionIds.Count];
     private readonly ObservableCollection<SectionView> _views = new();
     private List<StateRow>? _handOver;
@@ -244,17 +285,27 @@ public partial class SetupPage : Page
         var loc = Loc.Instance;
         var id = StateReader.SectionIds[index];
         var section = _sections[index];
-        var view = new SectionView
+        var status = section is null ? (ReadStatus?)null : Worst(section);
+        var attention = status is ReadStatus.Failed or ReadStatus.NeedsAdmin;
+        var badge = status switch
+        {
+            ReadStatus.Ok => loc["Badge_Ok"],
+            ReadStatus.Missing => loc["Badge_NotFound"],
+            ReadStatus.NeedsAdmin => loc["Badge_NeedsAdmin"],
+            ReadStatus.Failed => loc["Badge_Error"],
+            _ => "",
+        };
+        var summary = section is null ? loc["Setup_Reading"]
+            : section.SummaryKey is { } key ? Resolve(key, section.SummaryArgs)
+            : "";
+        var view = new SectionView(Expansion.IsExpanded(id, attention), open => Expansion.Set(id, open))
         {
             Title = loc["Setup_" + id + "_Title"],
             Description = loc["Setup_" + id + "_Desc"],
-            Pending = section is null ? loc["Setup_Reading"] : "",
-            Badge = section?.Status switch
-            {
-                ReadStatus.NeedsAdmin => loc["Badge_NeedsAdmin"],
-                ReadStatus.Missing => loc["Badge_NotFound"],
-                _ => "",
-            },
+            Summary = summary,
+            Badge = badge,
+            BadgeKind = status?.ToString() ?? "",
+            HelpText = badge.Length == 0 ? summary : summary.Length == 0 ? badge : loc.Format("Setup_Section_Help", badge, summary),
             Error = section?.Status == ReadStatus.Failed ? loc.FormatValues("Setup_SectionFailed", section.Error) : "",
         };
         foreach (var row in section?.Rows ?? new List<StateRow>())
@@ -270,6 +321,66 @@ public partial class SetupPage : Page
         else
         {
             _views.Add(view);
+        }
+    }
+
+    // A section needs attention when it, or any of its rows, failed or could only be read by an administrator.
+    private static ReadStatus Worst(StateSection section)
+    {
+        var worst = section.Status;
+        foreach (var row in section.Rows)
+        {
+            if (Rank(row.Status) > Rank(worst))
+            {
+                worst = row.Status;
+            }
+        }
+
+        return worst;
+    }
+
+    private static int Rank(ReadStatus status) => status switch
+    {
+        ReadStatus.Failed => 3,
+        ReadStatus.NeedsAdmin => 2,
+        ReadStatus.Missing => 1,
+        _ => 0,
+    };
+
+    private void OnExpandAll(object sender, RoutedEventArgs e) => SetAllExpanded(true);
+
+    private void OnCollapseAll(object sender, RoutedEventArgs e) => SetAllExpanded(false);
+
+    private void SetAllExpanded(bool open)
+    {
+        Expansion.SetAll(StateReader.SectionIds, open);
+        foreach (var view in _views)
+        {
+            view.IsExpanded = open;
+        }
+
+        AppLog.Write("setup", open ? "Expand all" : "Collapse all");
+    }
+
+    // The header toggle button carries the section's name for screen readers; by default it would read its content.
+    private void OnSectionLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is CardExpander expander && expander.Template?.FindName("ExpanderToggleButton", expander) is ToggleButton toggle)
+        {
+            toggle.SetBinding(AutomationProperties.NameProperty, new Binding(nameof(SectionView.Title)));
+            toggle.SetBinding(AutomationProperties.HelpTextProperty, new Binding(nameof(SectionView.HelpText)));
+        }
+    }
+
+    // Enter or Space on the header toggles the section, whatever the toggle button would do with Enter itself.
+    private void OnSectionKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key is Key.Enter or Key.Space && Keyboard.Modifiers == ModifierKeys.None
+            && sender is CardExpander { DataContext: SectionView view } expander
+            && ReferenceEquals(e.OriginalSource, expander.Template?.FindName("ExpanderToggleButton", expander)))
+        {
+            view.IsExpanded = !view.IsExpanded;
+            e.Handled = true;
         }
     }
 

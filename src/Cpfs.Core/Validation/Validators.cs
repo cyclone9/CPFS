@@ -51,6 +51,8 @@ public static class Validators
     // A label longer than this is cut off in Explorer's drive list. [unverified on Windows; NTFS volume labels allow 32]
     public const int MaxDriveNameLength = 32;
 
+    public const int MaxDeviceNameLength = 64;
+
     private static readonly Regex ComputerNamePattern = new("^[A-Za-z0-9]([A-Za-z0-9-]{0,13}[A-Za-z0-9])?$", RegexOptions.CultureInvariant);
     private static readonly Regex DigitsOnly = new("^[0-9]+$", RegexOptions.CultureInvariant);
     private static readonly Regex UserNamePattern = new("^[A-Za-z0-9._-]{1,20}$", RegexOptions.CultureInvariant);
@@ -214,6 +216,23 @@ public static class Validators
         }
 
         return name.Length > MaxDriveNameLength ? new(ValidationError.TooLong) : ValidationResult.Ok(name);
+    }
+
+    // A name the owner gives a connected device in the Monitor; it only lives in the app's own devices.json.
+    public static ValidationResult DeviceName(string? input)
+    {
+        var name = (input ?? "").Trim();
+        if (name.Length == 0)
+        {
+            return new(ValidationError.Empty);
+        }
+
+        if (HasControl(name))
+        {
+            return new(ValidationError.ControlCharacters);
+        }
+
+        return name.Length > MaxDeviceNameLength ? new(ValidationError.TooLong) : ValidationResult.Ok(name);
     }
 
     // The shortcut's file name without ".lnk".
