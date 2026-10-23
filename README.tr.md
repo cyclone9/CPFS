@@ -2,7 +2,8 @@
 
 # CPFS - CyClone Power File Share
 
-*Bilgisayarınızdaki klasör, her cihazın erişiminde.*
+**Slogan:** *Bilgisayarınızdaki klasör, her cihazın erişiminde.*  
+**Moto:** *Yalnızca seçtiğiniz klasör.*
 
 | | |
 |---|---|

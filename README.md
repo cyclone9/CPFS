@@ -2,7 +2,8 @@
 
 # CPFS - CyClone Power File Share
 
-*Your PC's folder, within reach of any device.*
+**Tagline:** *Your PC's folder, within reach of any device.*  
+**Motto:** *Only the folder you chose.*
 
 | | |
 |---|---|
