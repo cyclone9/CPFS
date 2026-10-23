@@ -46,7 +46,7 @@ public static class Planner
         R.NeedsAdmin, R.ReadFailed, R.Invalid, R.AtTarget, R.Stricter,
         R.BackupFresh, R.BackupTaken, R.BackupNone,
         R.AccountCreate, R.AccountForeign, R.AccountTakenOver, R.AccountEnable, R.NeverExpires, R.Unlock, R.UsersGroup,
-        R.Admin, R.Hidden, R.PasswordKeep, R.PasswordSet, R.PasswordNeeded,
+        R.Admin, R.AdminNew, R.Hidden, R.PasswordKeep, R.PasswordSet, R.PasswordNeeded,
         R.FolderCreate, R.AceGrant, R.AceAfterAccount,
         R.ShareCreate, R.ShareChange, R.ShareMove, R.ShareForeignName, R.ShareForeignPath, R.ShareOld, R.AdminShares,
         R.ServerStart, R.Smb2, R.Reject, R.Smb1, R.Smb1Feature, R.Smb1FeatureGone,
@@ -98,6 +98,7 @@ public static class Planner
         public const string Unlock = "Plan_R_Unlock";
         public const string UsersGroup = "Plan_R_UsersGroup";
         public const string Admin = "Plan_R_Admin";
+        public const string AdminNew = "Plan_R_AdminNew";
         public const string Hidden = "Plan_R_Hidden";
         public const string PasswordKeep = "Plan_R_PasswordKeep";
         public const string PasswordSet = "Plan_R_PasswordSet";
@@ -310,7 +311,13 @@ public static class Planner
             var info = _s.User.Value;
             if (info is null)
             {
+                // Each property is planned and checked on its own: what NetUserAdd gives a new account by default
+                // differs between Windows editions (Server 2025 leaves it out of Users).
                 Add("user.account", PlanSection.User, PlanAction.Create, Word(S.Account), Word(W.Absent), Data(user), R.AccountCreate);
+                Add("user.enabled", PlanSection.User, PlanAction.Create, Word(S.AccountEnabled), Word(W.Absent), Word(W.Enabled), R.AccountEnable);
+                Add("user.neverexpires", PlanSection.User, PlanAction.Create, Word(S.NeverExpires), Word(W.Absent), Word(W.Yes), R.NeverExpires);
+                Add("user.users", PlanSection.User, PlanAction.Create, Word(S.Users), Word(W.Absent), Word(W.Member), R.UsersGroup);
+                Add("user.admin", PlanSection.User, PlanAction.Create, Word(S.Admins), Word(W.Absent), Word(W.NotMember), R.AdminNew);
                 Add("user.hidden", PlanSection.User, PlanAction.Create, Word(S.Hidden), Word(W.Absent), PlanValue.Of(0), R.Hidden);
                 PasswordItem(newAccount: true);
                 return UserPlan.WillCreate;

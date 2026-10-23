@@ -576,6 +576,7 @@
   <data name="Plan_R_Unlock" xml:space="preserve"><value>The account is locked after wrong passwords; Setup unlocks it.</value></data>
   <data name="Plan_R_UsersGroup" xml:space="preserve"><value>Added to Users so it can sign in over the network.</value></data>
   <data name="Plan_R_Admin" xml:space="preserve"><value>The account is an administrator. Removing these rights is recommended: a leaked file-sharing password then cannot change Windows.</value></data>
+  <data name="Plan_R_AdminNew" xml:space="preserve"><value>Kept out of Administrators, so a leaked file-sharing password cannot change Windows.</value></data>
   <data name="Plan_R_Hidden" xml:space="preserve"><value>Hides the account from the sign-in screen.</value></data>
   <data name="Plan_R_PasswordKeep" xml:space="preserve"><value>The password fields are empty, so the current password stays.</value></data>
   <data name="Plan_R_PasswordSet" xml:space="preserve"><value>Sets the password you typed. It is not saved anywhere.</value></data>

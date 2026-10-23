@@ -50,3 +50,4 @@ This project uses [semantic versioning](https://semver.org/).
 - Uninstall leaves a setting whose backup has no original value as it is, instead of writing 0.
 - Uninstall always saves a copy of `config.json` to your Documents folder before it changes anything, as a new file that never replaces another, and refuses to run when `config.json` names a shared folder Setup would refuse (a drive root, Windows, Program Files or ProgramData).
 - The password boxes are emptied after every Apply, also when it fails.
+- Setup sets and checks each property of a new SMB account itself (enabled, password never expires, member of Users, not an administrator, hidden) instead of relying on Windows defaults; on some Windows editions a new account was not put in Users.

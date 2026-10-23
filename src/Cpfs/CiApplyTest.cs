@@ -193,6 +193,7 @@ internal static class CiApplyTest
         if (user is not null)
         {
             Check(LocalAccounts.IsMember(user.Sid, Accounts.UsersSid) == true, "the account is in Users");
+            Check(LocalAccounts.IsMember(user.Sid, Accounts.AdminsSid) == false, "the account is not in Administrators");
             Check(PlanReader.Folder(folder, user.Sid.Value).UserHasModify, "the account can modify the folder");
         }
 

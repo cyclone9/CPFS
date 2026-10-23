@@ -425,6 +425,23 @@ public class PlannerTests
         Assert.Equal(PlanAction.Create, Item(PlanFor(s, null, a => a with { Password = PasswordEntry.Valid }), "user.password").Action);
     }
 
+    // NetUserAdd's defaults differ between Windows editions, so nothing about a new account is left to them.
+    [Fact]
+    public void ANewAccountPlansEveryPropertyExplicitly()
+    {
+        var plan = PlanFor(Installed() with { User = Reading.Ok<UserInfo?>(null) }, null, a => a with { Password = PasswordEntry.Valid });
+        var run = ApplyList.Setup(plan).Select(e => e.Item.Key).ToList();
+
+        foreach (var key in new[] { "user.account", "user.enabled", "user.neverexpires", "user.users", "user.admin", "user.hidden", "user.password" })
+        {
+            Assert.Equal(PlanAction.Create, Item(plan, key).Action);
+            Assert.Contains(key, run);
+        }
+
+        Assert.True(run.IndexOf("user.account") < run.IndexOf("user.users"));
+        Assert.Equal(PlanValue.Word(Planner.W.NotMember), Item(plan, "user.admin").Target);
+    }
+
     [Fact]
     public void UnelevatedReadsThatNeedAnAdministratorCannotBePlanned()
     {
