@@ -1,3 +1,5 @@
+[English](README.md) · [فارسی](README.fa.md) · [العربية](README.ar.md) · [Türkçe](README.tr.md)
+
 # CPFS - CyClone Power File Share
 
 | | |
