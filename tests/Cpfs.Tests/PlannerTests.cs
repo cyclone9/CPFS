@@ -172,7 +172,30 @@ public class PlannerTests
         var plan = PlanFor(s, Fixture());
         Assert.Equal(PlanAction.Change, Item(plan, "hardening.AutoShareWks").Action);
         Assert.Equal(Planner.W.Absent, Item(plan, "hardening.AutoShareWks").Current!.WordKey);
+        Assert.Equal(Planner.W.Off, Item(plan, "hardening.AutoShareWks").Target!.WordKey);
         Assert.Equal(PlanAction.Change, Item(plan, "hardening.forceguest").Action);
+    }
+
+    [Theory]
+    [InlineData("NoLMHash", 1L, "Plan_V_On", null)]
+    [InlineData("AutoShareWks", 0L, "Plan_V_Off", null)]
+    [InlineData("RestrictAnonymous", 2L, "Plan_V_OnStrictest", null)]
+    [InlineData("LmCompatibilityLevel", 5L, "Plan_V_Level", "5")]
+    [InlineData("NoLMHash", 7L, "Plan_V_Value", "7")]
+    [InlineData("NoLMHash", null, "Plan_V_Absent", null)]
+    public void HardeningValuesAreShownAsWords(string name, long? value, string word, string? number)
+    {
+        var shown = Planner.HardeningWord(name, value);
+        Assert.Equal(word, shown.WordKey);
+        Assert.Equal(number, shown.Data);
+    }
+
+    [Fact]
+    public void TheSignInScreenValueIsShownAsVisibleOrHidden()
+    {
+        Assert.Equal(Planner.W.HiddenNow, Planner.HiddenWord(0).WordKey);
+        Assert.Equal(Planner.W.Visible, Planner.HiddenWord(1).WordKey);
+        Assert.Equal(Planner.W.Visible, Planner.HiddenWord(null).WordKey);
     }
 
     [Theory]

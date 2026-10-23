@@ -204,6 +204,11 @@ public static class Planner
         public const string RightRead = "Plan_V_RightRead";
         public const string RightCustom = "Plan_V_RightCustom";
         public const string Denied = "Plan_V_Denied";
+        public const string Visible = "Plan_V_Visible";
+        public const string HiddenNow = "Plan_V_Hidden";
+        public const string Strictest = "Plan_V_OnStrictest";
+        public const string Level = "Plan_V_Level";
+        public const string Value = "Plan_V_Value";
         public const string Unknown = "State_Unknown";
     }
 
@@ -212,12 +217,31 @@ public static class Planner
         W.Absent, W.Exists, W.On, W.Off, W.Public, W.Private, W.Domain, W.Automatic, W.Manual, W.Disabled, W.Enabled, W.Locked,
         W.Unlocked, W.Member, W.NotMember, W.Modify, W.NoAccess, W.Locked2, W.NotLocked, W.SetPassword, W.KeepPassword,
         W.Taken, W.WillTake, W.None, W.Success, W.Failure, W.SuccessFailure,
-        W.RightFull, W.RightChange, W.RightRead, W.RightCustom, W.Denied,
+        W.RightFull, W.RightChange, W.RightRead, W.RightCustom, W.Denied, W.Visible, W.HiddenNow, W.Strictest, W.Level, W.Value,
+        F.EncryptData, F.FolderEnumerationMode, F.CachingMode, F.Description, F.Enabled, F.Direction, F.Action, F.Protocol,
+        F.LocalPorts, F.Profiles, F.RemoteAddresses, F.Interfaces,
         S.Backup, S.Account, S.TakeOver, S.AccountEnabled, S.NeverExpires, S.Lockout, S.Users, S.Admins, S.Hidden, S.Password,
         S.Folder, S.Ace, S.Share, S.AdminShares, S.ServerStart, S.Smb2, S.Reject, S.Smb1, S.Smb1Feature, S.Guest,
         S.LockoutThreshold, S.Audit, S.BuiltIn, S.VpnAdapter, S.Drive, S.OldDrive, S.Label, S.OldLabel, S.Shortcut,
         S.OldShortcut, S.DataFolder, S.ShareAccess, S.ComputerName, S.SavedComputerName,
     };
+
+    // A setting of a share or a firewall rule that differs from Setup's, by the field name the planner reports.
+    internal static class F
+    {
+        public const string EncryptData = "Plan_F_EncryptData";
+        public const string FolderEnumerationMode = "Plan_F_FolderEnumerationMode";
+        public const string CachingMode = "Plan_F_CachingMode";
+        public const string Description = "Plan_F_Description";
+        public const string Enabled = "Plan_F_Enabled";
+        public const string Direction = "Plan_F_Direction";
+        public const string Action = "Plan_F_Action";
+        public const string Protocol = "Plan_F_Protocol";
+        public const string LocalPorts = "Plan_F_LocalPorts";
+        public const string Profiles = "Plan_F_Profiles";
+        public const string RemoteAddresses = "Plan_F_RemoteAddresses";
+        public const string Interfaces = "Plan_F_Interfaces";
+    }
 
     internal static class S
     {
@@ -318,7 +342,7 @@ public static class Planner
                 Add("user.neverexpires", PlanSection.User, PlanAction.Create, Word(S.NeverExpires), Word(W.Absent), Word(W.Yes), R.NeverExpires);
                 Add("user.users", PlanSection.User, PlanAction.Create, Word(S.Users), Word(W.Absent), Word(W.Member), R.UsersGroup);
                 Add("user.admin", PlanSection.User, PlanAction.Create, Word(S.Admins), Word(W.Absent), Word(W.NotMember), R.AdminNew);
-                Add("user.hidden", PlanSection.User, PlanAction.Create, Word(S.Hidden), Word(W.Absent), PlanValue.Of(0), R.Hidden);
+                Add("user.hidden", PlanSection.User, PlanAction.Create, Word(S.Hidden), Word(W.Visible), Word(W.HiddenNow), R.Hidden);
                 PasswordItem(newAccount: true);
                 return UserPlan.WillCreate;
             }
@@ -368,7 +392,7 @@ public static class Planner
 
             var hiddenOk = info.HiddenValue == 0;
             Add("user.hidden", PlanSection.User, hiddenOk ? PlanAction.Keep : PlanAction.Change, Word(S.Hidden),
-                info.HiddenValue is { } h ? PlanValue.Of(h) : Word(W.Absent), hiddenOk ? null : PlanValue.Of(0), hiddenOk ? R.AtTarget : R.Hidden);
+                HiddenWord(info.HiddenValue), hiddenOk ? null : Word(W.HiddenNow), hiddenOk ? R.AtTarget : R.Hidden);
             if (!hiddenOk && takeOver)
             {
                 MarkBackup();
@@ -526,7 +550,7 @@ public static class Planner
                     }
                     else
                     {
-                        Add("share.main", PlanSection.Share, PlanAction.Change, Data(shareName), Data(path), Data(string.Join(", ", diff)), R.ShareChange, string.Join(", ", diff));
+                        Add("share.main", PlanSection.Share, PlanAction.Change, Data(shareName), Data(path), FieldWords(diff), R.ShareChange, string.Join(", ", diff));
                     }
 
                     // A share that is created or moved gets the SMB account as its only entry, so only a share kept
@@ -706,7 +730,7 @@ public static class Planner
                 }
 
                 var current = reading.Value;
-                var currentValue = current is { } v ? PlanValue.Of(v) : Word(W.Absent);
+                var currentValue = HardeningWord(h.Name, current);
                 if (current == h.Target)
                 {
                     Add(key, PlanSection.Hardening, PlanAction.Keep, Data(h.Name), currentValue, null, R.AtTarget);
@@ -717,7 +741,7 @@ public static class Planner
                 }
                 else
                 {
-                    Add(key, PlanSection.Hardening, PlanAction.Change, Data(h.Name), currentValue, PlanValue.Of(h.Target), R.Hardening);
+                    Add(key, PlanSection.Hardening, PlanAction.Change, Data(h.Name), currentValue, HardeningWord(h.Name, h.Target), R.Hardening);
                     MarkBackup(FreshInstall);
                 }
             }
@@ -745,12 +769,12 @@ public static class Planner
             {
                 // The scripts' Backup.Lockout is null when they could not read it; a threshold of 0 now was never
                 // changed by them (they set 10 only when they read 0), so it is the original and is backed up.
-                Add("hardening.lockout", PlanSection.Hardening, PlanAction.Change, Word(S.LockoutThreshold), PlanValue.Of(0), PlanValue.Of(LockoutThreshold), R.LockoutSet);
+                Add("hardening.lockout", PlanSection.Hardening, PlanAction.Change, Word(S.LockoutThreshold), LockoutWord(0), LockoutWord(LockoutThreshold), R.LockoutSet);
                 MarkBackup(FreshInstall || (_c!.Backup == BackupState.Present && _c.BackupLockout is null));
             }
             else
             {
-                Add("hardening.lockout", PlanSection.Hardening, PlanAction.Keep, Word(S.LockoutThreshold), PlanValue.Of(_s.Lockout.Value.Threshold), null, R.LockoutKept);
+                Add("hardening.lockout", PlanSection.Hardening, PlanAction.Keep, Word(S.LockoutThreshold), LockoutWord(_s.Lockout.Value.Threshold), null, R.LockoutKept);
             }
 
             if (!_s.AuditLogon.IsOk)
@@ -804,7 +828,7 @@ public static class Planner
                         }
                         else
                         {
-                            Add(key, PlanSection.Firewall, PlanAction.Change, Data(spec.Name), Data(string.Join(", ", diff)), null, R.RuleChange, string.Join(", ", diff));
+                            Add(key, PlanSection.Firewall, PlanAction.Change, Data(spec.Name), FieldWords(diff), null, R.RuleChange, string.Join(", ", diff));
                         }
                     }
                 }
@@ -1244,7 +1268,7 @@ public static class Planner
         _ => Word(W.RightCustom),
     };
 
-    private static PlanValue StartWord(int? start) => start switch
+    internal static PlanValue StartWord(int? start) => start switch
     {
         2 => Word(W.Automatic),
         3 => Word(W.Manual),
@@ -1252,6 +1276,46 @@ public static class Planner
         null => Word(W.Absent),
         _ => PlanValue.Of(start.Value),
     };
+
+    // The UserList value: 0 hides the account from the sign-in screen; absent or any other value shows it.
+    internal static PlanValue HiddenWord(int? value) => Word(value == 0 ? W.HiddenNow : W.Visible);
+
+    // A lockout threshold of 0 means lockout is off; any other value is a number of attempts.
+    internal static PlanValue LockoutWord(long threshold) => threshold == 0 ? Word(W.Off) : PlanValue.Of(threshold);
+
+    // The hardening values as words: the flags read off (0) or on (1); RestrictAnonymous 2 is its strictest level;
+    // LmCompatibilityLevel is a level from 0 to 5. Anything else shows its number.
+    internal static PlanValue HardeningWord(string name, long? value)
+    {
+        if (value is not { } v)
+        {
+            return Word(W.Absent);
+        }
+
+        if (string.Equals(name, "LmCompatibilityLevel", StringComparison.OrdinalIgnoreCase))
+        {
+            return PlanValue.WordWith(W.Level, v);
+        }
+
+        return v switch
+        {
+            0 => Word(W.Off),
+            1 => Word(W.On),
+            2 when string.Equals(name, "RestrictAnonymous", StringComparison.OrdinalIgnoreCase) => Word(W.Strictest),
+            _ => PlanValue.WordWith(W.Value, v),
+        };
+    }
+
+    private static PlanValue FieldWords(IReadOnlyList<string> fields)
+    {
+        var keys = new List<string>(fields.Count);
+        foreach (var f in fields)
+        {
+            keys.Add("Plan_F_" + f);
+        }
+
+        return PlanValue.Words(keys);
+    }
 
     private static ShareInfo? FindShare(IReadOnlyList<ShareInfo> shares, string name)
     {

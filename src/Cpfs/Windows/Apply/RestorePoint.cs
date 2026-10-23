@@ -55,6 +55,8 @@ internal static class RestorePoint
                 return new RestorePointResult(RestorePointOutcome.Unavailable, newest, "0x" + code.ToString("X", CultureInfo.InvariantCulture));
             }
 
+            AppLog.Write("apply", "Restore point: skipped by Windows; newest existing point "
+                + (newest?.ToString("u", CultureInfo.InvariantCulture) ?? "none (System Protection may be off)"));
             return new RestorePointResult(RestorePointOutcome.Skipped, newest, null);
         }
         catch (Exception ex) when (ex is ManagementException or UnauthorizedAccessException or System.Runtime.InteropServices.COMException)

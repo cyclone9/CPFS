@@ -88,6 +88,18 @@ public class MonitorTests
     [InlineData("", null)]
     public void ShareInstanceNames(string instance, string? share) => Assert.Equal(share, MonitorMath.ShareFromInstance(instance));
 
+    [Fact]
+    public void ShareInstancesOfOneShareAreSummedAndTakeTheFilledCounter()
+    {
+        var totals = new System.Collections.Generic.Dictionary<string, (double Down, double Up)>(System.StringComparer.OrdinalIgnoreCase);
+        MonitorMath.AddShareInstance(totals, @"\\*\Shared", sent: 1000, read: 0, received: null, written: 40);
+        MonitorMath.AddShareInstance(totals, @"\\SCOPE\Shared", sent: 0, read: 500, received: 10, written: 0);
+        MonitorMath.AddShareInstance(totals, "_Total", sent: 9999, read: 9999, received: 9999, written: 9999);
+
+        Assert.Single(totals);
+        Assert.Equal((1500d, 50d), totals["Shared"]);
+    }
+
     [Theory]
     [InlineData("192.168.1.20", "192.168.1.20", false)]
     [InlineData("[fd7a:115c:a1e0::9]", "fd7a:115c:a1e0::9", true)]

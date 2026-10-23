@@ -42,8 +42,18 @@ internal static class Program
         }
 
         Startup.Init(args);
+
+        // --selftest and --ci-apply-test returned above: headless runs never wait for or block on another window.
+        using var instance = Windows.SingleInstance.Acquire(Startup.IsHandOver, out var outcome);
+        if (outcome != Windows.InstanceOutcome.First)
+        {
+            App.ShowSecondStartMessage(outcome);
+            return 0;
+        }
+
         var app = new App();
         app.InitializeComponent();
+        instance?.Listen(() => app.Dispatcher.BeginInvoke(new Action(App.BringToFront)));
         return app.Run();
     }
 

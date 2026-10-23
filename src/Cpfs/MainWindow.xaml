@@ -83,11 +83,6 @@
           NavigationCacheMode="Enabled"
           TargetPageType="{x:Type pages:AboutPage}" />
       </ui:NavigationView.FooterMenuItems>
-      <ui:NavigationView.ContentOverlay>
-        <Grid>
-          <ui:SnackbarPresenter x:Name="SnackbarHost" />
-        </Grid>
-      </ui:NavigationView.ContentOverlay>
     </ui:NavigationView>
   </Grid>
 </ui:FluentWindow>

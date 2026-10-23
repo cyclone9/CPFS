@@ -52,8 +52,6 @@ public partial class MainWindow : FluentWindow
         };
     }
 
-    public SnackbarPresenter Snackbars => SnackbarHost;
-
     // "CPFS 0.5.0-dev3", without the commit (About shows that).
     private void UpdateTitle()
     {

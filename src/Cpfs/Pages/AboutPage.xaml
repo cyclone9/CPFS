@@ -97,7 +97,27 @@
           <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="0" Style="{StaticResource InfoName}" Text="{Binding [About_Version], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="VersionValue" Grid.Row="0" Style="{StaticResource InfoData}" />
+        <StackPanel
+          Grid.Row="0"
+          Grid.Column="1"
+          Margin="0,0,0,8"
+          Orientation="Horizontal">
+          <TextBlock
+            x:Name="VersionValue"
+            Margin="0"
+            VerticalAlignment="Center"
+            Style="{StaticResource InfoData}" />
+          <!--  Negative margins keep the row as tall as the others.  -->
+          <ui:Button
+            Margin="8,-6,0,-6"
+            Padding="6"
+            VerticalAlignment="Center"
+            AutomationProperties.Name="{Binding [About_CopyVersion], Source={x:Static local:Loc.Instance}}"
+            Appearance="Transparent"
+            Click="OnCopyVersion"
+            Icon="{ui:SymbolIcon Copy24}"
+            ToolTip="{Binding [About_CopyVersion], Source={x:Static local:Loc.Instance}}" />
+        </StackPanel>
         <TextBlock Grid.Row="1" Style="{StaticResource InfoName}" Text="{Binding [About_Windows], Source={x:Static local:Loc.Instance}}" />
         <TextBlock x:Name="WindowsValue" Grid.Row="1" Style="{StaticResource InfoData}" />
         <TextBlock Grid.Row="2" Style="{StaticResource InfoName}" Text="{Binding [About_Framework], Source={x:Static local:Loc.Instance}}" />
@@ -131,12 +151,6 @@
         </StackPanel>
       </ui:CardControl.Header>
       <WrapPanel>
-        <ui:Button
-          Margin="0,0,8,0"
-          AutomationProperties.Name="{Binding [About_CopyVersion], Source={x:Static local:Loc.Instance}}"
-          Click="OnCopyVersion"
-          Content="{Binding [About_CopyVersion], Source={x:Static local:Loc.Instance}}"
-          Icon="{ui:SymbolIcon Copy24}" />
         <ui:Button
           Margin="0,0,8,0"
           AutomationProperties.Name="{Binding [About_Log_Open], Source={x:Static local:Loc.Instance}}"

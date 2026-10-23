@@ -287,6 +287,6 @@ public class UninstallPlannerTests
         var plan = PlanFor(Installed(), ConfigReader.Parse(ConfigWriter.Serialize(doc.Root)));
 
         Assert.Equal(PlanAction.Change, Item(plan, "u.lockout").Action);
-        Assert.Equal("0", Item(plan, "u.lockout").Target!.Data);
+        Assert.Equal(Planner.W.Off, Item(plan, "u.lockout").Target!.WordKey);
     }
 }

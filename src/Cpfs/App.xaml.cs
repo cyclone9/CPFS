@@ -16,6 +16,46 @@ public partial class App : Application
         };
     }
 
+    // A second start set the show event: bring this window forward. Nothing else can be asked of it.
+    internal static void BringToFront()
+    {
+        if (Current?.MainWindow is not { } window)
+        {
+            return;
+        }
+
+        if (window.WindowState == WindowState.Minimized)
+        {
+            window.WindowState = WindowState.Normal;
+        }
+
+        window.Show();
+        var active = window.Activate();
+        AppLog.Write("instance", "A second start asked this window to come to the front; activated " + active);
+    }
+
+    // Before any window exists, so the language comes from the saved preferences.
+    internal static void ShowSecondStartMessage(global::Cpfs.Windows.InstanceOutcome outcome)
+    {
+        var key = outcome switch
+        {
+            global::Cpfs.Windows.InstanceOutcome.OtherIsAdmin => "App_AlreadyOpenAdmin",
+            global::Cpfs.Windows.InstanceOutcome.OtherNoAnswer => "App_AlreadyOpen",
+            global::Cpfs.Windows.InstanceOutcome.HandOverTimedOut => "App_HandOverTimedOut",
+            _ => null,
+        };
+        if (key is null)
+        {
+            return;
+        }
+
+        var loc = Loc.Instance;
+        loc.SetCulture(System.Globalization.CultureInfo.GetCultureInfo(Loc.StartLanguage(global::Cpfs.Startup.Preferences.Language)));
+        var options = loc.IsRtl ? MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign : MessageBoxOptions.None;
+        MessageBox.Show(loc[key], loc["App_Title"], MessageBoxButton.OK,
+            outcome == global::Cpfs.Windows.InstanceOutcome.HandOverTimedOut ? MessageBoxImage.Warning : MessageBoxImage.Information, MessageBoxResult.OK, options);
+    }
+
     // Log the full exception and show it, so the owner can send the text back instead of seeing the app vanish.
     private static void OnUnhandled(object sender, DispatcherUnhandledExceptionEventArgs e)
     {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 
 namespace Cpfs.Core.Monitor;
@@ -33,6 +34,23 @@ public static class MonitorMath
         }
 
         return name;
+    }
+
+    // Adds one per-share counter instance to the totals by share name. Down takes the larger of Sent and Read bytes,
+    // up the larger of Received and Write bytes (whichever of the counters this Windows fills); instances that name
+    // the same share (one per SMB scope) are summed, never overwritten.
+    public static void AddShareInstance(IDictionary<string, (double Down, double Up)> totals, string? instance,
+        double? sent, double? read, double? received, double? written)
+    {
+        var share = ShareFromInstance(instance);
+        if (share is null)
+        {
+            return;
+        }
+
+        var down = Math.Max(sent ?? 0, read ?? 0);
+        var up = Math.Max(received ?? 0, written ?? 0);
+        totals[share] = totals.TryGetValue(share, out var t) ? (t.Down + down, t.Up + up) : (down, up);
     }
 
     // The client address as SMB reports it, without IPv6 brackets and with an IPv4-mapped IPv6 address shown as IPv4.

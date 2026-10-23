@@ -36,6 +36,10 @@
                   <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
                   <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}" />
                 </DataTrigger>
+                <DataTrigger Binding="{Binding StateKind}" Value="Skipped">
+                  <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+                  <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                </DataTrigger>
                 <DataTrigger Binding="{Binding StateKind}" Value="Partial">
                   <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
                   <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}" />

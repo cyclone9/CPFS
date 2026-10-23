@@ -112,7 +112,7 @@ public partial class AboutPage : Page
     }
 
     // "0.5.0-dev3 (3d20e71)": the version with its commit, for a bug report.
-    private void OnCopyVersion(object sender, RoutedEventArgs e) => Feedback.Copy("version", Version);
+    private void OnCopyVersion(object sender, RoutedEventArgs e) => Feedback.Copy(sender, "version", Version);
 
     private void OnCopyReport(object sender, RoutedEventArgs e)
     {
@@ -120,7 +120,8 @@ public partial class AboutPage : Page
         {
             AppLog.Write("log", "Report copied to the clipboard");
             Clipboard.SetText(AppLog.SessionText());
-            ShowLogResult(InfoBarSeverity.Success, Loc.Instance["Log_Copied"]);
+            LogResult.IsOpen = false;
+            Feedback.Show(sender, true, Loc.Instance["Common_Copied"]);
             Refresh();
         }
         catch (Exception ex) when (ex is COMException or ExternalException or IOException or UnauthorizedAccessException)

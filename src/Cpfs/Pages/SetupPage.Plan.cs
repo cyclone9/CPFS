@@ -46,6 +46,12 @@ public sealed class PlanItemView
 
     public bool Ticked { get; init; }
 
+    public bool AskEnabled { get; init; } = true;
+
+    public string LaterNote { get; init; } = "";
+
+    public bool HasLaterNote => LaterNote.Length > 0;
+
     public string AskName { get; init; } = "";
 
     public string HelpText { get; init; } = "";
@@ -67,6 +73,8 @@ public partial class SetupPage
 {
     private readonly Dictionary<string, bool> _choices = new(StringComparer.Ordinal);
     private readonly DispatcherTimer _planTimer = new() { Interval = TimeSpan.FromMilliseconds(300) };
+    private PasswordReveal[] _reveals = Array.Empty<PasswordReveal>();
+    private Window? _window;
     private ConfigDocument? _config;
     private LetterScan _letters = new();
     private ProtectedFolders _protected = new();
@@ -86,6 +94,44 @@ public partial class SetupPage
             _planTimer.Stop();
             await RecomputeAsync();
         };
+
+        _reveals = new[]
+        {
+            new PasswordReveal(PasswordBox1, PasswordPlain1, PasswordEye1),
+            new PasswordReveal(PasswordBox2, PasswordPlain2, PasswordEye2),
+        };
+        Loaded += (_, _) =>
+        {
+            if (_window is not null)
+            {
+                _window.Deactivated -= OnWindowDeactivated;
+            }
+
+            _window = Window.GetWindow(this);
+            if (_window is not null)
+            {
+                _window.Deactivated += OnWindowDeactivated;
+            }
+        };
+        Unloaded += (_, _) =>
+        {
+            HidePasswords();
+            if (_window is not null)
+            {
+                _window.Deactivated -= OnWindowDeactivated;
+                _window = null;
+            }
+        };
+    }
+
+    private void OnWindowDeactivated(object? sender, EventArgs e) => HidePasswords();
+
+    private void HidePasswords()
+    {
+        foreach (var reveal in _reveals)
+        {
+            reveal.Hide();
+        }
     }
 
     // Called after each read of the state: the form takes the saved install's values only the first time, so a
@@ -243,7 +289,7 @@ public partial class SetupPage
     };
 
     // Only the lengths and whether the two match leave the boxes; the comparison runs on unmanaged copies that are
-    // zeroed at once, so no managed string ever holds the password.
+    // zeroed at once, so no managed string holds the password unless the user shows it (PasswordReveal).
     private PasswordEntry PasswordState()
     {
         using var first = PasswordBox1.SecurePassword;
@@ -475,6 +521,11 @@ public partial class SetupPage
         }
 
         var reason = string.Format(loc.Culture, loc[item.ReasonKey], args);
+
+        // The executor skips the drive and the shortcut until 0.6.0: their items say so, and "create it again?" can't
+        // be ticked yet.
+        var later = item.Action is PlanAction.Create or PlanAction.Change or PlanAction.Ask
+            && item.Section is PlanSection.Drive or PlanSection.Shortcut;
         return new PlanItemView
         {
             Key = item.Key,
@@ -486,12 +537,33 @@ public partial class SetupPage
             Reason = reason,
             BackupNote = item.BackupNeeded ? loc["Setup_Plan_Backup"] : "",
             IsAsk = item.Action == PlanAction.Ask,
-            Ticked = item.Ticked,
+            Ticked = item.Ticked && !later,
+            AskEnabled = !later,
+            LaterNote = later ? loc["Setup_Plan_QuickAccessLater"] : "",
             AskName = loc.Format("Setup_Plan_AskName", subject),
             HelpText = detail.Length == 0 ? badge : loc.Format("Setup_Section_Help", badge, detail),
         };
     }
 
-    private static string Value(PlanValue value) =>
-        value.WordKey is { } key ? Loc.Instance[key] : Bidi.Embed(value.Data ?? "", Loc.Instance.IsRtl);
+    private static string Value(PlanValue value)
+    {
+        var loc = Loc.Instance;
+        if (value.WordList is { } words)
+        {
+            var texts = new string[words.Count];
+            for (var i = 0; i < texts.Length; i++)
+            {
+                texts[i] = loc[words[i]];
+            }
+
+            return string.Join(loc["Plan_ListSeparator"], texts);
+        }
+
+        if (value.WordKey is { } key)
+        {
+            return value.Data is { } number ? loc.Format(key, number) : loc[key];
+        }
+
+        return Bidi.Embed(value.Data ?? "", loc.IsRtl);
+    }
 }

@@ -51,3 +51,11 @@ This project uses [semantic versioning](https://semver.org/).
 - Uninstall always saves a copy of `config.json` to your Documents folder before it changes anything, as a new file that never replaces another, and refuses to run when `config.json` names a shared folder Setup would refuse (a drive root, Windows, Program Files or ProgramData).
 - The password boxes are emptied after every Apply, also when it fails.
 - Setup sets and checks each property of a new SMB account itself (enabled, password never expires, member of Users, not an administrator, hidden) instead of relying on Windows defaults; on some Windows editions a new account was not put in Users.
+- Copy buttons show the result on the button itself (a checkmark and "Copied" for a moment, or an error mark with the reason) instead of a large bar over the page.
+- About: the copy button for the version sits at the end of the version line.
+- Setup: an eye button beside each password box shows or hides what you typed; the text is hidden again when the window loses focus or Apply starts, and it can't be copied while shown.
+- Setup: the drive and shortcut fields and their "Create it again?" ticks are greyed out, keeping their values, and their plan items carry a note, because creating the drive and the shortcut comes in version 0.6.0.
+- The question after a restore point Windows did not make keeps its full button labels: the buttons share a row when they fit and stack when they don't, in any language and text size. Its progress row says Skipped, in a warning colour, instead of Failed.
+- Setup and Uninstall show settings in words instead of raw values: "Hidden from the sign-in screen: visible → hidden", security values as off, on or a level, a lockout threshold of 0 as off, the Server service start type by name, and the settings that differ on a share or firewall rule by name.
+- Monitor: the per-share traffic adds up every counter instance of a share and uses whichever of the sent or read byte counters Windows fills, and the log lists the share counters Windows returns once per run.
+- Only one CPFS window opens per Windows session: starting CPFS again brings the open window to the front, or says that CPFS is already open as administrator when Windows does not allow that.

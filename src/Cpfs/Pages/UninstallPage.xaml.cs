@@ -363,7 +363,14 @@ public partial class UninstallPage : Page
             return true;
         }
 
-        view.Set(StepOutcome.Failed, result.Outcome == RestorePointOutcome.Unavailable ? result.Error : null);
+        if (result.Outcome == RestorePointOutcome.Skipped)
+        {
+            view.SetSkipped();
+        }
+        else
+        {
+            view.Set(StepOutcome.Failed, result.Error);
+        }
         return await ApplyUi.ContinueWithoutRestorePointAsync(this, result);
     }
 

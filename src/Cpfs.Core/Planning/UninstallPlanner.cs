@@ -353,8 +353,8 @@ public static class UninstallPlanner
 
             if (existed && info.HiddenValue is not null)
             {
-                Add("u.user.hidden", PlanSection.User, PlanAction.RemoveIfOurs, Word(Planner.S.Hidden), PlanValue.Of(info.HiddenValue.Value),
-                    Word(Planner.W.Absent), R.UserHidden);
+                Add("u.user.hidden", PlanSection.User, PlanAction.RemoveIfOurs, Word(Planner.S.Hidden), Planner.HiddenWord(info.HiddenValue),
+                    Word(Planner.W.Visible), R.UserHidden);
             }
         }
 
@@ -429,18 +429,18 @@ public static class UninstallPlanner
                     var subject = PlanValue.Of(name);
                     if (entry.Exists == true && entry.Value is null)
                     {
-                        var now = _s.Hardening.TryGetValue(name, out var r) && r.IsOk && r.Value is { } v ? PlanValue.Of(v) : Word(Planner.W.Unknown);
+                        var now = _s.Hardening.TryGetValue(name, out var r) && r.IsOk && r.Value is { } v ? Planner.HardeningWord(name, v) : Word(Planner.W.Unknown);
                         Add(key, PlanSection.Hardening, PlanAction.Keep, subject, now, null, R.RestoreUnknown);
                         continue;
                     }
 
-                    var target = original is { } o ? PlanValue.Of(o) : Word(Planner.W.Absent);
+                    var target = Planner.HardeningWord(name, original);
                     if (_s.Hardening.TryGetValue(name, out var reading) && reading.IsOk)
                     {
                         var current = reading.Value;
                         var same = current == original;
                         Add(key, PlanSection.Hardening, same ? PlanAction.Keep : PlanAction.Change, subject,
-                            current is { } c ? PlanValue.Of(c) : Word(Planner.W.Absent), same ? null : target, same ? Planner.R.AtTarget : R.RestoreValue);
+                            Planner.HardeningWord(name, current), same ? null : target, same ? Planner.R.AtTarget : R.RestoreValue);
                     }
                     else
                     {
@@ -464,7 +464,7 @@ public static class UninstallPlanner
                     var current = _s.ServerStart.IsOk ? _s.ServerStart.Value : null;
                     var same = current == wanted;
                     Add("u.serverstart", PlanSection.Server, same ? PlanAction.Keep : PlanAction.Change, Word(Planner.S.ServerStart),
-                        current is { } c ? PlanValue.Of(c) : Word(Planner.W.Unknown), same ? null : PlanValue.Of(wanted), same ? Planner.R.AtTarget : R.RestoreValue);
+                        current is { } c ? Planner.StartWord(c) : Word(Planner.W.Unknown), same ? null : Planner.StartWord(wanted), same ? Planner.R.AtTarget : R.RestoreValue);
                 }
 
                 if (_c.BackupLockout is { } threshold)
@@ -474,7 +474,7 @@ public static class UninstallPlanner
                         && (_c.BackupLockoutDuration is not { } d || current.DurationSeconds == d)
                         && (_c.BackupLockoutWindow is not { } w || current.WindowSeconds == w);
                     Add("u.lockout", PlanSection.Hardening, same ? PlanAction.Keep : PlanAction.Change, Word(Planner.S.LockoutThreshold),
-                        current is not null ? PlanValue.Of(current.Threshold) : Word(Planner.W.Unknown), same ? null : PlanValue.Of(threshold),
+                        current is not null ? Planner.LockoutWord(current.Threshold) : Word(Planner.W.Unknown), same ? null : Planner.LockoutWord(threshold),
                         same ? Planner.R.AtTarget : R.RestoreValue);
                 }
             }

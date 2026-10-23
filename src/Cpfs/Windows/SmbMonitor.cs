@@ -83,6 +83,8 @@ internal static class SmbMonitor
     private const string SmbScope = @"root\Microsoft\Windows\SMB";
     private const string CimScope = @"root\cimv2";
 
+    private static int _sharesLogged;
+
     private static readonly Lazy<(string? Server, string? Shares)> PerfClasses = new(FindPerfClasses);
 
     public static MonitorSnapshot Read()
@@ -316,20 +318,47 @@ internal static class SmbMonitor
             return null;
         }
 
-        var result = new Dictionary<string, (double, double)>(StringComparer.OrdinalIgnoreCase);
-        foreach (var o in Query(CimScope, "SELECT * FROM " + name))
+        var result = new Dictionary<string, (double Down, double Up)>(StringComparer.OrdinalIgnoreCase);
+        var objects = Query(CimScope, "SELECT * FROM " + name);
+        if (Interlocked.Exchange(ref _sharesLogged, 1) == 0)
+        {
+            LogShareInstances(name, objects);
+        }
+
+        foreach (var o in objects)
         {
             using (o)
             {
-                var share = MonitorMath.ShareFromInstance(Prop(o, "Name") as string);
-                if (share is not null)
-                {
-                    result[share] = (Number(Prop(o, "ReadBytesPersec")) ?? 0, Number(Prop(o, "WriteBytesPersec")) ?? 0);
-                }
+                MonitorMath.AddShareInstance(result, Prop(o, "Name") as string, Number(Prop(o, "SentBytesPersec")), Number(Prop(o, "ReadBytesPersec")),
+                    Number(Prop(o, "ReceivedBytesPersec")), Number(Prop(o, "WriteBytesPersec")));
             }
         }
 
         return result;
+    }
+
+    // dev6 showed 0 B for a share while the server totals counted 12.5 MB, and no Microsoft page lists this class's
+    // instance names or properties: the first reading logs each instance with its byte counters, so a support log
+    // shows what this Windows returns.
+    private static void LogShareInstances(string className, List<ManagementBaseObject> objects)
+    {
+        var lines = new List<string>();
+        foreach (var o in objects)
+        {
+            var counters = new List<string>();
+            foreach (var p in o.Properties)
+            {
+                if (p.Name.IndexOf("Bytes", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    counters.Add(p.Name + "=" + Convert.ToString(p.Value, CultureInfo.InvariantCulture));
+                }
+            }
+
+            lines.Add("'" + (Prop(o, "Name") as string ?? "?") + "' " + string.Join(" ", counters));
+        }
+
+        AppLog.Write("monitor", className + ": " + lines.Count.ToString(CultureInfo.InvariantCulture) + " instances"
+            + (lines.Count == 0 ? "" : "; " + string.Join(" | ", lines)));
     }
 
     // The raw performance classes are subclasses of Win32_PerfRawData; their names come from the counter set's

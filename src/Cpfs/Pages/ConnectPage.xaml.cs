@@ -196,7 +196,7 @@ public partial class ConnectPage : Page
     {
         if (sender is FrameworkElement { DataContext: ValueItem item })
         {
-            Feedback.Copy(item.Label, item.Value);
+            Feedback.Copy(sender, item.Label, item.Value);
         }
     }
 

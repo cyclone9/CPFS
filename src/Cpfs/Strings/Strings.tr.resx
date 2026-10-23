@@ -9,6 +9,9 @@
   <data name="App_Title" xml:space="preserve"><value>CPFS</value><comment>Same in every language.</comment></data>
   <data name="App_TitleAdmin" xml:space="preserve"><value>CPFS (administrator)</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="App_ErrorTitle" xml:space="preserve"><value>CPFS error</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="App_AlreadyOpen" xml:space="preserve"><value>CPFS is already open. Look for its window on the taskbar.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="App_AlreadyOpenAdmin" xml:space="preserve"><value>CPFS is already open (as administrator). Look for its window on the taskbar.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="App_HandOverTimedOut" xml:space="preserve"><value>CPFS could not open as administrator because the previous CPFS window did not close. Close it and try again.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Nav_Setup" xml:space="preserve"><value>Setup</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Nav_Monitor" xml:space="preserve"><value>Monitor</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Nav_Sync" xml:space="preserve"><value>Sync</value><comment>UNTRANSLATED: English text</comment></data>
@@ -221,7 +224,6 @@
   <data name="About_Log_Copy" xml:space="preserve"><value>Copy report</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Log_None" xml:space="preserve"><value>No log file could be created.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Log_OpenFailed" xml:space="preserve"><value>The log could not be opened: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Log_Copied" xml:space="preserve"><value>The report is on the clipboard.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Log_CopyFailed" xml:space="preserve"><value>The report could not be copied: {0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="About_Licence_Title" xml:space="preserve"><value>Licences</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="About_Licence_Code" xml:space="preserve"><value>The CPFS program code is free software under the MIT licence.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -235,7 +237,7 @@
   <data name="About_Bidi_Sample" xml:space="preserve"><value>The folder {0} is shared as {1}, also at {2}. Language names: {3}, {4}.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Common_CopyName" xml:space="preserve"><value>Copy {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Common_Copied" xml:space="preserve"><value>Copied to the clipboard</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Common_Copied" xml:space="preserve"><value>Copied</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Common_CopyFailed" xml:space="preserve"><value>Could not copy to the clipboard: {0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Intro" xml:space="preserve"><value>Pick the address the other device should use. The steps, values and QR codes below follow it. The password is never shown, copied or put in a QR code: each device asks for it.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_NoInstall_Title" xml:space="preserve"><value>CPFS is not set up on this PC yet</value><comment>UNTRANSLATED: English text</comment></data>
@@ -442,6 +444,8 @@
   <data name="Setup_Form_SmbUser_Desc" xml:space="preserve"><value>A separate account used only for file sharing, not your Windows sign-in.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Password" xml:space="preserve"><value>Password</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_PasswordRepeat" xml:space="preserve"><value>Repeat password</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_PasswordShow" xml:space="preserve"><value>Show password</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_PasswordHide" xml:space="preserve"><value>Hide password</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Password_Desc" xml:space="preserve"><value>At least 8 characters. Leave both empty to keep the current password of an existing account. The password is never saved, logged or shown.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_PasswordShort" xml:space="preserve"><value>The password needs at least {0} characters.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_PasswordMismatch" xml:space="preserve"><value>The two passwords are not the same.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -476,6 +480,7 @@
   <data name="Setup_Plan_GroupSummary" xml:space="preserve"><value>{0} keep, {1} to look at</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Plan_Apply" xml:space="preserve"><value>Apply</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Plan_AskDo" xml:space="preserve"><value>Do this</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Plan_QuickAccessLater" xml:space="preserve"><value>Creating the drive and the shortcut comes in version 0.6.0</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Plan_AskName" xml:space="preserve"><value>Do this: {0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Plan_Arrow" xml:space="preserve"><value>{0} → {1}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Plan_Backup" xml:space="preserve"><value>The original value is saved in the backup first.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -564,7 +569,7 @@
   <data name="Plan_R_ReadFailed" xml:space="preserve"><value>Could not be read: {0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_Invalid" xml:space="preserve"><value>Fix this answer in the form first: {0}.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_AtTarget" xml:space="preserve"><value>Already as Setup sets it.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Plan_R_Stricter" xml:space="preserve"><value>Already stricter than Setup's value ({0}), so it is left as it is.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_Stricter" xml:space="preserve"><value>Already stricter than Setup's value, so it is left as it is.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_BackupFresh" xml:space="preserve"><value>First Setup on this PC: the original value of every setting marked below is saved in config.json before it changes.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_BackupTaken" xml:space="preserve"><value>Taken at the first Setup ({0}) and never taken again, so Uninstall restores the values from before CPFS.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_BackupNone" xml:space="preserve"><value>This install has no backup (it began before version 0.2). None is taken now, since today's values may be CPFS's own; Uninstall uses Windows defaults instead.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -585,7 +590,7 @@
   <data name="Plan_R_AceGrant" xml:space="preserve"><value>Gives {0} Modify rights on the folder and everything in it.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_AceAfterAccount" xml:space="preserve"><value>Gives {0} Modify rights on the folder once the account exists.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_ShareCreate" xml:space="preserve"><value>Creates the share: only the SMB account has access, folders it cannot open stay hidden, no offline copies.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Plan_R_ShareChange" xml:space="preserve"><value>The share's settings differ from Setup's: {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_ShareChange" xml:space="preserve"><value>Some of the share's settings differ from Setup's.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_ShareMove" xml:space="preserve"><value>The share moves to the new folder (removed and created again). Files stay where they are.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_ShareForeignName" xml:space="preserve"><value>A share named {0} already exists on {1} and CPFS did not create it. Tick to replace it; what it was is recorded first.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_ShareForeignPath" xml:space="preserve"><value>Another share, {0}, points to the same folder ({1}). Tick to remove it; otherwise it stays.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -604,7 +609,7 @@
   <data name="Plan_R_LockoutKept" xml:space="preserve"><value>Account lockout is already on; your threshold stays.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_Audit" xml:space="preserve"><value>Failed sign-ins are recorded in the Security log, which the Monitor reads.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_RuleCreate" xml:space="preserve"><value>The rule is missing and is created. CPFS rules never open a port on Public networks.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Plan_R_RuleChange" xml:space="preserve"><value>The rule differs from Setup's: {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_RuleChange" xml:space="preserve"><value>Some of the rule's settings differ from Setup's.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_RuleDuplicate" xml:space="preserve"><value>Several rules have this name; they are replaced by one.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_RuleRemove" xml:space="preserve"><value>A CPFS rule Setup no longer uses.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_RuleLegacy" xml:space="preserve"><value>A rule from CyShare, the earlier name of CPFS.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -644,6 +649,24 @@
   <data name="Plan_V_RightRead" xml:space="preserve"><value>read</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_V_RightCustom" xml:space="preserve"><value>custom</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_V_Denied" xml:space="preserve"><value>denied</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_V_Visible" xml:space="preserve"><value>visible</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_V_Hidden" xml:space="preserve"><value>hidden</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_V_OnStrictest" xml:space="preserve"><value>on, strictest</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_V_Level" xml:space="preserve"><value>level {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_V_Value" xml:space="preserve"><value>value {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_ListSeparator" xml:space="preserve"><value>, </value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_F_EncryptData" xml:space="preserve"><value>encryption</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_F_FolderEnumerationMode" xml:space="preserve"><value>folder listing</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_F_CachingMode" xml:space="preserve"><value>offline files</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_F_Description" xml:space="preserve"><value>description</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_F_Enabled" xml:space="preserve"><value>on or off</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_F_Direction" xml:space="preserve"><value>direction</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_F_Action" xml:space="preserve"><value>allow or block</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_F_Protocol" xml:space="preserve"><value>protocol</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_F_LocalPorts" xml:space="preserve"><value>port</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_F_Profiles" xml:space="preserve"><value>network types</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_F_RemoteAddresses" xml:space="preserve"><value>allowed addresses</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_F_Interfaces" xml:space="preserve"><value>network adapters</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_ShareAccessGrant" xml:space="preserve"><value>Gives the SMB account {0} full control of the share, the only permission CPFS sets.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_ShareAccessOther" xml:space="preserve"><value>{0} also has access to the share. Tick to remove it, so only the SMB account has access.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_ShareAccessDeny" xml:space="preserve"><value>A deny entry keeps the SMB account {0} out of the share. Tick to remove it.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -679,6 +702,7 @@
   <data name="Apply_State_Partial" xml:space="preserve"><value>Partly done</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_State_Failed" xml:space="preserve"><value>Failed</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_State_NotRun" xml:space="preserve"><value>Not run</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_State_Skipped" xml:space="preserve"><value>Skipped</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RpTitle" xml:space="preserve"><value>No new restore point</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RpSkippedMsg" xml:space="preserve"><value>Windows did not create a new restore point, most likely because one was made in the last 24 hours. The newest one is from {0}. Continue without a new one?</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RpUnavailableMsg" xml:space="preserve"><value>No restore point could be created ({0}). System Protection may be off for the system drive. Continue without a restore point?</value><comment>UNTRANSLATED: English text</comment></data>

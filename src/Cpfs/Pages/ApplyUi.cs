@@ -78,6 +78,14 @@ public sealed class StepView : INotifyPropertyChanged
         Error = outcome == StepOutcome.Unsupported && error is not null ? Loc.Instance.FormatValues("Apply_RefusedReason", error) : error ?? "";
     }
 
+    // A restore point Windows declined without an error (its 24-hour rule): a warning, not a failure.
+    public void SetSkipped()
+    {
+        State = Loc.Instance["Apply_State_Skipped"];
+        StateKind = "Skipped";
+        Error = "";
+    }
+
     private void SetField(ref string field, string value, string name)
     {
         if (string.Equals(field, value, StringComparison.Ordinal))
@@ -167,10 +175,18 @@ internal static class ApplyUi
             RestorePointOutcome.Unavailable => loc.FormatValues("Apply_RpUnavailableMsg", result.Error ?? "?"),
             _ => loc["Apply_RpNoneMsg"],
         };
-        var box = NewDialog(page, loc["Apply_RpTitle"], Text(message));
-        box.PrimaryButtonText = loc["Apply_RpContinue"];
-        box.SecondaryButtonText = loc["Apply_RpOpenSettings"];
-        box.CloseButtonText = loc["Apply_RpStop"];
+        var owner = Window.GetWindow(page);
+        var box = new ChoiceDialog(Text(message))
+        {
+            Title = loc["Apply_RpTitle"],
+            MaxWidth = 560,
+            FlowDirection = owner?.FlowDirection ?? FlowDirection.LeftToRight,
+            Owner = owner,
+        };
+        box.SetResourceReference(Control.FontFamilyProperty, Theming.FontResourceKey);
+        box.AddButton(loc["Apply_RpContinue"], Wpf.Ui.Controls.MessageBoxButton.Primary, ControlAppearance.Primary, isDefault: true);
+        box.AddButton(loc["Apply_RpOpenSettings"], Wpf.Ui.Controls.MessageBoxButton.Secondary, ControlAppearance.Secondary);
+        box.AddButton(loc["Apply_RpStop"], Wpf.Ui.Controls.MessageBoxButton.Close, ControlAppearance.Secondary, isCancel: true);
         var answer = await box.ShowDialogAsync();
         if (answer == Wpf.Ui.Controls.MessageBoxResult.Secondary)
         {

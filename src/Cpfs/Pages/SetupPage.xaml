@@ -141,9 +141,11 @@
             Checked="OnPlanTickChanged"
             Content="{Binding [Setup_Plan_AskDo], Source={x:Static local:Loc.Instance}}"
             IsChecked="{Binding Ticked, Mode=OneWay}"
+            IsEnabled="{Binding AskEnabled}"
             Tag="{Binding Key}"
             Unchecked="OnPlanTickChanged"
             Visibility="{Binding IsAsk, Converter={StaticResource Visible}}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding LaterNote}" Visibility="{Binding HasLaterNote, Converter={StaticResource Visible}}" />
         </StackPanel>
       </Grid>
     </DataTemplate>
@@ -172,6 +174,10 @@
                   <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorNeutralBrush}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding StateKind}" Value="Unsupported">
+                  <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+                  <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKind}" Value="Skipped">
                   <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
                   <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}" />
                 </DataTrigger>
@@ -312,15 +318,47 @@
         </StackPanel>
       </ui:CardControl.Header>
       <StackPanel MinWidth="240" MaxWidth="360">
-        <PasswordBox
-          x:Name="PasswordBox1"
-          AutomationProperties.Name="{Binding [Setup_Form_Password], Source={x:Static local:Loc.Instance}}"
-          PasswordChanged="OnPasswordChanged" />
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <PasswordBox
+            x:Name="PasswordBox1"
+            AutomationProperties.Name="{Binding [Setup_Form_Password], Source={x:Static local:Loc.Instance}}"
+            PasswordChanged="OnPasswordChanged" />
+          <TextBox
+            x:Name="PasswordPlain1"
+            AutomationProperties.Name="{Binding [Setup_Form_Password], Source={x:Static local:Loc.Instance}}"
+            Visibility="Collapsed" />
+          <ui:Button
+            x:Name="PasswordEye1"
+            Grid.Column="1"
+            Margin="4,0,0,0"
+            VerticalAlignment="Stretch"
+            Appearance="Transparent" />
+        </Grid>
         <TextBlock Margin="0,8,0,4" Style="{StaticResource CardValue}" Text="{Binding [Setup_Form_PasswordRepeat], Source={x:Static local:Loc.Instance}}" />
-        <PasswordBox
-          x:Name="PasswordBox2"
-          AutomationProperties.Name="{Binding [Setup_Form_PasswordRepeat], Source={x:Static local:Loc.Instance}}"
-          PasswordChanged="OnPasswordChanged" />
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <PasswordBox
+            x:Name="PasswordBox2"
+            AutomationProperties.Name="{Binding [Setup_Form_PasswordRepeat], Source={x:Static local:Loc.Instance}}"
+            PasswordChanged="OnPasswordChanged" />
+          <TextBox
+            x:Name="PasswordPlain2"
+            AutomationProperties.Name="{Binding [Setup_Form_PasswordRepeat], Source={x:Static local:Loc.Instance}}"
+            Visibility="Collapsed" />
+          <ui:Button
+            x:Name="PasswordEye2"
+            Grid.Column="1"
+            Margin="4,0,0,0"
+            VerticalAlignment="Stretch"
+            Appearance="Transparent" />
+        </Grid>
         <TextBlock x:Name="PasswordError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
       </StackPanel>
     </ui:CardControl>
@@ -369,16 +407,22 @@
       <StackPanel MinWidth="240" MaxWidth="360">
         <ui:ToggleSwitch
           x:Name="DriveSwitch"
+          IsEnabled="False"
+          AutomationProperties.HelpText="{Binding [Setup_Plan_QuickAccessLater], Source={x:Static local:Loc.Instance}}"
           AutomationProperties.LabeledBy="{Binding ElementName=DriveLabel}"
           Checked="OnFormChanged"
           Unchecked="OnFormChanged" />
         <ComboBox
           x:Name="DriveLetterBox"
+          IsEnabled="False"
+          AutomationProperties.HelpText="{Binding [Setup_Plan_QuickAccessLater], Source={x:Static local:Loc.Instance}}"
           Margin="0,8,0,0"
           AutomationProperties.LabeledBy="{Binding ElementName=DriveLabel}"
           FlowDirection="LeftToRight"
           SelectionChanged="OnFormChanged" />
         <TextBlock x:Name="DriveError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
+        <!--  The executor skips the drive and the shortcut until 0.6.0; the saved values stay visible.  -->
+        <TextBlock Margin="0,4,0,0" Style="{StaticResource CardDescription}" Text="{Binding [Setup_Plan_QuickAccessLater], Source={x:Static local:Loc.Instance}}" />
       </StackPanel>
     </ui:CardControl>
 
@@ -391,6 +435,8 @@
       <StackPanel MinWidth="240" MaxWidth="360">
         <TextBox
           x:Name="DriveNameBox"
+          IsEnabled="False"
+          AutomationProperties.HelpText="{Binding [Setup_Plan_QuickAccessLater], Source={x:Static local:Loc.Instance}}"
           AutomationProperties.LabeledBy="{Binding ElementName=DriveNameLabel}"
           TextChanged="OnFormChanged" />
         <TextBlock x:Name="DriveNameError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
@@ -406,10 +452,13 @@
       <StackPanel MinWidth="240" MaxWidth="360">
         <ui:ToggleSwitch
           x:Name="ShortcutSwitch"
+          IsEnabled="False"
+          AutomationProperties.HelpText="{Binding [Setup_Plan_QuickAccessLater], Source={x:Static local:Loc.Instance}}"
           AutomationProperties.LabeledBy="{Binding ElementName=ShortcutLabel}"
           Checked="OnFormChanged"
           Unchecked="OnFormChanged" />
         <TextBlock x:Name="ShortcutError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
+        <TextBlock Margin="0,4,0,0" Style="{StaticResource CardDescription}" Text="{Binding [Setup_Plan_QuickAccessLater], Source={x:Static local:Loc.Instance}}" />
       </StackPanel>
     </ui:CardControl>
 
@@ -422,6 +471,8 @@
       <StackPanel MinWidth="240" MaxWidth="360">
         <TextBox
           x:Name="ShortcutNameBox"
+          IsEnabled="False"
+          AutomationProperties.HelpText="{Binding [Setup_Plan_QuickAccessLater], Source={x:Static local:Loc.Instance}}"
           AutomationProperties.LabeledBy="{Binding ElementName=ShortcutNameLabel}"
           TextChanged="OnFormChanged" />
         <TextBlock x:Name="ShortcutNameError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />

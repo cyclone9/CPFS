@@ -76,6 +76,7 @@ public partial class SetupPage
         }
 
         var loc = Loc.Instance;
+        HidePasswords();
         _planTimer.Stop();
         await RecomputeAsync();
         var plan = _plan;
@@ -175,7 +176,14 @@ public partial class SetupPage
             return true;
         }
 
-        view.Set(StepOutcome.Failed, result.Outcome == RestorePointOutcome.Unavailable ? result.Error : null);
+        if (result.Outcome == RestorePointOutcome.Skipped)
+        {
+            view.SetSkipped();
+        }
+        else
+        {
+            view.Set(StepOutcome.Failed, result.Error);
+        }
         return await ApplyUi.ContinueWithoutRestorePointAsync(this, result);
     }
 }

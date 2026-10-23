@@ -44,14 +44,21 @@ public enum PlanSection
     Computer,
 }
 
-// A value in the plan: data shown as found (a path, a number), or a word the UI translates (a resource key).
+// A value in the plan: data shown as found (a path, a number), a word the UI translates (a resource key), a word
+// with one number in it (both set: the key's {0} takes Data), or a list of words.
 public sealed record PlanValue(string? Data, string? WordKey)
 {
+    public IReadOnlyList<string>? WordList { get; init; }
+
     public static PlanValue Of(string? data) => new(data, null);
 
     public static PlanValue Of(long data) => new(data.ToString(System.Globalization.CultureInfo.InvariantCulture), null);
 
     public static PlanValue Word(string key) => new(null, key);
+
+    public static PlanValue WordWith(string key, long data) => new(data.ToString(System.Globalization.CultureInfo.InvariantCulture), key);
+
+    public static PlanValue Words(IReadOnlyList<string> keys) => new(null, null) { WordList = keys };
 }
 
 public sealed record PlanItem
