@@ -42,6 +42,7 @@
         <StackPanel>
           <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
           <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Description}" />
+          <TextBlock Margin="0,8,0,0" Style="{StaticResource CardValue}" Text="{Binding Pending}" Visibility="{Binding IsPending, Converter={StaticResource Visible}}" />
           <Border Style="{StaticResource Badge}" Margin="0,8,0,0" Visibility="{Binding HasBadge, Converter={StaticResource Visible}}">
             <TextBlock Style="{StaticResource BadgeText}" Text="{Binding Badge}" />
           </Border>

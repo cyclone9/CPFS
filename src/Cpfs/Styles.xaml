@@ -6,6 +6,7 @@
   <!--  Every text sets a theme brush: a page sets no foreground of its own, so text would stay black on dark.  -->
   <Style x:Key="PageTitle" TargetType="TextBlock">
     <Setter Property="Margin" Value="0,0,0,16" />
+    <Setter Property="FontFamily" Value="{DynamicResource CpfsTitleFontFamily}" />
     <Setter Property="FontSize" Value="28" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="TextWrapping" Value="Wrap" />

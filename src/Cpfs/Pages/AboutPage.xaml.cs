@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Cpfs.Core.Text;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
@@ -58,27 +59,31 @@ public partial class AboutPage : Page
         FrameworkValue.Text = AppLog.FrameworkRelease();
         BackdropValue.Text = MainWindow.Current?.DescribeBackdrop() ?? "?";
         ThemeValue.Text = Theming.Choice + " -> " + ApplicationThemeManager.GetAppTheme() + " (Windows " + ApplicationThemeManager.GetSystemTheme() + ")";
-        FontValue.Text = Theming.CurrentFont + " (" + (MainWindow.Current?.FontFamily.Source ?? "?") + ")";
+        FontValue.Text = Theming.Describe();
         ElevatedValue.Text = Startup.IsElevated ? loc["Common_Yes"] : loc["Common_No"];
 
         var exe = typeof(AboutPage).Assembly.Location;
         long size = 0;
+        var modified = DateTime.MinValue;
         try
         {
-            size = new FileInfo(exe).Length;
+            var info = new FileInfo(exe);
+            size = info.Length;
+            modified = info.LastWriteTime;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             AppLog.Write("about", "Exe size: " + ex.Message);
         }
 
-        ExeValue.Text = exe + " (" + size.ToString("N0", CultureInfo.InvariantCulture) + " bytes)";
+        ExeValue.Text = exe;
+        ExeFileValue.Text = loc.Format("About_ExeFile_Value", Formats.Count(size, loc.Culture), Formats.DateTime(modified, loc.Culture));
         LibrariesValue.Text = string.Join(", ", Program.EmbeddedLibraries()) + Environment.NewLine
             + loc["About_Libraries_Loaded"] + " " + string.Join(", ", Program.LoadedFromBytes());
 
         LogPathValue.Text = AppLog.FilePath ?? loc["Log_None"];
         var logSize = AppLog.FileSize();
-        var sizeText = logSize is { } b ? loc.Format("About_LogSize_Value", b) : loc["State_Unknown"];
+        var sizeText = logSize is { } b ? loc.Format("About_LogSize_Value", Formats.Count(b, loc.Culture)) : loc["State_Unknown"];
         LogSizeValue.Text = AppLog.FailedWrites == 0
             ? sizeText
             : loc.Format("About_LogSize_Failures", sizeText, AppLog.FailedWrites, AppLog.LastWriteError ?? "?");

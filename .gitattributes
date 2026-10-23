@@ -1,0 +1,4 @@
+# Store these files byte for byte. The config fixtures reproduce files written by Windows
+# PowerShell (BOM, CRLF) and tests compare them exactly; the resx files keep CRLF as well.
+tests/**/Fixtures/** -text
+*.resx -text

@@ -42,8 +42,13 @@ public sealed class Loc : INotifyPropertyChanged
     public void SetCulture(CultureInfo culture)
     {
         Culture = culture;
+
+        // Code should pass Culture explicitly; this only keeps anything that forgets (WPF controls, thread pool work)
+        // on the app's language rather than the Windows regional format.
         Thread.CurrentThread.CurrentUICulture = culture;
         Thread.CurrentThread.CurrentCulture = culture;
+        CultureInfo.DefaultThreadCurrentUICulture = culture;
+        CultureInfo.DefaultThreadCurrentCulture = culture;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Culture)));
     }

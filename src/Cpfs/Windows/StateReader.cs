@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.DirectoryServices.AccountManagement;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Management;
@@ -9,8 +9,10 @@ using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
+using System.Threading.Tasks;
 using Cpfs.Core.Config;
 using Cpfs.Core.Drives;
+using Cpfs.Core.Text;
 using Microsoft.Win32;
 
 namespace Cpfs.Windows;
@@ -42,36 +44,68 @@ internal sealed class StateReader
 
     public ConfigDocument? Config { get; private set; }
 
-    public List<StateSection> ReadAll(LetterScan letters)
+    // Page order. Config is read first, since every other section compares with it; the rest run side by side and
+    // each is reported as soon as it is done, so one slow source doesn't hold up the others.
+    public static IReadOnlyList<string> SectionIds { get; } = new[]
     {
-        var sections = new List<StateSection>();
-        Add(sections, "Config", ReadConfig);
-        Add(sections, "Computer", ReadComputerName);
-        Add(sections, "User", ReadSmbUser);
-        Add(sections, "Share", ReadShare);
-        Add(sections, "Firewall", ReadFirewall);
-        Add(sections, "Tasks", ReadTasks);
-        Add(sections, "Hardening", ReadHardening);
-        Add(sections, "Networks", ReadNetworks);
-        Add(sections, "Drive", s => ReadDrive(s, letters));
-        Add(sections, "Shortcut", ReadShortcut);
-        Add(sections, "DataFolder", ReadDataFolder);
-        return sections;
+        "Config", "Computer", "User", "Share", "Firewall", "Tasks", "Hardening", "Networks", "Drive", "Shortcut", "DataFolder",
+    };
+
+    public async Task ReadAllAsync(Task<LetterScan> letters, Action<int, StateSection> done)
+    {
+        var total = Stopwatch.StartNew();
+        done(0, Run("Config", ReadConfig));
+
+        var readers = new Func<StateSection, Task>?[]
+        {
+            null,
+            Sync(ReadComputerName),
+            Sync(ReadSmbUser),
+            Sync(ReadShare),
+            Sync(ReadFirewall),
+            Sync(ReadTasks),
+            Sync(ReadHardening),
+            Sync(ReadNetworks),
+            async s => ReadDrive(s, await letters.ConfigureAwait(false)),
+            Sync(ReadShortcut),
+            Sync(ReadDataFolder),
+        };
+
+        var tasks = new List<Task>();
+        for (var i = 1; i < readers.Length; i++)
+        {
+            var index = i;
+            tasks.Add(Task.Run(async () => done(index, await RunAsync(SectionIds[index], readers[index]!).ConfigureAwait(false))));
+        }
+
+        await Task.WhenAll(tasks).ConfigureAwait(false);
+        AppLog.Write("state", "All sections in " + Ms(total));
     }
 
-    private static void Add(List<StateSection> sections, string id, Action<StateSection> read)
+    private static Func<StateSection, Task> Sync(Action<StateSection> read) => s =>
+    {
+        read(s);
+        return Task.CompletedTask;
+    };
+
+    private static StateSection Run(string id, Action<StateSection> read) =>
+        RunAsync(id, Sync(read)).GetAwaiter().GetResult();
+
+    private static async Task<StateSection> RunAsync(string id, Func<StateSection, Task> read)
     {
         var section = new StateSection(id);
+        var watch = Stopwatch.StartNew();
         try
         {
-            read(section);
+            await read(section).ConfigureAwait(false);
         }
         catch (Exception ex) when (State.IsExpected(ex))
         {
             section.Fail(ex);
         }
 
-        AppLog.Write("state", id + ": " + section.Status + (section.Error is null ? "" : " (" + section.Error + ")") + ", " + section.Rows.Count.ToString(CultureInfo.InvariantCulture) + " rows");
+        AppLog.Write("state", id + ": " + section.Status + (section.Error is null ? "" : " (" + section.Error + ")") + ", "
+            + section.Rows.Count.ToString(CultureInfo.InvariantCulture) + " rows in " + Ms(watch));
         foreach (var row in section.Rows)
         {
             if (row.Status != ReadStatus.Ok)
@@ -80,8 +114,10 @@ internal sealed class StateReader
             }
         }
 
-        sections.Add(section);
+        return section;
     }
+
+    internal static string Ms(Stopwatch watch) => watch.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture) + " ms";
 
     private void ReadConfig(StateSection s)
     {
@@ -112,7 +148,7 @@ internal sealed class StateReader
             }
         }
 
-        s.Rows.Add(StateRow.Data("Setup_Config_Modified", info.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
+        s.Rows.Add(StateRow.Data("Setup_Config_Modified", Formats.Stamp(info.LastWriteTime)));
         s.Rows.Add(StateRow.Data("Setup_Config_Size", bytes.Length.ToString(CultureInfo.InvariantCulture)));
 
         ConfigDocument doc;
@@ -166,23 +202,20 @@ internal sealed class StateReader
         }
 
         s.Rows.Add(StateRow.Data("Setup_User_Name", name));
-        using (var context = new PrincipalContext(ContextType.Machine))
-        using (var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, name))
+        var user = LocalAccounts.GetUser(name);
+        if (user is null)
         {
-            if (user is null)
-            {
-                s.Status = ReadStatus.Missing;
-                s.Rows.Add(StateRow.Word("Setup_User_Exists", "Common_No"));
-            }
-            else
-            {
-                s.Rows.Add(StateRow.Word("Setup_User_Exists", "Common_Yes"));
-                s.Rows.Add(StateRow.Data("Setup_User_Sid", user.Sid?.Value));
-                s.Rows.Add(StateRow.YesNo("Setup_User_Enabled", user.Enabled));
-                s.Rows.Add(StateRow.YesNo("Setup_User_PasswordNeverExpires", user.PasswordNeverExpires));
-                s.Rows.Add(Membership(context, user, "Setup_User_Admin", "S-1-5-32-544"));
-                s.Rows.Add(Membership(context, user, "Setup_User_Users", "S-1-5-32-545"));
-            }
+            s.Status = ReadStatus.Missing;
+            s.Rows.Add(StateRow.Word("Setup_User_Exists", "Common_No"));
+        }
+        else
+        {
+            s.Rows.Add(StateRow.Word("Setup_User_Exists", "Common_Yes"));
+            s.Rows.Add(StateRow.Data("Setup_User_Sid", user.Sid.Value));
+            s.Rows.Add(StateRow.YesNo("Setup_User_Enabled", user.Enabled));
+            s.Rows.Add(StateRow.YesNo("Setup_User_PasswordNeverExpires", user.PasswordNeverExpires));
+            s.Rows.Add(Membership(user, "Setup_User_Admin", "S-1-5-32-544"));
+            s.Rows.Add(Membership(user, "Setup_User_Users", "S-1-5-32-545"));
         }
 
         try
@@ -204,14 +237,14 @@ internal sealed class StateReader
         }
     }
 
-    private static StateRow Membership(PrincipalContext context, UserPrincipal user, string labelKey, string groupSid)
+    private static StateRow Membership(LocalUser user, string labelKey, string groupSid)
     {
         try
         {
-            using var group = GroupPrincipal.FindByIdentity(context, IdentityType.Sid, groupSid);
-            return group is null ? StateRow.Word(labelKey, "State_Unknown") : StateRow.YesNo(labelKey, user.IsMemberOf(group));
+            var member = LocalAccounts.IsMember(user.Sid, groupSid);
+            return member is null ? StateRow.Word(labelKey, "State_Unknown") : StateRow.YesNo(labelKey, member);
         }
-        catch (Exception ex) when (State.IsExpected(ex))
+        catch (Exception ex) when (State.IsExpected(ex) || ex is IdentityNotMappedException)
         {
             return StateRow.Failure(labelKey, ex);
         }

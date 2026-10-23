@@ -49,6 +49,7 @@
           Source="{StaticResource CpfsSymbolOnDark}" />
         <StackPanel Grid.Column="1">
           <TextBlock
+            FontFamily="{DynamicResource CpfsTitleFontFamily}"
             FontSize="20"
             FontWeight="SemiBold"
             Foreground="{DynamicResource TextFillColorPrimaryBrush}"
@@ -78,6 +79,7 @@
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="0" Style="{StaticResource InfoName}" Text="{Binding [About_Version], Source={x:Static local:Loc.Instance}}" />
         <TextBlock x:Name="VersionValue" Grid.Row="0" Style="{StaticResource InfoData}" />
@@ -95,12 +97,14 @@
         <TextBlock x:Name="ElevatedValue" Grid.Row="6" Style="{StaticResource InfoValue}" />
         <TextBlock Grid.Row="7" Style="{StaticResource InfoName}" Text="{Binding [About_Exe], Source={x:Static local:Loc.Instance}}" />
         <TextBlock x:Name="ExeValue" Grid.Row="7" Style="{StaticResource InfoData}" />
-        <TextBlock Grid.Row="8" Style="{StaticResource InfoName}" Text="{Binding [About_Libraries], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="LibrariesValue" Grid.Row="8" Style="{StaticResource InfoData}" />
-        <TextBlock Grid.Row="9" Style="{StaticResource InfoName}" Text="{Binding [About_LogPath], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="LogPathValue" Grid.Row="9" Style="{StaticResource InfoData}" />
-        <TextBlock Grid.Row="10" Style="{StaticResource InfoName}" Text="{Binding [About_LogSize], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="LogSizeValue" Grid.Row="10" Style="{StaticResource InfoValue}" />
+        <TextBlock Grid.Row="8" Style="{StaticResource InfoName}" Text="{Binding [About_ExeFile], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock x:Name="ExeFileValue" Grid.Row="8" Style="{StaticResource InfoValue}" />
+        <TextBlock Grid.Row="9" Style="{StaticResource InfoName}" Text="{Binding [About_Libraries], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock x:Name="LibrariesValue" Grid.Row="9" Style="{StaticResource InfoData}" />
+        <TextBlock Grid.Row="10" Style="{StaticResource InfoName}" Text="{Binding [About_LogPath], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock x:Name="LogPathValue" Grid.Row="10" Style="{StaticResource InfoData}" />
+        <TextBlock Grid.Row="11" Style="{StaticResource InfoName}" Text="{Binding [About_LogSize], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock x:Name="LogSizeValue" Grid.Row="11" Style="{StaticResource InfoValue}" />
       </Grid>
     </ui:Card>
 

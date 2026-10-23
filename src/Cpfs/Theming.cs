@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
@@ -36,15 +37,25 @@ public static class Theming
 
     private static Window? _window;
     private static bool _watching;
-    private static bool? _hasSegoeVariable;
+    private static readonly Lazy<HashSet<string>> Installed = new(InstalledFamilies);
+    private static readonly Dictionary<string, string> ResolvedCache = new(StringComparer.Ordinal);
 
     // Every control gets its font from this application resource: the window references it, and so do the
     // implicit ToolTip and ContextMenu styles, which open in their own trees and don't inherit from the window.
     public const string FontResourceKey = "CpfsUiFontFamily";
 
+    // Page titles and large text (WPF-UI's Subtitle and Title sizes): Segoe UI Variable's Display optical size.
+    public const string TitleFontResourceKey = "CpfsTitleFontFamily";
+
+    // WPF knows Segoe UI Variable only by its named instances; "Segoe UI Variable" alone silently becomes Segoe UI.
+    private const string VariableText = "Segoe UI Variable Text";
+    private const string VariableDisplay = "Segoe UI Variable Display";
+
     public static ThemeChoice Choice { get; private set; } = ThemeChoice.System;
 
-    public static FontFamily SegoeVariableFamily { get; } = new("Segoe UI Variable Text, Segoe UI");
+    public static FontFamily SegoeVariableFamily { get; } = new(VariableText + ", Segoe UI");
+
+    public static FontFamily SegoeVariableTitleFamily { get; } = new(VariableDisplay + ", " + VariableText + ", Segoe UI");
 
     public static FontFamily SegoeFamily { get; } = new("Segoe UI");
 
@@ -124,7 +135,8 @@ public static class Theming
             || (theme == ApplicationTheme.HighContrast && ApplicationThemeManager.GetSystemTheme() != SystemTheme.HCWhite);
     }
 
-    public static bool HasSegoeVariable => _hasSegoeVariable ??= InstalledFamilies().Overlaps(new[] { "Segoe UI Variable", "Segoe UI Variable Text" });
+    // Windows 11 ships it; Windows 10 doesn't, and gets Segoe UI.
+    public static bool HasSegoeVariable => Installed.Value.Contains(VariableText);
 
     public static UiFont CurrentFont => FontFor(Loc.Instance.Culture);
 
@@ -160,13 +172,22 @@ public static class Theming
         _ => VazirmatnFamily,
     };
 
+    public static FontFamily TitleFamilyOf(UiFont font) => font == UiFont.SegoeUiVariable ? SegoeVariableTitleFamily : FamilyOf(font);
+
     public static string NameOf(UiFont font) => Loc.Instance["Font_" + font];
+
+    public static string Describe()
+    {
+        var font = CurrentFont;
+        return font + ": body " + Resolve(FamilyOf(font), FontWeights.Normal) + "; title " + Resolve(TitleFamilyOf(font), FontWeights.SemiBold);
+    }
 
     // Called once from the MainWindow constructor, before any page exists.
     public static void InstallFontResources(Window window)
     {
         var app = Application.Current;
         app.Resources[FontResourceKey] = FamilyOf(CurrentFont);
+        app.Resources[TitleFontResourceKey] = TitleFamilyOf(CurrentFont);
         foreach (var type in new[] { typeof(System.Windows.Controls.ToolTip), typeof(System.Windows.Controls.ContextMenu) })
         {
             var style = new Style(type, app.TryFindResource(type) as Style);
@@ -189,7 +210,8 @@ public static class Theming
         var culture = Loc.Instance.Culture;
         var font = CurrentFont;
         Application.Current.Resources[FontResourceKey] = FamilyOf(font);
-        AppLog.Write("font", "Applied " + font + " for language " + culture.Name);
+        Application.Current.Resources[TitleFontResourceKey] = TitleFamilyOf(font);
+        AppLog.Write("font", "Applied " + font + " for language " + culture.Name + "; resolved " + Describe());
     }
 
     private static void ApplyAccent()
@@ -235,10 +257,66 @@ public static class Theming
         return installed;
     }
 
+    // The face WPF loads for a family at a weight. A family list resolves to its first installed member, which is
+    // what WPF uses for Latin text; the file name and any simulated bold show whether the named instance was found.
+    private static string Resolve(FontFamily family, FontWeight weight)
+    {
+        var key = family.Source + "|" + weight;
+        if (ResolvedCache.TryGetValue(key, out var cached))
+        {
+            return cached;
+        }
+
+        FontFamily? chosen = family;
+        if (family.BaseUri is null)
+        {
+            chosen = null;
+            foreach (var name in family.Source.Split(','))
+            {
+                if (Installed.Value.Contains(name.Trim()))
+                {
+                    chosen = new FontFamily(name.Trim());
+                    break;
+                }
+            }
+        }
+
+        string result;
+        if (chosen is null)
+        {
+            result = "none of '" + family.Source + "' installed, WPF fallback";
+        }
+        else if (!new Typeface(chosen, FontStyles.Normal, weight, FontStretches.Normal).TryGetGlyphTypeface(out var glyph))
+        {
+            result = chosen.Source + " (composite font)";
+        }
+        else
+        {
+            string file;
+            try
+            {
+                file = Path.GetFileName(glyph.FontUri.AbsolutePath);
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+            {
+                file = "?";
+            }
+
+            result = English(glyph.FamilyNames) + " " + English(glyph.FaceNames) + " (" + file
+                + (glyph.StyleSimulations == StyleSimulations.None ? "" : ", simulated " + glyph.StyleSimulations) + ")";
+        }
+
+        ResolvedCache[key] = result;
+        return result;
+    }
+
+    private static string English(IDictionary<CultureInfo, string> names) =>
+        names.TryGetValue(CultureInfo.GetCultureInfo("en-US"), out var name) ? name : names.Values.FirstOrDefault() ?? "?";
+
     private static void LogFontAvailability()
     {
-        var installed = InstalledFamilies();
-        var wanted = new[] { "Segoe UI Variable", "Segoe UI Variable Text", "Segoe UI", "Tahoma", "Cascadia Mono", "Consolas" };
+        var installed = Installed.Value;
+        var wanted = new[] { "Segoe UI Variable", VariableText, VariableDisplay, "Segoe UI", "Tahoma", "Cascadia Mono", "Consolas" };
         AppLog.Write("font", "Installed: " + string.Join(", ", wanted.Select(w => w + "=" + (installed.Contains(w) ? "yes" : "no"))));
     }
 }

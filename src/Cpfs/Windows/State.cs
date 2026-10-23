@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.DirectoryServices.AccountManagement;
 using System.IO;
 using System.Management;
 using System.Reflection;
@@ -78,6 +77,7 @@ internal sealed class StateSection
 internal static class State
 {
     private const int EAccessDenied = unchecked((int)0x80070005);
+    private const int ErrorAccessDenied = 5;
     private const int WbemAccessDenied = unchecked((int)0x80041003);
 
     public static bool IsAccessDenied(Exception? ex) => ex switch
@@ -87,13 +87,13 @@ internal static class State
         ManagementException m => m.ErrorCode == ManagementStatus.AccessDenied,
         COMException c => c.HResult is EAccessDenied or WbemAccessDenied,
         TargetInvocationException t => IsAccessDenied(t.InnerException),
-        PrincipalOperationException p => p.ErrorCode == EAccessDenied || IsAccessDenied(p.InnerException),
+        System.ComponentModel.Win32Exception w => w.NativeErrorCode == ErrorAccessDenied,
         IOException io => io.HResult == EAccessDenied,
         _ => false,
     };
 
     // The exceptions a read of Windows state can end in; anything else is a bug and goes to the crash handler.
     public static bool IsExpected(Exception ex) => ex is IOException or UnauthorizedAccessException or SecurityException
-        or ManagementException or COMException or TargetInvocationException or PrincipalException or InvalidOperationException
+        or ManagementException or COMException or TargetInvocationException or InvalidOperationException
         or ArgumentException or InvalidCastException or NotSupportedException or System.ComponentModel.Win32Exception;
 }

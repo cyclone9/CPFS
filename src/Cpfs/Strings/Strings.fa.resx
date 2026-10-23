@@ -209,11 +209,13 @@
   <data name="About_CurrentFont" xml:space="preserve"><value>Font</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="About_Elevated" xml:space="preserve"><value>Running as administrator</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="About_Exe" xml:space="preserve"><value>Program file</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_ExeFile" xml:space="preserve"><value>Program file size and date</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_ExeFile_Value" xml:space="preserve"><value>{0} bytes, modified {1}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="About_Libraries" xml:space="preserve"><value>Built-in libraries</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="About_Libraries_Loaded" xml:space="preserve"><value>Loaded:</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="About_LogPath" xml:space="preserve"><value>Log file</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="About_LogSize" xml:space="preserve"><value>Log size</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="About_LogSize_Value" xml:space="preserve"><value>{0:N0} bytes</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_LogSize_Value" xml:space="preserve"><value>{0} bytes</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="About_LogSize_Failures" xml:space="preserve"><value>{0}; {1} writes failed, the last with {2}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="About_Log_Title" xml:space="preserve"><value>Log</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="About_Log_Desc" xml:space="preserve"><value>If something goes wrong, send the log or the report. They contain no passwords.</value><comment>UNTRANSLATED: English text</comment></data>

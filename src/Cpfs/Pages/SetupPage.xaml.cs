@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows;
@@ -49,6 +51,10 @@ public sealed class SectionView
 
     public bool HasError => Error.Length > 0;
 
+    public string Pending { get; init; } = "";
+
+    public bool IsPending => Pending.Length > 0;
+
     public List<RowView> Rows { get; } = new();
 }
 
@@ -56,7 +62,8 @@ public sealed class SectionView
 // nothing on Windows; the only writes anywhere in the app are its own log and preferences under %LOCALAPPDATA%\CPFS.
 public partial class SetupPage : Page
 {
-    private List<StateSection>? _sections;
+    private readonly StateSection?[] _sections = new StateSection?[StateReader.SectionIds.Count];
+    private readonly ObservableCollection<SectionView> _views = new();
     private List<StateRow>? _handOver;
     private bool _loaded;
     private bool _reading;
@@ -64,6 +71,7 @@ public partial class SetupPage : Page
     public SetupPage()
     {
         InitializeComponent();
+        Sections.ItemsSource = _views;
         Loaded += OnLoaded;
         Loc.Instance.PropertyChanged += (_, e) =>
         {
@@ -88,7 +96,8 @@ public partial class SetupPage : Page
 
     private async void OnRefresh(object sender, RoutedEventArgs e) => await ReadAsync();
 
-    // WMI, the registry, Task Scheduler and the account store run off the UI thread; the results come back here.
+    // WMI, the registry, Task Scheduler and the account store run off the UI thread; each section comes back here as
+    // soon as it is read. A refresh keeps the previous reading on screen until the new one replaces it.
     private async Task ReadAsync()
     {
         if (_reading)
@@ -100,12 +109,22 @@ public partial class SetupPage : Page
         RefreshButton.IsEnabled = false;
         Busy.Visibility = Visibility.Visible;
         BusyText.Visibility = Visibility.Visible;
+        Render();
         try
         {
-            var (sections, handOver) = await Task.Run(ReadAll);
-            _sections = sections;
-            _handOver = handOver;
+            var dispatcher = Dispatcher;
+            var context = Task.Run(ReadContext);
+            var letters = LettersOf(context);
+            var sections = Task.Run(() => new StateReader().ReadAllAsync(letters, (index, section) =>
+                dispatcher.BeginInvoke(new Action(() =>
+                {
+                    _sections[index] = section;
+                    RenderSection(index);
+                }))));
+
+            _handOver = (await context).HandOver;
             Render();
+            await sections;
         }
         catch (Exception ex) when (State.IsExpected(ex))
         {
@@ -121,8 +140,12 @@ public partial class SetupPage : Page
         }
     }
 
-    private static (List<StateSection>, List<StateRow>?) ReadAll()
+    private static async Task<LetterScan> LettersOf(Task<(LetterScan Letters, List<StateRow>? HandOver)> context) =>
+        (await context.ConfigureAwait(false)).Letters;
+
+    private static (LetterScan Letters, List<StateRow>? HandOver) ReadContext()
     {
+        var watch = Stopwatch.StartNew();
         List<StateRow>? handOver = null;
         string? networkSid = null;
         string received = "";
@@ -141,8 +164,8 @@ public partial class SetupPage : Page
             letters.AddAll(received, LetterSource.UserSessionReceived);
         }
 
-        var sections = new StateReader().ReadAll(letters);
-        return (sections, handOver);
+        AppLog.Write("state", "Desktop user and drive letters in " + StateReader.Ms(watch));
+        return (letters, handOver);
     }
 
     private static List<StateRow> BuildHandOver(DesktopUser user, out string acceptedLetters)
@@ -210,35 +233,44 @@ public partial class SetupPage : Page
             HandOverRows.ItemsSource = rows;
         }
 
-        if (_sections is null)
+        for (var i = 0; i < _sections.Length; i++)
         {
-            return;
+            RenderSection(i);
+        }
+    }
+
+    private void RenderSection(int index)
+    {
+        var loc = Loc.Instance;
+        var id = StateReader.SectionIds[index];
+        var section = _sections[index];
+        var view = new SectionView
+        {
+            Title = loc["Setup_" + id + "_Title"],
+            Description = loc["Setup_" + id + "_Desc"],
+            Pending = section is null ? loc["Setup_Reading"] : "",
+            Badge = section?.Status switch
+            {
+                ReadStatus.NeedsAdmin => loc["Badge_NeedsAdmin"],
+                ReadStatus.Missing => loc["Badge_NotFound"],
+                _ => "",
+            },
+            Error = section?.Status == ReadStatus.Failed ? loc.FormatValues("Setup_SectionFailed", section.Error) : "",
+        };
+        foreach (var row in section?.Rows ?? new List<StateRow>())
+        {
+            view.Rows.Add(ToView(row));
         }
 
-        var views = new List<SectionView>();
-        foreach (var section in _sections)
+        // Replacing one item re-creates only that card, so the others don't flicker.
+        if (index < _views.Count)
         {
-            var view = new SectionView
-            {
-                Title = loc["Setup_" + section.Id + "_Title"],
-                Description = loc["Setup_" + section.Id + "_Desc"],
-                Badge = section.Status switch
-                {
-                    ReadStatus.NeedsAdmin => loc["Badge_NeedsAdmin"],
-                    ReadStatus.Missing => loc["Badge_NotFound"],
-                    _ => "",
-                },
-                Error = section.Status == ReadStatus.Failed ? loc.FormatValues("Setup_SectionFailed", section.Error) : "",
-            };
-            foreach (var row in section.Rows)
-            {
-                view.Rows.Add(ToView(row));
-            }
-
-            views.Add(view);
+            _views[index] = view;
         }
-
-        Sections.ItemsSource = views;
+        else
+        {
+            _views.Add(view);
+        }
     }
 
     private void RenderAdminCard()
