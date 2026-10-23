@@ -2,6 +2,8 @@
 
 # CPFS - CyClone Power File Share
 
+*Your PC's folder, within reach of any device.*
+
 | | |
 |---|---|
 | Version | 0.3.0 (in development) |
@@ -14,7 +16,7 @@ CPFS is being rebuilt as a Windows app. There is no release yet, so there is not
 
 ## What CPFS does
 
-CPFS shares one folder on a Windows PC so that phones and other devices can reach it by `ComputerName.local`. Devices sign in with a separate SMB account made for the purpose, not with your Windows account, and the share is set up with hardened Windows settings.
+CPFS shares one folder on a Windows 10 or 11 PC with Windows, macOS, Linux, Android and iOS devices. They connect by the PC's name (ComputerName.local), by its Wi-Fi or LAN address, or by a VPN address, and a phone can connect with a QR code. Sharing is limited to that folder, with a separate account and hardened Windows settings, and the uninstall puts the original settings back. If you run a Linux server, CPFS can also sync one subfolder with it over an encrypted channel. A file deleted or replaced on one side is kept in a versions folder on the other.
 
 ## What the app will have
 
@@ -30,6 +32,6 @@ CPFS shares one folder on a Windows PC so that phones and other devices can reac
 
 ## Licence
 
-The code is under the MIT licence (see `LICENSE`). The CPFS name, logo, symbols, wordmark and app icon are not covered by it and may not be used without permission.
+The code is under the MIT licence (see `LICENSE`). The CPFS name, logo, symbols, wordmark and app icon are not covered by it and may not be used without permission. The files in `assets/brand/` are the CPFS brand files and are not covered by the MIT licence. The Vazirmatn font in `assets/fonts/` is under the SIL Open Font License 1.1 (see `OFL.txt` there).
 
 © CyClone · https://cyclone9.ir/

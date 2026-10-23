@@ -2,6 +2,8 @@
 
 # CPFS - CyClone Power File Share
 
+*Bilgisayarınızdaki klasör, her cihazın erişiminde.*
+
 | | |
 |---|---|
 | Sürüm | 0.3.0 (geliştirme aşamasında) |
@@ -14,7 +16,7 @@ CPFS, Windows uygulaması olarak yeniden yazılıyor. Henüz yayımlanmış bir 
 
 ## CPFS ne yapar
 
-CPFS, bir Windows bilgisayardaki tek bir klasörü paylaşır; telefonlar ve diğer cihazlar ona `ComputerName.local` adıyla ulaşır. Cihazlar Windows hesabınızla değil, bu iş için oluşturulmuş ayrı bir SMB hesabıyla oturum açar. Paylaşım, sertleştirilmiş Windows ayarlarıyla kurulur.
+CPFS, bir Windows 10 veya 11 bilgisayarındaki tek bir klasörü Windows, macOS, Linux, Android ve iOS cihazlarla paylaşır. Cihazlar bilgisayarın adıyla (`ComputerName.local`), Wi-Fi veya LAN adresiyle ya da bir VPN adresiyle bağlanır; telefon QR koduyla da bağlanabilir. Paylaşım yalnızca o klasörle sınırlıdır, ayrı bir hesap ve sertleştirilmiş Windows ayarları kullanılır; Kaldırma özgün ayarları geri getirir. Bir Linux sunucunuz varsa CPFS, tek bir alt klasörü onunla şifreli bir kanal üzerinden eşitleyebilir. Bir tarafta silinen veya değiştirilen dosya, diğer tarafta sürümler klasöründe saklanır.
 
 ## Uygulamada neler olacak
 
@@ -30,6 +32,6 @@ CPFS, bir Windows bilgisayardaki tek bir klasörü paylaşır; telefonlar ve di�
 
 ## Lisans
 
-Kod MIT lisansı altındadır (bkz. `LICENSE`). CPFS adı, logo, semboller, yazı logosu ve uygulama simgesi bu lisansın kapsamında değildir; izinsiz kullanılamaz.
+Kod MIT lisansı altındadır (bkz. `LICENSE`). CPFS adı, logo, semboller, yazı logosu ve uygulama simgesi bu lisansın kapsamında değildir; izinsiz kullanılamaz. `assets/brand/` içindeki dosyalar CPFS marka dosyalarıdır ve MIT lisansının kapsamında değildir. `assets/fonts/` içindeki Vazirmatn yazı tipi SIL Open Font License 1.1 altındadır (`OFL.txt` orada).
 
 © CyClone · https://cyclone9.ir/
