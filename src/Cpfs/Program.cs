@@ -22,6 +22,13 @@ internal static class Program
     {
         // The resolver comes first: the log's first line formats the version with Cpfs.Core.
         AppDomain.CurrentDomain.AssemblyResolve += OnAssemblyResolve;
+
+        // Run by the CPFS-RunAsUser task in the user's session: no log, no window, only its exit code.
+        if (args.Length > 0 && string.Equals(args[0], "--user-session", StringComparison.Ordinal))
+        {
+            return RunUserSession(args);
+        }
+
         AppLog.Start();
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             AppLog.Write("unhandled", "AppDomain, terminating " + e.IsTerminating + ": " + (e.ExceptionObject?.ToString() ?? "null"));
@@ -53,9 +60,13 @@ internal static class Program
 
         var app = new App();
         app.InitializeComponent();
+        app.LogButtonStyle();
         instance?.Listen(() => app.Dispatcher.BeginInvoke(new Action(App.BringToFront)));
         return app.Run();
     }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static int RunUserSession(string[] args) => UserSession.Run(args);
 
     // Matches by simple name and ignores the requested version, which stands in for binding redirects.
     private static Assembly? OnAssemblyResolve(object? sender, ResolveEventArgs args)

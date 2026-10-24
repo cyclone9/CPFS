@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Net;
 
 namespace Cpfs.Core.Monitor;
@@ -18,40 +17,11 @@ public static class MonitorMath
         return (c - p) / seconds;
     }
 
-    // The share name from a per-share counter instance (\\*\Share or Share), or null for the totals and the
-    // administrative shares (IPC$, ADMIN$, C$), which the Monitor leaves out as 0.2.3 did.
-    public static string? ShareFromInstance(string? instance)
-    {
-        if (string.IsNullOrWhiteSpace(instance) || string.Equals(instance, "_Total", StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
+    // Windows counts no file data per device, so a device's state comes from its session: active while it has a file
+    // open or did something within the last few seconds, idle otherwise.
+    public const long ActiveIdleSeconds = 5;
 
-        var name = instance!.Substring(instance.LastIndexOf('\\') + 1);
-        if (name.Length == 0 || name.EndsWith("$", StringComparison.Ordinal))
-        {
-            return null;
-        }
-
-        return name;
-    }
-
-    // Adds one per-share counter instance to the totals by share name. Down takes the larger of Sent and Read bytes,
-    // up the larger of Received and Write bytes (whichever of the counters this Windows fills); instances that name
-    // the same share (one per SMB scope) are summed, never overwritten.
-    public static void AddShareInstance(IDictionary<string, (double Down, double Up)> totals, string? instance,
-        double? sent, double? read, double? received, double? written)
-    {
-        var share = ShareFromInstance(instance);
-        if (share is null)
-        {
-            return;
-        }
-
-        var down = Math.Max(sent ?? 0, read ?? 0);
-        var up = Math.Max(received ?? 0, written ?? 0);
-        totals[share] = totals.TryGetValue(share, out var t) ? (t.Down + down, t.Up + up) : (down, up);
-    }
+    public static bool IsActive(long secondsIdle, ulong openFiles) => openFiles > 0 || secondsIdle < ActiveIdleSeconds;
 
     // The client address as SMB reports it, without IPv6 brackets and with an IPv4-mapped IPv6 address shown as IPv4.
     public static string ClientAddress(string? clientComputerName)

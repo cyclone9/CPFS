@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using Cpfs.Core.Monitor;
+using Cpfs.Core.Text;
 using Cpfs.Core.Validation;
 using ValidationError = Cpfs.Core.Validation.ValidationError;
 using Cpfs.Windows;
@@ -41,6 +42,7 @@ public sealed class MonitorField : Observable
     private string _label = "";
     private string _value = "";
     private string _detail = "";
+    private string? _tip;
     private bool _isData;
 
     public string Label { get => _label; set => Set(ref _label, value); }
@@ -59,6 +61,9 @@ public sealed class MonitorField : Observable
     }
 
     public bool HasDetail => Detail.Length > 0;
+
+    // Null for no tooltip.
+    public string? Tip { get => _tip; set => Set(ref _tip, value); }
 
     public bool IsData
     {
@@ -97,6 +102,7 @@ public sealed class MonitorRow : Observable
             _session = value;
             Changed(nameof(CanDisconnect));
             Changed(nameof(CanName));
+            Changed(nameof(HasActions));
         }
     }
 
@@ -114,6 +120,7 @@ public sealed class MonitorRow : Observable
             Set(ref _title, value);
             Changed(nameof(HasTitle));
             Changed(nameof(CanName));
+            Changed(nameof(HasActions));
         }
     }
 
@@ -138,6 +145,9 @@ public sealed class MonitorRow : Observable
     public bool HasBadge => Badge.Length > 0;
 
     public bool CanDisconnect => Session is not null;
+
+    // Open files and failed sign-ins have no buttons; their rows give the data the full width.
+    public bool HasActions => Session is not null || HasTitle;
 
     public string ActionName { get => _actionName; set => Set(ref _actionName, value); }
 
@@ -200,7 +210,6 @@ public partial class MonitorPage : Page
     private readonly DispatcherTimer _timer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(2) };
     private readonly MonitorSection _server = new();
     private readonly MonitorSection _sessions = new();
-    private readonly MonitorSection _shares = new();
     private readonly MonitorSection _files = new();
     private readonly MonitorSection _fails = new();
     private readonly HashSet<string> _loggedFails = new(StringComparer.Ordinal);
@@ -219,7 +228,7 @@ public partial class MonitorPage : Page
     public MonitorPage()
     {
         InitializeComponent();
-        Sections.ItemsSource = new[] { _server, _sessions, _shares, _files, _fails };
+        Sections.ItemsSource = new[] { _server, _sessions, _files, _fails };
         AdminPanel.Visibility = Startup.IsElevated ? Visibility.Collapsed : Visibility.Visible;
         MonitorPanel.Visibility = Startup.IsElevated ? Visibility.Visible : Visibility.Collapsed;
         _timer.Tick += async (_, _) => await RefreshAsync();
@@ -291,9 +300,7 @@ public partial class MonitorPage : Page
     {
         var loc = Loc.Instance;
         _server.Title = loc["Monitor_Server_Title"];
-        _server.Description = loc["Monitor_Server_Desc"];
-        _shares.Title = loc["Monitor_Shares_Title"];
-        _shares.Description = loc["Monitor_Shares_Desc"];
+        _server.Description = ServerDescription();
         _sessions.Description = loc["Monitor_Sessions_Desc"];
         _files.Description = loc.Format("Monitor_Files_Desc", MaxFiles);
         _fails.Title = loc["Monitor_Fails_Title"];
@@ -307,12 +314,10 @@ public partial class MonitorPage : Page
             return;
         }
 
-        UpdatedText.Text = loc.Format("Monitor_Updated", cur.Taken.ToString("T", loc.Culture));
         var seconds = _previous is null ? 0 : (cur.Timestamp - _previous.Timestamp) / (double)Stopwatch.Frequency;
 
         RenderServer(cur, seconds);
         RenderSessions(cur);
-        RenderShares(cur, seconds);
         RenderFiles(cur);
         RenderFails();
     }
@@ -329,7 +334,24 @@ public partial class MonitorPage : Page
             ("Monitor_Server_Up", TotalAndRate(totals.Up, MonitorMath.Rate(before?.Up, totals.Up, seconds)), true),
             ("Monitor_Server_LogonErrors", totals.LogonErrors is { } n ? Formats(n) : loc["Monitor_NoValue"], true),
         });
+        if (totals is not null)
+        {
+            _server.Fields[0].Tip = loc["Monitor_DownTip"];
+            _server.Fields[1].Tip = loc["Monitor_UpTip"];
+        }
         _server.Empty = cur.Server.Status == ReadStatus.Missing ? loc["Monitor_Server_Unavailable"] : "";
+    }
+
+    // The totals cover every device; with exactly one connected, its current traffic is all from that one.
+    private string ServerDescription()
+    {
+        var loc = Loc.Instance;
+        if (_sessions.Rows.Count == 1 && _sessions.Rows[0] is { Session: { } only } row)
+        {
+            return loc.FormatValues("Monitor_Server_DescOne", row.HasTitle ? row.Title : only.Client);
+        }
+
+        return loc["Monitor_Server_Desc"];
     }
 
     private void RenderSessions(MonitorSnapshot cur)
@@ -359,39 +381,21 @@ public partial class MonitorPage : Page
             row.ActionName = loc.FormatValues("Monitor_Session_DisconnectName", shown);
             row.NameActionName = row.HasTitle ? loc.FormatValues("Monitor_Device_RenameName", row.Title) : loc.FormatValues("Monitor_Device_NameName", s.Client);
             row.ForgetActionName = loc.FormatValues("Monitor_Device_ForgetName", row.Title);
-            SetFields(row.Fields, new List<(string, string, bool)>
+            var fields = new List<(string, string, bool)>
             {
                 ("Monitor_Session_Client", s.Client, true),
                 ("Monitor_Session_User", s.User, true),
                 ("Monitor_Session_Dialect", s.Dialect.Length == 0 ? loc["Monitor_NoValue"] : s.Dialect, true),
                 ("Monitor_Session_Files", Formats(s.OpenFiles), false),
                 ("Monitor_Session_Connected", Duration(s.SecondsExists), false),
-                ("Monitor_Session_Idle", Duration(s.SecondsIdle), false),
-            }, _hostNames.Get(address));
-        });
-    }
+                ("Monitor_Session_Status", MonitorMath.IsActive(s.SecondsIdle, s.OpenFiles) ? loc["Monitor_Session_Active"] : loc.Format("Monitor_Session_IdleFor", Duration(s.SecondsIdle)), false),
+            };
 
-    private void RenderShares(MonitorSnapshot cur, double seconds)
-    {
-        var loc = Loc.Instance;
-        Status(_shares, cur.Shares);
-        _shares.Empty = cur.Shares.Status == ReadStatus.Missing ? loc["Monitor_Shares_Unavailable"]
-            : cur.Shares.Status == ReadStatus.Ok && cur.Shares.Value!.Count == 0 ? loc["Monitor_Shares_None"] : "";
-        var shares = new List<KeyValuePair<string, (double Down, double Up)>>(cur.Shares.Value ?? new Dictionary<string, (double, double)>());
-        shares.Sort((a, b) => string.CompareOrdinal(a.Key, b.Key));
-        var before = _previous?.Shares.Value;
-        SyncRows(_shares.Rows, shares, s => s.Key, (row, s) =>
-        {
-            (double Down, double Up)? old = before is not null && before.TryGetValue(s.Key, out var o) ? o : null;
-            SetFields(row.Fields, new List<(string, string, bool)>
-            {
-                ("Monitor_Share_Name", s.Key, true),
-                ("Monitor_Share_Down", Size(s.Value.Down), true),
-                ("Monitor_Share_Up", Size(s.Value.Up), true),
-                ("Monitor_Share_DownNow", Rate(MonitorMath.Rate(old?.Down, s.Value.Down, seconds)), true),
-                ("Monitor_Share_UpNow", Rate(MonitorMath.Rate(old?.Up, s.Value.Up, seconds)), true),
-            });
+            SetFields(row.Fields, fields, _hostNames.Get(address));
         });
+
+        // Rows are known only now; the server card's note names the one device.
+        _server.Description = ServerDescription();
     }
 
     private void RenderFiles(MonitorSnapshot cur)
@@ -562,16 +566,16 @@ public partial class MonitorPage : Page
         try
         {
             var shown = row.HasTitle ? row.Title + " (" + session.Client + ")" : session.Client;
-            var box = NewDialog(loc["Monitor_Disconnect_Title"], new System.Windows.Controls.TextBlock
+            var box = ApplyUi.NewChoice(this, loc["Monitor_Disconnect_Title"], new System.Windows.Controls.TextBlock
             {
                 Text = loc.FormatValues("Monitor_Disconnect_Msg", shown, session.User),
                 TextWrapping = TextWrapping.Wrap,
                 MaxWidth = 420,
             });
-            box.PrimaryButtonText = loc["Monitor_Disconnect_Confirm"];
-            box.PrimaryButtonAppearance = ControlAppearance.Danger;
+            box.AddButton(loc["Monitor_Disconnect_Confirm"], Wpf.Ui.Controls.MessageBoxButton.Primary, ControlAppearance.Danger);
+            box.AddButton(loc["Common_Cancel"], Wpf.Ui.Controls.MessageBoxButton.Close, ControlAppearance.Secondary, isCancel: true);
 
-            if (await box.ShowDialogAsync() != Wpf.Ui.Controls.MessageBoxResult.Primary)
+            if (!DialogCloses.Confirms(await box.ShowLoggedAsync("monitor", "Monitor_Disconnect_Title")))
             {
                 AppLog.Write("monitor", "Disconnect cancelled for session " + id);
                 return;
@@ -644,14 +648,17 @@ public partial class MonitorPage : Page
             panel.Children.Add(input);
             panel.Children.Add(message);
 
-            var box = NewDialog(loc[row.HasTitle ? "Monitor_Device_RenameTitle" : "Monitor_Device_NameTitle"], panel);
-            box.PrimaryButtonText = loc["Monitor_Device_Save"];
-            box.PrimaryButtonAppearance = ControlAppearance.Primary;
+            var titleKey = row.HasTitle ? "Monitor_Device_RenameTitle" : "Monitor_Device_NameTitle";
+            var box = ApplyUi.NewChoice(this, loc[titleKey], panel);
+
+            // Enter in the name box saves: the name only goes to devices.json, nothing on Windows changes.
+            var save = box.AddButton(loc["Monitor_Device_Save"], Wpf.Ui.Controls.MessageBoxButton.Primary, ControlAppearance.Primary, isDefault: true);
+            box.AddButton(loc["Common_Cancel"], Wpf.Ui.Controls.MessageBoxButton.Close, ControlAppearance.Secondary, isCancel: true);
 
             void Validate()
             {
                 var check = Validators.DeviceName(input.Text);
-                box.IsPrimaryButtonEnabled = check.IsValid;
+                save.IsEnabled = check.IsValid;
                 message.Text = check.Error switch
                 {
                     ValidationError.None => "",
@@ -669,7 +676,7 @@ public partial class MonitorPage : Page
             };
             Validate();
 
-            if (await box.ShowDialogAsync() != Wpf.Ui.Controls.MessageBoxResult.Primary)
+            if (!DialogCloses.Confirms(await box.ShowLoggedAsync("devices", titleKey)))
             {
                 return;
             }
@@ -734,21 +741,6 @@ public partial class MonitorPage : Page
             AppLog.Write("devices", "Forgetting a device name failed unexpectedly: " + ex);
             Show(ActionResult, InfoBarSeverity.Error, loc.FormatValues("Monitor_Device_SaveFailed", ex.GetType().Name + ": " + ex.Message));
         }
-    }
-
-    private Wpf.Ui.Controls.MessageBox NewDialog(string title, object content)
-    {
-        var owner = Window.GetWindow(this);
-        var box = new Wpf.Ui.Controls.MessageBox
-        {
-            Title = title,
-            Content = content,
-            CloseButtonText = Loc.Instance["Common_Cancel"],
-            FlowDirection = owner?.FlowDirection ?? FlowDirection.LeftToRight,
-            Owner = owner,
-        };
-        box.SetResourceReference(FontFamilyProperty, Theming.FontResourceKey);
-        return box;
     }
 
     private async void OnContinueAsAdministrator(object sender, RoutedEventArgs e)

@@ -161,6 +161,31 @@ public sealed class ConfigBook
         return BackupWrite.Recorded;
     }
 
+    // The drive name a letter had before CPFS named it (Backup.DriveLabels[]), recorded once per letter.
+    public BackupWrite BackupDriveLabel(char letter, string label)
+    {
+        if (ConfigJson.GetObject(Root, "Backup") is not { } block)
+        {
+            return BackupWrite.NoBackup;
+        }
+
+        var key = char.ToUpperInvariant(letter).ToString();
+        var list = new JsonArray();
+        foreach (var node in ConfigJson.GetArray(block, "DriveLabels"))
+        {
+            if (node is JsonObject o && string.Equals(ConfigJson.GetString(o, "Letter"), key, StringComparison.OrdinalIgnoreCase))
+            {
+                return BackupWrite.AlreadyRecorded;
+            }
+
+            list.Add(node?.DeepClone());
+        }
+
+        list.Add(new JsonObject { ["Letter"] = key, ["Label"] = label });
+        ConfigWriter.Set(block, "DriveLabels", list);
+        return BackupWrite.Recorded;
+    }
+
     public bool IsTrackedUser(string name)
     {
         foreach (var node in ConfigJson.GetArray(Tracked(), "Users"))

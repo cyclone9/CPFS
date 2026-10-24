@@ -19,7 +19,11 @@ public sealed class AppPreferences
     // Per two-letter language name; a language without an entry uses its default font.
     public Dictionary<string, string> Fonts { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    // Asks GitHub for a newer release once when the app starts. Off unless the user switches it on.
+    public bool CheckUpdatesAtStart { get; set; }
+
     // Unknown or malformed content gives the defaults rather than an error: preferences are never worth a failed start.
+    // Fields a newer or older version wrote (0.6.0 dev4's AlwaysShowDetails) are ignored.
     public static AppPreferences Parse(string? json)
     {
         var prefs = new AppPreferences();
@@ -54,6 +58,11 @@ public sealed class AppPreferences
             prefs.Language = language;
         }
 
+        if (Config.ConfigJson.Get(root, "CheckUpdatesAtStart") is JsonValue check && check.GetValueKind() == JsonValueKind.True)
+        {
+            prefs.CheckUpdatesAtStart = true;
+        }
+
         if (Config.ConfigJson.GetObject(root, "Fonts") is { } fonts)
         {
             foreach (var pair in fonts)
@@ -84,6 +93,7 @@ public sealed class AppPreferences
             [nameof(Theme)] = Theme,
             [nameof(Language)] = Language,
             [nameof(Fonts)] = fonts,
+            [nameof(CheckUpdatesAtStart)] = CheckUpdatesAtStart,
         };
         return root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
     }

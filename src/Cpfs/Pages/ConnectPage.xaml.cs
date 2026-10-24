@@ -35,9 +35,12 @@ public sealed class ValueItem : GuideItem
     public string CopyName { get; init; } = "";
 }
 
-public sealed class QrItem : GuideItem
+public sealed class QrItem
 {
     public ImageSource? Image { get; init; }
+
+    // The text the code holds, shown under it in the dialog with a copy button.
+    public string Text { get; init; } = "";
 
     public string Name { get; init; } = "";
 
@@ -51,6 +54,13 @@ public sealed class GuideCard
     public SymbolRegular Icon { get; init; }
 
     public List<GuideItem> Items { get; } = new();
+
+    // Set before the card is shown; a card without one (Windows, or CPFS not set up yet) has no QR button.
+    public QrItem? Qr { get; set; }
+
+    public bool HasQr => Qr is not null;
+
+    public string QrButtonName => Loc.Instance.Format("Connect_Qr_ShowName", Title);
 }
 
 public sealed class AddressOption
@@ -93,6 +103,9 @@ public partial class ConnectPage : Page
     private string _hostName = "";
     private bool _loaded;
     private bool _syncing;
+
+    // Device-independent pixels: about 6 cm on a 100 % display, easy for a phone camera to read from the screen.
+    private const double QrDialogSize = 280;
 
     public ConnectPage()
     {
@@ -198,6 +211,68 @@ public partial class ConnectPage : Page
         {
             Feedback.Copy(sender, item.Label, item.Value);
         }
+    }
+
+    // The QR code in a dialog of its own, large enough to scan from the screen, with the text it holds below it.
+    private async void OnShowQr(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: GuideCard { Qr: { } qr } card })
+        {
+            return;
+        }
+
+        var loc = Loc.Instance;
+        AppLog.Write("connect", "QR code shown: " + card.Title);
+        var panel = new StackPanel { MaxWidth = QrDialogSize + 80 };
+
+        // Never mirrored in right-to-left layouts: a mirrored QR code may not scan.
+        var image = new System.Windows.Controls.Image
+        {
+            Source = qr.Image,
+            Width = QrDialogSize,
+            Height = QrDialogSize,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            FlowDirection = FlowDirection.LeftToRight,
+        };
+        RenderOptions.SetEdgeMode(image, EdgeMode.Aliased);
+        System.Windows.Automation.AutomationProperties.SetName(image, qr.Name);
+        panel.Children.Add(image);
+
+        var caption = new System.Windows.Controls.TextBlock { Text = qr.Caption, Margin = new Thickness(0, 8, 0, 0), TextAlignment = TextAlignment.Center };
+        caption.SetResourceReference(StyleProperty, "CardDescription");
+        panel.Children.Add(caption);
+
+        var label = loc["Connect_Qr_TextLabel"];
+        var labelBlock = new System.Windows.Controls.TextBlock { Text = label, Margin = new Thickness(0, 12, 0, 2) };
+        labelBlock.SetResourceReference(StyleProperty, "CardDescription");
+        panel.Children.Add(labelBlock);
+
+        var value = new System.Windows.Controls.TextBlock { Text = qr.Text, VerticalAlignment = VerticalAlignment.Center };
+        value.SetResourceReference(StyleProperty, "DataValue");
+        System.Windows.Automation.AutomationProperties.SetName(value, label);
+        var valueBox = new Border { Padding = new Thickness(8, 6, 8, 6), CornerRadius = new CornerRadius(4), Child = value };
+        valueBox.SetResourceReference(Border.BackgroundProperty, "ControlFillColorSecondaryBrush");
+        var copyName = loc.Format("Common_CopyName", label);
+        var copy = new Wpf.Ui.Controls.Button
+        {
+            Icon = new SymbolIcon { Symbol = SymbolRegular.Copy24 },
+            Margin = new Thickness(8, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            ToolTip = copyName,
+        };
+        System.Windows.Automation.AutomationProperties.SetName(copy, copyName);
+        copy.Click += (s, _) => Feedback.Copy(s, label, qr.Text);
+        var row = new Grid();
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetColumn(copy, 1);
+        row.Children.Add(valueBox);
+        row.Children.Add(copy);
+        panel.Children.Add(row);
+
+        var box = ApplyUi.NewChoice(this, loc.Format("Connect_Qr_Title", card.Title), panel);
+        box.AddButton(loc["Common_Close"], Wpf.Ui.Controls.MessageBoxButton.Close, ControlAppearance.Secondary, isCancel: true);
+        await box.ShowLoggedAsync("connect", "Connect_Qr_Title");
     }
 
     private void Render()
@@ -403,12 +478,13 @@ public partial class ConnectPage : Page
         var loc = Loc.Instance;
         try
         {
-            card.Items.Add(new QrItem
+            card.Qr = new QrItem
             {
                 Image = QrImages.Create(text),
+                Text = text,
                 Name = loc.FormatValues("Connect_Qr_Name", text),
                 Caption = loc[captionKey],
-            });
+            };
         }
         catch (QrCapacityException ex)
         {

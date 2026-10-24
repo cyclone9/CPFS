@@ -28,7 +28,10 @@ internal static class CiApplyTest
     private const string TestUser = "CpfsCiUser";
     private const string TestShare = "CPFS-CI";
 
-    private static readonly List<(bool Pass, string Check, string Detail)> Rows = new();
+    private static readonly List<(bool Pass, bool Skipped, string Check, string Detail)> Rows = new();
+
+    private static char? _letter;
+    private static string? _shortcut;
 
     public static int Run()
     {
@@ -76,13 +79,15 @@ internal static class CiApplyTest
             Compare(before, Machine.Read(), folder);
             o.WriteLine();
             o.WriteLine("Result:");
-            foreach (var (pass, check, detail) in Rows)
+            foreach (var (pass, skipped, check, detail) in Rows)
             {
-                o.WriteLine((pass ? "PASS  " : "FAIL  ") + check + (detail.Length == 0 ? "" : "  (" + detail + ")"));
+                o.WriteLine((skipped ? "SKIP  " : pass ? "PASS  " : "FAIL  ") + check + (detail.Length == 0 ? "" : "  (" + detail + ")"));
             }
 
             var failed = Rows.Count(r => !r.Pass);
-            o.WriteLine(failed == 0 ? "All " + Rows.Count + " checks passed" : failed + " of " + Rows.Count + " checks failed");
+            var skips = Rows.Count(r => r.Skipped);
+            var ran = Rows.Count - skips;
+            o.WriteLine((failed == 0 ? "All " + ran + " checks passed" : failed + " of " + ran + " checks failed") + (skips == 0 ? "" : ", " + skips + " skipped"));
             return failed == 0 ? 0 : 1;
         }
         catch (Exception ex)
@@ -104,7 +109,10 @@ internal static class CiApplyTest
         return 2;
     }
 
-    private static void Check(bool pass, string check, string detail = "") => Rows.Add((pass, check, detail));
+    private static void Check(bool pass, string check, string detail = "") => Rows.Add((pass, false, check, detail));
+
+    // Not run, and not a failure: the run's result stays a pass.
+    private static void Skip(string check, string detail) => Rows.Add((true, true, check, detail));
 
     private static bool PartOfDomain()
     {
@@ -126,15 +134,22 @@ internal static class CiApplyTest
 
     private static void SetupPhase(TextWriter o, string folder, string temp)
     {
+        var snapshot = Read(TestUser, folder, TestShare);
+        _letter = snapshot.Letters.DefaultLetter();
+        Check(_letter is not null, "a free drive letter for the test", _letter?.ToString() ?? "none");
         var answers = new SetupAnswers
         {
             SharePath = folder,
             ShareName = TestShare,
             SmbUser = TestUser,
             Password = PasswordEntry.Valid,
+            Drive = _letter is not null,
+            DriveLetter = _letter,
+            DriveName = SetupDefaults.DriveNameFor(TestShare),
+            Shortcut = true,
+            ShortcutName = SetupDefaults.ShortcutNameFor(TestShare),
         };
 
-        var snapshot = Read(TestUser, folder, TestShare);
         var plan = Planner.Setup(snapshot, answers, null, PlanReader.ProtectedFolders());
 
         // Public networks are ticked, so switching to Private and back is exercised too.
@@ -172,6 +187,7 @@ internal static class CiApplyTest
             }
         });
         Check(result.Completed, "Setup ran to the end", result.Error ?? "");
+        SessionCheck(result, "drive.session", "the drive is mapped in the desktop user's session");
 
         var bytes = File.Exists(StateReader.ConfigPath) ? File.ReadAllBytes(StateReader.ConfigPath) : null;
         Check(bytes is not null, "config.json written");
@@ -212,6 +228,22 @@ internal static class CiApplyTest
         Check(PlanReader.AuditLogon().Failure, "failed logons are audited");
         var rules = PlanReader.OwnRules();
         Check(rules.Count(r => r.Name == FirewallRules.LanRule) == 1 && rules.Count(r => r.Name == FirewallRules.MdnsRule) == 1, "the CPFS LAN rules exist");
+
+        if (_letter is { } letter)
+        {
+            var target = Planner.DosTarget(folder);
+            Check(string.Equals(DosDrives.Read(letter), target, StringComparison.OrdinalIgnoreCase), "the DOS Devices mapping " + letter + ": exists", DosDrives.Read(letter) ?? "absent");
+            Check(DriveNames.Read(letter) == SetupDefaults.DriveNameFor(TestShare), "the drive name is set", DriveNames.Read(letter) ?? "absent");
+            Check(config.DriveLetter == letter.ToString() && config.DriveLabel == SetupDefaults.DriveNameFor(TestShare)
+                && string.Equals(config.TrackedDrivePath, folder, StringComparison.OrdinalIgnoreCase), "config.json records the drive letter, its name and folder");
+        }
+
+        _shortcut = config.Shortcut;
+        var lnkTarget = _shortcut is null ? null : Shortcuts.TargetOf(_shortcut);
+        Check(_shortcut is not null && string.Equals(Path.GetFileName(_shortcut), SetupDefaults.ShortcutNameFor(TestShare) + ".lnk", StringComparison.OrdinalIgnoreCase),
+            "config.json records the shortcut", _shortcut ?? "null");
+        Check(string.Equals(lnkTarget?.TrimEnd('\\'), folder, StringComparison.OrdinalIgnoreCase), "the shortcut points to the shared folder", lnkTarget ?? "absent");
+        Check(config.Access == 3, "config.json records drive and shortcut in Access", config.Access?.ToString(CultureInfo.InvariantCulture) ?? "null");
 
         // Re-running with the same answers changes nothing.
         var again = Planner.Setup(Read(TestUser, folder, TestShare), answers with { Password = PasswordEntry.Empty, Choices = new Dictionary<string, bool>() },
@@ -256,6 +288,33 @@ internal static class CiApplyTest
         });
         Check(ApplyList.Blocking(plan).Count == 0, "Uninstall plan has nothing that cannot be planned");
         Check(result.Completed, "Uninstall ran to the end", result.Error ?? "");
+        if (_letter is not null)
+        {
+            SessionCheck(result, "u.drive.session", "the drive is unmapped in the desktop user's session");
+        }
+    }
+
+    // The runner has no signed-in desktop user, so the step that changes the drive in that user's session reports
+    // that and is skipped. That doesn't fail the run here, in CI, and nowhere else; with a desktop user it must be done.
+    private static void SessionCheck(ExecutionResult result, string key, string check)
+    {
+        var report = result.Reports.FirstOrDefault(r => r.Key == key);
+        if (report is null)
+        {
+            Check(false, check, "the step did not run");
+        }
+        else if (report.Outcome == StepOutcome.Done)
+        {
+            Check(true, check);
+        }
+        else if (report.Outcome == StepOutcome.Unsupported && report.Error?.StartsWith(SessionDrive.NoDesktopUser, StringComparison.Ordinal) == true)
+        {
+            Skip(check, "no interactive user on this runner");
+        }
+        else
+        {
+            Check(false, check, report.Outcome + (report.Error is null ? "" : ": " + report.Error));
+        }
     }
 
     private static void Compare(Machine before, Machine after, string folder)
@@ -266,6 +325,16 @@ internal static class CiApplyTest
         Check(PlanReader.OwnRules().Count == 0, "the CPFS firewall rules are gone");
         Check(!Directory.Exists(StateReader.DataFolder), "ProgramData\\CPFS is gone");
         Check(Directory.Exists(folder), "the shared folder is still there");
+        if (_letter is { } letter)
+        {
+            Check(DosDrives.Read(letter) is null, "the DOS Devices mapping " + letter + ": is gone", DosDrives.Read(letter) ?? "");
+            Check(DriveNames.Read(letter) is null, "the drive name is gone", DriveNames.Read(letter) ?? "");
+        }
+
+        if (_shortcut is not null)
+        {
+            Check(!File.Exists(_shortcut), "the shortcut is gone", _shortcut);
+        }
         foreach (var pair in before.Hardening)
         {
             Check(after.Hardening[pair.Key] == pair.Value, "restored " + pair.Key, Show(pair.Value) + " -> " + Show(after.Hardening[pair.Key]));

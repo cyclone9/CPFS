@@ -71,6 +71,31 @@ public sealed class ConfigDocument
     // The drive's name in Explorer, written by the 0.2.3 scripts.
     public string? DriveLabel => ConfigJson.GetString(Root, "DriveLabel");
 
+    // The folder CPFS's drive letter points to (Tracked.Created.DrivePath, added by the app). Installs the scripts made
+    // have none: their drive points to SharePath.
+    public string? TrackedDrivePath => ConfigJson.GetString(ConfigJson.GetObject(ConfigJson.GetObject(Root, "Tracked"), "Created"), "DrivePath");
+
+    // The path the recorded drive letter maps to: what CPFS created, never anything else.
+    public string? OwnDrivePath => (TrackedDrivePath ?? SharePath)?.Trim().TrimEnd('\\');
+
+    // The drive name CPFS gave its letter; the scripts before 0.2.3 recorded none and always wrote "CPFS - <share>".
+    public string? OwnDriveLabel => DriveLabel is { Length: > 0 } label ? label : ShareName is { Length: > 0 } share ? "CPFS - " + share : null;
+
+    // A drive name that was there before CPFS set its own (Backup.DriveLabels, added by the app), by letter.
+    public string? BackupDriveLabel(char letter)
+    {
+        foreach (var node in ConfigJson.GetArray(ConfigJson.GetObject(Root, "Backup"), "DriveLabels"))
+        {
+            if (node is JsonObject entry && ConfigJson.GetString(entry, "Letter") is { Length: 1 } l
+                && char.ToUpperInvariant(l[0]) == char.ToUpperInvariant(letter))
+            {
+                return ConfigJson.GetString(entry, "Label");
+            }
+        }
+
+        return null;
+    }
+
     public string? Updated => ConfigJson.GetString(Root, "Updated");
 
     public string? BackupTaken => ConfigJson.GetString(ConfigJson.GetObject(Root, "Backup"), "Taken");

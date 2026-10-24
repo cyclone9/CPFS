@@ -92,6 +92,52 @@ public sealed class LetterScan
         return free;
     }
 
+    // Whether everything seen on a letter is CPFS's own mapping (one of ownTargets, "\??\D:\Folder"), so CPFS may
+    // map it again. A volume, a network drive or another mapping on it is someone else's. What this process or the
+    // user's session sees counts as CPFS's only when the DOS Devices value or the target this process reads is CPFS's.
+    public bool IsHeldOnlyBy(char letter, IReadOnlyCollection<string> ownTargets)
+    {
+        if (!_taken.TryGetValue(char.ToUpperInvariant(letter), out var uses))
+        {
+            return true;
+        }
+
+        bool Own(string? target)
+        {
+            if (target is null)
+            {
+                return false;
+            }
+
+            foreach (var t in ownTargets)
+            {
+                if (string.Equals(t, target, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        var mapped = uses.Exists(u => u.Source is LetterSource.DosDevices or LetterSource.ThisProcess && Own(u.Detail));
+        foreach (var use in uses)
+        {
+            var ours = use.Source switch
+            {
+                LetterSource.DosDevices or LetterSource.ThisProcess => Own(use.Detail),
+                LetterSource.UserSessionReceived => mapped,
+                _ => false,
+            };
+            if (!ours)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     // The previous letter if still free, then X if free, otherwise the last free letter; null when none is free.
     public char? DefaultLetter(char? ownLetter = null)
     {

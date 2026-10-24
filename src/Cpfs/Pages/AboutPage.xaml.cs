@@ -47,86 +47,90 @@ public partial class AboutPage : Page
         return reader.ReadToEnd();
     }
 
+    public const string HomepageUrl = "https://cyclone9.ir/cpfs.html";
+
+    public const string GitHubUrl = "https://github.com/cyclone9/CPFS";
+
+    private string? _releaseUrl;
+
     private void Refresh()
     {
-        var loc = Loc.Instance;
         BrandSymbol.Source = (ImageSource)FindResource(Theming.IsDarkSurface() ? "CpfsSymbolOnDark" : "CpfsSymbolOnLight");
-
         VersionValue.Text = Version;
-        WindowsValue.Text = AppLog.WindowsBuild() + "; " + Environment.OSVersion.Version;
-        FrameworkValue.Text = AppLog.FrameworkRelease();
-        BackdropValue.Text = MainWindow.Current?.DescribeBackdrop() ?? "?";
-        ThemeValue.Text = Theming.Choice + " -> " + ApplicationThemeManager.GetAppTheme() + " (Windows " + ApplicationThemeManager.GetSystemTheme() + ")";
-        FontValue.Text = Theming.Describe();
-        ElevatedValue.Text = Startup.IsElevated ? loc["Common_Yes"] : loc["Common_No"];
-
-        var exe = typeof(AboutPage).Assembly.Location;
-        long size = 0;
-        var modified = DateTime.MinValue;
-        try
-        {
-            var info = new FileInfo(exe);
-            size = info.Length;
-            modified = info.LastWriteTime;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            AppLog.Write("about", "Exe size: " + ex.Message);
-        }
-
-        ExeValue.Text = exe;
-        ExeFileValue.Text = loc.Format("About_ExeFile_Value", Formats.Count(size, loc.Culture), Formats.DateTime(modified, loc.Culture));
-        LibrariesValue.Text = string.Join(", ", Program.EmbeddedLibraries()) + Environment.NewLine
-            + loc["About_Libraries_Loaded"] + " " + string.Join(", ", Program.LoadedFromBytes());
-
-        LogPathValue.Text = AppLog.FilePath ?? loc["Log_None"];
-        var logSize = AppLog.FileSize();
-        var sizeText = logSize is { } b ? loc.Format("About_LogSize_Value", Formats.Count(b, loc.Culture)) : loc["State_Unknown"];
-        LogSizeValue.Text = AppLog.FailedWrites == 0
-            ? sizeText
-            : loc.Format("About_LogSize_Failures", sizeText, AppLog.FailedWrites, AppLog.LastWriteError ?? "?");
-
-        BidiSample.Text = loc.FormatValues("About_Bidi_Sample", @"D:\Shared", "smb://HOST-01.local/Shared", "192.168.1.10", loc["LangNative_tr"], loc["LangNative_fa"]);
-    }
-
-    private void OnOpenLog(object sender, RoutedEventArgs e)
-    {
-        var path = AppLog.FilePath;
-        if (path is null)
-        {
-            ShowLogResult(InfoBarSeverity.Error, Loc.Instance["Log_None"]);
-            return;
-        }
-
-        try
-        {
-            using (Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }))
-            {
-            }
-        }
-        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or FileNotFoundException)
-        {
-            AppLog.Write("log", "Open log failed: " + ex.Message);
-            ShowLogResult(InfoBarSeverity.Error, Loc.Instance.Format("Log_OpenFailed", ex.Message));
-        }
+        HomepageButton.Content = new System.Windows.Controls.TextBlock { Text = "cyclone9.ir/cpfs", Style = (Style)FindResource("DataValue") };
     }
 
     // "0.5.0-dev3 (3d20e71)": the version with its commit, for a bug report.
     private void OnCopyVersion(object sender, RoutedEventArgs e) => Feedback.Copy(sender, "version", Version);
 
-    private void OnCopyReport(object sender, RoutedEventArgs e)
+    private void OnOpenHomepage(object sender, RoutedEventArgs e) => OpenInBrowser(sender, HomepageUrl);
+
+    private void OnOpenGitHub(object sender, RoutedEventArgs e) => OpenInBrowser(sender, GitHubUrl);
+
+    private void OnOpenRelease(object sender, RoutedEventArgs e)
+    {
+        if (_releaseUrl is { } url && Core.Updates.UpdateCheck.IsReleasePage(url))
+        {
+            OpenInBrowser(sender, url);
+        }
+    }
+
+    private async void OnCheckUpdates(object sender, RoutedEventArgs e)
+    {
+        var loc = Loc.Instance;
+        CheckUpdatesButton.IsEnabled = false;
+        OpenReleaseButton.Visibility = Visibility.Collapsed;
+        UpdateResultText.Text = loc["About_Update_Checking"];
+        UpdateResultText.Visibility = Visibility.Visible;
+        try
+        {
+            var result = await Windows.UpdateClient.CheckAsync("about");
+            _releaseUrl = result.ReleaseUrl;
+            UpdateResultText.Text = UpdateText(result);
+            OpenReleaseButton.Visibility = result.Status == Core.Updates.UpdateStatus.Newer ? Visibility.Visible : Visibility.Collapsed;
+        }
+        finally
+        {
+            CheckUpdatesButton.IsEnabled = true;
+        }
+    }
+
+    public static string UpdateText(Core.Updates.UpdateResult result) => result.Status switch
+    {
+        Core.Updates.UpdateStatus.Latest => Loc.Instance["Update_Latest"],
+        Core.Updates.UpdateStatus.Newer => Loc.Instance.FormatValues("Update_Newer", result.Version ?? "?"),
+        Core.Updates.UpdateStatus.NoRelease => Loc.Instance["Update_NoRelease"],
+        _ => Loc.Instance["Update_Failed"],
+    };
+
+    // Opens the page in the default browser; the app itself goes online only for the update check.
+    public static void OpenInBrowser(object? sender, string url)
     {
         try
         {
-            AppLog.Write("log", "Report copied to the clipboard");
-            Clipboard.SetText(AppLog.SessionText());
-            LogResult.IsOpen = false;
-            Feedback.Show(sender, true, Loc.Instance["Common_Copied"]);
-            Refresh();
+            using (Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }))
+            {
+            }
         }
-        catch (Exception ex) when (ex is COMException or ExternalException or IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
         {
-            ShowLogResult(InfoBarSeverity.Error, Loc.Instance.Format("Log_CopyFailed", ex.Message));
+            AppLog.Write("about", "Open " + url + " failed: " + ex.Message);
+            if (sender is not null)
+            {
+                Feedback.Show(sender, false, Loc.Instance.FormatValues("About_Homepage_Failed", ex.Message));
+            }
+        }
+    }
+
+    private void OnCopyReport(object sender, RoutedEventArgs e)
+    {
+        if (ApplyUi.CopyReport(sender, out var error))
+        {
+            LogResult.IsOpen = false;
+        }
+        else
+        {
+            ShowLogResult(InfoBarSeverity.Error, error ?? "");
         }
     }
 

@@ -19,6 +19,7 @@ public partial class SetupPage
 {
     private readonly ObservableCollection<StepView> _steps = new();
     private bool _applying;
+    private bool _noNewRestorePoint;
 
     private void InitApply() => ProgressList.ItemsSource = _steps;
 
@@ -34,7 +35,8 @@ public partial class SetupPage
         string hint;
         if (!Startup.IsElevated)
         {
-            hint = loc["Apply_NeedsAdmin"];
+            // The card at the top explains it and holds the button; the shield and its tooltip point there.
+            hint = "";
         }
         else if (_applying)
         {
@@ -54,7 +56,8 @@ public partial class SetupPage
         }
         else if (!HasWork(_plan))
         {
-            hint = loc["Apply_Nothing"];
+            // The summary already says there is nothing to change.
+            hint = "";
         }
         else
         {
@@ -63,9 +66,14 @@ public partial class SetupPage
         }
 
         ApplyButton.IsEnabled = enabled;
+        ApplyButton.Icon = Startup.IsElevated ? null : new SymbolIcon { Symbol = SymbolRegular.Shield24 };
+        ApplyButton.ToolTip = Startup.IsElevated ? null : loc["Apply_ShieldTip"];
+        System.Windows.Controls.ToolTipService.SetShowOnDisabled(ApplyButton, true);
         RestorePointBox.IsEnabled = Startup.IsElevated && !_applying;
+        ApplyBusy.Visibility = _applying ? Visibility.Visible : Visibility.Collapsed;
         ApplyHint.Text = hint;
-        System.Windows.Automation.AutomationProperties.SetHelpText(ApplyButton, hint);
+        ApplyHint.Visibility = hint.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
+        System.Windows.Automation.AutomationProperties.SetHelpText(ApplyButton, Startup.IsElevated ? hint : loc["Apply_ShieldTip"]);
     }
 
     private async void OnApply(object sender, RoutedEventArgs e)
@@ -89,7 +97,9 @@ public partial class SetupPage
         var answers = ReadForm();
         var entries = ApplyList.Setup(plan);
         var restorePoint = RestorePointBox.IsChecked == true;
-        if (!await ApplyUi.ConfirmAsync(this, "Apply_ConfirmTitle", "Apply_ConfirmMsg", "Apply_ConfirmButton", entries, restorePoint))
+        var first = IsFirstInstall;
+        if (!await ApplyUi.ConfirmAsync(this, first ? "Setup_ConfirmFirstTitle" : "Apply_ConfirmTitle", "Apply_ConfirmMsg", "Apply_ConfirmUndo",
+            first ? "Setup_Plan_SetUp" : "Apply_ConfirmButton", entries, restorePoint))
         {
             AppLog.Write("apply", "Setup: the user cancelled at the summary");
             return;
@@ -99,11 +109,13 @@ public partial class SetupPage
         UpdateApplyState();
         RefreshButton.IsEnabled = false;
         ApplyResult.IsOpen = false;
+        ShowActions(connect: false, report: false);
+        _noNewRestorePoint = false;
         _steps.Clear();
         ProgressCard.Visibility = Visibility.Visible;
 
         // A copy of what the box holds; it is read only by the account steps and disposed below.
-        SecureString? password = answers.Password == PasswordEntry.Valid ? PasswordBox1.SecurePassword : null;
+        SecureString? password = answers.Password == PasswordEntry.Valid ? PasswordInput.SecurePassword : null;
         password?.MakeReadOnly();
         try
         {
@@ -132,31 +144,49 @@ public partial class SetupPage
 
             if (result.Completed)
             {
-                var (message, severity) = ApplyUi.DoneMessage(result);
-                if (run.RestartNeeded)
+                var (title, message, severity) = ApplyUi.DoneMessage(result, entries);
+                var notes = new List<string>();
+                if (message.Length > 0)
                 {
-                    message += " " + loc["Apply_RestartMsg"];
+                    notes.Add(message);
                 }
 
-                Show(ApplyResult, severity, loc["Apply_DoneTitle"], message);
+                if (run.RestartNeeded)
+                {
+                    notes.Add(loc["Apply_RestartMsg"]);
+                }
+
+                if (run.DriveRestartNeeded)
+                {
+                    notes.Add(loc["Apply_RestartDriveMsg"]);
+                }
+
+                if (_noNewRestorePoint)
+                {
+                    notes.Add(loc["Apply_NoRestorePointNote"]);
+                }
+
+                Show(ApplyResult, severity, title, string.Join(Environment.NewLine, notes));
+                ShowActions(connect: first, report: result.NotDone > 0);
             }
             else
             {
                 var failed = entries.First(x => x.Item.Key == result.FailedKey).Item;
                 Show(ApplyResult, InfoBarSeverity.Error, loc.FormatValues("Apply_FailedTitle", ToView(failed).Subject),
                     loc.FormatValues("Apply_FailedMsg", result.Error));
+                ShowActions(connect: false, report: true);
             }
         }
         catch (Exception ex)
         {
             AppLog.Exception("apply", ex);
             Show(ApplyResult, InfoBarSeverity.Error, loc["Apply_ErrorTitle"], ex.GetType().Name + ": " + ex.Message);
+            ShowActions(connect: false, report: true);
         }
         finally
         {
             password?.Dispose();
-            PasswordBox1.Clear();
-            PasswordBox2.Clear();
+            PasswordInput.Clear();
             _applying = false;
             await ReadAsync();
             UpdateApplyState();
@@ -184,6 +214,20 @@ public partial class SetupPage
         {
             view.Set(StepOutcome.Failed, result.Error);
         }
+
+        _noNewRestorePoint = true;
         return await ApplyUi.ContinueWithoutRestorePointAsync(this, result);
     }
+
+    // Open Connect after a first Setup; Copy report beside every failure or refused change.
+    private void ShowActions(bool connect, bool report)
+    {
+        OpenConnectButton.Visibility = connect ? Visibility.Visible : Visibility.Collapsed;
+        CopyReportButton.Visibility = report ? Visibility.Visible : Visibility.Collapsed;
+        ResultActions.Visibility = connect || report ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void OnOpenConnect(object sender, RoutedEventArgs e) => MainWindow.Current?.Open(typeof(ConnectPage));
+
+    private void OnCopyReport(object sender, RoutedEventArgs e) => ApplyUi.CopyReport(sender, out _);
 }

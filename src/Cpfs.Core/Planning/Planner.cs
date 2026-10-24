@@ -55,7 +55,8 @@ public static class Planner
         R.BuiltInDisable, R.BuiltInPortUnknown, R.BuiltInNone,
         R.NetworkPublic, R.NetworkPrivate,
         R.AutoCreate, R.AutoRemove, R.AutoOff, R.LegacyTask, R.StaleTask,
-        R.DriveCreate, R.DriveGone, R.DriveMove, R.DriveOldRemove, R.DriveOldForeign, R.DriveOff, R.LabelSet, R.LabelForeign, R.LabelOldRemove,
+        R.DriveCreate, R.DriveGone, R.DriveForeign, R.DriveSession, R.DriveOldSession, R.DriveOldRemove, R.DriveOldForeign, R.DriveOff,
+        R.LabelSet, R.LabelForeign, R.LabelRenamed, R.LabelOldRemove, R.LabelRestore,
         R.ShortcutCreate, R.ShortcutGone, R.ShortcutRetarget, R.ShortcutForeign, R.ShortcutOldRemove, R.ShortcutOff,
         R.DataCreate, R.DataLock,
         R.ShareAccessGrant, R.ShareAccessOther, R.ShareAccessDeny, R.ComputerSavedDiffers, R.ComputerPending,
@@ -73,6 +74,7 @@ public static class Planner
         p.Firewall();
         p.Networks();
         p.AutoPrivate();
+        p.StaleTask();
         p.Drive(path);
         p.Shortcut(path);
         p.DataFolder();
@@ -145,13 +147,17 @@ public static class Planner
         public const string StaleTask = "Plan_R_StaleTask";
         public const string DriveCreate = "Plan_R_DriveCreate";
         public const string DriveGone = "Plan_R_DriveGone";
-        public const string DriveMove = "Plan_R_DriveMove";
+        public const string DriveForeign = "Plan_R_DriveForeign";
+        public const string DriveSession = "Plan_R_DriveSession";
+        public const string DriveOldSession = "Plan_R_DriveOldSession";
         public const string DriveOldRemove = "Plan_R_DriveOldRemove";
         public const string DriveOldForeign = "Plan_R_DriveOldForeign";
         public const string DriveOff = "Plan_R_DriveOff";
         public const string LabelSet = "Plan_R_LabelSet";
         public const string LabelForeign = "Plan_R_LabelForeign";
+        public const string LabelRenamed = "Plan_R_LabelRenamed";
         public const string LabelOldRemove = "Plan_R_LabelOldRemove";
+        public const string LabelRestore = "Plan_R_LabelRestore";
         public const string ShortcutCreate = "Plan_R_ShortcutCreate";
         public const string ShortcutGone = "Plan_R_ShortcutGone";
         public const string ShortcutRetarget = "Plan_R_ShortcutRetarget";
@@ -222,8 +228,8 @@ public static class Planner
         F.LocalPorts, F.Profiles, F.RemoteAddresses, F.Interfaces,
         S.Backup, S.Account, S.TakeOver, S.AccountEnabled, S.NeverExpires, S.Lockout, S.Users, S.Admins, S.Hidden, S.Password,
         S.Folder, S.Ace, S.Share, S.AdminShares, S.ServerStart, S.Smb2, S.Reject, S.Smb1, S.Smb1Feature, S.Guest,
-        S.LockoutThreshold, S.Audit, S.BuiltIn, S.VpnAdapter, S.Drive, S.OldDrive, S.Label, S.OldLabel, S.Shortcut,
-        S.OldShortcut, S.DataFolder, S.ShareAccess, S.ComputerName, S.SavedComputerName,
+        S.LockoutThreshold, S.Audit, S.BuiltIn, S.VpnAdapter, S.Drive, S.OldDrive, S.DriveSession, S.OldDriveSession, S.Label,
+        S.OldLabel, S.Shortcut, S.OldShortcut, S.DataFolder, S.ShareAccess, S.ComputerName, S.SavedComputerName,
     };
 
     // A setting of a share or a firewall rule that differs from Setup's, by the field name the planner reports.
@@ -271,6 +277,8 @@ public static class Planner
         public const string VpnAdapter = "Plan_S_VpnAdapter";
         public const string Drive = "Plan_S_Drive";
         public const string OldDrive = "Plan_S_OldDrive";
+        public const string DriveSession = "Plan_S_DriveSession";
+        public const string OldDriveSession = "Plan_S_OldDriveSession";
         public const string Label = "Plan_S_Label";
         public const string OldLabel = "Plan_S_OldLabel";
         public const string Shortcut = "Plan_S_Shortcut";
@@ -976,16 +984,26 @@ public static class Planner
                 Add("auto.legacy", PlanSection.AutoPrivate, PlanAction.RemoveIfOurs, Data(LegacyAutoPrivateTask), Word(W.Exists), Word(W.Absent), R.LegacyTask);
             }
 
-            if (tasks.TryGetValue(RunAsUserTask, out var stale) && stale)
+        }
+
+        // A CPFS-RunAsUser task in the root folder is a leftover (from a run that stopped, or the 0.2.x scripts):
+        // CPFS's own exists only inside the drive.session step. It goes with the drive, not with Auto-Private.
+        public void StaleTask()
+        {
+            if (_s.Tasks.IsOk && _s.Tasks.Value!.TryGetValue(RunAsUserTask, out var stale) && stale)
             {
-                Add("auto.runasuser", PlanSection.AutoPrivate, PlanAction.RemoveIfOurs, Data(RunAsUserTask), Word(W.Exists), Word(W.Absent), R.StaleTask);
+                Add("task.runasuser", PlanSection.Drive, PlanAction.RemoveIfOurs, Data(RunAsUserTask), Word(W.Exists), Word(W.Absent), R.StaleTask);
             }
         }
 
+        // The drive letter: the DOS Devices value (every session, after a restart), the same mapping in the desktop
+        // user's session now (drive.session, through the CPFS-RunAsUser task), and the name Explorer shows. The old
+        // letter's mapping and name go first, and only when they are still what CPFS recorded.
         public void Drive(string? path)
         {
-            var oldLetter = _c?.DriveLetter is { Length: 1 } l ? char.ToUpperInvariant(l[0]) : (char?)null;
-            var oldPath = Trim(_c?.SharePath);
+            var oldLetter = _c?.DriveLetter is { Length: 1 } l && IsAsciiLetter(l[0]) ? char.ToUpperInvariant(l[0]) : (char?)null;
+            var ownPath = _c?.OwnDrivePath;
+            var ownTarget = ownPath is { Length: > 0 } ? DosTarget(ownPath) : null;
             if (!_s.DosDevices.IsOk)
             {
                 if (_a.Drive || oldLetter is not null)
@@ -999,159 +1017,218 @@ public static class Planner
             var dos = _s.DosDevices.Value!;
             var labels = _s.DriveLabels.Value;
             char? letter = null;
+            string? target = null;
+            var label = Validators.DriveName(_a.DriveName);
+            var invalid = false;
             if (_a.Drive)
             {
                 var check = Validators.DriveLetter(_a.DriveLetter?.ToString(), _s.Letters.Free(oldLetter));
-                var label = Validators.DriveName(_a.DriveName);
                 if (!check.IsValid)
                 {
                     Invalid("drive.map", PlanSection.Drive, Word(S.Drive), _a.DriveLetter?.ToString() ?? "", "DriveLetter");
+                    invalid = true;
                 }
                 else if (path is null)
                 {
                     Items.Add(Cannot("drive.map", PlanSection.Drive, Word(S.Drive), PlanCause.InvalidAnswer, R.Invalid, "SharePath"));
+                    invalid = true;
                 }
                 else
                 {
                     letter = check.Value![0];
-                    var target = @"\??\" + path;
-                    var current = dos.TryGetValue(letter.Value, out var v) ? v : null;
-                    if (string.Equals(current, target, StringComparison.OrdinalIgnoreCase))
-                    {
-                        Add("drive.map", PlanSection.Drive, PlanAction.Keep, Word(S.Drive), Data(letter + ":"), null, R.AtTarget);
-                    }
-                    else if (current is not null)
-                    {
-                        Add("drive.map", PlanSection.Drive, PlanAction.Change, Word(S.Drive), Data(letter + ": " + current), Data(letter + ": " + target), R.DriveMove);
-                    }
-                    else if (letter == oldLetter)
-                    {
-                        // The drive config.json records is gone: the user removed it, so it comes back only when ticked.
-                        AskItem("drive.map", PlanSection.Drive, Word(S.Drive), Word(W.Absent), Data(letter + ": " + target), R.DriveGone, letter + ":");
-                    }
-                    else
-                    {
-                        Add("drive.map", PlanSection.Drive, PlanAction.Create, Word(S.Drive), Word(W.Absent), Data(letter + ": " + target), R.DriveCreate);
-                    }
-                }
-
-                if (!label.IsValid)
-                {
-                    Invalid("drive.label", PlanSection.Drive, Word(S.Label), _a.DriveName, "DriveName");
-                }
-                else if (letter is { } d)
-                {
-                    if (labels is null)
-                    {
-                        Unread("drive.label", PlanSection.Drive, Word(S.Label), _s.DriveLabels.State, _s.DriveLabels.Error);
-                    }
-                    else
-                    {
-                        var currentLabel = labels.TryGetValue(d, out var cl) ? cl : null;
-                        if (string.Equals(currentLabel, label.Value, StringComparison.Ordinal))
-                        {
-                            Add("drive.label", PlanSection.Drive, PlanAction.Keep, Word(S.Label), Data(currentLabel), null, R.AtTarget);
-                        }
-                        else if (currentLabel is null)
-                        {
-                            Add("drive.label", PlanSection.Drive, PlanAction.Create, Word(S.Label), Word(W.Absent), Data(label.Value), R.LabelSet);
-                        }
-                        else
-                        {
-                            var ours = d == oldLetter && (SameText(currentLabel, _c?.DriveLabel) || currentLabel.StartsWith("CPFS", StringComparison.OrdinalIgnoreCase));
-                            Add("drive.label", PlanSection.Drive, PlanAction.Change, Word(S.Label), Data(currentLabel), Data(label.Value), ours ? R.LabelSet : R.LabelForeign);
-                            MarkBackup(!ours);
-                        }
-                    }
+                    target = DosTarget(path);
                 }
             }
-            else if (oldLetter is null)
-            {
-                Add("drive.map", PlanSection.Drive, PlanAction.Keep, Word(S.Drive), Word(W.None), null, R.DriveOff);
-            }
 
-            if (oldLetter is { } o && o != letter)
-            {
-                var value = dos.TryGetValue(o, out var ov) ? ov : null;
-                if (value is null)
-                {
-                    // Nothing left to remove.
-                }
-                else if (oldPath is not null && string.Equals(value, @"\??\" + oldPath, StringComparison.OrdinalIgnoreCase))
-                {
-                    Add("drive.oldmap", PlanSection.Drive, PlanAction.RemoveIfOurs, Word(S.OldDrive), Data(o + ": " + value), Word(W.Absent), R.DriveOldRemove);
-                }
-                else
-                {
-                    Add("drive.oldmap", PlanSection.Drive, PlanAction.Keep, Word(S.OldDrive), Data(o + ": " + value), null, R.DriveOldForeign);
-                }
+            var oldValue = oldLetter is { } o && dos.TryGetValue(o, out var ov) ? ov : null;
+            var oldIsOurs = oldValue is not null && SameText(oldValue, ownTarget);
 
-                if (labels is not null && labels.TryGetValue(o, out var oldLabel)
-                    && (SameText(oldLabel, _c?.DriveLabel) || oldLabel.StartsWith("CPFS", StringComparison.OrdinalIgnoreCase)))
+            // CPFS's own letter is taken again only while nothing but CPFS's mapping holds it.
+            var foreign = letter is { } own && own == oldLetter
+                && !_s.Letters.IsHeldOnlyBy(own, ownTarget is null ? new[] { target! } : new[] { ownTarget, target! });
+            var removeOld = !invalid && !foreign && oldIsOurs && (letter != oldLetter || !SameText(oldValue, target));
+
+            if (!invalid && !foreign && oldLetter is { } ol && letter != ol && labels is not null && labels.TryGetValue(ol, out var oldLabel))
+            {
+                var original = _c!.BackupDriveLabel(ol);
+                if (original is not null && !string.Equals(oldLabel, original, StringComparison.Ordinal) && SameText(oldLabel, _c.OwnDriveLabel))
+                {
+                    Add("drive.oldlabel", PlanSection.Drive, PlanAction.Change, Word(S.OldLabel), Data(oldLabel), Data(original), R.LabelRestore);
+                }
+                else if (original is null && SameText(oldLabel, _c.OwnDriveLabel))
                 {
                     Add("drive.oldlabel", PlanSection.Drive, PlanAction.RemoveIfOurs, Word(S.OldLabel), Data(oldLabel), Word(W.Absent), R.LabelOldRemove);
                 }
             }
+
+            if (removeOld)
+            {
+                var shown = oldLetter + ": " + oldValue;
+                Add("drive.oldsession", PlanSection.Drive, PlanAction.RemoveIfOurs, Word(S.OldDriveSession), Data(shown), Word(W.Absent), R.DriveOldSession);
+                Add("drive.oldmap", PlanSection.Drive, PlanAction.RemoveIfOurs, Word(S.OldDrive), Data(shown), Word(W.Absent), R.DriveOldRemove);
+            }
+            else if (!invalid && oldLetter is { } of && letter != of && oldValue is not null && !oldIsOurs)
+            {
+                Add("drive.oldmap", PlanSection.Drive, PlanAction.Keep, Word(S.OldDrive), Data(of + ": " + oldValue), null, R.DriveOldForeign);
+            }
+
+            if (!_a.Drive)
+            {
+                if (oldLetter is null)
+                {
+                    Add("drive.map", PlanSection.Drive, PlanAction.Keep, Word(S.Drive), Word(W.None), null, R.DriveOff);
+                }
+
+                return;
+            }
+
+            if (letter is not { } d)
+            {
+                return;
+            }
+
+            var current = dos.TryGetValue(d, out var cv) ? cv : null;
+            var mapping = d + ": " + target;
+            var willMap = false;
+            if (foreign || (current is not null && !SameText(current, target) && !(d == oldLetter && oldIsOurs)))
+            {
+                Items.Add(Cannot("drive.map", PlanSection.Drive, Word(S.Drive), PlanCause.InvalidAnswer, R.DriveForeign, d + ":") with { Current = Data(current ?? d + ":") });
+                return;
+            }
+
+            if (SameText(current, target))
+            {
+                Add("drive.map", PlanSection.Drive, PlanAction.Keep, Word(S.Drive), Data(mapping), null, R.AtTarget);
+            }
+            else if (d == oldLetter && !removeOld)
+            {
+                // The drive config.json records is gone: the user removed it, so it comes back only when ticked.
+                AskItem("drive.map", PlanSection.Drive, Word(S.Drive), Word(W.Absent), Data(mapping), R.DriveGone, d + ":");
+                willMap = _a.IsTicked("drive.map");
+            }
+            else
+            {
+                Add("drive.map", PlanSection.Drive, PlanAction.Create, Word(S.Drive), Word(W.Absent), Data(mapping), R.DriveCreate);
+                willMap = true;
+            }
+
+            if (willMap)
+            {
+                Add("drive.session", PlanSection.Drive, PlanAction.Create, Word(S.DriveSession), Word(W.Absent), Data(mapping), R.DriveSession);
+            }
+
+            if (!label.IsValid)
+            {
+                Invalid("drive.label", PlanSection.Drive, Word(S.Label), _a.DriveName, "DriveName");
+            }
+            else if (labels is null)
+            {
+                Unread("drive.label", PlanSection.Drive, Word(S.Label), _s.DriveLabels.State, _s.DriveLabels.Error);
+            }
+            else
+            {
+                var currentLabel = labels.TryGetValue(d, out var cl) ? cl : null;
+                if (string.Equals(currentLabel, label.Value, StringComparison.Ordinal))
+                {
+                    Add("drive.label", PlanSection.Drive, PlanAction.Keep, Word(S.Label), Data(currentLabel), null, R.AtTarget);
+                }
+                else if (currentLabel is null)
+                {
+                    Add("drive.label", PlanSection.Drive, PlanAction.Create, Word(S.Label), Word(W.Absent), Data(label.Value), R.LabelSet);
+                }
+                else
+                {
+                    // A name CPFS gave this letter is replaced; anyone else's is saved first, so Uninstall puts it back.
+                    // A backup is taken once per letter, so a name given since (the user renamed CPFS's drive) would
+                    // be lost on Uninstall: it is replaced only when ticked.
+                    var ours = d == oldLetter && SameText(currentLabel, _c?.OwnDriveLabel);
+                    var original = _c?.BackupDriveLabel(d);
+                    if (ours)
+                    {
+                        Add("drive.label", PlanSection.Drive, PlanAction.Change, Word(S.Label), Data(currentLabel), Data(label.Value), R.LabelSet);
+                    }
+                    else if (original is not null && !string.Equals(currentLabel, original, StringComparison.Ordinal))
+                    {
+                        AskItem("drive.label", PlanSection.Drive, Word(S.Label), Data(currentLabel), Data(label.Value), R.LabelRenamed,
+                            d + ":", currentLabel, label.Value!);
+                    }
+                    else
+                    {
+                        Add("drive.label", PlanSection.Drive, PlanAction.Change, Word(S.Label), Data(currentLabel), Data(label.Value), R.LabelForeign);
+                        MarkBackup();
+                    }
+                }
+            }
         }
 
+        // The desktop shortcut on the Public Desktop. A recorded shortcut under another name goes first; a file CPFS did
+        // not record is never overwritten.
         public void Shortcut(string? path)
         {
             var recorded = _c?.Shortcut;
             var files = _s.PublicDesktopFiles;
             string? target = null;
+            string? fileName = null;
             if (_a.Shortcut)
             {
                 var name = Validators.ShortcutName(_a.ShortcutName);
                 if (!name.IsValid)
                 {
                     Invalid("shortcut.file", PlanSection.Shortcut, Word(S.Shortcut), _a.ShortcutName, "ShortcutName");
+                    return;
                 }
-                else if (!files.IsOk)
+
+                if (!files.IsOk)
                 {
                     Unread("shortcut.file", PlanSection.Shortcut, Word(S.Shortcut), files.State, files.Error);
+                    return;
                 }
-                else
-                {
-                    var fileName = name.Value + ".lnk";
-                    target = _s.CommonDesktop.TrimEnd('\\') + "\\" + fileName;
-                    var exists = Contains(files.Value!, fileName);
-                    var ours = SameText(target, recorded);
-                    if (exists && !ours)
-                    {
-                        Items.Add(Cannot("shortcut.file", PlanSection.Shortcut, Data(target), PlanCause.InvalidAnswer, R.ShortcutForeign, fileName));
-                    }
-                    else if (exists && path is not null && !SamePath(path, _c?.SharePath))
-                    {
-                        Add("shortcut.file", PlanSection.Shortcut, PlanAction.Change, Data(target), Data(_c?.SharePath ?? "?"), Data(path), R.ShortcutRetarget);
-                    }
-                    else if (exists)
-                    {
-                        Add("shortcut.file", PlanSection.Shortcut, PlanAction.Keep, Data(target), Word(W.Exists), null, R.AtTarget);
-                    }
-                    else if (ours)
-                    {
-                        // The earlier install made it and it is gone: the user removed it, so it comes back only when ticked.
-                        AskItem("shortcut.file", PlanSection.Shortcut, Data(target), Word(W.Absent), Data(path ?? _a.SharePath), R.ShortcutGone, fileName);
-                    }
-                    else
-                    {
-                        Add("shortcut.file", PlanSection.Shortcut, PlanAction.Create, Data(target), Word(W.Absent), Data(path ?? _a.SharePath), R.ShortcutCreate);
-                    }
-                }
-            }
-            else if (recorded is null)
-            {
-                Add("shortcut.file", PlanSection.Shortcut, PlanAction.Keep, Word(S.Shortcut), Word(W.None), null, R.ShortcutOff);
+
+                fileName = name.Value + ".lnk";
+                target = _s.CommonDesktop.TrimEnd('\\') + "\\" + fileName;
             }
 
             if (recorded is not null && !SameText(recorded, target) && files.IsOk)
             {
                 var inDesktop = SameText(DirectoryOf(recorded), _s.CommonDesktop.TrimEnd('\\'));
-                var exists = inDesktop && Contains(files.Value!, FileName(recorded));
-                if (exists)
+                if (inDesktop && Contains(files.Value!, FileName(recorded)))
                 {
                     Add("shortcut.old", PlanSection.Shortcut, PlanAction.RemoveIfOurs, Word(S.OldShortcut), Data(recorded), Word(W.Absent), R.ShortcutOldRemove);
                 }
+            }
+
+            if (!_a.Shortcut)
+            {
+                if (recorded is null)
+                {
+                    Add("shortcut.file", PlanSection.Shortcut, PlanAction.Keep, Word(S.Shortcut), Word(W.None), null, R.ShortcutOff);
+                }
+
+                return;
+            }
+
+            var exists = Contains(files.Value!, fileName!);
+            var ours = SameText(target, recorded);
+            if (exists && !ours)
+            {
+                Items.Add(Cannot("shortcut.file", PlanSection.Shortcut, Data(target), PlanCause.InvalidAnswer, R.ShortcutForeign, fileName!));
+            }
+            else if (exists && path is not null && !SamePath(path, _c?.SharePath))
+            {
+                Add("shortcut.file", PlanSection.Shortcut, PlanAction.Change, Data(target), Data(_c?.SharePath ?? "?"), Data(path), R.ShortcutRetarget);
+            }
+            else if (exists)
+            {
+                Add("shortcut.file", PlanSection.Shortcut, PlanAction.Keep, Data(target), Word(W.Exists), null, R.AtTarget);
+            }
+            else if (ours)
+            {
+                // The earlier install made it and it is gone: the user removed it, so it comes back only when ticked.
+                AskItem("shortcut.file", PlanSection.Shortcut, Data(target), Word(W.Absent), Data(path ?? _a.SharePath), R.ShortcutGone, fileName!);
+            }
+            else
+            {
+                Add("shortcut.file", PlanSection.Shortcut, PlanAction.Create, Data(target), Word(W.Absent), Data(path ?? _a.SharePath), R.ShortcutCreate);
             }
         }
 
@@ -1336,6 +1413,11 @@ public static class Planner
         || (name.Length == 2 && name[1] == '$' && char.IsLetter(name[0]) && name[0] < 128);
 
     private static bool SameText(string? a, string? b) => a is not null && b is not null && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+
+    // A DOS Devices value, and the target DefineDosDevice gets with DDD_RAW_TARGET_PATH: the folder as an NT path.
+    public static string DosTarget(string path) => @"\??\" + path.Trim().TrimEnd('\\');
+
+    private static bool IsAsciiLetter(char c) => c is >= 'A' and <= 'Z' or >= 'a' and <= 'z';
 
     private static bool SamePath(string? a, string? b) => SameText(Trim(a), Trim(b));
 

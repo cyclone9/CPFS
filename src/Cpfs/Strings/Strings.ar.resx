@@ -52,15 +52,10 @@
   <data name="Pref_Lang_Desc" xml:space="preserve"><value>The language of the app.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Pref_Font_Title" xml:space="preserve"><value>Font</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Pref_Font_Desc" xml:space="preserve"><value>The font for the current language. Each language keeps its own choice.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Stored" xml:space="preserve"><value>Your preferences are saved for your Windows account in:</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Title" xml:space="preserve"><value>Setup</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_ReadOnly_Title" xml:space="preserve"><value>Nothing changes until you press Apply</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_ReadOnly_Msg" xml:space="preserve"><value>This page shows your CPFS install, the Windows settings and what Setup would change. Windows is changed only after you press Apply and confirm, and a restore point comes first.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Admin_Title" xml:space="preserve"><value>Some items need administrator rights to read</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Admin_Desc" xml:space="preserve"><value>Continue as administrator to read them too. Windows asks for permission once. Nothing is changed.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Admin_Button" xml:space="preserve"><value>Continue as administrator</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Admin_ElevatedTitle" xml:space="preserve"><value>Running as administrator</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Admin_ElevatedDesc" xml:space="preserve"><value>Everything below was read with administrator rights. Nothing is changed.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Admin_CancelledTitle" xml:space="preserve"><value>Administrator rights were not granted</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Admin_CancelledMsg" xml:space="preserve"><value>The Windows prompt was declined, so CPFS continues without administrator rights.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Admin_FailedTitle" xml:space="preserve"><value>CPFS could not restart as administrator</value><comment>UNTRANSLATED: English text</comment></data>
@@ -232,14 +227,11 @@
   <data name="About_Licence_Mit" xml:space="preserve"><value>CPFS licence (MIT)</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="About_Licence_Notices" xml:space="preserve"><value>Third-party notices</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="About_Licence_Ofl" xml:space="preserve"><value>Vazirmatn font licence (SIL OFL 1.1)</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="About_Bidi_Title" xml:space="preserve"><value>Text direction check</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="About_Bidi_Desc" xml:space="preserve"><value>Paths, addresses and names keep their own direction inside the text of every language.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="About_Bidi_Sample" xml:space="preserve"><value>The folder {0} is shared as {1}, also at {2}. Language names: {3}, {4}.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Common_CopyName" xml:space="preserve"><value>Copy {0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Common_Copied" xml:space="preserve"><value>Copied</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Common_CopyFailed" xml:space="preserve"><value>Could not copy to the clipboard: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Intro" xml:space="preserve"><value>Pick the address the other device should use. The steps, values and QR codes below follow it. The password is never shown, copied or put in a QR code: each device asks for it.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Intro" xml:space="preserve"><value>Pick the address the other device should use. The steps, values and QR codes below follow it. The SMB password is never shown, copied or put in a QR code: each device asks for it.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_NoInstall_Title" xml:space="preserve"><value>CPFS is not set up on this PC yet</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_NoInstall_Msg" xml:space="preserve"><value>No CPFS settings file was found, so the steps show placeholders instead of your share and user name. Run Setup first.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Incomplete_Title" xml:space="preserve"><value>CPFS setup is not finished</value><comment>UNTRANSLATED: English text</comment></data>
@@ -259,65 +251,67 @@
   <data name="Connect_Kind_MagicDns" xml:space="preserve"><value>Through the VPN. MagicDNS name.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Where_Lan" xml:space="preserve"><value>Works only when the device is on the same network as this PC.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Where_Vpn" xml:space="preserve"><value>Works from anywhere while Tailscale or Headscale is on, on both devices.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Account_Title" xml:space="preserve"><value>Share and user</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Account_Desc" xml:space="preserve"><value>Devices sign in with the SMB user, not with your Windows account. Where a device asks, choose Registered User.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Account_Title" xml:space="preserve"><value>Share and username</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Account_Desc" xml:space="preserve"><value>Devices sign in with the SMB username, not with your Windows account. Where a device asks, choose Registered User.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Label_Share" xml:space="preserve"><value>Share</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Label_User" xml:space="preserve"><value>User name</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Label_User" xml:space="preserve"><value>Username</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Label_Domain" xml:space="preserve"><value>Domain or workgroup (only if asked)</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Label_Unc" xml:space="preserve"><value>Address for File Explorer</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Label_SignIn" xml:space="preserve"><value>Sign in as</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Label_SmbUrl" xml:space="preserve"><value>Server address</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Label_IosUrl" xml:space="preserve"><value>Server address with user name</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Label_NetUse" xml:space="preserve"><value>Command Prompt (asks for the password)</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Label_NetUse" xml:space="preserve"><value>Command Prompt (asks for the SMB password)</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Label_MountDir" xml:space="preserve"><value>Create the mount folder once</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Label_Mount" xml:space="preserve"><value>Mount command (asks for the password)</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Label_Mount" xml:space="preserve"><value>Mount command (asks for the SMB password)</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Label_Host" xml:space="preserve"><value>Host</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Label_Path" xml:space="preserve"><value>Path or share</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Placeholder_Share" xml:space="preserve"><value>ShareName</value><comment>Same in every language.</comment></data>
   <data name="Connect_Placeholder_User" xml:space="preserve"><value>UserName</value><comment>Same in every language.</comment></data>
   <data name="Connect_Qr_Name" xml:space="preserve"><value>QR code with {0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_QrFailed" xml:space="preserve"><value>The QR code could not be made: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Qr_Show" xml:space="preserve"><value>QR code</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Qr_ShowName" xml:space="preserve"><value>Show the QR code for {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Qr_Title" xml:space="preserve"><value>QR code for {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Qr_TextLabel" xml:space="preserve"><value>Text in the code</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Win_Title" xml:space="preserve"><value>Windows (another PC)</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Win_Step1" xml:space="preserve"><value>In File Explorer, type the address below in the address bar and press Enter.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Win_Step2" xml:space="preserve"><value>Sign in as {0}, not with the Windows account of that PC.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Win_Step2" xml:space="preserve"><value>Sign in with the username {0}, not with the Windows account of that PC.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Win_Step3" xml:space="preserve"><value>To keep it as a drive, use Map network drive, paste the address and tick Connect using different credentials.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Win_Step4" xml:space="preserve"><value>Or run this command in a Command Prompt. The * makes it ask for the password.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Win_Step4" xml:space="preserve"><value>Or run this command in a Command Prompt. The * makes it ask for the SMB password.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Win_NoQr" xml:space="preserve"><value>Windows gets no QR code: copy the address instead.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Win_Strict" xml:space="preserve"><value>Strict mode: Windows 8 and later support SMB 3 encryption.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Mac_Title" xml:space="preserve"><value>macOS</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Mac_Step1" xml:space="preserve"><value>In Finder, choose Go, then Connect to Server. Type the address below and click Connect.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Mac_Step2" xml:space="preserve"><value>Choose Registered User and enter the user name {0} and the password.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Mac_Step2" xml:space="preserve"><value>Choose Registered User and enter the username {0} and the SMB password.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Mac_Qr" xml:space="preserve"><value>The server address as text.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Mac_Strict" xml:space="preserve"><value>Strict mode: macOS 10.10 Yosemite and later support SMB 3 encryption.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Linux_Title" xml:space="preserve"><value>Linux</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Linux_Step1" xml:space="preserve"><value>In the file manager, open the address below: in GNOME Files under Other Locations, in Dolphin in the address bar.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Linux_Step2" xml:space="preserve"><value>Sign in as {0} with the password.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Linux_Step3" xml:space="preserve"><value>To mount it from a terminal (needs the cifs-utils package), create the folder once, then run the mount command. It asks for the password.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Linux_Step2" xml:space="preserve"><value>Sign in with the username {0} and the SMB password.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Linux_Step3" xml:space="preserve"><value>To mount it from a terminal (needs the cifs-utils package), create the folder once, then run the mount command. It asks for the SMB password.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Linux_Local" xml:space="preserve"><value>Names ending in .local need Avahi with nss-mdns on that machine.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Linux_Qr" xml:space="preserve"><value>The server address as text.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Linux_Strict" xml:space="preserve"><value>Strict mode: keep the seal option in the mount command. It asks for SMB 3 encryption.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Android_Title" xml:space="preserve"><value>Android</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Android_Step1" xml:space="preserve"><value>Use a file manager with SMB support: Material Files, CIFS Documents Provider, or Samsung My Files (Network storage).</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Android_Step2" xml:space="preserve"><value>Scan the QR code and copy the host, or type it. Add an SMB server with the host, path and user name below, and leave the domain empty.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Android_Step3" xml:space="preserve"><value>Enter the password when the app asks for it.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Android_Step2" xml:space="preserve"><value>Scan the QR code and copy the host, or type it. Add an SMB server with the host, path and username below, and leave the domain empty.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Android_Step3" xml:space="preserve"><value>Enter the SMB password when the app asks for it.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Android_Local" xml:space="preserve"><value>Names ending in .local work on current Android versions, but not while a VPN app is on or over mobile data. Use an IP address then.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Android_Qr" xml:space="preserve"><value>The host as text: scan it, copy it and paste it into the app's host field.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Android_Strict" xml:space="preserve"><value>Strict mode: SMB 3 encryption support depends on the app. If it can't connect, turn Strict mode off in Setup.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Ios_Title" xml:space="preserve"><value>iPhone and iPad</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Ios_Step1" xml:space="preserve"><value>Scan the QR code with the Camera app and tap the address. If Files doesn't open, use the next step.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Ios_Step2" xml:space="preserve"><value>In Files, tap Browse, then the More button (three dots), then Connect to Server, and enter the address below.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Ios_Step3" xml:space="preserve"><value>Choose Registered User and enter the user name {0} and the password.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Ios_Step3" xml:space="preserve"><value>Choose Registered User and enter the username {0} and the SMB password.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Ios_Version" xml:space="preserve"><value>Needs iOS or iPadOS 13 or later.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Ios_Qr" xml:space="preserve"><value>The server address with your user name. The password is not in it.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Ios_Qr" xml:space="preserve"><value>The server address with your username. The password is not in it.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Ios_Strict" xml:space="preserve"><value>Strict mode: Apple doesn't document SMB 3 encryption for iPhone and iPad. If it can't connect, turn Strict mode off in Setup.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Admin_Title" xml:space="preserve"><value>The Monitor needs administrator rights</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Admin_Desc" xml:space="preserve"><value>Connected devices, open files, traffic counters and the Security log can only be read as administrator. Windows asks for permission once. Nothing is changed.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Intro" xml:space="preserve"><value>Updates every 2 seconds. Down is from this PC to a device, up is from a device to this PC.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Updated" xml:space="preserve"><value>Updated {0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_NoValue" xml:space="preserve"><value>-</value><comment>Same in every language.</comment></data>
   <data name="Monitor_ReadFailed" xml:space="preserve"><value>Could not read this: {0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Server_Title" xml:space="preserve"><value>Server totals</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Server_Desc" xml:space="preserve"><value>Since the SMB server started.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Server_Desc" xml:space="preserve"><value>Since the SMB server started, for all devices together.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Server_Down" xml:space="preserve"><value>Down</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Server_Up" xml:space="preserve"><value>Up</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Server_LogonErrors" xml:space="preserve"><value>Failed logons since the start</value><comment>UNTRANSLATED: English text</comment></data>
@@ -328,34 +322,24 @@
   <data name="Monitor_Sessions_Desc" xml:space="preserve"><value>Devices signed in to this PC's SMB server.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Sessions_None" xml:space="preserve"><value>No device is connected.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Session_Client" xml:space="preserve"><value>Client</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Session_User" xml:space="preserve"><value>User</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Session_User" xml:space="preserve"><value>Username</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Session_Dialect" xml:space="preserve"><value>SMB version</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Session_Files" xml:space="preserve"><value>Open files</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Session_Connected" xml:space="preserve"><value>Connected for</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Session_Idle" xml:space="preserve"><value>Idle for</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Session_Vpn" xml:space="preserve"><value>Through the VPN</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Session_Disconnect" xml:space="preserve"><value>Disconnect</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Session_DisconnectName" xml:space="preserve"><value>Disconnect {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Shares_Title" xml:space="preserve"><value>Share traffic</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Shares_Desc" xml:space="preserve"><value>Totals since the SMB server started, and the speed now.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Shares_None" xml:space="preserve"><value>No share has traffic counters yet.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Shares_Unavailable" xml:space="preserve"><value>Per-share counters are not available on this PC. The server totals still work.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Share_Name" xml:space="preserve"><value>Share</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Share_Down" xml:space="preserve"><value>Down</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Share_Up" xml:space="preserve"><value>Up</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Share_DownNow" xml:space="preserve"><value>Down now</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Share_UpNow" xml:space="preserve"><value>Up now</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Files_Title" xml:space="preserve"><value>Open files ({0})</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Files_Desc" xml:space="preserve"><value>Files that devices have open on this PC, up to {0}.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Files_None" xml:space="preserve"><value>No file is open.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_File_Path" xml:space="preserve"><value>File</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_File_User" xml:space="preserve"><value>User</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_File_User" xml:space="preserve"><value>Username</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_File_Client" xml:space="preserve"><value>Client</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Fails_Title" xml:space="preserve"><value>Failed sign-ins in the last 24 hours</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Fails_Desc" xml:space="preserve"><value>Network sign-ins only, newest first, from the Windows Security log. Read every 10 seconds.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Fails_None" xml:space="preserve"><value>No failed sign-in in the last 24 hours.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Fail_Time" xml:space="preserve"><value>Time</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Fail_User" xml:space="preserve"><value>User</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Fail_User" xml:space="preserve"><value>Username</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Fail_From" xml:space="preserve"><value>From</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Fail_Reason" xml:space="preserve"><value>Reason</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Fail_Unknown" xml:space="preserve"><value>Code {0}</value><comment>UNTRANSLATED: English text</comment></data>
@@ -366,7 +350,7 @@
   <data name="FailReason_C000015B" xml:space="preserve"><value>Network sign-in not allowed for this account</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="FailReason_C0000071" xml:space="preserve"><value>Password expired</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="FailReason_C0000133" xml:space="preserve"><value>Clock difference too large</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="FailReason_C000006D" xml:space="preserve"><value>Wrong user name or password</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="FailReason_C000006D" xml:space="preserve"><value>Wrong username or password</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="FailReason_C000006F" xml:space="preserve"><value>Outside the allowed sign-in hours</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="FailReason_C0000070" xml:space="preserve"><value>Not allowed from this device</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="FailReason_C0000193" xml:space="preserve"><value>Account expired</value><comment>UNTRANSLATED: English text</comment></data>
@@ -403,10 +387,6 @@
   <data name="Size_2" xml:space="preserve"><value>{0} MB</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Size_3" xml:space="preserve"><value>{0} GB</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Size_4" xml:space="preserve"><value>{0} TB</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="About_Brand_TaglineLabel" xml:space="preserve"><value>العبارة التعريفية</value><comment>Brand label, the same word as in the READMEs (owner, 2026-10-23).</comment></data>
-  <data name="About_Brand_MottoLabel" xml:space="preserve"><value>الشعار</value><comment>Brand label, the same word as in the READMEs (owner, 2026-10-23).</comment></data>
-  <data name="About_Brand_Motto" xml:space="preserve"><value>Only the folder you chose.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Stored_Title" xml:space="preserve"><value>Where your preferences are saved</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Badge_Ok" xml:space="preserve"><value>Ok</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Badge_Error" xml:space="preserve"><value>Error</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_ExpandAll" xml:space="preserve"><value>Expand all</value><comment>UNTRANSLATED: English text</comment></data>
@@ -435,20 +415,19 @@
   <data name="Setup_DataFolder_SummaryAdmins" xml:space="preserve"><value>Exists, owned by Administrators</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_DataFolder_SummaryOther" xml:space="preserve"><value>Exists, owned by {0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Plan_Title" xml:space="preserve"><value>What Setup would do</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Plan_Desc" xml:space="preserve"><value>Your answers, starting from what the existing install saved. The plan below compares them with this PC as it is now. Nothing changes until you press Apply.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_State_Title" xml:space="preserve"><value>What is on this PC now</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_SharePath" xml:space="preserve"><value>Shared folder</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_SharePath_Desc" xml:space="preserve"><value>The folder phones and other devices will see. Files in it are never deleted.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_ShareName" xml:space="preserve"><value>Share name</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Form_SmbUser" xml:space="preserve"><value>SMB account</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Form_SmbUser_Desc" xml:space="preserve"><value>A separate account used only for file sharing, not your Windows sign-in.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Form_Password" xml:space="preserve"><value>Password</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Form_PasswordRepeat" xml:space="preserve"><value>Repeat password</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_SmbUser" xml:space="preserve"><value>SMB username</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_SmbUser_Desc" xml:space="preserve"><value>Used to sign in from your devices. A separate account, not your Windows sign-in.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_Password" xml:space="preserve"><value>SMB password</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_PasswordShow" xml:space="preserve"><value>Show password</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_PasswordHide" xml:space="preserve"><value>Hide password</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Form_Password_Desc" xml:space="preserve"><value>At least 8 characters. Leave both empty to keep the current password of an existing account. The password is never saved, logged or shown.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Form_PasswordShort" xml:space="preserve"><value>The password needs at least {0} characters.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Form_PasswordMismatch" xml:space="preserve"><value>The two passwords are not the same.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_ClearShareName" xml:space="preserve"><value>Clear the share name</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_ClearSmbUser" xml:space="preserve"><value>Clear the SMB username</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_ClearPassword" xml:space="preserve"><value>Clear the SMB password</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_PasswordShort" xml:space="preserve"><value>The SMB password needs at least {0} characters.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Strict" xml:space="preserve"><value>Strict mode</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Strict_Desc" xml:space="preserve"><value>Require SMB3 encryption. Some older devices can no longer connect.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_AutoPrivate" xml:space="preserve"><value>Make new networks Private</value><comment>UNTRANSLATED: English text</comment></data>
@@ -465,12 +444,11 @@
   <data name="Setup_Form_Error_TooShort" xml:space="preserve"><value>This is too short.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Error_InvalidCharacters" xml:space="preserve"><value>This contains characters that are not allowed here.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Error_AllDigits" xml:space="preserve"><value>A name made only of digits is not allowed.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Form_Error_SameAsWindowsUser" xml:space="preserve"><value>This is a Windows sign-in name. Use a separate account, for example the name with -SMB added.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Form_Error_SameAsComputerName" xml:space="preserve"><value>The account cannot have the same name as this PC.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_Error_SameAsWindowsUser" xml:space="preserve"><value>This is a Windows sign-in name. Use a separate username, for example the name with -SMB added.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_Error_SameAsComputerName" xml:space="preserve"><value>The SMB username can't be the same as this PC's name.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Error_NotFullPath" xml:space="preserve"><value>Enter a full path that starts with a drive, such as D:\Shared.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Error_DriveRoot" xml:space="preserve"><value>A whole drive cannot be shared. Choose a folder on it.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Error_ProtectedFolder" xml:space="preserve"><value>This is a Windows or user folder and cannot be shared. Choose another folder.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Form_Error_PasswordsDiffer" xml:space="preserve"><value>The two passwords are not the same.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Error_ReservedName" xml:space="preserve"><value>Windows reserves this name. Choose another.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Error_TrailingDotOrSpace" xml:space="preserve"><value>A file name cannot end with a dot or a space.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Error_ControlCharacters" xml:space="preserve"><value>This contains control characters.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -480,12 +458,9 @@
   <data name="Setup_Plan_GroupSummary" xml:space="preserve"><value>{0} keep, {1} to look at</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Plan_Apply" xml:space="preserve"><value>Apply</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Plan_AskDo" xml:space="preserve"><value>Do this</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Plan_QuickAccessLater" xml:space="preserve"><value>Creating the drive and the shortcut comes in version 0.6.0</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Plan_AskName" xml:space="preserve"><value>Do this: {0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Plan_Arrow" xml:space="preserve"><value>{0} → {1}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Plan_Backup" xml:space="preserve"><value>The original value is saved in the backup first.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Plan_NotElevatedTitle" xml:space="preserve"><value>Some items need administrator rights</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Plan_NotElevated" xml:space="preserve"><value>Use Continue as administrator to read them and complete the plan.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_Badge_Keep" xml:space="preserve"><value>Keep</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_Badge_Change" xml:space="preserve"><value>Change</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_Badge_Create" xml:space="preserve"><value>Create</value><comment>UNTRANSLATED: English text</comment></data>
@@ -516,7 +491,7 @@
   <data name="Plan_S_Users" xml:space="preserve"><value>Member of Users</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_S_Admins" xml:space="preserve"><value>Member of Administrators</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_S_Hidden" xml:space="preserve"><value>Hidden from the sign-in screen</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Plan_S_Password" xml:space="preserve"><value>Password</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_S_Password" xml:space="preserve"><value>SMB password</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_S_Folder" xml:space="preserve"><value>Shared folder</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_S_Ace" xml:space="preserve"><value>Folder access</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_S_Share" xml:space="preserve"><value>Share</value><comment>UNTRANSLATED: English text</comment></data>
@@ -583,9 +558,9 @@
   <data name="Plan_R_Admin" xml:space="preserve"><value>The account is an administrator. Removing these rights is recommended: a leaked file-sharing password then cannot change Windows.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_AdminNew" xml:space="preserve"><value>Kept out of Administrators, so a leaked file-sharing password cannot change Windows.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_Hidden" xml:space="preserve"><value>Hides the account from the sign-in screen.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Plan_R_PasswordKeep" xml:space="preserve"><value>The password fields are empty, so the current password stays.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_PasswordKeep" xml:space="preserve"><value>The SMB password box is empty, so the current password stays.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_PasswordSet" xml:space="preserve"><value>Sets the password you typed. It is not saved anywhere.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Plan_R_PasswordNeeded" xml:space="preserve"><value>A new account needs a password: type it twice in the form.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_PasswordNeeded" xml:space="preserve"><value>A new account needs a password: type it in the SMB password box.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_FolderCreate" xml:space="preserve"><value>The folder does not exist yet and is created.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_AceGrant" xml:space="preserve"><value>Gives {0} Modify rights on the folder and everything in it.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_AceAfterAccount" xml:space="preserve"><value>Gives {0} Modify rights on the folder once the account exists.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -627,7 +602,6 @@
   <data name="Plan_R_LegacyTask" xml:space="preserve"><value>A task from CyShare, the earlier name of CPFS.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_StaleTask" xml:space="preserve"><value>Left over from an interrupted run; Setup creates this task only for a moment.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_DriveCreate" xml:space="preserve"><value>Maps the drive for every session.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Plan_R_DriveMove" xml:space="preserve"><value>The letter points somewhere else and is pointed at the shared folder.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_DriveOldRemove" xml:space="preserve"><value>The drive letter CPFS mapped before.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_DriveOldForeign" xml:space="preserve"><value>The previous letter now points somewhere CPFS did not set, so it is left alone.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_DriveOff" xml:space="preserve"><value>No drive letter.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -680,14 +654,12 @@
   <data name="Plan_R_DriveGone" xml:space="preserve"><value>The drive {0} the earlier install made is gone. Create it again?</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RestorePoint" xml:space="preserve"><value>Create a restore point first</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RestorePointStep" xml:space="preserve"><value>Restore point</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Apply_NeedsAdmin" xml:space="preserve"><value>Applying needs administrator rights. Use Continue as administrator above.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_Running" xml:space="preserve"><value>Applying the changes...</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_Blocked" xml:space="preserve"><value>Some items cannot be planned. Correct the answers marked in red, or read the items marked as not planned.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Apply_Nothing" xml:space="preserve"><value>Nothing to change: this PC already matches the plan.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_Ready" xml:space="preserve"><value>You see a summary to confirm before anything changes.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_ConfirmTitle" xml:space="preserve"><value>Apply these changes?</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_ConfirmMsg" xml:space="preserve"><value>{0} changes will be made to Windows.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Apply_ConfirmDeferred" xml:space="preserve"><value>{0} items come in 0.6.0 and are skipped.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_ConfirmDeferred" xml:space="preserve"><value>{0} items aren't available yet and are skipped.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_ConfirmRestorePoint" xml:space="preserve"><value>A restore point is created first.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_ConfirmNoRestorePoint" xml:space="preserve"><value>No restore point is created.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_ConfirmButton" xml:space="preserve"><value>Apply changes</value><comment>UNTRANSLATED: English text</comment></data>
@@ -697,7 +669,7 @@
   <data name="Apply_State_Running" xml:space="preserve"><value>Working</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_State_Done" xml:space="preserve"><value>Done</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_State_Kept" xml:space="preserve"><value>Already done</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Apply_State_Deferred" xml:space="preserve"><value>Comes in 0.6.0</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_State_Deferred" xml:space="preserve"><value>Not available yet</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_State_Unsupported" xml:space="preserve"><value>Refused by Windows</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_State_Partial" xml:space="preserve"><value>Partly done</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_State_Failed" xml:space="preserve"><value>Failed</value><comment>UNTRANSLATED: English text</comment></data>
@@ -705,24 +677,20 @@
   <data name="Apply_State_Skipped" xml:space="preserve"><value>Skipped</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RpTitle" xml:space="preserve"><value>No new restore point</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RpSkippedMsg" xml:space="preserve"><value>Windows did not create a new restore point, most likely because one was made in the last 24 hours. The newest one is from {0}. Continue without a new one?</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Apply_RpUnavailableMsg" xml:space="preserve"><value>No restore point could be created ({0}). System Protection may be off for the system drive. Continue without a restore point?</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_RpUnavailableMsg" xml:space="preserve"><value>No restore point could be created. Windows said:&#xD;&#xA;{0}&#xD;&#xA;System Protection may be off for the system drive. Continue without a restore point?</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RpNoneMsg" xml:space="preserve"><value>Windows reported no error, but no restore point exists. System Protection may be off for the system drive. Continue without a restore point?</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RpContinue" xml:space="preserve"><value>Continue without it</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RpOpenSettings" xml:space="preserve"><value>Open System Protection</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RpStop" xml:space="preserve"><value>Stop</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_StoppedTitle" xml:space="preserve"><value>Nothing was changed</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_StoppedMsg" xml:space="preserve"><value>Setup stopped before changing Windows.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Apply_DoneTitle" xml:space="preserve"><value>Setup applied</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Apply_DoneMsg" xml:space="preserve"><value>{0} done, {1} already done, {2} left for 0.6.0.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Apply_DoneRefused" xml:space="preserve"><value>{0} not done: Windows refused the change.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Apply_DonePartial" xml:space="preserve"><value>{0} done only in part; the item shows what was left.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Apply_RefusedReason" xml:space="preserve"><value>Windows refused this change: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_RefusedReason" xml:space="preserve"><value>Windows refused this change. It said:&#xD;&#xA;{0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RestartMsg" xml:space="preserve"><value>Restart Windows to finish removing SMB1.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_FailedTitle" xml:space="preserve"><value>Stopped at: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Apply_FailedMsg" xml:space="preserve"><value>{0}. What was done before this item is recorded in config.json, so Uninstall can undo it.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_FailedMsg" xml:space="preserve"><value>What was done before this item is recorded in config.json, so Uninstall can undo it. Windows said:&#xD;&#xA;{0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_ErrorTitle" xml:space="preserve"><value>Apply failed</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Uninst_Intro_Title" xml:space="preserve"><value>What Uninstall would undo</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Uninst_Intro_Desc" xml:space="preserve"><value>Read from the backup in config.json and from what Setup recorded. Your files are never deleted. Nothing changes until you press Uninstall and confirm.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_Intro_Title" xml:space="preserve"><value>Uninstall removes what CPFS set up on this PC</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_Intro_Desc" xml:space="preserve"><value>Files in the shared folder stay. Nothing changes until you press Uninstall and confirm.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_Admin_Title" xml:space="preserve"><value>Administrator rights needed</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_Admin_Desc" xml:space="preserve"><value>Uninstall reads and changes settings only an administrator can. Restart CPFS as administrator to see the plan.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_Apply" xml:space="preserve"><value>Uninstall</value><comment>UNTRANSLATED: English text</comment></data>
@@ -763,8 +731,8 @@
   <data name="Uninst_R_NetworkSaved" xml:space="preserve"><value>CPFS made this network Private. It is not connected now; tick to make it Public in the saved network list.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_R_SaveCopy" xml:space="preserve"><value>Before anything changes, a copy of config.json with the backup of your original settings goes to your Documents folder. It holds no password.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_R_DataRemove" xml:space="preserve"><value>The CPFS data folder with config.json. Removed last.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Uninst_R_DataKept" xml:space="preserve"><value>Kept, because it records a drive, shortcut or task that Uninstall removes only from 0.6.0 on.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Uninst_R_Later" xml:space="preserve"><value>Uninstall removes this from 0.6.0 on.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_R_DataKept" xml:space="preserve"><value>Kept, because it records a drive, shortcut or task that Uninstall can't remove yet.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_R_Later" xml:space="preserve"><value>Uninstall can't remove this yet.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_S_Owner" xml:space="preserve"><value>Owner of uploaded files</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_S_Ace" xml:space="preserve"><value>Folder permission</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_S_Delete" xml:space="preserve"><value>Delete the account</value><comment>UNTRANSLATED: English text</comment></data>
@@ -776,4 +744,137 @@
   <data name="Uninst_S_Config" xml:space="preserve"><value>config.json</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_S_Kept" xml:space="preserve"><value>Always kept</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_ConfigUnreadable" xml:space="preserve"><value>config.json exists but could not be read. Apply stays off, so the backup in it is not replaced.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Nav_Advanced" xml:space="preserve"><value>Advanced</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Common_ShowDetails" xml:space="preserve"><value>Show details</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Common_Close" xml:space="preserve"><value>Close</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Homepage" xml:space="preserve"><value>Homepage</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Homepage_Help" xml:space="preserve"><value>Opens the CPFS homepage in your browser</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Homepage_Failed" xml:space="preserve"><value>The browser could not be opened: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Help_Title" xml:space="preserve"><value>Having a problem?</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Help_Desc" xml:space="preserve"><value>Press Copy report and paste it into your message. It contains no passwords.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Adv_State_Desc" xml:space="preserve"><value>Read-only: what CPFS finds on this PC. Nothing here changes Windows.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Adv_Diagnostics_Title" xml:space="preserve"><value>Diagnostics</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Welcome_Title" xml:space="preserve"><value>Share a folder with your phone</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Welcome_Desc" xml:space="preserve"><value>Choose the folder and an SMB password. CPFS does the rest, and Uninstall can undo it.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_ConfigFailed" xml:space="preserve"><value>config.json could not be read</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_ShareName_Desc" xml:space="preserve"><value>The name devices see for the folder.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_Browse" xml:space="preserve"><value>Browse…</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_Browse_Help" xml:space="preserve"><value>Choose the folder in the Windows folder picker</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_Browse_Title" xml:space="preserve"><value>Choose the folder to share</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_BrowseRefused" xml:space="preserve"><value>{0} can't be shared. {1}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_BrowseFailed" xml:space="preserve"><value>The folder picker could not be opened: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_Password_DescFirst" xml:space="preserve"><value>At least {0} characters. Devices ask for it when they connect.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_Password_DescKeep" xml:space="preserve"><value>Leave it empty to keep the current password.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_ComputerName" xml:space="preserve"><value>Computer name</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_ComputerName_Desc" xml:space="preserve"><value>Devices find this PC by this name followed by .local.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_ComputerName_Later" xml:space="preserve"><value>Renaming the computer isn't available yet</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_More_Title" xml:space="preserve"><value>More options</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_More_Desc" xml:space="preserve"><value>Strict mode, new networks, drive letter, desktop shortcut and computer name. The defaults suit most people.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Decisions_Title" xml:space="preserve"><value>Your decisions</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Decisions_Desc" xml:space="preserve"><value>Ticked items are done. Unticked items are left as they are.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Summary_Title" xml:space="preserve"><value>What Apply will do</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Summary_TitleFirst" xml:space="preserve"><value>What Set up will do</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Plan_SetUp" xml:space="preserve"><value>Set up</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_ConfirmFirstTitle" xml:space="preserve"><value>Set up CPFS?</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_OpenConnect" xml:space="preserve"><value>Connect a device</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Details_Desc" xml:space="preserve"><value>Every setting Setup checks, what it would do and why, and the progress of Apply.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_Summary_Title" xml:space="preserve"><value>What Uninstall will do</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_Details_Desc" xml:space="preserve"><value>Every item Uninstall checks, what it would do and why, and its progress.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_ConfirmMsgOne" xml:space="preserve"><value>1 change will be made to Windows.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_ConfirmUndo" xml:space="preserve"><value>Uninstall undoes these changes.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_ConfirmMsgOne" xml:space="preserve"><value>1 change will be made to Windows. Files in the shared folder are not deleted.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_ConfirmUndo" xml:space="preserve"><value>This undoes the changes Setup made.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_DoneOne" xml:space="preserve"><value>Done. 1 change made.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_DoneMany" xml:space="preserve"><value>Done. {0} changes made.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_DoneNone" xml:space="preserve"><value>Done. Nothing needed changing.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_DoneRefusedItem" xml:space="preserve"><value>Windows refused {0}. It said:</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_DonePartialItem" xml:space="preserve"><value>{0} was only partly done. Windows said:</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_NoRestorePointNote" xml:space="preserve"><value>No new restore point was made.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Shares" xml:space="preserve"><value>Shares {0} as {1} for the account {2}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_StrictOn" xml:space="preserve"><value>Strict mode is on: devices must encrypt the connection, and some older ones can't connect.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_StrictOff" xml:space="preserve"><value>Strict mode is off: devices no longer have to encrypt the connection.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_ShareRenamed" xml:space="preserve"><value>Devices connect to the new share name {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_ShareMoved" xml:space="preserve"><value>The share {0} now shows the folder {1}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_NewAccount" xml:space="preserve"><value>Devices sign in with the new account {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Password" xml:space="preserve"><value>A new password for {0}. Devices must use it from now on.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Rename" xml:space="preserve"><value>The computer name changes to {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_StaysPublic" xml:space="preserve"><value>{0} stays a Public network, so devices on it can't connect.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Changes_One" xml:space="preserve"><value>1 change to Windows.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Changes_Many" xml:space="preserve"><value>{0} changes to Windows.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Backup" xml:space="preserve"><value>Your current Windows settings are saved first, so Uninstall can put them back.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Security_One" xml:space="preserve"><value>1 security setting is put in place.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Security_Many" xml:space="preserve"><value>{0} security settings are put in place.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Firewall_Created_One" xml:space="preserve"><value>1 firewall rule is created.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Firewall_Created_Many" xml:space="preserve"><value>{0} firewall rules are created.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Firewall_Changed_One" xml:space="preserve"><value>1 firewall rule is corrected.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Firewall_Changed_Many" xml:space="preserve"><value>{0} firewall rules are corrected.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Firewall_TurnedOff_One" xml:space="preserve"><value>1 built-in firewall rule that opens file sharing to public networks is turned off.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Firewall_TurnedOff_Many" xml:space="preserve"><value>{0} built-in firewall rules that open file sharing to public networks are turned off.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Firewall_Removed_One" xml:space="preserve"><value>1 firewall rule is removed.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Firewall_Removed_Many" xml:space="preserve"><value>{0} firewall rules are removed.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Networks_One" xml:space="preserve"><value>1 network becomes Private.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Networks_Many" xml:space="preserve"><value>{0} networks become Private.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_DataFolder" xml:space="preserve"><value>The CPFS data folder is locked to administrators.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Nothing" xml:space="preserve"><value>Nothing to change. This PC already matches your settings.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Blocked" xml:space="preserve"><value>Some items can't be planned yet, so the button stays off until they can.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_Share" xml:space="preserve"><value>Removes the share {0}. Devices can no longer connect to it.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_DeleteUser" xml:space="preserve"><value>Deletes the account {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_KeepUser" xml:space="preserve"><value>The account {0} is kept.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_FilesStay" xml:space="preserve"><value>Files in the shared folder stay.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_Copy" xml:space="preserve"><value>A copy of your settings backup goes to Documents first.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_Restore_One" xml:space="preserve"><value>1 Windows setting goes back to how it was before CPFS.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_Restore_Many" xml:space="preserve"><value>{0} Windows settings go back to how they were before CPFS.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_Firewall_Removed_One" xml:space="preserve"><value>1 firewall rule is removed.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_Firewall_Removed_Many" xml:space="preserve"><value>{0} firewall rules are removed.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_Firewall_TurnedOn_One" xml:space="preserve"><value>1 built-in firewall rule is turned back on.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_Firewall_TurnedOn_Many" xml:space="preserve"><value>{0} built-in firewall rules are turned back on.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_Networks_One" xml:space="preserve"><value>1 network becomes Public again.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_Networks_Many" xml:space="preserve"><value>{0} networks become Public again.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_Data" xml:space="preserve"><value>The CPFS data folder is removed last.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_Nothing" xml:space="preserve"><value>Nothing to undo. CPFS has nothing set up on this PC that Uninstall can remove.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_DownTip" xml:space="preserve"><value>From this PC to the device</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_UpTip" xml:space="preserve"><value>From the device to this PC</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Common_ListBullet" xml:space="preserve"><value>–</value><comment>Same in every language.</comment></data>
+  <data name="Monitor_Session_Status" xml:space="preserve"><value>Status</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Session_Active" xml:space="preserve"><value>Active now</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Session_IdleFor" xml:space="preserve"><value>Idle for {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Server_DescOne" xml:space="preserve"><value>Since the SMB server started, for all devices together. Right now all traffic is from {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Nav_Motto" xml:space="preserve"><value>Only the folder you chose.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Common_NeedsAdmin" xml:space="preserve"><value>Needs administrator rights</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_ShieldTip" xml:space="preserve"><value>Use Continue as administrator at the top first</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_RestartDriveMsg" xml:space="preserve"><value>The previous drive letter may stay in File Explorer until Windows restarts.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_NeedsAdmin" xml:space="preserve"><value>Continue as administrator to see the full plan.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_DriveAndShortcut" xml:space="preserve"><value>Adds drive {0} called ‘{1}’ and a desktop shortcut.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Drive" xml:space="preserve"><value>Adds drive {0} called ‘{1}’.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Shortcut" xml:space="preserve"><value>Adds a desktop shortcut called ‘{0}’.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_DriveForeign" xml:space="preserve"><value>{0} is used by something CPFS didn't create, so it is left alone. Choose another letter.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_DriveSession" xml:space="preserve"><value>Shows the drive in your session now, so File Explorer has it without a restart.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_DriveOldSession" xml:space="preserve"><value>Removes the previous drive from your session.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_LabelRestore" xml:space="preserve"><value>Puts back the name the letter had before CPFS.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_S_DriveSession" xml:space="preserve"><value>Drive in your session</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_S_OldDriveSession" xml:space="preserve"><value>Previous drive in your session</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_R_LabelRemove" xml:space="preserve"><value>The name CPFS gave the drive.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_R_DriveSession" xml:space="preserve"><value>Removes the drive from your session.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_R_DriveRemove" xml:space="preserve"><value>The drive letter CPFS mapped. If File Explorer still shows it, it goes at the next restart.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_R_DriveForeign" xml:space="preserve"><value>The letter now points somewhere CPFS did not set, so it is left alone.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_R_ShortcutRemove" xml:space="preserve"><value>The desktop shortcut CPFS made. It is removed only while it still points to the shared folder.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_GitHub" xml:space="preserve"><value>Source code on GitHub</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_GitHub_Help" xml:space="preserve"><value>Opens github.com/cyclone9/CPFS in your browser.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Update_Title" xml:space="preserve"><value>Updates</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Update_Desc" xml:space="preserve"><value>Asks GitHub whether a newer version of CPFS is out. Nothing is downloaded or installed.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Update_Check" xml:space="preserve"><value>Check for updates</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Update_Checking" xml:space="preserve"><value>Checking…</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Latest" xml:space="preserve"><value>You have the latest version.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Newer" xml:space="preserve"><value>Version {0} is available.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_NoRelease" xml:space="preserve"><value>No release published yet.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Failed" xml:space="preserve"><value>Couldn't check for updates.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_OpenRelease" xml:space="preserve"><value>Open release page</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_InfoTitle" xml:space="preserve"><value>A new version of CPFS is available</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Updates_Title" xml:space="preserve"><value>Check for updates when CPFS starts</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Updates_Desc" xml:space="preserve"><value>Asks GitHub once at each start and shows a note only when a newer version is out. Nothing is downloaded.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_LabelRenamed" xml:space="preserve"><value>Drive {0} has the name ‘{1}’. Replace it with ‘{2}’?</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_State_NoSession" xml:space="preserve"><value>Needs a restart</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_NoSessionMap" xml:space="preserve"><value>Couldn't add the drive to your current session; it appears after a restart.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_NoSessionUnmap" xml:space="preserve"><value>Couldn't remove the drive from your current session; it goes after a restart.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_RestartDriveMsg" xml:space="preserve"><value>The removed drive letter may stay in File Explorer until Windows restarts.</value><comment>UNTRANSLATED: English text</comment></data>
 </root>

@@ -37,6 +37,15 @@
       Grid.Row="1"
       IsBackButtonVisible="Collapsed"
       OpenPaneLength="240">
+      <!--  The motto, only while the pane is open (MainWindow.UpdateMotto); plain text, never a tab stop.  -->
+      <ui:NavigationView.PaneHeader>
+        <TextBlock
+          x:Name="PaneMotto"
+          Margin="16,0,12,8"
+          Focusable="False"
+          Style="{StaticResource CardDescription}"
+          Text="{Binding [Nav_Motto], Source={x:Static local:Loc.Instance}}" />
+      </ui:NavigationView.PaneHeader>
       <ui:NavigationView.MenuItems>
         <ui:NavigationViewItem
           AutomationProperties.Name="{Binding [Nav_Setup], Source={x:Static local:Loc.Instance}}"
@@ -77,6 +86,12 @@
           NavigationCacheMode="Enabled"
           TargetPageType="{x:Type pages:PreferencesPage}" />
         <ui:NavigationViewItem
+          AutomationProperties.Name="{Binding [Nav_Advanced], Source={x:Static local:Loc.Instance}}"
+          Content="{Binding [Nav_Advanced], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon Wrench24}"
+          NavigationCacheMode="Enabled"
+          TargetPageType="{x:Type pages:AdvancedPage}" />
+        <ui:NavigationViewItem
           AutomationProperties.Name="{Binding [Nav_About], Source={x:Static local:Loc.Instance}}"
           Content="{Binding [Nav_About], Source={x:Static local:Loc.Instance}}"
           Icon="{ui:SymbolIcon Info24}"
@@ -84,5 +99,29 @@
           TargetPageType="{x:Type pages:AboutPage}" />
       </ui:NavigationView.FooterMenuItems>
     </ui:NavigationView>
+
+    <!--  The start-up update check's note, only when a newer release exists (MainWindow.CheckForUpdateAtStart).  -->
+    <StackPanel
+      x:Name="UpdateNote"
+      Grid.Row="1"
+      MaxWidth="420"
+      Margin="16"
+      HorizontalAlignment="Right"
+      VerticalAlignment="Bottom"
+      Visibility="Collapsed">
+      <ui:InfoBar
+        x:Name="UpdateBar"
+        Title="{Binding [Update_InfoTitle], Source={x:Static local:Loc.Instance}}"
+        IsClosable="True"
+        IsOpen="True"
+        Severity="Informational" />
+      <ui:Button
+        Margin="0,4,0,0"
+        HorizontalAlignment="Right"
+        AutomationProperties.Name="{Binding [Update_OpenRelease], Source={x:Static local:Loc.Instance}}"
+        Click="OnOpenUpdate"
+        Content="{Binding [Update_OpenRelease], Source={x:Static local:Loc.Instance}}"
+        Icon="{ui:SymbolIcon Open24}" />
+    </StackPanel>
   </Grid>
 </ui:FluentWindow>

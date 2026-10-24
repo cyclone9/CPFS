@@ -9,10 +9,6 @@
     <Style x:Key="InfoName" BasedOn="{StaticResource CardTitle}" TargetType="TextBlock">
       <Setter Property="Margin" Value="0,0,16,8" />
     </Style>
-    <Style x:Key="InfoValue" BasedOn="{StaticResource CardValue}" TargetType="TextBlock">
-      <Setter Property="Margin" Value="0,0,0,8" />
-      <Setter Property="Grid.Column" Value="1" />
-    </Style>
     <Style x:Key="InfoData" BasedOn="{StaticResource DataValue}" TargetType="TextBlock">
       <Setter Property="Margin" Value="0,0,0,8" />
       <Setter Property="Grid.Column" Value="1" />
@@ -56,22 +52,11 @@
             Foreground="{DynamicResource TextFillColorPrimaryBrush}"
             Text="{Binding [About_Brand_Name], Source={x:Static local:Loc.Instance}}"
             TextWrapping="Wrap" />
-          <!--  Both brand lines carry their label, so a reader can tell the tagline from the motto.  -->
-          <Grid Margin="0,8,0,0">
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="Auto" />
-              <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-              <RowDefinition Height="Auto" />
-              <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Style="{StaticResource InfoName}" Text="{Binding [About_Brand_TaglineLabel], Source={x:Static local:Loc.Instance}}" />
-            <TextBlock Grid.Row="0" Style="{StaticResource InfoValue}" Text="{Binding [About_Brand_Tagline], Source={x:Static local:Loc.Instance}}" />
-            <TextBlock Grid.Row="1" Style="{StaticResource InfoName}" Text="{Binding [About_Brand_MottoLabel], Source={x:Static local:Loc.Instance}}" />
-            <TextBlock Grid.Row="1" Style="{StaticResource InfoValue}" Text="{Binding [About_Brand_Motto], Source={x:Static local:Loc.Instance}}" />
-          </Grid>
-          <TextBlock Margin="0,4,0,0" Style="{StaticResource Body}" Text="{Binding [About_Brand_Description], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock
+            Margin="0,4,0,0"
+            Style="{StaticResource CardValue}"
+            Text="{Binding [About_Brand_Tagline], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock Margin="0,8,0,0" Style="{StaticResource Body}" Text="{Binding [About_Brand_Description], Source={x:Static local:Loc.Instance}}" />
         </StackPanel>
       </Grid>
     </ui:Card>
@@ -86,21 +71,16 @@
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0" Style="{StaticResource InfoName}" Text="{Binding [About_Version], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock
+          Grid.Row="0"
+          Margin="0,0,16,12"
+          Style="{StaticResource InfoName}"
+          Text="{Binding [About_Version], Source={x:Static local:Loc.Instance}}" />
         <StackPanel
           Grid.Row="0"
           Grid.Column="1"
-          Margin="0,0,0,8"
+          Margin="0,0,0,12"
           Orientation="Horizontal">
           <TextBlock
             x:Name="VersionValue"
@@ -118,51 +98,79 @@
             Icon="{ui:SymbolIcon Copy24}"
             ToolTip="{Binding [About_CopyVersion], Source={x:Static local:Loc.Instance}}" />
         </StackPanel>
-        <TextBlock Grid.Row="1" Style="{StaticResource InfoName}" Text="{Binding [About_Windows], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="WindowsValue" Grid.Row="1" Style="{StaticResource InfoData}" />
-        <TextBlock Grid.Row="2" Style="{StaticResource InfoName}" Text="{Binding [About_Framework], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="FrameworkValue" Grid.Row="2" Style="{StaticResource InfoData}" />
-        <TextBlock Grid.Row="3" Style="{StaticResource InfoName}" Text="{Binding [About_Backdrop], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="BackdropValue" Grid.Row="3" Style="{StaticResource InfoValue}" />
-        <TextBlock Grid.Row="4" Style="{StaticResource InfoName}" Text="{Binding [About_CurrentTheme], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="ThemeValue" Grid.Row="4" Style="{StaticResource InfoData}" />
-        <TextBlock Grid.Row="5" Style="{StaticResource InfoName}" Text="{Binding [About_CurrentFont], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="FontValue" Grid.Row="5" Style="{StaticResource InfoData}" />
-        <TextBlock Grid.Row="6" Style="{StaticResource InfoName}" Text="{Binding [About_Elevated], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="ElevatedValue" Grid.Row="6" Style="{StaticResource InfoValue}" />
-        <TextBlock Grid.Row="7" Style="{StaticResource InfoName}" Text="{Binding [About_Exe], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="ExeValue" Grid.Row="7" Style="{StaticResource InfoData}" />
-        <TextBlock Grid.Row="8" Style="{StaticResource InfoName}" Text="{Binding [About_ExeFile], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="ExeFileValue" Grid.Row="8" Style="{StaticResource InfoValue}" />
-        <TextBlock Grid.Row="9" Style="{StaticResource InfoName}" Text="{Binding [About_Libraries], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="LibrariesValue" Grid.Row="9" Style="{StaticResource InfoData}" />
-        <TextBlock Grid.Row="10" Style="{StaticResource InfoName}" Text="{Binding [About_LogPath], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="LogPathValue" Grid.Row="10" Style="{StaticResource InfoData}" />
-        <TextBlock Grid.Row="11" Style="{StaticResource InfoName}" Text="{Binding [About_LogSize], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="LogSizeValue" Grid.Row="11" Style="{StaticResource InfoValue}" />
+        <TextBlock Grid.Row="1" Style="{StaticResource InfoName}" Text="{Binding [About_Homepage], Source={x:Static local:Loc.Instance}}" />
+        <!--  Opens the page in the browser; the app itself never goes online.  -->
+        <ui:Button
+          x:Name="HomepageButton"
+          Grid.Row="1"
+          Grid.Column="1"
+          Margin="-8,-6,0,2"
+          Padding="8,4"
+          HorizontalAlignment="Left"
+          AutomationProperties.HelpText="{Binding [About_Homepage_Help], Source={x:Static local:Loc.Instance}}"
+          AutomationProperties.Name="{Binding [About_Homepage], Source={x:Static local:Loc.Instance}}"
+          Appearance="Transparent"
+          Click="OnOpenHomepage"
+          FlowDirection="LeftToRight"
+          Icon="{ui:SymbolIcon Open24}"
+          ToolTip="{Binding [About_Homepage_Help], Source={x:Static local:Loc.Instance}}" />
+        <ui:Button
+          Grid.Row="2"
+          Grid.Column="1"
+          Margin="-8,4,0,2"
+          Padding="8,4"
+          HorizontalAlignment="Left"
+          AutomationProperties.HelpText="{Binding [About_GitHub_Help], Source={x:Static local:Loc.Instance}}"
+          AutomationProperties.Name="{Binding [About_GitHub], Source={x:Static local:Loc.Instance}}"
+          Appearance="Transparent"
+          Click="OnOpenGitHub"
+          Content="{Binding [About_GitHub], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon Code24}"
+          ToolTip="{Binding [About_GitHub_Help], Source={x:Static local:Loc.Instance}}" />
       </Grid>
     </ui:Card>
 
-    <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon DocumentText24}">
+    <!--  Goes online only when pressed: one request to GitHub's public releases list, nothing downloaded.  -->
+    <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon ArrowSync24}">
       <ui:CardControl.Header>
         <StackPanel>
-          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [About_Log_Title], Source={x:Static local:Loc.Instance}}" />
-          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [About_Log_Desc], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [About_Update_Title], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [About_Update_Desc], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock
+            x:Name="UpdateResultText"
+            Margin="0,8,0,0"
+            AutomationProperties.LiveSetting="Polite"
+            Style="{StaticResource Body}"
+            Visibility="Collapsed" />
+          <ui:Button
+            x:Name="OpenReleaseButton"
+            Margin="0,8,0,0"
+            AutomationProperties.Name="{Binding [Update_OpenRelease], Source={x:Static local:Loc.Instance}}"
+            Click="OnOpenRelease"
+            Content="{Binding [Update_OpenRelease], Source={x:Static local:Loc.Instance}}"
+            Icon="{ui:SymbolIcon Open24}"
+            Visibility="Collapsed" />
         </StackPanel>
       </ui:CardControl.Header>
-      <WrapPanel>
-        <ui:Button
-          Margin="0,0,8,0"
-          AutomationProperties.Name="{Binding [About_Log_Open], Source={x:Static local:Loc.Instance}}"
-          Click="OnOpenLog"
-          Content="{Binding [About_Log_Open], Source={x:Static local:Loc.Instance}}"
-          Icon="{ui:SymbolIcon Open24}" />
-        <ui:Button
-          AutomationProperties.Name="{Binding [About_Log_Copy], Source={x:Static local:Loc.Instance}}"
-          Click="OnCopyReport"
-          Content="{Binding [About_Log_Copy], Source={x:Static local:Loc.Instance}}"
-          Icon="{ui:SymbolIcon Copy24}" />
-      </WrapPanel>
+      <ui:Button
+        x:Name="CheckUpdatesButton"
+        AutomationProperties.Name="{Binding [About_Update_Check], Source={x:Static local:Loc.Instance}}"
+        Click="OnCheckUpdates"
+        Content="{Binding [About_Update_Check], Source={x:Static local:Loc.Instance}}" />
+    </ui:CardControl>
+
+    <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon PersonSupport24}">
+      <ui:CardControl.Header>
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [About_Help_Title], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [About_Help_Desc], Source={x:Static local:Loc.Instance}}" />
+        </StackPanel>
+      </ui:CardControl.Header>
+      <ui:Button
+        AutomationProperties.Name="{Binding [About_Log_Copy], Source={x:Static local:Loc.Instance}}"
+        Click="OnCopyReport"
+        Content="{Binding [About_Log_Copy], Source={x:Static local:Loc.Instance}}"
+        Icon="{ui:SymbolIcon Copy24}" />
     </ui:CardControl>
 
     <ui:InfoBar x:Name="LogResult" Margin="0,0,0,4" IsClosable="True" IsOpen="False" />
@@ -185,12 +193,5 @@
       </StackPanel>
     </ui:Card>
 
-    <ui:Card Margin="0,0,0,4">
-      <StackPanel>
-        <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [About_Bidi_Title], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [About_Bidi_Desc], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock x:Name="BidiSample" Margin="0,8,0,0" Style="{StaticResource Body}" />
-      </StackPanel>
-    </ui:Card>
   </StackPanel>
 </Page>

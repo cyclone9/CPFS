@@ -61,9 +61,6 @@ internal sealed class MonitorSnapshot
 
     public Part<ServerTotals> Server { get; init; } = new();
 
-    // Share name to (down, up) running totals; Missing when this Windows has no per-share counters.
-    public Part<Dictionary<string, (double Down, double Up)>> Shares { get; init; } = new();
-
     // Normalized client address to MAC, from the neighbor table; read only while a device is connected.
     public Part<Dictionary<string, string>> Macs { get; init; } = new();
 }
@@ -83,9 +80,7 @@ internal static class SmbMonitor
     private const string SmbScope = @"root\Microsoft\Windows\SMB";
     private const string CimScope = @"root\cimv2";
 
-    private static int _sharesLogged;
-
-    private static readonly Lazy<(string? Server, string? Shares)> PerfClasses = new(FindPerfClasses);
+    private static readonly Lazy<string?> ServerPerfClass = new(FindServerPerfClass);
 
     public static MonitorSnapshot Read()
     {
@@ -95,7 +90,6 @@ internal static class SmbMonitor
             Sessions = sessions,
             Files = Part<List<OpenFileInfo>>.Of(ReadFiles, "open files"),
             Server = Part<ServerTotals>.Of(ReadServer, "server counters"),
-            Shares = Part<Dictionary<string, (double, double)>>.Of(ReadShares, "share counters"),
             Macs = sessions.Value is { Count: > 0 } ? Part<Dictionary<string, string>>.Of(DeviceLookup.ReadNeighbors, "neighbor table") : new(),
         };
     }
@@ -288,7 +282,7 @@ internal static class SmbMonitor
 
     private static ServerTotals? ReadServer()
     {
-        var name = PerfClasses.Value.Server;
+        var name = ServerPerfClass.Value;
         if (name is null)
         {
             return null;
@@ -310,64 +304,12 @@ internal static class SmbMonitor
         return null;
     }
 
-    private static Dictionary<string, (double, double)>? ReadShares()
-    {
-        var name = PerfClasses.Value.Shares;
-        if (name is null)
-        {
-            return null;
-        }
-
-        var result = new Dictionary<string, (double Down, double Up)>(StringComparer.OrdinalIgnoreCase);
-        var objects = Query(CimScope, "SELECT * FROM " + name);
-        if (Interlocked.Exchange(ref _sharesLogged, 1) == 0)
-        {
-            LogShareInstances(name, objects);
-        }
-
-        foreach (var o in objects)
-        {
-            using (o)
-            {
-                MonitorMath.AddShareInstance(result, Prop(o, "Name") as string, Number(Prop(o, "SentBytesPersec")), Number(Prop(o, "ReadBytesPersec")),
-                    Number(Prop(o, "ReceivedBytesPersec")), Number(Prop(o, "WriteBytesPersec")));
-            }
-        }
-
-        return result;
-    }
-
-    // dev6 showed 0 B for a share while the server totals counted 12.5 MB, and no Microsoft page lists this class's
-    // instance names or properties: the first reading logs each instance with its byte counters, so a support log
-    // shows what this Windows returns.
-    private static void LogShareInstances(string className, List<ManagementBaseObject> objects)
-    {
-        var lines = new List<string>();
-        foreach (var o in objects)
-        {
-            var counters = new List<string>();
-            foreach (var p in o.Properties)
-            {
-                if (p.Name.IndexOf("Bytes", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    counters.Add(p.Name + "=" + Convert.ToString(p.Value, CultureInfo.InvariantCulture));
-                }
-            }
-
-            lines.Add("'" + (Prop(o, "Name") as string ?? "?") + "' " + string.Join(" ", counters));
-        }
-
-        AppLog.Write("monitor", className + ": " + lines.Count.ToString(CultureInfo.InvariantCulture) + " instances"
-            + (lines.Count == 0 ? "" : "; " + string.Join(" | ", lines)));
-    }
-
     // The raw performance classes are subclasses of Win32_PerfRawData; their names come from the counter set's
     // registry name, so they are matched by name here, never by the localized display name.
-    private static (string? Server, string? Shares) FindPerfClasses()
+    private static string? FindServerPerfClass()
     {
         var watch = Stopwatch.StartNew();
         string? server = null;
-        string? shares = null;
         try
         {
             using var root = new ManagementClass(new ManagementScope(CimScope), new ManagementPath("Win32_PerfRawData"), null);
@@ -381,10 +323,6 @@ internal static class SmbMonitor
                     {
                         server = name;
                     }
-                    else if (shares is null && name.IndexOf("SMBServerShares", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        shares = name;
-                    }
                 }
             }
         }
@@ -393,8 +331,8 @@ internal static class SmbMonitor
             AppLog.Write("monitor", "Performance classes: " + ex.GetType().Name + ": " + ex.Message);
         }
 
-        AppLog.Write("monitor", "Performance classes: server " + (server ?? "none") + ", shares " + (shares ?? "none") + " in " + StateReader.Ms(watch));
-        return (server, shares);
+        AppLog.Write("monitor", "Performance classes: server " + (server ?? "none") + " in " + StateReader.Ms(watch));
+        return server;
     }
 
     private static List<ManagementBaseObject> Query(string scope, string wql)

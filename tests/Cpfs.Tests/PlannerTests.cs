@@ -413,7 +413,7 @@ public class PlannerTests
     [Theory]
     [InlineData(PasswordEntry.Empty, PlanAction.Keep)]
     [InlineData(PasswordEntry.Valid, PlanAction.Change)]
-    [InlineData(PasswordEntry.Mismatch, PlanAction.CannotPlan)]
+    [InlineData(PasswordEntry.TooShort, PlanAction.CannotPlan)]
     public void ThePlanOnlySaysWhetherThePasswordIsSet(PasswordEntry entry, PlanAction expected)
     {
         var item = Item(PlanFor(Installed(), Fixture(), a => a with { Password = entry }), "user.password");
@@ -488,7 +488,7 @@ public class PlannerTests
     {
         var letters = new LetterScan();
         letters.Add('C', LetterSource.SystemDrive);
-        letters.Add('X', LetterSource.DosDevices);
+        letters.Add('X', LetterSource.DosDevices, @"\??\D:\Shared");
         letters.Add('Y', LetterSource.UserNetwork);
         var dos = new Dictionary<char, string> { ['X'] = @"\??\D:\Shared" };
         var s = Installed() with
@@ -511,6 +511,197 @@ public class PlannerTests
         Assert.Equal(PlanAction.Create, Item(moved, "drive.map").Action);
         Assert.Equal(PlanAction.RemoveIfOurs, Item(moved, "drive.oldmap").Action);
         Assert.Equal(PlanAction.RemoveIfOurs, Item(moved, "drive.oldlabel").Action);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(moved, "drive.oldsession").Action);
+        Assert.Equal(PlanAction.Create, Item(moved, "drive.session").Action);
+
+        // The old letter's name and mapping go before the new letter is mapped.
+        var keys = moved.Items.Select(i => i.Key).Where(k => k.StartsWith("drive.", StringComparison.Ordinal)).ToList();
+        Assert.Equal(new[] { "drive.oldlabel", "drive.oldsession", "drive.oldmap", "drive.map", "drive.session", "drive.label" }, keys);
+    }
+
+    [Fact]
+    public void CpfsOwnLetterHeldBySomethingElseIsRefused()
+    {
+        var letters = new LetterScan();
+        letters.Add('C', LetterSource.SystemDrive);
+        letters.Add('X', LetterSource.UserNetwork, @"\\nas\photos");
+        var s = Installed() with
+        {
+            Letters = letters,
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+        };
+
+        var plan = PlanFor(s, WithDrive('X'), a => a with { Drive = true, DriveLetter = 'X' });
+
+        Assert.Equal(PlanAction.CannotPlan, Item(plan, "drive.map").Action);
+        Assert.Equal(Planner.R.DriveForeign, Item(plan, "drive.map").ReasonKey);
+        Assert.DoesNotContain(plan.Items, i => i.Key == "drive.session" || i.Key == "drive.label");
+    }
+
+    [Fact]
+    public void AMovedFolderRemapsTheSameLetterAfterRemovingTheOldMapping()
+    {
+        var letters = new LetterScan();
+        letters.Add('C', LetterSource.SystemDrive);
+        letters.Add('X', LetterSource.DosDevices, @"\??\D:\Shared");
+        letters.Add('X', LetterSource.UserSessionReceived);
+        var s = Installed() with
+        {
+            Letters = letters,
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['X'] = @"\??\D:\Shared" }),
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['X'] = "CPFS - Shared" }),
+        };
+
+        var plan = PlanFor(s, WithDrive('X'), a => a with { Drive = true, DriveLetter = 'X', SharePath = @"D:\Moved" });
+
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(plan, "drive.oldsession").Action);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(plan, "drive.oldmap").Action);
+        Assert.Equal(PlanAction.Create, Item(plan, "drive.map").Action);
+        Assert.Equal(@"X: \??\D:\Moved", Item(plan, "drive.map").Target!.Data);
+        Assert.Equal(PlanAction.Create, Item(plan, "drive.session").Action);
+        Assert.Equal(PlanAction.Keep, Item(plan, "drive.label").Action);
+        Assert.DoesNotContain(plan.Items, i => i.Key == "drive.oldlabel");
+    }
+
+    [Fact]
+    public void AGoneDriveComesBackOnlyWhenTickedAndThenAlsoInTheSession()
+    {
+        var s = Installed() with
+        {
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+        };
+
+        var unticked = PlanFor(s, WithDrive('X'), a => a with { Drive = true, DriveLetter = 'X' });
+        Assert.Equal(PlanAction.Ask, Item(unticked, "drive.map").Action);
+        Assert.DoesNotContain(unticked.Items, i => i.Key == "drive.session");
+
+        var ticked = PlanFor(s, WithDrive('X'), a => a with
+        {
+            Drive = true, DriveLetter = 'X', Choices = new Dictionary<string, bool> { ["drive.map"] = true },
+        });
+        Assert.True(Item(ticked, "drive.map").Ticked);
+        Assert.Equal(PlanAction.Create, Item(ticked, "drive.session").Action);
+    }
+
+    [Fact]
+    public void ADriveNameCpfsDidNotSetIsBackedUpAndPutBackWhenTheLetterMoves()
+    {
+        var dos = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>());
+        var first = PlanFor(Installed() with
+        {
+            DosDevices = dos,
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['M'] = "Music" }),
+        }, ConfigReader.Parse(TestFiles.ConfigBytes("v0.2.3-anonymised.json")), a => a with { Drive = true, DriveLetter = 'M' });
+        Assert.Equal(Planner.R.LabelForeign, Item(first, "drive.label").ReasonKey);
+        Assert.True(Item(first, "drive.label").BackupNeeded);
+
+        var book = Cpfs.Core.Apply.ConfigBook.ForSetup(WithDrive('M'));
+        Assert.Equal(Cpfs.Core.Apply.BackupWrite.Recorded, book.BackupDriveLabel('M', "Music"));
+        Assert.Equal(Cpfs.Core.Apply.BackupWrite.AlreadyRecorded, book.BackupDriveLabel('m', "CPFS - Shared"));
+        var config = ConfigReader.Parse(ConfigWriter.Serialize(book.Root));
+        Assert.Equal("Music", config.BackupDriveLabel('M'));
+
+        var moved = PlanFor(Installed() with
+        {
+            DosDevices = dos,
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['M'] = "CPFS - Shared" }),
+        }, config, a => a with { Drive = true, DriveLetter = 'S' });
+        Assert.Equal(PlanAction.Change, Item(moved, "drive.oldlabel").Action);
+        Assert.Equal("Music", Item(moved, "drive.oldlabel").Target!.Data);
+    }
+
+    // The backup of a letter's name is taken once, so a name the user gave CPFS's drive since would be lost on
+    // Uninstall: it is replaced only when ticked. CPFS's own name and the backed-up original are replaced as before.
+    [Fact]
+    public void ADriveNameTheUserGaveSinceTheBackupIsAnUntickedQuestion()
+    {
+        var book = Cpfs.Core.Apply.ConfigBook.ForSetup(WithDrive('M'));
+        book.BackupDriveLabel('M', "Music");
+        var config = ConfigReader.Parse(ConfigWriter.Serialize(book.Root));
+        SystemSnapshot Labelled(string label) => Installed() with
+        {
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['M'] = @"\??\D:\Shared" }),
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['M'] = label }),
+        };
+        SetupAnswers Photos(SetupAnswers a) => a with { Drive = true, DriveLetter = 'M', DriveName = "Photos" };
+
+        var renamed = Item(PlanFor(Labelled("Songs"), config, Photos), "drive.label");
+        Assert.Equal(PlanAction.Ask, renamed.Action);
+        Assert.False(renamed.Ticked);
+        Assert.False(renamed.BackupNeeded);
+        Assert.Equal(Planner.R.LabelRenamed, renamed.ReasonKey);
+        Assert.Equal(new[] { "M:", "Songs", "Photos" }, renamed.ReasonArgs);
+
+        var ticked = Item(PlanFor(Labelled("Songs"), config, a => Photos(a) with { Choices = new Dictionary<string, bool> { ["drive.label"] = true } }), "drive.label");
+        Assert.True(ticked.Ticked);
+
+        var own = Item(PlanFor(Labelled("CPFS - Shared"), config, Photos), "drive.label");
+        Assert.Equal(PlanAction.Change, own.Action);
+        Assert.Equal(Planner.R.LabelSet, own.ReasonKey);
+
+        var original = Item(PlanFor(Labelled("Music"), config, Photos), "drive.label");
+        Assert.Equal(PlanAction.Change, original.Action);
+        Assert.Equal(Planner.R.LabelForeign, original.ReasonKey);
+    }
+
+    // A CPFS-RunAsUser task found now is a leftover: it goes with the drive (not deferred with Auto-Private), before
+    // the session step creates CPFS's own for a moment.
+    [Fact]
+    public void AStaleRunAsUserTaskIsRemovedBeforeTheSessionStep()
+    {
+        var none = PlanFor(Installed(), WithDrive('X'), a => a with { Drive = true, DriveLetter = 'X' });
+        Assert.DoesNotContain(none.Items, i => i.Key == "task.runasuser");
+
+        var s = Installed() with
+        {
+            Tasks = Reading.Ok<IReadOnlyDictionary<string, bool>>(new Dictionary<string, bool>
+            {
+                [Planner.AutoPrivateTask] = false, [Planner.RunAsUserTask] = true, [Planner.LegacyAutoPrivateTask] = false,
+            }),
+        };
+        var plan = PlanFor(s, WithDrive('X'), a => a with
+        {
+            Drive = true, DriveLetter = 'X', Choices = new Dictionary<string, bool> { ["drive.map"] = true },
+        });
+        var item = Item(plan, "task.runasuser");
+        Assert.Equal(PlanAction.RemoveIfOurs, item.Action);
+        Assert.Equal(PlanSection.Drive, item.Section);
+        Assert.Equal(Planner.RunAsUserTask, item.Subject.Data);
+
+        var keys = Cpfs.Core.Apply.ApplyList.Setup(plan).Where(e => !e.Deferred).Select(e => e.Item.Key).ToList();
+        Assert.Contains("task.runasuser", keys);
+        Assert.Contains("drive.session", keys);
+        Assert.True(keys.IndexOf("task.runasuser") < keys.IndexOf("drive.session"));
+    }
+
+    [Fact]
+    public void ARecordedShortcutUnderAnotherNameGoesBeforeTheNewOneIsCreated()
+    {
+        var s = Installed() with
+        {
+            PublicDesktopFiles = Reading.Ok<IReadOnlyList<string>>(new[] { "Shared (CPFS).lnk" }),
+        };
+
+        var plan = PlanFor(s, WithDrive('X'), a => a with { Shortcut = true, ShortcutName = "Photos" });
+        var keys = plan.Items.Select(i => i.Key).Where(k => k.StartsWith("shortcut.", StringComparison.Ordinal)).ToList();
+
+        Assert.Equal(new[] { "shortcut.old", "shortcut.file" }, keys);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(plan, "shortcut.old").Action);
+        Assert.Equal(PlanAction.Create, Item(plan, "shortcut.file").Action);
+    }
+
+    [Fact]
+    public void ARecordedShortcutThatIsGoneIsAnUntickedQuestion()
+    {
+        var s = Installed() with { PublicDesktopFiles = Reading.Ok<IReadOnlyList<string>>(new[] { "desktop.ini" }) };
+
+        var plan = PlanFor(s, WithDrive('X'), a => a with { Shortcut = true, ShortcutName = "Shared (CPFS)" });
+
+        Assert.Equal(PlanAction.Ask, Item(plan, "shortcut.file").Action);
+        Assert.False(Item(plan, "shortcut.file").Ticked);
+        Assert.DoesNotContain(plan.Items, i => i.Key == "shortcut.old");
     }
 
     [Fact]

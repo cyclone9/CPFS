@@ -12,6 +12,27 @@
         <ResourceDictionary Source="Brand.xaml" />
         <ResourceDictionary Source="Styles.xaml" />
       </ResourceDictionary.MergedDictionaries>
+
+      <!--
+        WPF-UI 4.3.0's button template sets Foreground to {Binding PressedForeground, RelativeSource TemplatedParent}
+        while pressed, but a Button has no templated parent, so the binding fails and Foreground falls back to its
+        default, SystemColors.ControlTextBrush: black text and icon on a dark button. A style trigger outranks the
+        template trigger and reads the same brush from the button itself.
+        BasedOn names WPF-UI's keyed style, never {x:Type ui:Button}: that is this style's own key, so the lookup can
+        land on this entry instead of the library's, and without the library's Template every ui:Button falls back to
+        the classic Button template (0.6.0 dev3). ButtonStyleTests guards this.
+      -->
+      <Style BasedOn="{StaticResource DefaultUiButtonStyle}" TargetType="{x:Type ui:Button}">
+        <Style.Triggers>
+          <MultiTrigger>
+            <MultiTrigger.Conditions>
+              <Condition Property="IsMouseOver" Value="True" />
+              <Condition Property="IsPressed" Value="True" />
+            </MultiTrigger.Conditions>
+            <Setter Property="Foreground" Value="{Binding PressedForeground, RelativeSource={RelativeSource Self}}" />
+          </MultiTrigger>
+        </Style.Triggers>
+      </Style>
     </ResourceDictionary>
   </Application.Resources>
 </Application>

@@ -13,7 +13,7 @@ public enum StepOutcome
     // Already as planned when read again: nothing written.
     Kept,
 
-    // Belongs to a later version (quick access, Auto-Private, computer name); not run.
+    // Belongs to a later version (Auto-Private, computer name); not run.
     Deferred,
 
     // Windows refused the call as not supported on this system: not done, and the run goes on.
@@ -82,9 +82,9 @@ public static class ApplyList
         _ => false,
     };
 
-    // Quick access, Auto-Private and the computer name come in 0.6.0.
+    // Auto-Private and the computer name come in a later version.
     public static bool IsDeferred(PlanItem item) =>
-        item.Section is PlanSection.Drive or PlanSection.Shortcut or PlanSection.AutoPrivate or PlanSection.Computer;
+        item.Section is PlanSection.AutoPrivate or PlanSection.Computer;
 
     // Items that stop Apply: anything that could not be planned, except in the sections that are not applied yet.
     public static IReadOnlyList<PlanItem> Blocking(Plan plan)

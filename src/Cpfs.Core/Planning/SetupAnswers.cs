@@ -6,13 +6,12 @@ using Cpfs.Core.Drives;
 
 namespace Cpfs.Core.Planning;
 
-// What the two password boxes hold, never the password itself.
+// What the password box holds, never the password itself.
 public enum PasswordEntry
 {
     Empty,
     Valid,
     TooShort,
-    Mismatch,
 }
 
 // The Setup form.

@@ -80,24 +80,13 @@ public class MonitorTests
     }
 
     [Theory]
-    [InlineData(@"\\*\Shared", "Shared")]
-    [InlineData("Family-Files", "Family-Files")]
-    [InlineData("_Total", null)]
-    [InlineData(@"\\*\IPC$", null)]
-    [InlineData(@"\\*\C$", null)]
-    [InlineData("", null)]
-    public void ShareInstanceNames(string instance, string? share) => Assert.Equal(share, MonitorMath.ShareFromInstance(instance));
-
-    [Fact]
-    public void ShareInstancesOfOneShareAreSummedAndTakeTheFilledCounter()
+    [InlineData(0, 0, true)]
+    [InlineData(4, 0, true)]
+    [InlineData(5, 0, false)]
+    [InlineData(600, 1, true)]
+    public void DeviceIsActiveWithAnOpenFileOrRecentWork(long secondsIdle, ulong openFiles, bool active)
     {
-        var totals = new System.Collections.Generic.Dictionary<string, (double Down, double Up)>(System.StringComparer.OrdinalIgnoreCase);
-        MonitorMath.AddShareInstance(totals, @"\\*\Shared", sent: 1000, read: 0, received: null, written: 40);
-        MonitorMath.AddShareInstance(totals, @"\\SCOPE\Shared", sent: 0, read: 500, received: 10, written: 0);
-        MonitorMath.AddShareInstance(totals, "_Total", sent: 9999, read: 9999, received: 9999, written: 9999);
-
-        Assert.Single(totals);
-        Assert.Equal((1500d, 50d), totals["Shared"]);
+        Assert.Equal(active, MonitorMath.IsActive(secondsIdle, openFiles));
     }
 
     [Theory]

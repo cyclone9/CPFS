@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| Sürüm | 0.5.0 (geliştirme aşamasında) |
+| Sürüm | 0.6.0 (geliştirme aşamasında) |
 | Platform | Windows 10 ve 11 (Ev veya Pro sürümü) |
 | Gereksinimler | .NET Framework 4.8 (Windows 10 1903 ve sonrası ile Windows 11'de yerleşik gelir), Yönetici hakları |
 | Ana sayfa | https://cyclone9.ir/cpfs.html |

@@ -7,6 +7,8 @@
   xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
   Foreground="{DynamicResource TextFillColorPrimaryBrush}">
   <Page.Resources>
+    <BooleanToVisibilityConverter x:Key="Visible" />
+
     <DataTemplate DataType="{x:Type pages:StepItem}">
       <TextBlock Margin="0,4,0,4" Style="{StaticResource Body}" Text="{Binding Text}" />
     </DataTemplate>
@@ -52,42 +54,40 @@
       </StackPanel>
     </DataTemplate>
 
-    <DataTemplate DataType="{x:Type pages:QrItem}">
-      <StackPanel Margin="0,8,0,4" HorizontalAlignment="Left">
-        <!--  Never mirrored in right-to-left layouts: a mirrored QR code may not scan.  -->
-        <Image
-          Width="176"
-          Height="176"
-          HorizontalAlignment="Left"
-          FlowDirection="LeftToRight"
-          AutomationProperties.Name="{Binding Name}"
-          RenderOptions.EdgeMode="Aliased"
-          Source="{Binding Image}" />
-        <TextBlock
-          MaxWidth="320"
-          Margin="0,4,0,0"
-          HorizontalAlignment="Left"
-          Style="{StaticResource CardDescription}"
-          Text="{Binding Caption}" />
-      </StackPanel>
-    </DataTemplate>
-
     <DataTemplate x:Key="GuideCardTemplate" DataType="{x:Type pages:GuideCard}">
       <!--  Stretch: the cards of one row share the height of the tallest.  -->
       <ui:Card VerticalAlignment="Stretch" VerticalContentAlignment="Top">
         <StackPanel>
-          <StackPanel Orientation="Horizontal">
+          <!--  Name on the start side, the QR button (where the device can use a code) at the top of the end side.  -->
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
             <ui:SymbolIcon
               Margin="0,0,12,0"
               VerticalAlignment="Center"
               FontSize="20"
               Symbol="{Binding Icon}" />
             <TextBlock
+              Grid.Column="1"
               VerticalAlignment="Center"
               FontSize="16"
               Style="{StaticResource CardTitle}"
-              Text="{Binding Title}" />
-          </StackPanel>
+              Text="{Binding Title}"
+              TextWrapping="Wrap" />
+            <ui:Button
+              Grid.Column="2"
+              Margin="8,0,0,0"
+              VerticalAlignment="Top"
+              AutomationProperties.Name="{Binding QrButtonName}"
+              Click="OnShowQr"
+              Content="{Binding [Connect_Qr_Show], Source={x:Static local:Loc.Instance}}"
+              Icon="{ui:SymbolIcon QrCode24}"
+              ToolTip="{Binding QrButtonName}"
+              Visibility="{Binding HasQr, Converter={StaticResource Visible}}" />
+          </Grid>
           <ItemsControl Margin="0,8,0,0" Focusable="False" ItemsSource="{Binding Items}" />
         </StackPanel>
       </ui:Card>
@@ -147,8 +147,8 @@
 
     <!--
       One client card per column, two columns when both fit. The minimum card is 20 ems of text, about 40 characters
-      of a step and room for the 176 px QR code and a code box with its copy button, plus the card's padding and
-      border (14 + 14 + 2). At the default window size the content area holds two.
+      of a step and room for a code box with its copy button, plus the card's padding and border (14 + 14 + 2). At the
+      default window size the content area holds two.
     -->
     <ItemsControl x:Name="Guides" Focusable="False" ItemTemplate="{StaticResource GuideCardTemplate}">
       <ItemsControl.ItemsPanel>

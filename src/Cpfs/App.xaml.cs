@@ -16,6 +16,29 @@ public partial class App : Application
         };
     }
 
+    // The app-wide ui:Button style must carry WPF-UI's template through its BasedOn chain; without it every button
+    // falls back to the classic look (0.6.0 dev3). The log says which it is.
+    internal void LogButtonStyle()
+    {
+        try
+        {
+            var hasTemplate = false;
+            for (var style = TryFindResource(typeof(Wpf.Ui.Controls.Button)) as Style; style is not null && !hasTemplate; style = style.BasedOn)
+            {
+                foreach (var setter in style.Setters)
+                {
+                    hasTemplate |= setter is Setter { Property: var p } && p == System.Windows.Controls.Control.TemplateProperty;
+                }
+            }
+
+            AppLog.Write("theme", "Button style carries the WPF-UI template: " + hasTemplate);
+        }
+        catch (System.Windows.Markup.XamlParseException ex)
+        {
+            AppLog.Write("theme", "Button style failed to load: " + ex.Message);
+        }
+    }
+
     // A second start set the show event: bring this window forward. Nothing else can be asked of it.
     internal static void BringToFront()
     {

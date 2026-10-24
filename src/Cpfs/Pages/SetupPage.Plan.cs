@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.InteropServices;
-using System.Security;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -46,15 +45,12 @@ public sealed class PlanItemView
 
     public bool Ticked { get; init; }
 
-    public bool AskEnabled { get; init; } = true;
-
-    public string LaterNote { get; init; } = "";
-
-    public bool HasLaterNote => LaterNote.Length > 0;
-
     public string AskName { get; init; } = "";
 
     public string HelpText { get; init; } = "";
+
+    // Can't be read or planned without administrator rights: shows the shield.
+    public bool NeedsAdmin { get; init; }
 }
 
 public sealed class PlanGroupView
@@ -67,13 +63,13 @@ public sealed class PlanGroupView
 }
 
 // The Plan view: the form with the saved install as defaults, and what Setup would change. Planning writes nothing;
-// Apply (SetupPage.Apply.cs) does. The password never leaves the two PasswordBoxes until Apply hands a copy to the
-// account step; the plan only learns whether they are empty, valid, too short or different.
+// Apply (SetupPage.Apply.cs) does. The password never leaves the PasswordBox until Apply hands a copy to the account
+// step; the plan only learns whether it is empty, valid or too short.
 public partial class SetupPage
 {
     private readonly Dictionary<string, bool> _choices = new(StringComparer.Ordinal);
     private readonly DispatcherTimer _planTimer = new() { Interval = TimeSpan.FromMilliseconds(300) };
-    private PasswordReveal[] _reveals = Array.Empty<PasswordReveal>();
+    private PasswordReveal? _reveal;
     private Window? _window;
     private ConfigDocument? _config;
     private LetterScan _letters = new();
@@ -81,6 +77,8 @@ public partial class SetupPage
     private SystemSnapshot? _snapshot;
     private string? _snapshotFor;
     private Plan? _plan;
+    private PlanSummary? _summary;
+    private string? _lastSummaryLogged;
     private bool _formReady;
     private bool _suppressForm;
     private int _planVersion;
@@ -95,11 +93,7 @@ public partial class SetupPage
             await RecomputeAsync();
         };
 
-        _reveals = new[]
-        {
-            new PasswordReveal(PasswordBox1, PasswordPlain1, PasswordEye1),
-            new PasswordReveal(PasswordBox2, PasswordPlain2, PasswordEye2),
-        };
+        _reveal = new PasswordReveal(PasswordInput, PasswordPlain, PasswordEye, PasswordClear);
         Loaded += (_, _) =>
         {
             if (_window is not null)
@@ -126,12 +120,18 @@ public partial class SetupPage
 
     private void OnWindowDeactivated(object? sender, EventArgs e) => HidePasswords();
 
-    private void HidePasswords()
+    private void HidePasswords() => _reveal?.Hide();
+
+    private void OnClearShareName(object sender, RoutedEventArgs e)
     {
-        foreach (var reveal in _reveals)
-        {
-            reveal.Hide();
-        }
+        ShareNameBox.Clear();
+        ShareNameBox.Focus();
+    }
+
+    private void OnClearSmbUser(object sender, RoutedEventArgs e)
+    {
+        SmbUserBox.Clear();
+        SmbUserBox.Focus();
     }
 
     // Called after each read of the state: the form takes the saved install's values only the first time, so a
@@ -140,6 +140,7 @@ public partial class SetupPage
     {
         _config = config;
         _letters = letters;
+        RenderMode();
         var desktopSid = Startup.IsElevated ? DesktopUser.Current.Sid : null;
         var watch = System.Diagnostics.Stopwatch.StartNew();
         var (snapshot, protectedFolders) = await Task.Run(() => (PlanReader.ReadStatic(letters, desktopSid), PlanReader.ProtectedFolders()));
@@ -156,6 +157,8 @@ public partial class SetupPage
 
         _snapshot = snapshot;
         _snapshotFor = null;
+        ComputerNameBox.Text = snapshot.ComputerName ?? "";
+        RenderMode();
         AppLog.Write("plan", "Plan state ready in " + StateReader.Ms(watch) + (Startup.IsElevated ? " (elevated)" : " (not elevated)"));
         await RecomputeAsync();
     }
@@ -213,6 +216,11 @@ public partial class SetupPage
         if (_suppressForm || !_formReady)
         {
             return;
+        }
+
+        if (ReferenceEquals(sender, SharePathBox))
+        {
+            SetText(BrowseError, "");
         }
 
         if (ReferenceEquals(sender, ShareNameBox))
@@ -288,55 +296,16 @@ public partial class SetupPage
         Choices = new Dictionary<string, bool>(_choices, StringComparer.Ordinal),
     };
 
-    // Only the lengths and whether the two match leave the boxes; the comparison runs on unmanaged copies that are
-    // zeroed at once, so no managed string holds the password unless the user shows it (PasswordReveal).
+    // Only the length leaves the box, so no managed string holds the password unless the user shows it (PasswordReveal).
     private PasswordEntry PasswordState()
     {
-        using var first = PasswordBox1.SecurePassword;
-        using var second = PasswordBox2.SecurePassword;
-        var error = Validators.Password(first.Length, first.Length == second.Length && SameSecret(first, second));
-        return error switch
+        using var secret = PasswordInput.SecurePassword;
+        return Validators.Password(secret.Length) switch
         {
-            ValidationError.Empty when second.Length == 0 => PasswordEntry.Empty,
+            ValidationError.Empty => PasswordEntry.Empty,
             ValidationError.None => PasswordEntry.Valid,
-            ValidationError.TooShort => PasswordEntry.TooShort,
-            _ => PasswordEntry.Mismatch,
+            _ => PasswordEntry.TooShort,
         };
-    }
-
-    private static bool SameSecret(SecureString a, SecureString b)
-    {
-        if (a.Length != b.Length)
-        {
-            return false;
-        }
-
-        var pa = IntPtr.Zero;
-        var pb = IntPtr.Zero;
-        try
-        {
-            pa = Marshal.SecureStringToGlobalAllocUnicode(a);
-            pb = Marshal.SecureStringToGlobalAllocUnicode(b);
-            var diff = 0;
-            for (var i = 0; i < a.Length; i++)
-            {
-                diff |= Marshal.ReadInt16(pa, i * 2) ^ Marshal.ReadInt16(pb, i * 2);
-            }
-
-            return diff == 0;
-        }
-        finally
-        {
-            if (pa != IntPtr.Zero)
-            {
-                Marshal.ZeroFreeGlobalAllocUnicode(pa);
-            }
-
-            if (pb != IntPtr.Zero)
-            {
-                Marshal.ZeroFreeGlobalAllocUnicode(pb);
-            }
-        }
     }
 
     // The account and folder parts of the state depend on what is typed; they are re-read off the UI thread when
@@ -365,10 +334,67 @@ public partial class SetupPage
         }
 
         _plan = Planner.Setup(snapshot, answers, _config, _protected);
+        _summary = PlanSummary.Setup(_plan, answers, _config);
         ShowFieldErrors(answers, snapshot);
         RenderPlan();
         AppLog.Write("plan", "Plan: " + Counts(_plan));
         LogItems(_plan);
+        var summaryLog = _summary.LogText();
+        if (!string.Equals(summaryLog, _lastSummaryLogged, StringComparison.Ordinal))
+        {
+            _lastSummaryLogged = summaryLog;
+            AppLog.Write("plan", "Summary: " + summaryLog);
+        }
+    }
+
+    // A first install (no config.json) is set up; an existing one is applied. An unreadable config.json is not a
+    // first install: Apply stays off for it.
+    private bool IsFirstInstall => _config is null && !ConfigUnreadable;
+
+    private void RenderMode()
+    {
+        var loc = Loc.Instance;
+        var first = IsFirstInstall;
+        WelcomeCard.Visibility = first ? Visibility.Visible : Visibility.Collapsed;
+        PasswordDesc.Text = first ? loc.Format("Setup_Form_Password_DescFirst", Validators.MinPasswordLength) : loc["Setup_Form_Password_DescKeep"];
+        SummaryTitle.Text = loc[first ? "Setup_Summary_TitleFirst" : "Setup_Summary_Title"];
+        var button = loc[first ? "Setup_Plan_SetUp" : "Setup_Plan_Apply"];
+        ApplyButton.Content = button;
+        System.Windows.Automation.AutomationProperties.SetName(ApplyButton, button);
+    }
+
+    // The folder picker; a folder the share rules refuse is named with the reason and not put in the box.
+    private void OnBrowse(object sender, RoutedEventArgs e)
+    {
+        var loc = Loc.Instance;
+        string? picked;
+        try
+        {
+            picked = FolderPicker.Pick(Window.GetWindow(this), loc["Setup_Form_Browse_Title"], SharePathBox.Text);
+        }
+        catch (Exception ex) when (ex is COMException or InvalidCastException or UnauthorizedAccessException)
+        {
+            AppLog.Write("setup", "Folder picker: " + ex.GetType().Name + ": " + ex.Message);
+            SetText(BrowseError, loc.FormatValues("Setup_Form_BrowseFailed", ex.Message));
+            return;
+        }
+
+        if (picked is null)
+        {
+            return;
+        }
+
+        var check = Validators.SharePath(picked, _protected);
+        AppLog.Write("setup", "Folder picker: " + (check.IsValid ? "accepted" : "refused, " + check.Error));
+        if (!check.IsValid)
+        {
+            SetText(BrowseError, loc.FormatValues("Setup_Form_BrowseRefused", picked, loc["Setup_Form_Error_" + check.Error]));
+            return;
+        }
+
+        SharePathBox.Text = check.Value!;
+        SetText(BrowseError, "");
+        SharePathBox.Focus();
     }
 
     // The items that are not Keep, written again only when they differ from the last plan's.
@@ -418,7 +444,6 @@ public partial class SetupPage
         SetText(PasswordError, a.Password switch
         {
             PasswordEntry.TooShort => Loc.Instance.Format("Setup_Form_PasswordShort", Validators.MinPasswordLength),
-            PasswordEntry.Mismatch => Loc.Instance["Setup_Form_PasswordMismatch"],
             _ => "",
         });
     }
@@ -440,7 +465,8 @@ public partial class SetupPage
         }
 
         var loc = Loc.Instance;
-        PlanSummary.Text = loc.Format("Setup_Plan_Summary",
+        RenderMode();
+        PlanCounts.Text = loc.Format("Setup_Plan_Summary",
             Formats.Count(_plan.Count(PlanAction.Keep), loc.Culture),
             Formats.Count(_plan.Count(PlanAction.Change), loc.Culture),
             Formats.Count(_plan.Count(PlanAction.Create), loc.Culture),
@@ -448,18 +474,18 @@ public partial class SetupPage
             Formats.Count(_plan.Count(PlanAction.Ask), loc.Culture),
             Formats.Count(_plan.Count(PlanAction.CannotPlan), loc.Culture));
 
-        PlanGroups.ItemsSource = Groups(_plan, out var needsAdmin);
-        PlanNotice.IsOpen = needsAdmin;
-        PlanNotice.Title = loc["Setup_Plan_NotElevatedTitle"];
-        PlanNotice.Message = loc["Setup_Plan_NotElevated"];
+        PlanGroups.ItemsSource = Groups(_plan);
+        var decisions = AskViews(_plan);
+        Decisions.ItemsSource = decisions;
+        DecisionsCard.Visibility = decisions.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        SummaryBody.Text = _summary is null ? "" : ApplyUi.SummaryText(_summary);
         UpdateApplyState();
     }
 
     // The plan's items by section, in the sections' order, each group with its count of keep and other items.
-    internal static List<PlanGroupView> Groups(Plan plan, out bool needsAdmin)
+    internal static List<PlanGroupView> Groups(Plan plan)
     {
         var loc = Loc.Instance;
-        needsAdmin = false;
         var groups = new List<PlanGroupView>();
         foreach (PlanSection section in Enum.GetValues(typeof(PlanSection)))
         {
@@ -472,7 +498,6 @@ public partial class SetupPage
                     continue;
                 }
 
-                needsAdmin |= item.Cause == PlanCause.NeedsAdmin;
                 if (item.Action == PlanAction.Keep)
                 {
                     keep++;
@@ -502,6 +527,21 @@ public partial class SetupPage
         return groups;
     }
 
+    // Every Ask item, in the plan's order: what Your decisions shows.
+    internal static List<PlanItemView> AskViews(Plan plan)
+    {
+        var list = new List<PlanItemView>();
+        foreach (var item in plan.Items)
+        {
+            if (item.Action == PlanAction.Ask)
+            {
+                list.Add(ToView(item));
+            }
+        }
+
+        return list;
+    }
+
     internal static PlanItemView ToView(PlanItem item)
     {
         var loc = Loc.Instance;
@@ -522,10 +562,6 @@ public partial class SetupPage
 
         var reason = string.Format(loc.Culture, loc[item.ReasonKey], args);
 
-        // The executor skips the drive and the shortcut until 0.6.0: their items say so, and "create it again?" can't
-        // be ticked yet.
-        var later = item.Action is PlanAction.Create or PlanAction.Change or PlanAction.Ask
-            && item.Section is PlanSection.Drive or PlanSection.Shortcut;
         return new PlanItemView
         {
             Key = item.Key,
@@ -537,11 +573,10 @@ public partial class SetupPage
             Reason = reason,
             BackupNote = item.BackupNeeded ? loc["Setup_Plan_Backup"] : "",
             IsAsk = item.Action == PlanAction.Ask,
-            Ticked = item.Ticked && !later,
-            AskEnabled = !later,
-            LaterNote = later ? loc["Setup_Plan_QuickAccessLater"] : "",
+            Ticked = item.Ticked,
             AskName = loc.Format("Setup_Plan_AskName", subject),
             HelpText = detail.Length == 0 ? badge : loc.Format("Setup_Section_Help", badge, detail),
+            NeedsAdmin = item.Cause == PlanCause.NeedsAdmin,
         };
     }
 

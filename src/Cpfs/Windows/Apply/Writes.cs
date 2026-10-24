@@ -18,8 +18,9 @@ using Microsoft.Win32;
 
 namespace Cpfs.Windows.Apply;
 
-// Every call in CPFS that changes Windows is in this file. Only the executor's steps (SetupSteps, UninstallSteps)
-// call it, after the user pressed Apply and confirmed.
+// Every call in CPFS that changes Windows is in this file and QuickAccessWrites.cs (and the --user-session verb, which
+// maps the drive in the user's own session). Only the executor's steps (SetupSteps, UninstallSteps) call them, after
+// the user pressed Apply and confirmed.
 internal static class Accounts
 {
     public const string AdminsSid = "S-1-5-32-544";

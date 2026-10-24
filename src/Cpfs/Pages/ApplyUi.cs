@@ -2,11 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
 using Cpfs.Core.Apply;
 using Cpfs.Core.Planning;
+using Cpfs.Core.Text;
 using Cpfs.Windows.Apply;
 using Wpf.Ui.Controls;
 
@@ -73,8 +80,15 @@ public sealed class StepView : INotifyPropertyChanged
 
     public void Set(StepOutcome outcome, string? error)
     {
-        State = Loc.Instance["Apply_State_" + outcome];
         StateKind = outcome.ToString();
+        if (outcome == StepOutcome.Unsupported && SessionDrive.NoDesktopUserText(error) is { } text)
+        {
+            State = Loc.Instance["Apply_State_NoSession"];
+            Error = Loc.Instance[text];
+            return;
+        }
+
+        State = Loc.Instance["Apply_State_" + outcome];
         Error = outcome == StepOutcome.Unsupported && error is not null ? Loc.Instance.FormatValues("Apply_RefusedReason", error) : error ?? "";
     }
 
@@ -98,27 +112,36 @@ public sealed class StepView : INotifyPropertyChanged
     }
 }
 
-// The dialogs both Apply pages share: the summary to confirm, and the question after a restore point that was not
-// created.
+// What Setup and Uninstall share: the summary sentence, the confirmation, the question after a restore point that was
+// not created, the result, Copy report and the behaviour of every Show details.
 internal static class ApplyUi
 {
-    public static Wpf.Ui.Controls.MessageBox NewDialog(FrameworkElement page, string title, object content)
+    // The summary's sentences in the UI language: counts formatted for it, names and paths kept in their own direction.
+    public static string SummaryText(PlanSummary summary)
     {
-        var owner = Window.GetWindow(page);
-        var box = new Wpf.Ui.Controls.MessageBox
+        var loc = Loc.Instance;
+        var sentences = new List<string>();
+        foreach (var line in summary.Lines)
         {
-            Title = title,
-            Content = content,
-            CloseButtonText = Loc.Instance["Common_Cancel"],
-            FlowDirection = owner?.FlowDirection ?? FlowDirection.LeftToRight,
-            Owner = owner,
-        };
-        box.SetResourceReference(Control.FontFamilyProperty, Theming.FontResourceKey);
-        return box;
+            var args = new object[line.Args.Count];
+            for (var i = 0; i < args.Length; i++)
+            {
+                args[i] = line.Args[i] switch
+                {
+                    int n => Formats(n),
+                    var other => Bidi.Embed(other?.ToString() ?? "", loc.IsRtl),
+                };
+            }
+
+            sentences.Add(string.Format(loc.Culture, loc[line.Key], args));
+        }
+
+        return string.Join(" ", sentences);
     }
 
-    // Every change that will run, the items left for 0.6.0, and whether a restore point comes first.
-    public static async Task<bool> ConfirmAsync(FrameworkElement page, string titleKey, string messageKey, string buttonKey,
+    // Three lines, how many changes, how they are undone and whether a restore point comes first, with the item list
+    // under Show details.
+    public static async Task<bool> ConfirmAsync(FrameworkElement page, string titleKey, string messageKey, string undoKey, string buttonKey,
         IReadOnlyList<ApplyEntry> entries, bool restorePoint)
     {
         var loc = Loc.Instance;
@@ -135,34 +158,91 @@ internal static class ApplyUi
 
             run++;
             var view = SetupPage.ToView(e.Item);
-            list.Children.Add(new System.Windows.Controls.TextBlock
-            {
-                Text = view.Detail.Length > 0 ? loc.Format("Apply_ConfirmLine", view.Subject, view.Detail) : view.Subject,
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 0, 0, 4),
-            });
+            list.Children.Add(ListLine(view.Detail.Length > 0 ? loc.Format("Apply_ConfirmLine", view.Subject, view.Detail) : view.Subject));
         }
 
-        var content = new StackPanel { MaxWidth = 520 };
-        content.Children.Add(Text(loc.Format(messageKey, Formats(run))));
+        var details = new StackPanel();
         if (deferred > 0)
         {
-            content.Children.Add(Text(loc.Format("Apply_ConfirmDeferred", Formats(deferred))));
+            details.Children.Add(Text(loc.Format("Apply_ConfirmDeferred", Formats(deferred))));
         }
 
-        content.Children.Add(Text(loc[restorePoint ? "Apply_ConfirmRestorePoint" : "Apply_ConfirmNoRestorePoint"]));
-        content.Children.Add(new ScrollViewer
+        // The list scrolls inside the expander, so the dialog stays within the screen and its buttons stay visible.
+        details.Children.Add(new ScrollViewer
         {
             Content = list,
-            MaxHeight = 280,
-            Margin = new Thickness(0, 8, 0, 0),
+            MaxHeight = Math.Max(120, Math.Min(280, SystemParameters.WorkArea.Height - 400)),
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         });
 
-        var box = NewDialog(page, loc[titleKey], content);
-        box.PrimaryButtonText = loc[buttonKey];
-        box.PrimaryButtonAppearance = ControlAppearance.Primary;
-        return await box.ShowDialogAsync() == Wpf.Ui.Controls.MessageBoxResult.Primary;
+        // Opening or closing it never closes the dialog: no button is the default, and Enter and Space on its header
+        // only toggle it (AttachKeys).
+        var expander = new CardExpander
+        {
+            Header = loc["Common_ShowDetails"],
+            Content = details,
+            IsExpanded = false,
+            Margin = new Thickness(0, 0, 0, 8),
+        };
+        System.Windows.Automation.AutomationProperties.SetName(expander, loc["Common_ShowDetails"]);
+        AttachKeys(expander);
+
+        var content = new StackPanel { MaxWidth = 520 };
+        content.Children.Add(Text(loc.Format(messageKey + (run == 1 ? "One" : ""), Formats(run))));
+        content.Children.Add(Text(loc[undoKey]));
+        content.Children.Add(Text(loc[restorePoint ? "Apply_ConfirmRestorePoint" : "Apply_ConfirmNoRestorePoint"]));
+        content.Children.Add(expander);
+
+        // Our own buttons, not the message box's template buttons, so only a press of the primary button confirms; no
+        // button is the default, so Enter on the expander confirms nothing.
+        var box = NewChoice(page, loc[titleKey], content);
+        box.AddButton(loc[buttonKey], Wpf.Ui.Controls.MessageBoxButton.Primary, ControlAppearance.Primary);
+        box.AddButton(loc["Common_Cancel"], Wpf.Ui.Controls.MessageBoxButton.Close, ControlAppearance.Secondary, isCancel: true);
+        var toggles = 0;
+        void OnToggle(object sender, RoutedEventArgs e)
+        {
+            if (!ReferenceEquals(e.OriginalSource, expander))
+            {
+                return;
+            }
+
+            toggles++;
+            box.Dispatcher.BeginInvoke(new Action(() => FitHeight(box)), System.Windows.Threading.DispatcherPriority.Loaded);
+        }
+
+        expander.Expanded += OnToggle;
+        expander.Collapsed += OnToggle;
+
+        return DialogCloses.Confirms(await box.ShowLoggedAsync("apply", titleKey,
+            () => "; details toggled " + toggles.ToString(CultureInfo.InvariantCulture) + " times, " + (expander.IsExpanded ? "open" : "closed") + " at close"));
+    }
+
+    // One item of a list: the dash in its own column, so a long line wraps under the text, not under the dash. The
+    // grid mirrors with the dialog, which puts the dash on the right in a right-to-left language.
+    private static Grid ListLine(string text)
+    {
+        var line = new Grid { Margin = new Thickness(0, 0, 0, 4) };
+        line.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        line.Children.Add(new System.Windows.Controls.TextBlock { Text = Loc.Instance["Common_ListBullet"], Margin = new Thickness(0, 0, 6, 0) });
+        var body = new System.Windows.Controls.TextBlock { Text = text, TextWrapping = TextWrapping.Wrap };
+        Grid.SetColumn(body, 1);
+        line.Children.Add(body);
+        return line;
+    }
+
+    public static ChoiceDialog NewChoice(FrameworkElement page, string title, object content)
+    {
+        var owner = Window.GetWindow(page);
+        var box = new ChoiceDialog(content)
+        {
+            Title = title,
+            MaxWidth = 560,
+            FlowDirection = owner?.FlowDirection ?? FlowDirection.LeftToRight,
+            Owner = owner,
+        };
+        box.SetResourceReference(Control.FontFamilyProperty, Theming.FontResourceKey);
+        return box;
     }
 
     // True to go on without a new restore point. "Open System Protection" opens its settings and stops.
@@ -171,24 +251,17 @@ internal static class ApplyUi
         var loc = Loc.Instance;
         var message = result.Outcome switch
         {
-            RestorePointOutcome.Skipped when result.Newest is { } newest => loc.Format("Apply_RpSkippedMsg", newest.ToString("g", loc.Culture)),
+            RestorePointOutcome.Skipped when result.Newest is { } newest => loc.Format("Apply_RpSkippedMsg", Cpfs.Core.Text.Formats.DateTime(newest.LocalDateTime, loc.Culture)),
             RestorePointOutcome.Unavailable => loc.FormatValues("Apply_RpUnavailableMsg", result.Error ?? "?"),
             _ => loc["Apply_RpNoneMsg"],
         };
-        var owner = Window.GetWindow(page);
-        var box = new ChoiceDialog(Text(message))
-        {
-            Title = loc["Apply_RpTitle"],
-            MaxWidth = 560,
-            FlowDirection = owner?.FlowDirection ?? FlowDirection.LeftToRight,
-            Owner = owner,
-        };
-        box.SetResourceReference(Control.FontFamilyProperty, Theming.FontResourceKey);
-        box.AddButton(loc["Apply_RpContinue"], Wpf.Ui.Controls.MessageBoxButton.Primary, ControlAppearance.Primary, isDefault: true);
+        // No default button: Enter alone must not go on without a restore point.
+        var box = NewChoice(page, loc["Apply_RpTitle"], Text(message));
+        box.AddButton(loc["Apply_RpContinue"], Wpf.Ui.Controls.MessageBoxButton.Primary, ControlAppearance.Primary);
         box.AddButton(loc["Apply_RpOpenSettings"], Wpf.Ui.Controls.MessageBoxButton.Secondary, ControlAppearance.Secondary);
         box.AddButton(loc["Apply_RpStop"], Wpf.Ui.Controls.MessageBoxButton.Close, ControlAppearance.Secondary, isCancel: true);
-        var answer = await box.ShowDialogAsync();
-        if (answer == Wpf.Ui.Controls.MessageBoxResult.Secondary)
+        var answer = await box.ShowLoggedAsync("apply", "Apply_RpTitle");
+        if (answer == DialogClose.SecondaryButton)
         {
             try
             {
@@ -203,27 +276,101 @@ internal static class ApplyUi
         }
 
         AppLog.Write("apply", "Restore point " + result.Outcome + "; the user chose " + answer);
-        return answer == Wpf.Ui.Controls.MessageBoxResult.Primary;
+        return DialogCloses.Confirms(answer);
     }
 
-    // After a run that finished: what was done, what was already so, what waits for 0.6.0, and, as a warning, what
-    // Windows refused or what was done only in part. Those are not done, and never counted as planned for later.
-    public static (string Message, InfoBarSeverity Severity) DoneMessage(ExecutionResult result)
+    // After a run that finished: how many changes were made as the title; then, by name and with Windows' words, each
+    // change Windows refused or did only in part. Those are not done, and never counted as made.
+    public static (string Title, string Message, InfoBarSeverity Severity) DoneMessage(ExecutionResult result, IReadOnlyList<ApplyEntry> entries)
     {
         var loc = Loc.Instance;
-        var message = loc.Format("Apply_DoneMsg", Formats(result.Count(StepOutcome.Done)), Formats(result.Count(StepOutcome.Kept)),
-            Formats(result.Count(StepOutcome.Deferred)));
-        if (result.Count(StepOutcome.Unsupported) is var refused and > 0)
+        var done = result.Count(StepOutcome.Done);
+        var title = done == 0 ? loc["Apply_DoneNone"] : loc.Format(done == 1 ? "Apply_DoneOne" : "Apply_DoneMany", Formats(done));
+        var notes = new List<string>();
+        foreach (var r in result.Reports)
         {
-            message += " " + loc.Format("Apply_DoneRefused", Formats(refused));
+            if (r.Outcome == StepOutcome.Unsupported && SessionDrive.NoDesktopUserText(r.Error) is { } text)
+            {
+                notes.Add(loc[text]);
+            }
+            else if (r.Outcome is StepOutcome.Unsupported or StepOutcome.Partial && r.Index >= 0 && r.Index < entries.Count)
+            {
+                var subject = SetupPage.ToView(entries[r.Index].Item).Subject;
+                // Windows' message, possibly in another language than the app's, goes on a line of its own.
+                notes.Add(loc.Format(r.Outcome == StepOutcome.Unsupported ? "Apply_DoneRefusedItem" : "Apply_DonePartialItem", subject)
+                    + Environment.NewLine + Bidi.Embed(r.Error ?? "?", loc.IsRtl));
+            }
         }
 
-        if (result.Count(StepOutcome.Partial) is var partial and > 0)
+        if (result.Count(StepOutcome.Deferred) is var later and > 0)
         {
-            message += " " + loc.Format("Apply_DonePartial", Formats(partial));
+            notes.Add(loc.Format("Apply_ConfirmDeferred", Formats(later)));
         }
 
-        return (message, result.NotDone > 0 ? InfoBarSeverity.Warning : InfoBarSeverity.Success);
+        return (title, string.Join(Environment.NewLine, notes), result.NotDone > 0 ? InfoBarSeverity.Warning : InfoBarSeverity.Success);
+    }
+
+    // The session log on the clipboard for support; it holds no password.
+    public static bool CopyReport(object sender, out string? error)
+    {
+        try
+        {
+            AppLog.Write("log", "Report copied to the clipboard");
+            Clipboard.SetText(AppLog.SessionText());
+            Feedback.Show(sender, true, Loc.Instance["Common_Copied"]);
+            error = null;
+            return true;
+        }
+        catch (Exception ex) when (ex is COMException or ExternalException or IOException or UnauthorizedAccessException)
+        {
+            error = Loc.Instance.Format("Log_CopyFailed", ex.Message);
+            Feedback.Show(sender, false, error);
+            return false;
+        }
+    }
+
+    // A Show details expander: it starts collapsed.
+    public static void AttachDetails(CardExpander expander)
+    {
+        expander.IsExpanded = false;
+        AttachKeys(expander);
+    }
+
+    // A page's own expander: named for screen readers on its toggle button, and opened or closed by Enter or Space on
+    // its header, as the Advanced page's sections are.
+    public static void AttachKeys(CardExpander expander)
+    {
+        expander.Loaded += (_, _) => NameToggle(expander);
+        expander.PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key is Key.Enter or Key.Space && Keyboard.Modifiers == ModifierKeys.None
+                && ReferenceEquals(e.OriginalSource, expander.Template?.FindName("ExpanderToggleButton", expander)))
+            {
+                expander.IsExpanded = !expander.IsExpanded;
+                e.Handled = true;
+            }
+        };
+    }
+
+    // The header toggle button is the expander's one tab stop; by default it would read its content.
+    public static void NameToggle(CardExpander expander)
+    {
+        if (expander.Template?.FindName("ExpanderToggleButton", expander) is ToggleButton toggle)
+        {
+            System.Windows.Automation.AutomationProperties.SetName(toggle, System.Windows.Automation.AutomationProperties.GetName(expander));
+            System.Windows.Automation.AutomationProperties.SetHelpText(toggle, System.Windows.Automation.AutomationProperties.GetHelpText(expander));
+        }
+    }
+
+    // WPF-UI 4.3.0's MessageBox sets its height once, when it loads. After its content grows or shrinks, the window
+    // is measured again at its current width, as the library does on load, so it neither clips nor leaves a gap.
+    private static void FitHeight(Window box)
+    {
+        if (box.IsLoaded && VisualTreeHelper.GetChildrenCount(box) > 0 && VisualTreeHelper.GetChild(box, 0) is UIElement root)
+        {
+            root.Measure(new Size(box.ActualWidth, double.PositiveInfinity));
+            box.SetCurrentValue(FrameworkElement.HeightProperty, root.DesiredSize.Height);
+        }
     }
 
     public static string Formats(int n) => Cpfs.Core.Text.Formats.Count(n, Loc.Instance.Culture);

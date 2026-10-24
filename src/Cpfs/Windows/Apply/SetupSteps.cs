@@ -30,7 +30,12 @@ internal sealed class SetupRun
         }
 
         Rules = FirewallRules.Wanted(vpn);
+
+        // config.json as it was before this run: what the previous drive and shortcut were, and where they point.
+        Original = book.FirstSetup ? null : ConfigReader.Parse(ConfigWriter.Serialize(book.Root));
     }
+
+    public ConfigDocument? Original { get; }
 
     public SetupAnswers Answers { get; }
 
@@ -51,6 +56,17 @@ internal sealed class SetupRun
     public bool CreatedAccount { get; set; }
 
     public bool RestartNeeded { get; set; }
+
+    // A drive letter mapping was removed: Windows keeps the one it made at start until the next restart.
+    public bool DriveRestartNeeded { get; set; }
+
+    public char? OldLetter => Original?.DriveLetter is { Length: 1 } l ? char.ToUpperInvariant(l[0]) : null;
+
+    public char Letter => Answers.DriveLetter is { } l ? char.ToUpperInvariant(l) : throw new InvalidOperationException("No drive letter was chosen.");
+
+    public string DriveName => Answers.DriveName.Trim();
+
+    public string ShortcutDescription => Planner.ShareDescription + " - " + SharePath;
 
     // Runs the plan; the progress callback is called on the worker thread.
     public ExecutionResult Execute(Action<StepReport> progress)
@@ -74,6 +90,20 @@ internal sealed class SetupRun
                 b.SetField("SharePath", SharePath);
                 b.SetField("ShareName", ShareName);
                 b.SetField("Strict", Answers.Strict);
+                b.SetField("Access", (Answers.Drive ? 1 : 0) | (Answers.Shortcut ? 2 : 0));
+
+                // Turned off: whatever is still recorded is no longer CPFS's (its own was removed above).
+                if (!Answers.Drive)
+                {
+                    b.SetField("DriveLetter", null);
+                    b.SetField("DriveLabel", null);
+                    b.TrackCreated("DrivePath", null);
+                }
+
+                if (!Answers.Shortcut)
+                {
+                    b.SetField("Shortcut", null);
+                }
             });
     }
 
@@ -126,6 +156,15 @@ internal static class SetupSteps
             "fw.extra" => RemoveRules(arg),
             "fw.builtin" => BuiltIn(run, arg),
             "net" => Network(run, arg),
+            "task.runasuser" => QuickAccessSteps.StaleTask(),
+            "drive.oldlabel" => QuickAccessSteps.OldLabel(run, item),
+            "drive.oldsession" => QuickAccessSteps.OldSession(run),
+            "drive.oldmap" => QuickAccessSteps.OldMap(run),
+            "drive.map" => QuickAccessSteps.Map(run),
+            "drive.session" => QuickAccessSteps.Session(run),
+            "drive.label" => QuickAccessSteps.Label(run, item),
+            "shortcut.old" => QuickAccessSteps.OldShortcut(run),
+            "shortcut.file" => QuickAccessSteps.Shortcut(run, item),
             _ when family.StartsWith("hardening.", StringComparison.Ordinal) => Hardening(family.Substring("hardening.".Length)),
             _ => throw new NotSupportedException("No step for plan item " + key),
         };

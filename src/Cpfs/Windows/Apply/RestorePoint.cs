@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Management;
+using Cpfs.Core.Text;
 
 namespace Cpfs.Windows.Apply;
 
@@ -16,7 +17,7 @@ internal enum RestorePointOutcome
     Unavailable,
 }
 
-internal sealed record RestorePointResult(RestorePointOutcome Outcome, DateTime? Newest, string? Error);
+internal sealed record RestorePointResult(RestorePointOutcome Outcome, DateTimeOffset? Newest, string? Error);
 
 // A System Restore point before CPFS changes Windows (owner decision 10): a second way back next to the backup in
 // config.json. It never switches System Protection on and never changes the frequency setting.
@@ -30,7 +31,7 @@ internal static class RestorePoint
     {
         try
         {
-            var (beforeSequence, _) = Newest();
+            var (beforeSequence, _, _) = Newest();
             uint code;
             using (var type = new ManagementClass(new ManagementScope(Scope), new ManagementPath("SystemRestore"), null))
             using (var args = type.GetMethodParameters("CreateRestorePoint"))
@@ -42,7 +43,7 @@ internal static class RestorePoint
                 code = Convert.ToUInt32(result?["ReturnValue"] ?? 0u, CultureInfo.InvariantCulture);
             }
 
-            var (afterSequence, newest) = Newest();
+            var (afterSequence, newest, raw) = Newest();
             AppLog.Write("apply", "Restore point: return " + code.ToString(CultureInfo.InvariantCulture) + ", newest sequence "
                 + (beforeSequence?.ToString(CultureInfo.InvariantCulture) ?? "none") + " -> " + (afterSequence?.ToString(CultureInfo.InvariantCulture) ?? "none"));
             if (afterSequence is { } a && (beforeSequence is null || a > beforeSequence))
@@ -56,7 +57,7 @@ internal static class RestorePoint
             }
 
             AppLog.Write("apply", "Restore point: skipped by Windows; newest existing point "
-                + (newest?.ToString("u", CultureInfo.InvariantCulture) ?? "none (System Protection may be off)"));
+                + (newest is { } n ? CimDateTime.Iso(n) + " (CreationTime " + raw + ")" : "none (System Protection may be off)"));
             return new RestorePointResult(RestorePointOutcome.Skipped, newest, null);
         }
         catch (Exception ex) when (ex is ManagementException or UnauthorizedAccessException or System.Runtime.InteropServices.COMException)
@@ -66,10 +67,11 @@ internal static class RestorePoint
         }
     }
 
-    private static (uint? Sequence, DateTime? Created) Newest()
+    private static (uint? Sequence, DateTimeOffset? Created, string? Raw) Newest()
     {
         uint? sequence = null;
-        DateTime? created = null;
+        DateTimeOffset? created = null;
+        string? raw = null;
         foreach (var point in Wmi.All(Scope, "SELECT SequenceNumber, CreationTime FROM SystemRestore"))
         {
             using (point)
@@ -78,30 +80,13 @@ internal static class RestorePoint
                 if (sequence is null || n > sequence)
                 {
                     sequence = n;
-                    created = Time(StateReader.Prop(point, "CreationTime") as string);
+                    raw = StateReader.Prop(point, "CreationTime") as string;
+                    created = CimDateTime.TryParse(raw, out var t) ? t : null;
                 }
             }
         }
 
-        return (sequence, created);
-    }
-
-    // CreationTime is a CIM datetime string [unverified: the class page does not state its format].
-    private static DateTime? Time(string? value)
-    {
-        if (string.IsNullOrEmpty(value))
-        {
-            return null;
-        }
-
-        try
-        {
-            return ManagementDateTimeConverter.ToDateTime(value);
-        }
-        catch (Exception ex) when (ex is ArgumentException or FormatException or ArgumentOutOfRangeException)
-        {
-            return null;
-        }
+        return (sequence, created, raw);
     }
 }
 

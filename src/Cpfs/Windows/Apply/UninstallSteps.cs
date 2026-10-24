@@ -41,6 +41,9 @@ internal sealed class UninstallRun
 
     public string? SavedCopy { get; set; }
 
+    // Windows keeps the letter it mapped at start until the next restart.
+    public bool DriveRestartNeeded { get; set; }
+
     public ExecutionResult Execute(Action<StepReport> progress)
     {
         foreach (var item in Plan.Items)
@@ -75,6 +78,11 @@ internal static class UninstallSteps
         return family switch
         {
             "u.share" => Share(run, arg),
+            "u.task.runasuser" => QuickAccessSteps.StaleTask(),
+            "u.drive.label" => QuickAccessSteps.UninstallLabel(run),
+            "u.drive.session" => QuickAccessSteps.UninstallSession(run),
+            "u.drive" => QuickAccessSteps.UninstallMap(run),
+            "u.shortcut" => QuickAccessSteps.UninstallShortcut(run),
             "u.owner" => Owner(run),
             "u.ace" => Ace(run),
             "u.user.profile" => Profile(run),

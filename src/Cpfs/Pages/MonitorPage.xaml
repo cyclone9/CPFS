@@ -12,7 +12,13 @@
     <!--  One label and value; fields sit in a WrapPanel, so a row folds onto more lines in a narrow window.  -->
     <DataTemplate DataType="{x:Type pages:MonitorField}">
       <StackPanel MinWidth="104" Margin="0,0,24,8">
-        <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding Label}" />
+        <!--  Down and Up explain their direction in a tooltip, for the mouse and for screen readers.  -->
+        <TextBlock
+          Margin="0"
+          AutomationProperties.HelpText="{Binding Tip}"
+          Style="{StaticResource CardDescription}"
+          Text="{Binding Label}"
+          ToolTip="{Binding Tip}" />
         <TextBlock Style="{StaticResource DataValue}" Text="{Binding Value}" Visibility="{Binding IsData, Converter={StaticResource Visible}}" />
         <TextBlock Style="{StaticResource CardValue}" Text="{Binding Value}" Visibility="{Binding IsText, Converter={StaticResource Visible}}" />
         <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding Detail}" TextWrapping="Wrap" Visibility="{Binding HasDetail, Converter={StaticResource Visible}}" />
@@ -30,52 +36,59 @@
         BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
         BorderThickness="1"
         CornerRadius="4">
-        <Grid>
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-          </Grid.ColumnDefinitions>
+        <!--
+          The device's data on the start side, its buttons in one column of equal widths on the end side; in a narrow
+          window the buttons go below the data. The two naming buttons never show together.
+        -->
+        <local:FieldCardPanel FieldAutoWidth="True" MinHeaderEms="16">
           <StackPanel>
             <TextBlock Style="{StaticResource CardTitle}" Margin="0,0,0,6" Text="{Binding Title}" TextWrapping="Wrap" Visibility="{Binding HasTitle, Converter={StaticResource Visible}}" />
             <Border Style="{StaticResource Badge}" Margin="0,0,0,6" Visibility="{Binding HasBadge, Converter={StaticResource Visible}}">
               <TextBlock Style="{StaticResource BadgeText}" Text="{Binding Badge}" />
             </Border>
             <ItemsControl Focusable="False" ItemsPanel="{StaticResource Wrap}" ItemsSource="{Binding Fields}" />
-            <WrapPanel Margin="0,0,0,8">
-              <ui:Button
-                Margin="0,0,8,0"
-                AutomationProperties.Name="{Binding NameActionName}"
-                Click="OnNameDevice"
-                Content="{Binding [Monitor_Device_Name], Source={x:Static local:Loc.Instance}}"
-                Icon="{ui:SymbolIcon Tag24}"
-                ToolTip="{Binding [Monitor_Device_NameTip], Source={x:Static local:Loc.Instance}}"
-                Visibility="{Binding CanName, Converter={StaticResource Visible}}" />
-              <ui:Button
-                Margin="0,0,8,0"
-                AutomationProperties.Name="{Binding NameActionName}"
-                Click="OnNameDevice"
-                Content="{Binding [Monitor_Device_Rename], Source={x:Static local:Loc.Instance}}"
-                Icon="{ui:SymbolIcon Rename24}"
-                ToolTip="{Binding [Monitor_Device_NameTip], Source={x:Static local:Loc.Instance}}"
-                Visibility="{Binding HasTitle, Converter={StaticResource Visible}}" />
-              <ui:Button
-                AutomationProperties.Name="{Binding ForgetActionName}"
-                Click="OnForgetDevice"
-                Content="{Binding [Monitor_Device_Forget], Source={x:Static local:Loc.Instance}}"
-                Icon="{ui:SymbolIcon Delete24}"
-                Visibility="{Binding HasTitle, Converter={StaticResource Visible}}" />
-            </WrapPanel>
           </StackPanel>
-          <ui:Button
-            Grid.Column="1"
-            Margin="8,0,0,8"
-            VerticalAlignment="Center"
-            AutomationProperties.Name="{Binding ActionName}"
-            Click="OnDisconnect"
-            Content="{Binding [Monitor_Session_Disconnect], Source={x:Static local:Loc.Instance}}"
-            Icon="{ui:SymbolIcon PlugDisconnected24}"
-            Visibility="{Binding CanDisconnect, Converter={StaticResource Visible}}" />
-        </Grid>
+          <StackPanel Margin="0,0,0,4" Visibility="{Binding HasActions, Converter={StaticResource Visible}}">
+            <ui:Button
+              Margin="0,0,0,4"
+              HorizontalAlignment="Stretch"
+              HorizontalContentAlignment="Left"
+              AutomationProperties.Name="{Binding NameActionName}"
+              Click="OnNameDevice"
+              Content="{Binding [Monitor_Device_Name], Source={x:Static local:Loc.Instance}}"
+              Icon="{ui:SymbolIcon Tag24}"
+              ToolTip="{Binding [Monitor_Device_NameTip], Source={x:Static local:Loc.Instance}}"
+              Visibility="{Binding CanName, Converter={StaticResource Visible}}" />
+            <ui:Button
+              Margin="0,0,0,4"
+              HorizontalAlignment="Stretch"
+              HorizontalContentAlignment="Left"
+              AutomationProperties.Name="{Binding NameActionName}"
+              Click="OnNameDevice"
+              Content="{Binding [Monitor_Device_Rename], Source={x:Static local:Loc.Instance}}"
+              Icon="{ui:SymbolIcon Rename24}"
+              ToolTip="{Binding [Monitor_Device_NameTip], Source={x:Static local:Loc.Instance}}"
+              Visibility="{Binding HasTitle, Converter={StaticResource Visible}}" />
+            <ui:Button
+              Margin="0,0,0,4"
+              HorizontalAlignment="Stretch"
+              HorizontalContentAlignment="Left"
+              AutomationProperties.Name="{Binding ForgetActionName}"
+              Click="OnForgetDevice"
+              Content="{Binding [Monitor_Device_Forget], Source={x:Static local:Loc.Instance}}"
+              Icon="{ui:SymbolIcon Delete24}"
+              Visibility="{Binding HasTitle, Converter={StaticResource Visible}}" />
+            <ui:Button
+              Margin="0,0,0,4"
+              HorizontalAlignment="Stretch"
+              HorizontalContentAlignment="Left"
+              AutomationProperties.Name="{Binding ActionName}"
+              Click="OnDisconnect"
+              Content="{Binding [Monitor_Session_Disconnect], Source={x:Static local:Loc.Instance}}"
+              Icon="{ui:SymbolIcon PlugDisconnected24}"
+              Visibility="{Binding CanDisconnect, Converter={StaticResource Visible}}" />
+          </StackPanel>
+        </local:FieldCardPanel>
       </Border>
     </DataTemplate>
 
@@ -123,8 +136,6 @@
     </StackPanel>
 
     <StackPanel x:Name="MonitorPanel" Visibility="Collapsed">
-      <TextBlock Style="{StaticResource Body}" Text="{Binding [Monitor_Intro], Source={x:Static local:Loc.Instance}}" />
-      <TextBlock x:Name="UpdatedText" Margin="0,4,0,8" Style="{StaticResource CardDescription}" />
       <ui:InfoBar x:Name="ActionResult" Margin="0,0,0,4" IsClosable="True" IsOpen="False" />
       <ItemsControl x:Name="Sections" Focusable="False" ItemTemplate="{StaticResource SectionTemplate}" />
     </StackPanel>

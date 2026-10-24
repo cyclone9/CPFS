@@ -82,6 +82,9 @@ internal sealed class StateReader
         AppLog.Write("state", "All sections in " + Ms(total));
     }
 
+    // config.json alone, for Setup's plan; Config holds the document afterwards when it could be read.
+    public StateSection ReadConfigSection() => Run("Config", ReadConfig);
+
     private static Func<StateSection, Task> Sync(Action<StateSection> read) => s =>
     {
         read(s);

@@ -50,7 +50,7 @@ public static class UninstallPlanner
         R.NoConfig, R.RefuseUser, R.RefusePath, R.ShareRemove, R.ShareForeign, R.UserDeleteUntracked, R.RestoreUnknown, R.ShareReplaced, R.Owner, R.AceRemove, R.UserDelete, R.UserDeleteExisted,
         R.UserDeleteAdmin, R.Profile, R.UserBefore, R.UserAdmin, R.UserHidden, R.UserGone, R.RuleRemove, R.BuiltInEnable,
         R.BuiltInMissing, R.Restore, R.RestoreValue, R.SettingsKept, R.Revert, R.AlwaysKept, R.NetworkPublic, R.NetworkSaved,
-        R.SaveCopy, R.DataRemove, R.DataKept, R.Later,
+        R.SaveCopy, R.DataRemove, R.DataKept, R.Later, R.LabelRemove, R.DriveSession, R.DriveRemove, R.DriveForeign, R.ShortcutRemove,
     };
 
     public static readonly IReadOnlyList<string> WordKeys = new[]
@@ -110,6 +110,11 @@ public static class UninstallPlanner
         public const string DataRemove = "Uninst_R_DataRemove";
         public const string DataKept = "Uninst_R_DataKept";
         public const string Later = "Uninst_R_Later";
+        public const string LabelRemove = "Uninst_R_LabelRemove";
+        public const string DriveSession = "Uninst_R_DriveSession";
+        public const string DriveRemove = "Uninst_R_DriveRemove";
+        public const string DriveForeign = "Uninst_R_DriveForeign";
+        public const string ShortcutRemove = "Uninst_R_ShortcutRemove";
     }
 
     internal static class S
@@ -189,6 +194,8 @@ public static class UninstallPlanner
             Add("u.savecopy", PlanSection.DataFolder, PlanAction.Create, Word(S.SaveCopy), null, null, R.SaveCopy);
 
             Shares();
+            StaleTask();
+            QuickAccess();
             Later();
             Folder(user, info);
             User(user, info);
@@ -237,30 +244,82 @@ public static class UninstallPlanner
             }
         }
 
-        // Quick access and Auto-Private are removed from 0.6.0 on; until then they are shown and left.
-        private void Later()
+        // The drive and the shortcut config.json records, and only while they are still CPFS's: the drive name it
+        // gave (or the one that was there before, put back), the mapping in the desktop user's session and the DOS
+        // Devices value pointing at the recorded folder, and the shortcut file (its target is checked when it runs).
+        private void QuickAccess()
         {
-            var letter = _c!.DriveLetter is { Length: 1 } l ? char.ToUpperInvariant(l[0]) : (char?)null;
-            if (letter is { } d && _s.DosDevices.IsOk && _s.DosDevices.Value!.ContainsKey(d))
+            var letter = _c!.DriveLetter is { Length: 1 } l && l[0] is >= 'A' and <= 'Z' or >= 'a' and <= 'z' ? char.ToUpperInvariant(l[0]) : (char?)null;
+            if (letter is { } d)
             {
-                Deferred("u.drive", PlanSection.Drive, Word(Planner.S.Drive), PlanValue.Of(d + ":"));
+                var labels = _s.DriveLabels.IsOk ? _s.DriveLabels.Value! : null;
+                var current = labels is not null && labels.TryGetValue(d, out var cl) ? cl : null;
+                var original = _c.BackupDriveLabel(d);
+                if (labels is null)
+                {
+                    Unread("u.drive.label", PlanSection.Drive, Word(Planner.S.Label), _s.DriveLabels);
+                }
+                else if (original is not null && !string.Equals(current, original, StringComparison.Ordinal) && (current is null || SameText(current, _c.OwnDriveLabel)))
+                {
+                    Add("u.drive.label", PlanSection.Drive, PlanAction.Change, Word(Planner.S.Label), current is null ? Word(Planner.W.Absent) : PlanValue.Of(current),
+                        PlanValue.Of(original), Planner.R.LabelRestore);
+                }
+                else if (original is null && current is not null && SameText(current, _c.OwnDriveLabel))
+                {
+                    Add("u.drive.label", PlanSection.Drive, PlanAction.RemoveIfOurs, Word(Planner.S.Label), PlanValue.Of(current), Word(Planner.W.Absent), R.LabelRemove);
+                }
+
+                var path = _c.OwnDrivePath;
+                if (!_s.DosDevices.IsOk)
+                {
+                    Unread("u.drive", PlanSection.Drive, Word(Planner.S.Drive), _s.DosDevices);
+                }
+                else if (_s.DosDevices.Value!.TryGetValue(d, out var value))
+                {
+                    var shown = PlanValue.Of(d + ": " + value);
+                    if (path is { Length: > 0 } && SameText(value, Planner.DosTarget(path)))
+                    {
+                        Add("u.drive.session", PlanSection.Drive, PlanAction.RemoveIfOurs, Word(Planner.S.DriveSession), shown, Word(Planner.W.Absent), R.DriveSession);
+                        Add("u.drive", PlanSection.Drive, PlanAction.RemoveIfOurs, Word(Planner.S.Drive), shown, Word(Planner.W.Absent), R.DriveRemove);
+                    }
+                    else
+                    {
+                        Add("u.drive", PlanSection.Drive, PlanAction.Keep, Word(Planner.S.Drive), shown, null, R.DriveForeign);
+                    }
+                }
             }
 
-            if (_c.Shortcut is { Length: > 0 } lnk && _s.PublicDesktopFiles.IsOk)
+            if (_c.Shortcut is { Length: > 0 } lnk && _s.PublicDesktopFiles.IsOk
+                && SameText(lnk.Substring(0, Math.Max(0, lnk.LastIndexOf('\\'))), _s.CommonDesktop.TrimEnd('\\')))
             {
                 var name = lnk.Substring(lnk.LastIndexOf('\\') + 1);
                 foreach (var f in _s.PublicDesktopFiles.Value!)
                 {
                     if (string.Equals(f, name, StringComparison.OrdinalIgnoreCase))
                     {
-                        Deferred("u.shortcut", PlanSection.Shortcut, Word(Planner.S.Shortcut), PlanValue.Of(lnk));
+                        Add("u.shortcut", PlanSection.Shortcut, PlanAction.RemoveIfOurs, Word(Planner.S.Shortcut), PlanValue.Of(lnk), Word(Planner.W.Absent), R.ShortcutRemove);
                     }
                 }
             }
+        }
 
+        // A leftover CPFS-RunAsUser task in the root folder: Setup's drive.session step creates and deletes it, so one
+        // that exists now is CPFS's and goes.
+        private void StaleTask()
+        {
+            if (_s.Tasks.IsOk && _s.Tasks.Value!.TryGetValue(Planner.RunAsUserTask, out var stale) && stale)
+            {
+                Add("u.task.runasuser", PlanSection.Drive, PlanAction.RemoveIfOurs, PlanValue.Of(Planner.RunAsUserTask), Word(Planner.W.Exists),
+                    Word(Planner.W.Absent), Planner.R.StaleTask);
+            }
+        }
+
+        // Auto-Private is removed from a later version on; until then its tasks are shown and left.
+        private void Later()
+        {
             if (_s.Tasks.IsOk)
             {
-                foreach (var task in new[] { Planner.AutoPrivateTask, Planner.LegacyAutoPrivateTask, Planner.RunAsUserTask })
+                foreach (var task in new[] { Planner.AutoPrivateTask, Planner.LegacyAutoPrivateTask })
                 {
                     if (_s.Tasks.Value!.TryGetValue(task, out var exists) && exists)
                     {

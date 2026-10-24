@@ -46,8 +46,10 @@ public partial class PreferencesPage : Page
     public PreferencesPage()
     {
         InitializeComponent();
-        StoredPath.Text = Startup.PreferencesPath;
         Refill();
+        _syncing = true;
+        UpdatesSwitch.IsChecked = Startup.Preferences.CheckUpdatesAtStart;
+        _syncing = false;
         Loc.Instance.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(Loc.Culture))
@@ -56,6 +58,18 @@ public partial class PreferencesPage : Page
                 Dispatcher.BeginInvoke(new System.Action(Refill));
             }
         };
+    }
+
+    private void OnUpdatesSwitch(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (_syncing)
+        {
+            return;
+        }
+
+        Startup.Preferences.CheckUpdatesAtStart = UpdatesSwitch.IsChecked == true;
+        Startup.SavePreferences();
+        AppLog.Write("prefs", "Check for updates at start " + (Startup.Preferences.CheckUpdatesAtStart ? "on" : "off"));
     }
 
     private void Refill()

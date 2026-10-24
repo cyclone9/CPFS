@@ -44,13 +44,57 @@ public partial class MainWindow : FluentWindow
         ApplyFlowDirection();
 
         ContentRendered += OnFirstRender;
+        RootNavigation.PaneOpened += (_, _) => UpdateMotto();
+        RootNavigation.PaneClosed += (_, _) => UpdateMotto();
         Loaded += (_, _) =>
         {
             Theming.Init(this);
             Theming.ApplyFont();
+            UpdateMotto();
             RootNavigation.Navigate(StartPage());
+            CheckForUpdateAtStart();
         };
     }
+
+    private string? _updateUrl;
+
+    // Only when the user switched it on, once per start, and not again in the elevated window the first one opened.
+    private async void CheckForUpdateAtStart()
+    {
+        if (!Startup.Preferences.CheckUpdatesAtStart || Startup.IsHandOver)
+        {
+            return;
+        }
+
+        var result = await Windows.UpdateClient.CheckOnceAsync();
+        if (result.Status != Core.Updates.UpdateStatus.Newer || result.ReleaseUrl is null)
+        {
+            return;
+        }
+
+        _updateUrl = result.ReleaseUrl;
+        UpdateBar.Message = Pages.AboutPage.UpdateText(result);
+        System.ComponentModel.DependencyPropertyDescriptor.FromProperty(InfoBar.IsOpenProperty, typeof(InfoBar)).AddValueChanged(UpdateBar, (_, _) =>
+        {
+            if (!UpdateBar.IsOpen)
+            {
+                UpdateNote.Visibility = Visibility.Collapsed;
+            }
+        });
+        UpdateNote.Visibility = Visibility.Visible;
+    }
+
+    private void OnOpenUpdate(object sender, RoutedEventArgs e)
+    {
+        if (_updateUrl is { } url && Core.Updates.UpdateCheck.IsReleasePage(url))
+        {
+            Pages.AboutPage.OpenInBrowser(sender, url);
+        }
+    }
+
+    // Shown only in the open pane: a compact or minimal pane has no room for it.
+    private void UpdateMotto() =>
+        PaneMotto.Visibility = RootNavigation.IsPaneOpen ? Visibility.Visible : Visibility.Collapsed;
 
     // "CPFS 0.5.0-dev3", without the commit (About shows that).
     private void UpdateTitle()
@@ -67,6 +111,9 @@ public partial class MainWindow : FluentWindow
         _ => typeof(Pages.SetupPage),
     }
     : typeof(Pages.SetupPage);
+
+    // Shows another page, as if its navigation item had been clicked.
+    public void Open(Type page) => RootNavigation.Navigate(page);
 
     public void ApplyFlowDirection()
     {

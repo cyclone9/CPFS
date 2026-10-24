@@ -28,6 +28,9 @@ public partial class UninstallPage : Page
     private byte[]? _configBytes;
     private string? _documents;
     private Plan? _plan;
+    private PlanSummary? _summary;
+    private string? _lastSummaryLogged;
+    private bool _noNewRestorePoint;
     private bool _loaded;
     private bool _reading;
     private bool _applying;
@@ -36,6 +39,7 @@ public partial class UninstallPage : Page
     {
         InitializeComponent();
         ProgressList.ItemsSource = _steps;
+        ApplyUi.AttachDetails(DetailsExpander);
         Loaded += OnLoaded;
         Loc.Instance.PropertyChanged += (_, e) =>
         {
@@ -75,7 +79,7 @@ public partial class UninstallPage : Page
 
         _reading = true;
         RefreshButton.IsEnabled = false;
-        PlanSummary.Text = Loc.Instance["Setup_Reading"];
+        SummaryBody.Text = Loc.Instance["Setup_Reading"];
         try
         {
             var (input, bytes, documents) = await Task.Run(ReadInput);
@@ -202,6 +206,14 @@ public partial class UninstallPage : Page
             AppLog.Write("uninstall", "  " + line);
         }
 
+        _summary = PlanSummary.Uninstall(_plan);
+        var summaryLog = _summary.LogText();
+        if (!string.Equals(summaryLog, _lastSummaryLogged, StringComparison.Ordinal))
+        {
+            _lastSummaryLogged = summaryLog;
+            AppLog.Write("uninstall", "Summary: " + summaryLog);
+        }
+
         Render();
     }
 
@@ -213,14 +225,18 @@ public partial class UninstallPage : Page
         }
 
         var loc = Loc.Instance;
-        PlanSummary.Text = loc.Format("Setup_Plan_Summary",
+        SummaryBody.Text = _summary is null ? "" : ApplyUi.SummaryText(_summary);
+        var decisions = SetupPage.AskViews(_plan);
+        Decisions.ItemsSource = decisions;
+        DecisionsCard.Visibility = decisions.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        PlanCounts.Text = loc.Format("Setup_Plan_Summary",
             ApplyUi.Formats(_plan.Count(PlanAction.Keep)),
             ApplyUi.Formats(_plan.Count(PlanAction.Change)),
             ApplyUi.Formats(_plan.Count(PlanAction.Create)),
             ApplyUi.Formats(_plan.Count(PlanAction.RemoveIfOurs)),
             ApplyUi.Formats(_plan.Count(PlanAction.Ask)),
             ApplyUi.Formats(_plan.Count(PlanAction.CannotPlan)));
-        PlanGroups.ItemsSource = SetupPage.Groups(_plan, out _);
+        PlanGroups.ItemsSource = SetupPage.Groups(_plan);
         UpdateApplyState();
     }
 
@@ -243,7 +259,8 @@ public partial class UninstallPage : Page
         }
         else if (!ApplyList.Uninstall(_plan).Any(e => !e.Deferred))
         {
-            hint = loc["Apply_Nothing"];
+            // The summary already says there is nothing to undo.
+            hint = "";
         }
         else
         {
@@ -253,7 +270,9 @@ public partial class UninstallPage : Page
 
         ApplyButton.IsEnabled = enabled && !_reading;
         RestorePointBox.IsEnabled = !_applying;
+        ApplyBusy.Visibility = _applying ? Visibility.Visible : Visibility.Collapsed;
         ApplyHint.Text = hint;
+        ApplyHint.Visibility = hint.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         System.Windows.Automation.AutomationProperties.SetHelpText(ApplyButton, hint);
     }
 
@@ -277,7 +296,7 @@ public partial class UninstallPage : Page
         var plan = _plan;
         var entries = ApplyList.Uninstall(plan);
         var restorePoint = RestorePointBox.IsChecked == true;
-        if (!await ApplyUi.ConfirmAsync(this, "Uninst_ConfirmTitle", "Uninst_ConfirmMsg", "Uninst_Apply", entries, restorePoint))
+        if (!await ApplyUi.ConfirmAsync(this, "Uninst_ConfirmTitle", "Uninst_ConfirmMsg", "Uninst_ConfirmUndo", "Uninst_Apply", entries, restorePoint))
         {
             AppLog.Write("uninstall", "The user cancelled at the summary");
             return;
@@ -287,6 +306,8 @@ public partial class UninstallPage : Page
         UpdateApplyState();
         RefreshButton.IsEnabled = false;
         ApplyResult.IsOpen = false;
+        ResultActions.Visibility = Visibility.Collapsed;
+        _noNewRestorePoint = false;
         _steps.Clear();
         ProgressCard.Visibility = Visibility.Visible;
         try
@@ -318,13 +339,30 @@ public partial class UninstallPage : Page
 
             if (result.Completed)
             {
-                var (message, severity) = ApplyUi.DoneMessage(result);
-                if (run.SavedCopy is not null)
+                var (_, message, severity) = ApplyUi.DoneMessage(result, entries);
+                var notes = new List<string>();
+                if (message.Length > 0)
                 {
-                    message += " " + loc.FormatValues("Uninst_CopySaved", run.SavedCopy);
+                    notes.Add(message);
                 }
 
-                Show(ApplyResult, severity, loc["Uninst_DoneTitle"], message);
+                if (run.SavedCopy is not null)
+                {
+                    notes.Add(loc.FormatValues("Uninst_CopySaved", run.SavedCopy));
+                }
+
+                if (run.DriveRestartNeeded)
+                {
+                    notes.Add(loc["Uninst_RestartDriveMsg"]);
+                }
+
+                if (_noNewRestorePoint)
+                {
+                    notes.Add(loc["Apply_NoRestorePointNote"]);
+                }
+
+                Show(ApplyResult, severity, loc["Uninst_DoneTitle"], string.Join(Environment.NewLine, notes));
+                ResultActions.Visibility = result.NotDone > 0 ? Visibility.Visible : Visibility.Collapsed;
             }
             else
             {
@@ -336,12 +374,14 @@ public partial class UninstallPage : Page
                 }
 
                 Show(ApplyResult, InfoBarSeverity.Error, loc.FormatValues("Uninst_FailedTitle", SetupPage.ToView(failed).Subject), message);
+                ResultActions.Visibility = Visibility.Visible;
             }
         }
         catch (Exception ex)
         {
             AppLog.Exception("uninstall", ex);
             Show(ApplyResult, InfoBarSeverity.Error, loc["Apply_ErrorTitle"], ex.GetType().Name + ": " + ex.Message);
+            ResultActions.Visibility = Visibility.Visible;
         }
         finally
         {
@@ -371,8 +411,12 @@ public partial class UninstallPage : Page
         {
             view.Set(StepOutcome.Failed, result.Error);
         }
+
+        _noNewRestorePoint = true;
         return await ApplyUi.ContinueWithoutRestorePointAsync(this, result);
     }
+
+    private void OnCopyReport(object sender, RoutedEventArgs e) => ApplyUi.CopyReport(sender, out _);
 
     private async void OnContinueAsAdministrator(object sender, RoutedEventArgs e)
     {

@@ -17,7 +17,6 @@ public enum ValidationError
     NotFullPath,
     DriveRoot,
     ProtectedFolder,
-    PasswordsDiffer,
     ReservedName,
     TrailingDotOrSpace,
     ControlCharacters,
@@ -186,20 +185,15 @@ public static class Validators
         return ValidationResult.Ok(path);
     }
 
-    // The password itself never enters Core: the page passes its length and whether the two boxes match.
-    public static ValidationError Password(int length, bool matches)
+    // The password itself never enters Core: the page passes only its length.
+    public static ValidationError Password(int length)
     {
         if (length == 0)
         {
             return ValidationError.Empty;
         }
 
-        if (length < MinPasswordLength)
-        {
-            return ValidationError.TooShort;
-        }
-
-        return matches ? ValidationError.None : ValidationError.PasswordsDiffer;
+        return length < MinPasswordLength ? ValidationError.TooShort : ValidationError.None;
     }
 
     public static ValidationResult DriveName(string? input)

@@ -60,13 +60,14 @@ public class ExecutorTests
         var entries = ApplyList.Setup(plan);
         Assert.Equal(new[] { "data.folder", "backup", "hardening.b", "net:Home", "drive.map", "shortcut.file", "auto.task", "fw.extra:CyShare" },
             entries.Select(e => e.Item.Key));
-        Assert.Equal(new[] { "drive.map", "shortcut.file", "auto.task" }, entries.Where(e => e.Deferred).Select(e => e.Item.Key));
+        Assert.Equal(new[] { "auto.task" }, entries.Where(e => e.Deferred).Select(e => e.Item.Key));
 
         var run = new Run();
         var result = run.Execute(entries, null, e => new LambdaStep { Do = () => run.Calls.Add(e.Item.Key) });
         Assert.True(result.Completed);
-        Assert.DoesNotContain("drive.map", run.Calls);
-        Assert.Equal(3, result.Count(StepOutcome.Deferred));
+        Assert.Contains("drive.map", run.Calls);
+        Assert.DoesNotContain("auto.task", run.Calls);
+        Assert.Equal(1, result.Count(StepOutcome.Deferred));
         Assert.Single(ApplyList.Blocking(plan));
     }
 

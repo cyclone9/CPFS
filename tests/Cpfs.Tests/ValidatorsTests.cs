@@ -84,10 +84,9 @@ public class ValidatorsTests
     [Fact]
     public void Password()
     {
-        Assert.Equal(ValidationError.Empty, Validators.Password(0, true));
-        Assert.Equal(ValidationError.TooShort, Validators.Password(7, true));
-        Assert.Equal(ValidationError.PasswordsDiffer, Validators.Password(8, false));
-        Assert.Equal(ValidationError.None, Validators.Password(8, true));
+        Assert.Equal(ValidationError.Empty, Validators.Password(0));
+        Assert.Equal(ValidationError.TooShort, Validators.Password(7));
+        Assert.Equal(ValidationError.None, Validators.Password(8));
     }
 
     [Theory]

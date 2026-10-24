@@ -171,13 +171,112 @@ public class UninstallPlannerTests
     }
 
     [Fact]
-    public void TheDataFolderStaysWhileAShortcutOnlyALaterVersionRemovesIsThere()
+    public void TheRecordedShortcutIsRemovedAndTheDataFolderGoesLast()
     {
         var s = Installed() with { PublicDesktopFiles = Reading.Ok<IReadOnlyList<string>>(new[] { "Shared (CPFS).lnk" }) };
         var plan = PlanFor(s, Fixture());
 
-        Assert.True(ApplyList.Uninstall(plan).Single(e => e.Item.Key == "u.shortcut").Deferred);
-        Assert.Equal(PlanAction.Keep, Item(plan, "u.data").Action);
+        var entries = ApplyList.Uninstall(plan);
+        Assert.False(entries.Single(e => e.Item.Key == "u.shortcut").Deferred);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(plan, "u.data").Action);
+        Assert.Equal("u.data", entries[entries.Count - 1].Item.Key);
+    }
+
+    // What Setup records for the drive (letter, the folder it points to, its name) is exactly what Uninstall removes.
+    [Fact]
+    public void UninstallRemovesExactlyTheDriveSetupRecorded()
+    {
+        var book = ConfigBook.ForSetup(Fixture());
+        book.SetField("DriveLetter", "X");
+        book.TrackCreated("DrivePath", @"E:\Moved");
+        book.SetField("DriveLabel", "Photos");
+        var config = ConfigReader.Parse(book.Serialize("0.6.0-test", new DateTime(2026, 10, 24, 12, 0, 0)));
+        Assert.Equal(@"E:\Moved", config.OwnDrivePath);
+
+        var s = Installed() with
+        {
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['X'] = @"\??\E:\Moved", ['Y'] = @"\??\D:\Shared" }),
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['X'] = "Photos", ['Y'] = "CPFS - Shared" }),
+        };
+        var plan = PlanFor(s, config);
+        var keys = ApplyList.Uninstall(plan).Select(e => e.Item.Key).Where(k => k.StartsWith("u.drive", StringComparison.Ordinal)).ToList();
+
+        Assert.Equal(new[] { "u.drive.label", "u.drive.session", "u.drive" }, keys);
+        Assert.All(keys, k => Assert.Equal(PlanAction.RemoveIfOurs, Item(plan, k).Action));
+        Assert.Equal(@"X: \??\E:\Moved", Item(plan, "u.drive").Current!.Data);
+    }
+
+    // A leftover CPFS-RunAsUser task is CPFS's and goes; Auto-Private's tasks are still left for a later version.
+    [Fact]
+    public void UninstallRemovesAStaleRunAsUserTask()
+    {
+        var s = Installed() with
+        {
+            Tasks = Reading.Ok<IReadOnlyDictionary<string, bool>>(new Dictionary<string, bool>
+            {
+                [Planner.AutoPrivateTask] = true, [Planner.RunAsUserTask] = true, [Planner.LegacyAutoPrivateTask] = false,
+            }),
+        };
+        var plan = PlanFor(s, Fixture());
+
+        var item = Item(plan, "u.task.runasuser");
+        Assert.Equal(PlanAction.RemoveIfOurs, item.Action);
+        Assert.Contains(ApplyList.Uninstall(plan), e => e.Item.Key == "u.task.runasuser" && !e.Deferred);
+        Assert.DoesNotContain(plan.Items, i => i.Key == "u.task:" + Planner.RunAsUserTask);
+        Assert.Contains(plan.Items, i => i.Key == "u.task:" + Planner.AutoPrivateTask);
+    }
+
+    [Fact]
+    public void AMappingOrNameThatIsNoLongerCpfsIsLeft()
+    {
+        var book = ConfigBook.ForSetup(Fixture());
+        book.SetField("DriveLetter", "X");
+        var config = ConfigReader.Parse(book.Serialize("0.6.0-test", new DateTime(2026, 10, 24, 12, 0, 0)));
+        var s = Installed() with
+        {
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['X'] = @"\??\E:\Elsewhere" }),
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['X'] = "CPFS - Somebody else" }),
+        };
+
+        var plan = PlanFor(s, config);
+
+        Assert.Equal(PlanAction.Keep, Item(plan, "u.drive").Action);
+        Assert.DoesNotContain(plan.Items, i => i.Key is "u.drive.session" or "u.drive.label");
+    }
+
+    // The scripts before 0.2.3 recorded no drive name and always wrote "CPFS - <share>": that one is CPFS's.
+    [Fact]
+    public void AnOlderConfigWithoutADriveNameUsesTheScriptsDefaultName()
+    {
+        var book = ConfigBook.ForSetup(Fixture());
+        book.SetField("DriveLetter", "X");
+        book.SetField("DriveLabel", null);
+        var config = ConfigReader.Parse(book.Serialize("0.6.0-test", new DateTime(2026, 10, 24, 12, 0, 0)));
+        var s = Installed() with
+        {
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['X'] = @"\??\D:\Shared" }),
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['X'] = "CPFS - Shared" }),
+        };
+
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(PlanFor(s, config), "u.drive.label").Action);
+    }
+
+    [Fact]
+    public void ADriveNameThatWasThereBeforeCpfsIsPutBack()
+    {
+        var book = ConfigBook.ForSetup(Fixture());
+        book.SetField("DriveLetter", "X");
+        Assert.Equal(BackupWrite.Recorded, book.BackupDriveLabel('X', "Music"));
+        book.SetField("DriveLabel", "CPFS - Shared");
+        var config = ConfigReader.Parse(book.Serialize("0.6.0-test", new DateTime(2026, 10, 24, 12, 0, 0)));
+        var s = Installed() with
+        {
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['X'] = "CPFS - Shared" }),
+        };
+
+        var item = Item(PlanFor(s, config), "u.drive.label");
+        Assert.Equal(PlanAction.Change, item.Action);
+        Assert.Equal("Music", item.Target!.Data);
     }
 
     [Theory]
