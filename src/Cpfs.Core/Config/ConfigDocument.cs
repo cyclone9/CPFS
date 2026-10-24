@@ -70,6 +70,13 @@ public sealed class ConfigDocument
             ? new TrackedFile(ConfigJson.GetString(e, "Path"), ConfigJson.GetString(e, "Sha256"))
             : null;
 
+    // The folder that holds that copy (Tracked.Created.AutoPrivateFolder, added by the app): Uninstall removes it only
+    // when CPFS created it.
+    public TrackedFolder? TrackedAutoPrivateFolder =>
+        ConfigJson.GetObject(ConfigJson.GetObject(ConfigJson.GetObject(Root, "Tracked"), "Created"), "AutoPrivateFolder") is { } f
+            ? new TrackedFolder(ConfigJson.GetString(f, "Path"), ConfigJson.GetBool(f, "CreatedByCpfs") == true)
+            : null;
+
     // Every computer name CPFS set (Tracked.ComputerNames, added by the app). A file without the field was written
     // before the app could rename: the 0.2.x scripts wrote the chosen name as HostName instead.
     public IReadOnlyList<string> TrackedComputerNames => Strings(ConfigJson.GetObject(Root, "Tracked"), "ComputerNames");
@@ -284,6 +291,8 @@ public sealed record TrackedUser(string? Name, bool? Existed, bool? WasAdmin);
 public sealed record TrackedShare(string Name, string? Path);
 
 public sealed record TrackedFile(string? Path, string? Sha256);
+
+public sealed record TrackedFolder(string? Path, bool CreatedByCpfs);
 
 public sealed record TrackedExplorerEntry(string? Sid, string? Clsid, string? Folder, string? Name);
 

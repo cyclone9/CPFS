@@ -29,6 +29,10 @@ internal static class CiApplyTest
     private const string TestUser = "CpfsCiUser";
     private const string TestShare = "CPFS-CI";
 
+    // Written into the shared folder before Setup; Uninstall must leave both untouched.
+    private const string MarkerName = "keep-me.txt";
+    private const string MarkerText = "CPFS CI marker: Setup and Uninstall never touch this file.";
+
     private static readonly List<(bool Pass, bool Skipped, string Check, string Detail)> Rows = new();
 
     private static char? _letter;
@@ -64,14 +68,17 @@ internal static class CiApplyTest
                 return Refuse(o, "Not elevated.");
             }
 
-            if (Directory.Exists(StateReader.DataFolder) || LocalAccounts.GetUser(TestUser) is not null)
+            if (Directory.Exists(StateReader.DataFolder) || Directory.Exists(AutoPrivateCopy.Folder) || LocalAccounts.GetUser(TestUser) is not null)
             {
-                return Refuse(o, "Not a clean machine: ProgramData\\CPFS or the test account already exists.");
+                return Refuse(o, "Not a clean machine: ProgramData\\CPFS, Program Files\\CPFS or the test account already exists.");
             }
 
             var before = Machine.Read();
             var temp = Environment.GetEnvironmentVariable("RUNNER_TEMP") is { Length: > 0 } t ? t : Path.GetTempPath();
             var folder = Path.Combine(temp, "cpfs-ci", "Shared");
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(Path.Combine(folder, MarkerName), MarkerText, new UTF8Encoding(false));
+            Premises(o);
             try
             {
                 SetupPhase(o, folder, temp);
@@ -137,6 +144,42 @@ internal static class CiApplyTest
         return true;
     }
 
+    // What the move to Program Files\CPFS rests on, asserted once on a real Windows: a standard user can't create a
+    // folder in Program Files. ProgramData's Users entries are only logged (expected: create folders, write data).
+    private static void Premises(TextWriter o)
+    {
+        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+        var create = new List<string>();
+        foreach (var r in AclLines(programFiles, o))
+        {
+            if (r.AccessControlType == System.Security.AccessControl.AccessControlType.Allow
+                && (r.FileSystemRights & (System.Security.AccessControl.FileSystemRights.CreateDirectories | System.Security.AccessControl.FileSystemRights.CreateFiles)) != 0
+                && r.IdentityReference is SecurityIdentifier sid
+                && (sid.IsWellKnown(WellKnownSidType.BuiltinUsersSid) || sid.IsWellKnown(WellKnownSidType.AuthenticatedUserSid) || sid.IsWellKnown(WellKnownSidType.WorldSid)))
+            {
+                create.Add(sid.Value + " " + r.FileSystemRights + " " + r.PropagationFlags);
+            }
+        }
+
+        Check(create.Count == 0, "premise: Users can't create folders or files in " + programFiles, string.Join("; ", create));
+        AclLines(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), o);
+        Check(string.Equals(AutoPrivateCopy.Folder, Path.Combine(programFiles, "CPFS"), StringComparison.OrdinalIgnoreCase)
+            && !AutoPrivateCopy.Folder.Contains("(x86)"), "the copy's folder is in the 64-bit Program Files", AutoPrivateCopy.Folder);
+    }
+
+    private static List<System.Security.AccessControl.FileSystemAccessRule> AclLines(string path, TextWriter o)
+    {
+        var rules = new DirectoryInfo(path).GetAccessControl(System.Security.AccessControl.AccessControlSections.Access)
+            .GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<System.Security.AccessControl.FileSystemAccessRule>().ToList();
+        o.WriteLine("ACL of " + path + ":");
+        foreach (var r in rules)
+        {
+            o.WriteLine("  " + r.IdentityReference.Value + " " + r.AccessControlType + " " + r.FileSystemRights + " inherit " + r.InheritanceFlags + " propagate " + r.PropagationFlags);
+        }
+
+        return rules;
+    }
+
     private static SystemSnapshot Read(string user, string path, string share) =>
         PlanReader.ReadAnswerParts(PlanReader.ReadStatic(DriveLetters.Scan(null), DesktopUser.Current.Sid), user, path, share);
 
@@ -173,6 +216,21 @@ internal static class CiApplyTest
         // Public networks stay unticked: they must stay Public and land in AutoPrivateSkip. Switching one to Private and
         // back is exercised by the in-process run of the --auto-private worker below.
         var plan = Planner.Setup(snapshot, answers, null, PlanReader.ProtectedFolders());
+
+        // A runner where the Entra ID join can't be read (Windows Server 2025 did) asks about the rename, unticked; the
+        // test ticks it so the rename is still tested.
+        var rename = plan.Find("computer.name");
+        o.WriteLine("computer.name: " + (rename is null ? "no item" : rename.Action + " " + rename.ReasonKey));
+        if (rename is { Action: PlanAction.Ask })
+        {
+            answers = answers with { Choices = new Dictionary<string, bool> { ["computer.name"] = true } };
+            plan = Planner.Setup(snapshot, answers, null, PlanReader.ProtectedFolders());
+            o.WriteLine("computer.name: the Ask item is ticked for the test");
+        }
+
+        Check(plan.Find("computer.name") is { Action: PlanAction.Change } or { Action: PlanAction.Ask, Ticked: true }, "the rename is planned",
+            plan.Find("computer.name")?.Action.ToString() ?? "no item");
+        Check(plan.Find("folder.exists") is { Action: PlanAction.Keep }, "the shared folder made by the test is kept as it is", plan.Find("folder.exists")?.Action.ToString() ?? "no item");
         var leftPublic = plan.Items.Where(i => i.Action == PlanAction.Ask && i.Key.StartsWith("net:", StringComparison.Ordinal)).Select(i => i.Key.Substring(4)).Distinct(StringComparer.Ordinal).ToList();
         o.WriteLine("Setup plan:");
         foreach (var line in plan.LogLines())
@@ -319,6 +377,13 @@ internal static class CiApplyTest
             Check(plan.Find("u.task:" + task) is { Action: PlanAction.RemoveIfOurs }, "Uninstall removes the task " + task);
         }
 
+        Check(plan.Find("u.auto.exe") is { Action: PlanAction.RemoveIfOurs } && plan.Find("u.auto.folder") is { Action: PlanAction.RemoveIfOurs },
+            "Uninstall removes the exe copy and its folder", (plan.Find("u.auto.exe")?.Action.ToString() ?? "no u.auto.exe") + ", " + (plan.Find("u.auto.folder")?.Action.ToString() ?? "no u.auto.folder"));
+        var keys = plan.Items.Select(i => i.Key).ToList();
+        var order = new[] { "u.task:" + Planner.AutoPrivateTask, "u.auto.exe", "u.auto.folder", "u.data" }.Select(k => keys.IndexOf(k)).ToList();
+        Check(order.All(i => i >= 0) && order.Zip(order.Skip(1), (a, b) => a < b).All(x => x), "Uninstall order: task, exe copy, its folder, data folder last",
+            string.Join(" ", order));
+
         Check(result.Completed, "Uninstall ran to the end", result.Detail ?? result.Error ?? "");
         if (_letter is not null)
         {
@@ -337,8 +402,14 @@ internal static class CiApplyTest
     {
         var copy = AutoPrivateCopy.Path;
         var hash = File.Exists(copy) ? AutoPrivateCopy.Sha256Of(copy) : null;
-        Check(hash is not null && hash == AutoPrivateCopy.Sha256Of(AutoPrivateCopy.Running), "the exe copy is in ProgramData\\CPFS and is this build", hash ?? "absent");
-        Check(SetupSteps.Locked(), "ProgramData\\CPFS is still locked with the copy in it");
+        Check(hash is not null && hash == AutoPrivateCopy.Sha256Of(AutoPrivateCopy.Running), "the exe copy is in Program Files\\CPFS and is this build", hash ?? "absent");
+        var lockInfo = PlanReader.FolderLock(AutoPrivateCopy.Folder);
+        Check(lockInfo.Exists && lockInfo.OwnerIsAdministrators && lockInfo.Protected && !lockInfo.OthersCanWrite,
+            "Program Files\\CPFS is owned by Administrators, protected, and only SYSTEM and Administrators can write", lockInfo.ToString());
+        Check(SetupSteps.Locked(), "ProgramData\\CPFS is still locked");
+        Check(!File.Exists(AutoPrivateCopy.OldPath), "there is no exe copy in ProgramData\\CPFS", AutoPrivateCopy.OldPath);
+        Check(config.TrackedAutoPrivateFolder is { CreatedByCpfs: true } f && string.Equals(f.Path, AutoPrivateCopy.Folder, StringComparison.OrdinalIgnoreCase),
+            "config.json records Program Files\\CPFS as created by CPFS", config.TrackedAutoPrivateFolder?.ToString() ?? "null");
         var acl = File.Exists(copy) ? new FileInfo(copy).GetAccessControl() : null;
         var othersWrite = acl is not null && acl.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<System.Security.AccessControl.FileSystemAccessRule>()
             .Any(r => r.AccessControlType == System.Security.AccessControl.AccessControlType.Allow
@@ -526,9 +597,12 @@ internal static class CiApplyTest
         Check(!Directory.Exists(StateReader.DataFolder), "ProgramData\\CPFS is gone");
         Check(!AutoPrivateTask.Exists(Planner.AutoPrivateTask) && !AutoPrivateTask.Exists(Planner.LegacyAutoPrivateTask), "the Auto-Private tasks are gone");
         Check(!File.Exists(AutoPrivateCopy.Path), "the exe copy is gone");
+        Check(!Directory.Exists(AutoPrivateCopy.Folder), "Program Files\\CPFS is gone", AutoPrivateCopy.Folder);
         var pendingName = PlanReader.ComputerName();
         Check(string.Equals(pendingName, _originalName, StringComparison.OrdinalIgnoreCase), "the pending computer name is the original again", pendingName ?? "absent");
         Check(Directory.Exists(folder), "the shared folder is still there");
+        var marker = Path.Combine(folder, MarkerName);
+        Check(File.Exists(marker) && File.ReadAllText(marker, new UTF8Encoding(false)) == MarkerText, "the file in the shared folder is still there, unchanged", marker);
         if (_letter is { } letter)
         {
             Check(DosDrives.Read(letter) is null, "the DOS Devices mapping " + letter + ": is gone", DosDrives.Read(letter) ?? "");

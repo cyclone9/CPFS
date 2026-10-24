@@ -40,7 +40,7 @@ internal static class PlanReader
             WindowsUserNames = WindowsUserNames(desktopSid),
             ComputerName = Part("computer", ComputerName).Value,
             ComputerNames = Part("computer names", ComputerNames),
-            Join = Part("domain and Entra ID join", Apply.ComputerRename.ReadJoin),
+            Join = Part("domain join", Apply.ComputerRename.ReadJoin),
             Shares = Part("shares", Shares),
             SmbServer = Part("smb server", SmbServer),
             ServerStart = Part("server start", ServerStart),
@@ -56,7 +56,10 @@ internal static class PlanReader
             Tasks = Part("tasks", Tasks),
             AutoPrivateTask = Part("auto-private task", () => Apply.AutoPrivateTask.Read()),
             AutoPrivateFiles = Part("auto-private files", Apply.AutoPrivateCopy.ReadFiles),
+            AutoPrivateFolder = Part("auto-private folder", Apply.AutoPrivateCopy.ReadFolder),
             AutoPrivateExe = Apply.AutoPrivateCopy.Path,
+            AutoPrivateFolderPath = Apply.AutoPrivateCopy.Folder,
+            AutoPrivateOldExe = Apply.AutoPrivateCopy.OldPath,
             DataFolder = Part("data folder", DataFolder),
             DosDevices = Part("dos devices", DosDevices),
             DriveLabels = Part<IReadOnlyDictionary<char, string>>("drive labels", () => DriveIconValues("DefaultLabel")),
@@ -673,9 +676,12 @@ internal static class PlanReader
         return result;
     }
 
-    internal static DataFolderInfo DataFolder()
+    internal static DataFolderInfo DataFolder() => FolderLock(StateReader.DataFolder);
+
+    // Owner, protection and who can write: the lock check for ProgramData\CPFS and Program Files\CPFS alike.
+    internal static DataFolderInfo FolderLock(string path)
     {
-        var dir = new DirectoryInfo(StateReader.DataFolder);
+        var dir = new DirectoryInfo(path);
         if (!dir.Exists)
         {
             return new DataFolderInfo(false, false, false, false);

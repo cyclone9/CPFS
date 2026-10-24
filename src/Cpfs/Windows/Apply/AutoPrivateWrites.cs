@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
@@ -16,7 +17,7 @@ using Microsoft.Win32;
 namespace Cpfs.Windows.Apply;
 
 // The CPFS-AutoPrivate task through the Task Scheduler 2.0 COM API, as RunAsUser does: a SYSTEM task in the root
-// folder, started 5 s after event 10000 of the NetworkProfile channel, running the exe copy in ProgramData\CPFS with
+// folder, started 5 s after event 10000 of the NetworkProfile channel, running the exe copy in Program Files\CPFS with
 // --auto-private. Only the two Auto-Private names can be deleted here.
 internal static class AutoPrivateTask
 {
@@ -299,11 +300,21 @@ internal static class AutoPrivateTask
     }
 }
 
-// The copy of this exe the task runs, in the locked ProgramData\CPFS: never the exe the user started, which may sit in a
-// folder the user can write to. Written next to its place and moved in, then checked against the running exe's hash.
+// The copy of this exe the task runs, in Program Files\CPFS: never the exe the user started, which may sit in a folder
+// the user can write to, and not ProgramData\CPFS, which any user can re-create after an admin deletes it by hand
+// (ProgramData grants Users "create folders"; Program Files doesn't). Streamed from one open of the source to a temp
+// file next to its place while hashing the same bytes, moved in, and the final file hashed again.
 internal static class AutoPrivateCopy
 {
-    public static string Path => System.IO.Path.Combine(StateReader.DataFolder, "Cpfs.exe");
+    private const string ExeName = "Cpfs.exe";
+
+    // The known-folder path, not %ProgramFiles% from this process's environment; the x64 build gets C:\Program Files.
+    public static string Folder => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "CPFS");
+
+    public static string Path => System.IO.Path.Combine(Folder, ExeName);
+
+    // Where the dev3 test build put the copy.
+    public static string OldPath => System.IO.Path.Combine(StateReader.DataFolder, ExeName);
 
     public static string LegacyScript => System.IO.Path.Combine(StateReader.DataFolder, "set-private.ps1");
 
@@ -313,7 +324,11 @@ internal static class AutoPrivateCopy
     {
         using var sha = SHA256.Create();
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
-        var hash = sha.ComputeHash(stream);
+        return Hex(sha.ComputeHash(stream));
+    }
+
+    private static string Hex(byte[] hash)
+    {
         var sb = new StringBuilder(hash.Length * 2);
         foreach (var b in hash)
         {
@@ -328,23 +343,64 @@ internal static class AutoPrivateCopy
     public static AutoPrivateFiles ReadFiles()
     {
         var exists = File.Exists(Path);
-        return new AutoPrivateFiles(exists, exists && IsCurrent(), File.Exists(LegacyScript));
+        return new AutoPrivateFiles(exists, exists && IsCurrent(), File.Exists(LegacyScript), File.Exists(OldPath));
     }
 
-    public static void Write()
+    public static AutoPrivateFolderInfo ReadFolder()
     {
-        var source = Running;
-        if (string.Equals(System.IO.Path.GetFullPath(source), System.IO.Path.GetFullPath(Path), StringComparison.OrdinalIgnoreCase))
+        if (!Directory.Exists(Folder))
         {
-            throw new InvalidOperationException("CPFS runs from its own copy in ProgramData\\CPFS; start the exe you downloaded to update it.");
+            return new AutoPrivateFolderInfo(false, false, false);
         }
 
-        var temp = Path + ".tmp";
-        File.Copy(source, temp, overwrite: true);
-        if (!string.Equals(Sha256Of(temp), Sha256Of(source), StringComparison.Ordinal))
+        var others = false;
+        foreach (var entry in Directory.EnumerateFileSystemEntries(Folder))
         {
-            File.Delete(temp);
-            throw new IOException("The copy of CPFS in ProgramData\\CPFS does not match the running program.");
+            others |= !string.Equals(System.IO.Path.GetFileName(entry), ExeName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return new AutoPrivateFolderInfo(true, SetupSteps.Locked(Folder), others);
+    }
+
+    // expectedSha256: the hash recorded in config.json before this write; the bytes read must be those.
+    public static void Write(string expectedSha256)
+    {
+        var source = Running;
+        if (SamePath(source, Path) || SamePath(source, OldPath))
+        {
+            throw new InvalidOperationException("CPFS runs from its own copy in " + System.IO.Path.GetDirectoryName(source) + "; start the exe you downloaded to update it.");
+        }
+
+        NoteSourceFolder(source);
+        var temp = Path + ".tmp";
+        string read;
+        try
+        {
+            // No FileShare.Write or Delete: the source can't change under the read.
+            using var input = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var output = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None);
+            using var sha = SHA256.Create();
+            var buffer = new byte[81920];
+            int n;
+            while ((n = input.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                sha.TransformBlock(buffer, 0, n, null, 0);
+                output.Write(buffer, 0, n);
+            }
+
+            sha.TransformFinalBlock(buffer, 0, 0);
+            read = Hex(sha.Hash!);
+        }
+        catch
+        {
+            TryDelete(temp);
+            throw;
+        }
+
+        if (!string.Equals(read, expectedSha256, StringComparison.Ordinal))
+        {
+            TryDelete(temp);
+            throw new IOException("The running program changed while CPFS copied it; nothing was copied to " + Folder + ".");
         }
 
         Retry(() =>
@@ -358,9 +414,76 @@ internal static class AutoPrivateCopy
                 File.Move(temp, Path);
             }
         });
+
+        if (!string.Equals(Sha256Of(Path), read, StringComparison.Ordinal))
+        {
+            throw new IOException("The copy of CPFS in " + Folder + " does not match the program that was read.");
+        }
+    }
+
+    // Informational: whoever can write to the source folder could have swapped the exe before it was started elevated,
+    // so the copy adds nothing they don't have already. Logged, never refused.
+    private static void NoteSourceFolder(string source)
+    {
+        var folder = System.IO.Path.GetDirectoryName(source);
+        if (string.IsNullOrEmpty(folder))
+        {
+            return;
+        }
+
+        try
+        {
+            var security = new DirectoryInfo(folder).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+            var why = new List<string>();
+            foreach (FileSystemAccessRule rule in security.GetAccessRules(true, true, typeof(SecurityIdentifier)))
+            {
+                if (rule.AccessControlType == AccessControlType.Allow && (rule.FileSystemRights & FileSystemRights.WriteData) != 0
+                    && rule.IdentityReference is SecurityIdentifier sid
+                    && (sid.IsWellKnown(WellKnownSidType.BuiltinUsersSid) || sid.IsWellKnown(WellKnownSidType.AuthenticatedUserSid) || sid.IsWellKnown(WellKnownSidType.WorldSid)))
+                {
+                    why.Add(sid.Value + " can write");
+                }
+            }
+
+            var owner = security.GetOwner(typeof(SecurityIdentifier)) as SecurityIdentifier;
+            if (owner is not null && !owner.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid)
+                && !string.Equals(owner.Value, DesktopUser.Current.Sid, StringComparison.OrdinalIgnoreCase))
+            {
+                why.Add("owner " + owner.Value);
+            }
+
+            if (why.Count > 0)
+            {
+                AppLog.Write("apply", "Copied from a folder others can write to: " + folder + " (" + string.Join(", ", why) + ")");
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            AppLog.Write("apply", "The source folder's permissions could not be read: " + folder + " (" + ex.GetType().Name + ")");
+        }
+    }
+
+    private static bool SamePath(string a, string b) =>
+        string.Equals(System.IO.Path.GetFullPath(a), System.IO.Path.GetFullPath(b), StringComparison.OrdinalIgnoreCase);
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            AppLog.Write("apply", "Could not remove " + path + ": " + ex.Message);
+        }
     }
 
     public static void Remove() => Retry(() => File.Delete(Path));
+
+    public static void RemoveOld() => Retry(() => File.Delete(OldPath));
+
+    // Only when nothing is left in it: CPFS removes no file it didn't put there.
+    public static void RemoveFolder() => Retry(() => Directory.Delete(Folder, recursive: false));
 
     // The task may be running the file at that moment; it finishes within its one-minute limit.
     internal static void Retry(Action action)
@@ -394,10 +517,12 @@ internal static class ComputerRename
         }
     }
 
-    public static ComputerJoin ReadJoin() => new(PartOfDomain(), EntraJoined());
+    // The domain read must succeed (it throws, and the plan can't offer a rename); the Entra read may fail, and is then
+    // null with its HRESULT in the log.
+    public static ComputerJoin ReadJoin() => new(PartOfDomain(), TryEntraJoined());
 
     // Win32_ComputerSystem.PartOfDomain: true for a domain member; false or null otherwise [Learn: Win32_ComputerSystem].
-    private static bool PartOfDomain()
+    public static bool PartOfDomain()
     {
         foreach (var cs in StateReader.Query(@"root\cimv2", "SELECT PartOfDomain FROM Win32_ComputerSystem"))
         {
@@ -410,28 +535,39 @@ internal static class ComputerRename
         return false;
     }
 
-    // A null join info means neither a device join nor a work account [Learn: NetGetAadJoinInformation]; joinType is
-    // the structure's first field.
-    private static bool EntraJoined()
+    // Learn documents only S_OK or "an HRESULT error code", with no code that means "not joined", so every failure is
+    // "unknown" (Windows Server 2025 on the CI runner fails here).
+    private static bool? TryEntraJoined()
     {
-        var hr = NetGetAadJoinInformation(null, out var info);
-        if (hr != 0)
-        {
-            throw new Win32Exception(hr, "NetGetAadJoinInformation failed");
-        }
-
-        if (info == IntPtr.Zero)
-        {
-            return false;
-        }
-
         try
         {
-            return Marshal.ReadInt32(info) == DsregDeviceJoin;
+            var hr = NetGetAadJoinInformation(null, out var info);
+            if (hr != 0)
+            {
+                AppLog.Write("plan", "Entra ID join: not known, NetGetAadJoinInformation returned HRESULT 0x" + hr.ToString("X8", CultureInfo.InvariantCulture));
+                return null;
+            }
+
+            // A null join info means neither a device join nor a work account [Learn: NetGetAadJoinInformation]; joinType
+            // is the structure's first field.
+            if (info == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            try
+            {
+                return Marshal.ReadInt32(info) == DsregDeviceJoin;
+            }
+            finally
+            {
+                NetFreeAadJoinInformation(info);
+            }
         }
-        finally
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
         {
-            NetFreeAadJoinInformation(info);
+            AppLog.Write("plan", "Entra ID join: not known (" + ex.GetType().Name + ")");
+            return null;
         }
     }
 

@@ -283,6 +283,23 @@ public sealed class ConfigBook
     public void TrackAutoPrivateExe(string? path, string? sha256) =>
         TrackCreated("AutoPrivateExe", path is null ? null : new JsonObject { ["Path"] = path, ["Sha256"] = sha256 });
 
+    // Clears Tracked.Created.AutoPrivateExe only while it still names this path: a copy recorded at another place in
+    // the same run stays recorded.
+    public void ForgetAutoPrivateExe(string path)
+    {
+        var created = ConfigJson.GetObject(ConfigJson.GetObject(Root, "Tracked"), "Created");
+        if (ConfigJson.GetObject(created, "AutoPrivateExe") is { } e
+            && string.Equals(ConfigJson.GetString(e, "Path")?.Trim(), path, StringComparison.OrdinalIgnoreCase))
+        {
+            TrackAutoPrivateExe(null, null);
+        }
+    }
+
+    // The folder that holds the copy (Tracked.Created.AutoPrivateFolder), recorded before it is created or locked;
+    // CreatedByCpfs false for a folder of that name that was already there.
+    public void TrackAutoPrivateFolder(string path, bool createdByCpfs) =>
+        TrackCreated("AutoPrivateFolder", new JsonObject { ["Path"] = path, ["CreatedByCpfs"] = createdByCpfs });
+
     // A computer name CPFS is about to set (Tracked.ComputerNames); the list only grows.
     public bool TrackComputerName(string name) => AddString("ComputerNames", name);
 

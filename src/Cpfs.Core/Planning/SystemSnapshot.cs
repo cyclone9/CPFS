@@ -58,8 +58,9 @@ public sealed record ShareAccessEntry(string Account, string? Sid, int ControlTy
 public sealed record ComputerNameInfo(string? Active, string? Pending);
 
 // Whether a rename is CPFS's to make: never on a domain member; only after asking on a device joined to Entra ID
-// (NetGetAadJoinInformation's device join; a work account the user added doesn't count).
-public sealed record ComputerJoin(bool PartOfDomain, bool EntraJoined);
+// (NetGetAadJoinInformation's device join; a work account the user added doesn't count). EntraJoined is null when
+// the Entra read failed: a rename is then asked, unticked, instead of blocking the plan.
+public sealed record ComputerJoin(bool PartOfDomain, bool? EntraJoined);
 
 public sealed record LockoutInfo(uint Threshold, uint DurationSeconds, uint WindowSeconds);
 
@@ -146,8 +147,15 @@ public sealed record SystemSnapshot
 
     public Reading<AutoPrivateFiles> AutoPrivateFiles { get; init; } = Reading.Failed<AutoPrivateFiles>(null);
 
-    // Where Setup puts the exe copy the task runs.
-    public string AutoPrivateExe { get; init; } = @"C:\ProgramData\CPFS\Cpfs.exe";
+    // Where Setup puts the exe copy the task runs, and the folder that holds it.
+    public string AutoPrivateExe { get; init; } = @"C:\Program Files\CPFS\Cpfs.exe";
+
+    public string AutoPrivateFolderPath { get; init; } = @"C:\Program Files\CPFS";
+
+    public Reading<AutoPrivateFolderInfo> AutoPrivateFolder { get; init; } = Reading.Failed<AutoPrivateFolderInfo>(null);
+
+    // Where the dev3 test build put the copy, inside ProgramData\CPFS.
+    public string AutoPrivateOldExe { get; init; } = @"C:\ProgramData\CPFS\Cpfs.exe";
 
     public Reading<DataFolderInfo> DataFolder { get; init; } = Reading.Failed<DataFolderInfo>(null);
 

@@ -929,7 +929,7 @@
   <data name="Setup_Form_ComputerName_Note" xml:space="preserve"><value>Letters, digits and hyphens, up to 15, not only digits. Windows uses a new name after a restart.</value></data>
   <data name="Setup_Form_Error_SameAsSmbUser" xml:space="preserve"><value>The computer name can't be the same as the SMB username.</value></data>
   <data name="Plan_R_AutoTaskChange" xml:space="preserve"><value>A task of this name exists but differs from CPFS's ({0}), so it is set up again.</value></data>
-  <data name="Plan_R_AutoExeCreate" xml:space="preserve"><value>Copies CPFS into ProgramData\CPFS, which only administrators can change. The task runs this copy, never the file you started.</value></data>
+  <data name="Plan_R_AutoExeCreate" xml:space="preserve"><value>Copies CPFS into Program Files\CPFS, which only administrators can change. The task runs this copy, never the file you started.</value></data>
   <data name="Plan_R_AutoExeUpdate" xml:space="preserve"><value>The copy is from another CPFS build, so it is replaced with this one.</value></data>
   <data name="Plan_R_AutoExeRemove" xml:space="preserve"><value>Auto-Private is off, so the copy of CPFS the task ran is removed.</value></data>
   <data name="Plan_R_AutoScript" xml:space="preserve"><value>The script of the earlier Auto-Private task. Nothing uses it any more.</value></data>
@@ -943,7 +943,7 @@
   <data name="Summary_RenamePending" xml:space="preserve"><value>Windows takes the name {0} after the next restart.</value></data>
   <data name="Summary_AutoPrivateOn" xml:space="preserve"><value>New networks will be marked Private automatically.</value></data>
   <data name="Summary_U_Rename" xml:space="preserve"><value>The computer name goes back to {0} after you restart Windows.</value></data>
-  <data name="Uninst_R_TaskRemove" xml:space="preserve"><value>The task CPFS created. It goes before ProgramData\CPFS.</value></data>
+  <data name="Uninst_R_TaskRemove" xml:space="preserve"><value>The task CPFS created. It goes before the copy of CPFS it runs and before ProgramData\CPFS.</value></data>
   <data name="Uninst_R_ComputerRestore" xml:space="preserve"><value>Puts back {0}, the name this PC had before CPFS, after a restart.</value></data>
   <data name="Uninst_R_ComputerRenamedSince" xml:space="preserve"><value>This PC was renamed since, not by CPFS. Tick to put back {0}, its name before CPFS, after a restart.</value></data>
   <data name="Uninst_R_ComputerBackupInvalid" xml:space="preserve"><value>The name in the backup, {0}, isn't one CPFS can set, so the name stays.</value></data>
@@ -954,4 +954,13 @@
   <data name="Restart_ConfirmMsg" xml:space="preserve"><value>Save your work in other programs first. Windows closes them and restarts.</value></data>
   <data name="Restart_FailedTitle" xml:space="preserve"><value>Windows didn't restart</value></data>
   <data name="Restart_Failed" xml:space="preserve"><value>Restart from the Start menu instead. Windows said: {0}</value></data>
+  <data name="Plan_R_ComputerEntraUnknown" xml:space="preserve"><value>CPFS couldn't check whether this PC is joined to a work or school account (Entra ID). Tick only if you're sure no organisation manages it. Windows takes the name {0} after a restart.</value></data>
+  <data name="Plan_R_AutoFolderCreate" xml:space="preserve"><value>Creates the folder for the copy of CPFS the task runs. Only SYSTEM and administrators can change it.</value></data>
+  <data name="Plan_R_AutoFolderLock" xml:space="preserve"><value>Others can write to the folder CPFS made for its copy. It is locked to SYSTEM and Administrators again.</value></data>
+  <data name="Plan_R_AutoFolderForeign" xml:space="preserve"><value>A folder of this name was already here. CPFS locks it to SYSTEM and Administrators and leaves it in place when you uninstall.</value></data>
+  <data name="Plan_R_AutoExeOld" xml:space="preserve"><value>An earlier test build put its copy in ProgramData\CPFS. Nothing runs it any more, so it is removed.</value></data>
+  <data name="Uninst_R_AutoExeRemove" xml:space="preserve"><value>The copy of CPFS the task ran. It goes right after the task.</value></data>
+  <data name="Uninst_R_AutoFolderRemove" xml:space="preserve"><value>The folder CPFS created for that copy, once it is empty.</value></data>
+  <data name="Uninst_R_AutoFolderForeign" xml:space="preserve"><value>CPFS didn't create this folder, so it stays.</value></data>
+  <data name="Uninst_R_AutoFolderNotEmpty" xml:space="preserve"><value>It holds files CPFS didn't put there, so it stays.</value></data>
 </root>

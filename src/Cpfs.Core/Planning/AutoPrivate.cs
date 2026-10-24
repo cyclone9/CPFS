@@ -21,9 +21,13 @@ public sealed record TaskTriggerInfo(int Type, string? Subscription, string? Del
 // Type 0 is an exec action; Path and Arguments are null for any other type.
 public sealed record TaskActionInfo(int Type, string? Path, string? Arguments);
 
-// ProgramData\CPFS: the exe copy the task runs (and whether it is the same build as the running exe), and the 0.2.x
-// set-private.ps1.
-public sealed record AutoPrivateFiles(bool ExeExists, bool ExeIsCurrent, bool LegacyScript);
+// The exe copy the task runs in Program Files\CPFS (and whether it is the same build as the running exe), the 0.2.x
+// set-private.ps1 in ProgramData\CPFS, and the copy the dev3 build put there (OldExe).
+public sealed record AutoPrivateFiles(bool ExeExists, bool ExeIsCurrent, bool LegacyScript, bool OldExe = false);
+
+// Program Files\CPFS. Locked: owned by Administrators, inheritance off, nobody but SYSTEM and Administrators can write.
+// HasOtherEntries: anything in it besides Cpfs.exe.
+public sealed record AutoPrivateFolderInfo(bool Exists, bool Locked, bool HasOtherEntries);
 
 // The definition Setup registers, and the read-back that tells it apart from anything else under that name.
 public static class AutoPrivateTaskSpec

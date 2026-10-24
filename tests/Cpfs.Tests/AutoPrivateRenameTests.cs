@@ -15,7 +15,9 @@ namespace Cpfs.Tests;
 // rename, in Setup and Uninstall.
 public class AutoPrivateRenameTests
 {
-    private const string Exe = @"C:\ProgramData\CPFS\Cpfs.exe";
+    private const string Exe = @"C:\Program Files\CPFS\Cpfs.exe";
+    private const string Folder = @"C:\Program Files\CPFS";
+    private const string OldExe = @"C:\ProgramData\CPFS\Cpfs.exe";
 
     private static ScheduledTaskInfo Wanted() => new(
         AutoPrivateTaskSpec.SystemSid,
@@ -26,13 +28,17 @@ public class AutoPrivateRenameTests
         AutoPrivateTaskSpec.ExecutionTimeLimit,
         AutoPrivateTaskSpec.InstancesIgnoreNew);
 
-    private static SystemSnapshot Machine(ScheduledTaskInfo? task = null, AutoPrivateFiles? files = null, bool taskListed = false) =>
+    // The copy's folder exists and is locked whenever the copy does, unless the test says otherwise.
+    private static SystemSnapshot Machine(ScheduledTaskInfo? task = null, AutoPrivateFiles? files = null, bool taskListed = false, AutoPrivateFolderInfo? folder = null) =>
         PlannerTests.Installed() with
         {
             Join = Reading.Ok(new ComputerJoin(false, false)),
             AutoPrivateTask = Reading.Ok(task),
             AutoPrivateFiles = Reading.Ok(files ?? new AutoPrivateFiles(false, false, false)),
+            AutoPrivateFolder = Reading.Ok(folder ?? new AutoPrivateFolderInfo(files?.ExeExists == true, files?.ExeExists == true, false)),
             AutoPrivateExe = Exe,
+            AutoPrivateFolderPath = Folder,
+            AutoPrivateOldExe = OldExe,
             Tasks = Reading.Ok<IReadOnlyDictionary<string, bool>>(new Dictionary<string, bool>
             {
                 [Planner.AutoPrivateTask] = taskListed || task is not null, [Planner.RunAsUserTask] = false, [Planner.LegacyAutoPrivateTask] = false,
@@ -57,10 +63,49 @@ public class AutoPrivateRenameTests
         var plan = Setup(Machine(), PlannerTests.Fixture(), a => a with { AutoPrivate = true });
         Assert.Equal(PlanAction.Create, Item(plan, "auto.exe").Action);
         Assert.Equal(PlanAction.Create, Item(plan, "auto.task").Action);
+        Assert.Equal(PlanAction.Create, Item(plan, "auto.folder").Action);
         var keys = ApplyList.Setup(plan).Select(e => e.Item.Key).ToList();
         Assert.True(keys.IndexOf("data.folder") < keys.IndexOf("auto.exe") || !keys.Contains("data.folder"));
+        Assert.True(keys.IndexOf("auto.folder") < keys.IndexOf("auto.exe"));
         Assert.True(keys.IndexOf("auto.exe") < keys.IndexOf("auto.task"));
         Assert.Empty(ApplyList.Blocking(plan));
+    }
+
+    [Fact]
+    public void TheCopysFolderIsLockedAndAFolderCpfsDidNotCreateIsSaidToStay()
+    {
+        var locked = Setup(Machine(folder: new AutoPrivateFolderInfo(true, true, false)), PlannerTests.Fixture(), a => a with { AutoPrivate = true });
+        Assert.Equal(PlanAction.Keep, Item(locked, "auto.folder").Action);
+
+        var foreign = Setup(Machine(folder: new AutoPrivateFolderInfo(true, false, true)), PlannerTests.Fixture(), a => a with { AutoPrivate = true });
+        Assert.Equal(PlanAction.Change, Item(foreign, "auto.folder").Action);
+        Assert.Equal(Planner.R.AutoFolderForeign, Item(foreign, "auto.folder").ReasonKey);
+
+        var ours = With(PlannerTests.Fixture(), r =>
+            ((JsonObject)r["Tracked"]!)["Created"] = new JsonObject { ["AutoPrivateFolder"] = new JsonObject { ["Path"] = Folder, ["CreatedByCpfs"] = true } });
+        var loosened = Setup(Machine(folder: new AutoPrivateFolderInfo(true, false, false)), ours, a => a with { AutoPrivate = true });
+        Assert.Equal(Planner.R.AutoFolderLock, Item(loosened, "auto.folder").ReasonKey);
+
+        var unread = Setup(Machine() with { AutoPrivateFolder = Reading.Failed<AutoPrivateFolderInfo>("x") }, PlannerTests.Fixture(), a => a with { AutoPrivate = true });
+        Assert.Contains(ApplyList.Blocking(unread), i => i.Key == "auto.folder");
+        Assert.Null(unread.Find("auto.exe"));
+    }
+
+    [Fact]
+    public void TheDev3CopyInProgramDataGoesAfterTheTaskPointsElsewhere()
+    {
+        var dev3Task = Wanted() with { Actions = new[] { new TaskActionInfo(AutoPrivateTaskSpec.ActionExec, OldExe, AutoPrivateTaskSpec.Arguments) } };
+        var on = Setup(Machine(dev3Task, new AutoPrivateFiles(false, false, false, OldExe: true)), PlannerTests.Fixture(), a => a with { AutoPrivate = true });
+        Assert.Equal(PlanAction.Change, Item(on, "auto.task").Action);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(on, "auto.exe.old").Action);
+        var keys = ApplyList.Setup(on).Select(e => e.Item.Key).ToList();
+        Assert.True(keys.IndexOf("auto.exe") < keys.IndexOf("auto.task") && keys.IndexOf("auto.task") < keys.IndexOf("auto.exe.old"));
+
+        var off = Setup(Machine(dev3Task, new AutoPrivateFiles(false, false, false, OldExe: true)), PlannerTests.Fixture(), a => a with { AutoPrivate = false });
+        var offKeys = ApplyList.Setup(off).Select(e => e.Item.Key).ToList();
+        Assert.True(offKeys.IndexOf("auto.task") < offKeys.IndexOf("auto.exe.old"));
+
+        Assert.Null(Setup(Machine(), PlannerTests.Fixture(), a => a with { AutoPrivate = true }).Find("auto.exe.old"));
     }
 
     [Fact]
@@ -261,6 +306,45 @@ public class AutoPrivateRenameTests
 
         var unread = Setup(Machine() with { Join = Reading.Failed<ComputerJoin>("x") }, PlannerTests.Fixture(), a => a with { ComputerName = "LAPTOP" });
         Assert.Equal(PlanAction.CannotPlan, Item(unread, "computer.name").Action);
+        Assert.Equal(new[] { "computer.name" }, ApplyList.Blocking(unread).Select(i => i.Key));
+    }
+
+    [Fact]
+    public void ARenameThatIsNotRequestedNeverDependsOnTheJoinRead()
+    {
+        var noJoin = Machine() with { Join = Reading.Failed<ComputerJoin>("Win32Exception") };
+        foreach (var name in new[] { "", "HOST-01", "host-01" })
+        {
+            var plan = Setup(noJoin, PlannerTests.Fixture(), a => a with { ComputerName = name });
+            Assert.Equal(PlanAction.Keep, Item(plan, "computer.name").Action);
+            Assert.DoesNotContain(ApplyList.Blocking(plan), i => i.Key == "computer.name");
+        }
+
+        var pending = noJoin with { ComputerNames = Reading.Ok(new ComputerNameInfo("HOST-01", "LAPTOP")) };
+        var same = Setup(pending, PlannerTests.Fixture(), a => a with { ComputerName = "LAPTOP" });
+        Assert.Equal(PlanAction.Keep, Item(same, "computer.name").Action);
+        Assert.Equal(Planner.R.ComputerPending, Item(same, "computer.name").ReasonKey);
+    }
+
+    [Fact]
+    public void AnEntraJoinThatCouldNotBeReadAsksUntickedInsteadOfBlocking()
+    {
+        var unknown = Machine() with { Join = Reading.Ok(new ComputerJoin(false, null)) };
+        var plan = Setup(unknown, PlannerTests.Fixture(), a => a with { ComputerName = "LAPTOP" });
+        var item = Item(plan, "computer.name");
+        Assert.Equal(PlanAction.Ask, item.Action);
+        Assert.False(item.Ticked);
+        Assert.Equal(Planner.R.ComputerEntraUnknown, item.ReasonKey);
+        Assert.Equal("LAPTOP", item.ReasonArgs[0]);
+        Assert.Empty(ApplyList.Blocking(plan));
+        Assert.DoesNotContain(ApplyList.Setup(plan), e => e.Item.Key == "computer.name");
+
+        var ticked = Setup(unknown, PlannerTests.Fixture(), a => a with { ComputerName = "LAPTOP", Choices = new Dictionary<string, bool> { ["computer.name"] = true } });
+        Assert.Contains(ApplyList.Setup(ticked), e => e.Item.Key == "computer.name");
+
+        // A domain member stays a Keep whatever the Entra read gave.
+        var domain = Setup(Machine() with { Join = Reading.Ok(new ComputerJoin(true, null)) }, PlannerTests.Fixture(), a => a with { ComputerName = "LAPTOP" });
+        Assert.Equal(Planner.R.ComputerDomain, Item(domain, "computer.name").ReasonKey);
     }
 
     [Fact]
@@ -368,6 +452,81 @@ public class AutoPrivateRenameTests
 
         var unread = UninstallPlanner.Uninstall(Uninstall(s with { Tasks = Reading.Failed<IReadOnlyDictionary<string, bool>>("x") }, PlannerTests.Fixture()));
         Assert.Contains(ApplyList.Blocking(unread), i => i.Key == "u.task");
+    }
+
+    private static SystemSnapshot WithCopy(AutoPrivateFolderInfo folder, bool exe = true) => UninstallPlannerTests.Installed() with
+    {
+        Tasks = Reading.Ok<IReadOnlyDictionary<string, bool>>(new Dictionary<string, bool>
+        {
+            [Planner.AutoPrivateTask] = true, [Planner.RunAsUserTask] = false, [Planner.LegacyAutoPrivateTask] = false,
+        }),
+        AutoPrivateFiles = Reading.Ok(new AutoPrivateFiles(exe, exe, false)),
+        AutoPrivateFolder = Reading.Ok(folder),
+        AutoPrivateExe = Exe,
+        AutoPrivateFolderPath = Folder,
+        AutoPrivateOldExe = OldExe,
+    };
+
+    private static ConfigDocument CopyRecorded(string exePath, bool? folderOurs) => With(PlannerTests.Fixture(), r =>
+    {
+        var created = new JsonObject { ["AutoPrivateExe"] = new JsonObject { ["Path"] = exePath, ["Sha256"] = "ab" } };
+        if (folderOurs is { } ours)
+        {
+            created["AutoPrivateFolder"] = new JsonObject { ["Path"] = Folder, ["CreatedByCpfs"] = ours };
+        }
+
+        ((JsonObject)r["Tracked"]!)["Created"] = created;
+    });
+
+    [Fact]
+    public void UninstallRemovesTheCopyAfterTheTaskThenItsFolderOnlyWhenCpfsCreatedItAndItIsEmpty()
+    {
+        var plan = UninstallPlanner.Uninstall(Uninstall(WithCopy(new AutoPrivateFolderInfo(true, true, false)), CopyRecorded(Exe, true)));
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(plan, "u.auto.exe").Action);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(plan, "u.auto.folder").Action);
+        var keys = ApplyList.Uninstall(plan).Select(e => e.Item.Key).ToList();
+        Assert.True(keys.IndexOf("u.task:" + Planner.AutoPrivateTask) < keys.IndexOf("u.auto.exe"));
+        Assert.True(keys.IndexOf("u.auto.exe") < keys.IndexOf("u.auto.folder"));
+        Assert.Equal("u.data", keys[^1]);
+
+        var foreign = UninstallPlanner.Uninstall(Uninstall(WithCopy(new AutoPrivateFolderInfo(true, true, false)), CopyRecorded(Exe, false)));
+        Assert.Equal(PlanAction.Keep, Item(foreign, "u.auto.folder").Action);
+        Assert.Equal(UninstallPlanner.R.AutoFolderForeign, Item(foreign, "u.auto.folder").ReasonKey);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(foreign, "u.auto.exe").Action);
+
+        var notEmpty = UninstallPlanner.Uninstall(Uninstall(WithCopy(new AutoPrivateFolderInfo(true, true, true)), CopyRecorded(Exe, true)));
+        Assert.Equal(UninstallPlanner.R.AutoFolderNotEmpty, Item(notEmpty, "u.auto.folder").ReasonKey);
+
+        // The dev3 copy in ProgramData\CPFS goes with u.data; an unrecorded copy in Program Files keeps its folder.
+        var dev3 = UninstallPlanner.Uninstall(Uninstall(WithCopy(new AutoPrivateFolderInfo(true, true, false)), CopyRecorded(OldExe, true)));
+        Assert.Null(dev3.Find("u.auto.exe"));
+        Assert.Equal(UninstallPlanner.R.AutoFolderNotEmpty, Item(dev3, "u.auto.folder").ReasonKey);
+
+        var gone = UninstallPlanner.Uninstall(Uninstall(WithCopy(new AutoPrivateFolderInfo(false, false, false), exe: false), CopyRecorded(Exe, true)));
+        Assert.Null(gone.Find("u.auto.exe"));
+        Assert.Null(gone.Find("u.auto.folder"));
+
+        var unread = UninstallPlanner.Uninstall(Uninstall(WithCopy(new AutoPrivateFolderInfo(true, true, false)) with
+        {
+            AutoPrivateFolder = Reading.Failed<AutoPrivateFolderInfo>("x"),
+        }, CopyRecorded(Exe, true)));
+        Assert.Contains(ApplyList.Blocking(unread), i => i.Key == "u.auto.folder");
+    }
+
+    [Fact]
+    public void TheCopysFolderIsRecordedAndOnlyTheCopyRecordedAtAPathIsForgotten()
+    {
+        var book = ConfigBook.ForSetup(PlannerTests.Fixture());
+        book.TrackAutoPrivateFolder(Folder, true);
+        book.TrackAutoPrivateExe(Exe, "abc");
+        book.ForgetAutoPrivateExe(OldExe);
+        var doc = ConfigReader.Parse(book.Serialize("0.7.0-test", new DateTime(2026, 10, 24, 12, 0, 0)));
+        Assert.Equal(new TrackedFolder(Folder, true), doc.TrackedAutoPrivateFolder);
+        Assert.Equal(new TrackedFile(Exe, "abc"), doc.TrackedAutoPrivateExe);
+
+        book.ForgetAutoPrivateExe(Exe.ToUpperInvariant());
+        Assert.Null(ConfigReader.Parse(book.Serialize("0.7.0-test", DateTime.Now)).TrackedAutoPrivateExe);
+        Assert.Null(PlannerTests.Fixture().TrackedAutoPrivateFolder);
     }
 
     [Fact]

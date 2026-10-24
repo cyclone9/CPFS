@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Security.Principal;
 using Cpfs.Core.Apply;
 using Cpfs.Core.Config;
@@ -83,6 +84,8 @@ internal static class UninstallSteps
             "u.share" => Share(run, arg),
             "u.task.runasuser" => QuickAccessSteps.StaleTask(),
             "u.task" => Task(arg),
+            "u.auto.exe" => AutoCopy(),
+            "u.auto.folder" => AutoFolder(),
             "u.drive.label" => QuickAccessSteps.UninstallLabel(run),
             "u.drive.icon" => QuickAccessSteps.UninstallIcon(run),
             "u.drive.session" => QuickAccessSteps.UninstallSession(run),
@@ -472,6 +475,30 @@ internal static class UninstallSteps
         Read = () => !AutoPrivateTask.Exists(name),
         Do = () => AutoPrivateTask.Delete(name),
         Check = () => !AutoPrivateTask.Exists(name),
+    };
+
+    // The copy in Program Files\CPFS, after the task that ran it is gone; it may still be closing after its last run.
+    private static LambdaStep AutoCopy() => new LambdaStep
+    {
+        Read = () => !File.Exists(AutoPrivateCopy.Path),
+        Do = AutoPrivateCopy.Remove,
+        Check = () => !File.Exists(AutoPrivateCopy.Path),
+    };
+
+    // The folder CPFS created for the copy, only when nothing is left in it; otherwise it stays and the rest goes on.
+    private static LambdaStep AutoFolder() => new LambdaStep
+    {
+        Read = () => !Directory.Exists(AutoPrivateCopy.Folder),
+        Do = () =>
+        {
+            if (Directory.EnumerateFileSystemEntries(AutoPrivateCopy.Folder).Any())
+            {
+                throw new StepPartialException(AutoPrivateCopy.Folder + " is not empty, so CPFS leaves it.");
+            }
+
+            AutoPrivateCopy.RemoveFolder();
+        },
+        Check = () => !Directory.Exists(AutoPrivateCopy.Folder),
     };
 
     // The name from the first Setup's backup, checked before Windows is asked for it; Windows takes it after a restart.

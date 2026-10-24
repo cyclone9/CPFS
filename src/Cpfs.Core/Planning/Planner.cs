@@ -55,7 +55,7 @@ public static class Planner
         R.BuiltInDisable, R.BuiltInPortUnknown, R.BuiltInNone,
         R.NetworkPublic, R.NetworkPrivate,
         R.AutoCreate, R.AutoRemove, R.AutoOff, R.LegacyTask, R.StaleTask, R.AutoTaskChange, R.AutoExeCreate, R.AutoExeUpdate, R.AutoExeRemove,
-        R.AutoScript, R.AutoSkip,
+        R.AutoScript, R.AutoSkip, R.AutoFolderCreate, R.AutoFolderLock, R.AutoFolderForeign, R.AutoExeOld,
         R.DriveCreate, R.DriveGone, R.DriveForeign, R.DriveSession, R.DriveOldSession, R.DriveOldRemove, R.DriveOldForeign, R.DriveOff,
         R.LabelSet, R.LabelForeign, R.LabelRenamed, R.LabelOldRemove, R.LabelRestore,
         R.IconSet, R.IconForeign, R.IconChanged, R.IconOldRemove, R.IconRestore,
@@ -64,7 +64,7 @@ public static class Planner
         R.ExplorerOtherUser, R.ExplorerOtherUserKept, R.ExplorerNotLoaded,
         R.DataCreate, R.DataLock,
         R.ShareAccessGrant, R.ShareAccessOther, R.ShareAccessDeny, R.ComputerSavedDiffers, R.ComputerPending,
-        R.ComputerRename, R.ComputerDomain, R.ComputerNoBackup, R.ComputerEntra,
+        R.ComputerRename, R.ComputerDomain, R.ComputerNoBackup, R.ComputerEntra, R.ComputerEntraUnknown,
     };
 
     public static Plan Setup(SystemSnapshot snapshot, SetupAnswers answers, ConfigDocument? config, ProtectedFolders protectedFolders)
@@ -203,6 +203,11 @@ public static class Planner
         public const string ComputerDomain = "Plan_R_ComputerDomain";
         public const string ComputerNoBackup = "Plan_R_ComputerNoBackup";
         public const string ComputerEntra = "Plan_R_ComputerEntra";
+        public const string ComputerEntraUnknown = "Plan_R_ComputerEntraUnknown";
+        public const string AutoFolderCreate = "Plan_R_AutoFolderCreate";
+        public const string AutoFolderLock = "Plan_R_AutoFolderLock";
+        public const string AutoFolderForeign = "Plan_R_AutoFolderForeign";
+        public const string AutoExeOld = "Plan_R_AutoExeOld";
     }
 
     // Word keys for values and subjects.
@@ -997,9 +1002,10 @@ public static class Planner
             }
         }
 
-        // On: the skip list, the exe copy in ProgramData\CPFS and the SYSTEM task that runs it, in that order, so the task
-        // never runs before what it reads is in place. Off: the task goes first, then the copy CPFS recorded. The data
-        // folder is locked first in every run (data.folder); the steps check the lock again before they write.
+        // On: the skip list, the locked Program Files\CPFS, the exe copy in it and the SYSTEM task that runs it, in that
+        // order, so the task never runs before what it reads is in place. Off: the task goes first, then the copy CPFS
+        // recorded. Either way the dev3 copy in ProgramData\CPFS goes after the task. The data folder is locked first in
+        // every run (data.folder); the steps check the locks again before they write.
         public void AutoPrivate()
         {
             if (!_s.Tasks.IsOk)
@@ -1027,6 +1033,12 @@ public static class Planner
                 }
             }
 
+            // ProgramData\CPFS is CPFS's own locked folder, so a Cpfs.exe in it is the copy the dev3 build put there.
+            if (_s.AutoPrivateFiles.IsOk && _s.AutoPrivateFiles.Value!.OldExe)
+            {
+                Add("auto.exe.old", PlanSection.AutoPrivate, PlanAction.RemoveIfOurs, Data(_s.AutoPrivateOldExe), Word(W.Exists), Word(W.Absent), R.AutoExeOld);
+            }
+
             if (tasks.TryGetValue(LegacyAutoPrivateTask, out var legacy) && legacy)
             {
                 Add("auto.legacy", PlanSection.AutoPrivate, PlanAction.RemoveIfOurs, Data(LegacyAutoPrivateTask), Word(W.Exists), Word(W.Absent), R.LegacyTask);
@@ -1044,13 +1056,19 @@ public static class Planner
             foreach (var (key, state, error) in new[]
             {
                 ("auto.task", _s.DataFolder.State, _s.DataFolder.Error),
+                ("auto.folder", _s.AutoPrivateFolder.State, _s.AutoPrivateFolder.Error),
                 ("auto.exe", _s.AutoPrivateFiles.State, _s.AutoPrivateFiles.Error),
                 ("auto.task", _s.AutoPrivateTask.State, _s.AutoPrivateTask.Error),
             })
             {
                 if (state != ReadState.Ok)
                 {
-                    Unread(key, PlanSection.AutoPrivate, key == "auto.exe" ? Data(_s.AutoPrivateExe) : Data(AutoPrivateTask), state, error);
+                    Unread(key, PlanSection.AutoPrivate, key switch
+                    {
+                        "auto.exe" => Data(_s.AutoPrivateExe),
+                        "auto.folder" => Data(_s.AutoPrivateFolderPath),
+                        _ => Data(AutoPrivateTask),
+                    }, state, error);
                     return false;
                 }
             }
@@ -1060,6 +1078,22 @@ public static class Planner
             if (!AutoPrivateRules.SameNames(skip, previous))
             {
                 Add("auto.skip", PlanSection.AutoPrivate, PlanAction.Change, Word(S.AutoSkip), Names(previous), Names(skip), R.AutoSkip);
+            }
+
+            // A folder of that name CPFS didn't create is locked too, but recorded as not CPFS's, so Uninstall leaves it.
+            var folder = _s.AutoPrivateFolder.Value!;
+            if (!folder.Exists)
+            {
+                Add("auto.folder", PlanSection.AutoPrivate, PlanAction.Create, Data(_s.AutoPrivateFolderPath), Word(W.Absent), Word(W.Locked2), R.AutoFolderCreate);
+            }
+            else if (!folder.Locked)
+            {
+                Add("auto.folder", PlanSection.AutoPrivate, PlanAction.Change, Data(_s.AutoPrivateFolderPath), Word(W.NotLocked), Word(W.Locked2),
+                    _c?.TrackedAutoPrivateFolder?.CreatedByCpfs == true ? R.AutoFolderLock : R.AutoFolderForeign);
+            }
+            else
+            {
+                Add("auto.folder", PlanSection.AutoPrivate, PlanAction.Keep, Data(_s.AutoPrivateFolderPath), Word(W.Locked2), null, R.AtTarget);
             }
 
             var files = _s.AutoPrivateFiles.Value!;
@@ -1583,6 +1617,7 @@ public static class Planner
                 return;
             }
 
+            // Only a requested rename depends on the join read; a failed domain read blocks this item alone.
             if (!_s.Join.IsOk)
             {
                 Unread(key, PlanSection.Computer, subject, _s.Join.State, _s.Join.Error);
@@ -1598,9 +1633,9 @@ public static class Planner
             {
                 Add(key, PlanSection.Computer, PlanAction.Keep, subject, Data(current), null, R.ComputerNoBackup);
             }
-            else if (join.EntraJoined)
+            else if (join.EntraJoined is not false)
             {
-                AskItem(key, PlanSection.Computer, subject, Data(current), Data(desired), R.ComputerEntra, desired);
+                AskItem(key, PlanSection.Computer, subject, Data(current), Data(desired), join.EntraJoined is null ? R.ComputerEntraUnknown : R.ComputerEntra, desired);
                 MarkBackup();
             }
             else

@@ -13,7 +13,7 @@ using Microsoft.Win32;
 
 namespace Cpfs;
 
-// "Cpfs.exe --auto-private", run by the CPFS-AutoPrivate task as SYSTEM from the copy in ProgramData\CPFS. It switches
+// "Cpfs.exe --auto-private", run by the CPFS-AutoPrivate task as SYSTEM from the copy in Program Files\CPFS. It switches
 // to Private only a Public network CPFS has never seen (AutoPrivateRules), writes the name to auto-private.log before it
 // switches, and never writes config.json. One line per run goes to auto-private-run.log; no window, no other log.
 // Exit code: the number of networks switched; a refusal or "nothing to do" is 0.
@@ -55,6 +55,13 @@ internal static class AutoPrivateVerb
             }
         }
 
+        if (!SetupSteps.Locked(AutoPrivateCopy.Folder))
+        {
+            return (0, "refused: " + AutoPrivateCopy.Folder + " is not locked");
+        }
+
+        // Before config.json is read, never after: a standard user can re-create a hand-deleted ProgramData\CPFS and put
+        // a crafted config.json in it, and this check is what keeps that file from steering the verb.
         if (!SetupSteps.Locked())
         {
             return (0, "refused: ProgramData\\CPFS is not locked");
@@ -164,8 +171,10 @@ internal static class AutoPrivateVerb
     {
         try
         {
+            // SYSTEM never writes into a ProgramData\CPFS someone else may have re-created: a link planted there would
+            // turn the write into one anywhere on the disk.
             var path = Path.Combine(StateReader.DataFolder, AutoPrivateLog.RunLogFileName);
-            if (!Directory.Exists(StateReader.DataFolder))
+            if (!SetupSteps.Locked())
             {
                 return;
             }

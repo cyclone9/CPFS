@@ -171,8 +171,10 @@ internal static class SetupSteps
             "fw.builtin" => BuiltIn(run, arg),
             "net" => Network(run, arg),
             "auto.skip" => AutoSkip(run),
+            "auto.folder" => CopyFolder(run),
             "auto.exe" when item.Action == PlanAction.RemoveIfOurs => RemoveCopy(),
             "auto.exe" => Copy(),
+            "auto.exe.old" => RemoveOldCopy(),
             "auto.task" when item.Action == PlanAction.RemoveIfOurs => RemoveTask(Planner.AutoPrivateTask),
             "auto.task" => RegisterTask(),
             "auto.legacy" => RemoveTask(Planner.LegacyAutoPrivateTask),
@@ -203,9 +205,11 @@ internal static class SetupSteps
         Check = Locked,
     };
 
-    internal static bool Locked()
+    internal static bool Locked() => Locked(StateReader.DataFolder);
+
+    internal static bool Locked(string path)
     {
-        var d = PlanReader.DataFolder();
+        var d = PlanReader.FolderLock(path);
         return d.Exists && d.OwnerIsAdministrators && d.Protected && !d.OthersCanWrite;
     }
 
@@ -843,14 +847,42 @@ internal static class SetupSteps
         Check = () => NonePublic(name),
     };
 
-    // Nothing SYSTEM runs may sit in a folder anyone else can write to: checked again right before each write.
+    // Nothing SYSTEM runs or reads may sit in a folder anyone else can write to: both folders are checked again right
+    // before each write.
     private static void RequireLocked()
     {
         if (!Locked())
         {
             throw new InvalidOperationException("ProgramData\\CPFS is not locked to SYSTEM and Administrators, so the Auto-Private task is not set up.");
         }
+
+        if (!Locked(AutoPrivateCopy.Folder))
+        {
+            throw new InvalidOperationException(AutoPrivateCopy.Folder + " is not locked to SYSTEM and Administrators, so the Auto-Private task is not set up.");
+        }
     }
+
+    // Program Files\CPFS, recorded before it is created or locked: CreatedByCpfs stays true once an earlier run made it,
+    // and is false for a folder of that name that was already there, which Uninstall then leaves.
+    private static LambdaStep CopyFolder(SetupRun run) => new LambdaStep
+    {
+        Read = () => Locked(AutoPrivateCopy.Folder),
+        RecordWith = b =>
+        {
+            var earlier = run.Original?.TrackedAutoPrivateFolder;
+            var ours = !Directory.Exists(AutoPrivateCopy.Folder)
+                || (earlier is { CreatedByCpfs: true } && string.Equals(earlier.Path, AutoPrivateCopy.Folder, StringComparison.OrdinalIgnoreCase));
+            b!.TrackAutoPrivateFolder(AutoPrivateCopy.Folder, ours);
+            if (!ours)
+            {
+                AppLog.Write("apply", AutoPrivateCopy.Folder + " was already there; it is locked and kept at Uninstall");
+            }
+
+            return BackupWrite.Recorded;
+        },
+        Do = () => Folders.LockDataFolder(AutoPrivateCopy.Folder),
+        Check = () => Locked(AutoPrivateCopy.Folder),
+    };
 
     // The networks left Public, recorded before the task that reads them is created.
     private static LambdaStep AutoSkip(SetupRun run)
@@ -882,7 +914,7 @@ internal static class SetupSteps
             Do = () =>
             {
                 RequireLocked();
-                AutoPrivateCopy.Write();
+                AutoPrivateCopy.Write(hash!);
             },
             Check = AutoPrivateCopy.IsCurrent,
         };
@@ -894,6 +926,15 @@ internal static class SetupSteps
         Do = AutoPrivateCopy.Remove,
         TrackWith = b => b!.TrackAutoPrivateExe(null, null),
         Check = () => !File.Exists(AutoPrivateCopy.Path),
+    };
+
+    // The dev3 copy in ProgramData\CPFS, after the task points elsewhere; its record goes only if it still names it.
+    private static LambdaStep RemoveOldCopy() => new LambdaStep
+    {
+        Read = () => !File.Exists(AutoPrivateCopy.OldPath),
+        Do = AutoPrivateCopy.RemoveOld,
+        TrackWith = b => b!.ForgetAutoPrivateExe(AutoPrivateCopy.OldPath),
+        Check = () => !File.Exists(AutoPrivateCopy.OldPath),
     };
 
     private static bool TaskAtTarget() =>
@@ -908,7 +949,7 @@ internal static class SetupSteps
             RequireLocked();
             if (!AutoPrivateCopy.IsCurrent())
             {
-                throw new InvalidOperationException("The copy of CPFS in ProgramData\\CPFS is missing or differs from this program, so the Auto-Private task is not set up.");
+                throw new InvalidOperationException("The copy of CPFS in " + AutoPrivateCopy.Folder + " is missing or differs from this program, so the Auto-Private task is not set up.");
             }
 
             if (AutoPrivateTask.Exists(Planner.AutoPrivateTask))
@@ -965,7 +1006,7 @@ internal static class SetupSteps
                     throw new InvalidOperationException("The computer name " + name + " is not valid.");
                 }
 
-                if (ComputerRename.ReadJoin().PartOfDomain)
+                if (ComputerRename.PartOfDomain())
                 {
                     throw new InvalidOperationException("This PC is joined to a domain; rename it through the domain.");
                 }

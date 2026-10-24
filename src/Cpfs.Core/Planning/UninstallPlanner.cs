@@ -51,7 +51,7 @@ public static class UninstallPlanner
         R.UserDeleteAdmin, R.Profile, R.UserBefore, R.UserAdmin, R.UserHidden, R.UserGone, R.RuleRemove, R.BuiltInEnable,
         R.BuiltInMissing, R.Restore, R.RestoreValue, R.SettingsKept, R.Revert, R.AlwaysKept, R.NetworkPublic, R.NetworkSaved,
         R.SaveCopy, R.DataRemove, R.TaskRemove, R.ComputerRestore, R.ComputerRenamedSince, R.ComputerBackupInvalid, R.LabelRemove, R.IconRemove, R.DriveSession, R.DriveRemove, R.DriveForeign, R.ShortcutRemove,
-        R.ExplorerRemove, R.ExplorerForeign, R.ExplorerNotLoaded,
+        R.ExplorerRemove, R.ExplorerForeign, R.ExplorerNotLoaded, R.AutoExeRemove, R.AutoFolderRemove, R.AutoFolderForeign, R.AutoFolderNotEmpty,
     };
 
     public static readonly IReadOnlyList<string> WordKeys = new[]
@@ -147,6 +147,10 @@ public static class UninstallPlanner
         public const string ExplorerRemove = "Uninst_R_ExplorerRemove";
         public const string ExplorerForeign = "Uninst_R_ExplorerForeign";
         public const string ExplorerNotLoaded = "Uninst_R_ExplorerNotLoaded";
+        public const string AutoExeRemove = "Uninst_R_AutoExeRemove";
+        public const string AutoFolderRemove = "Uninst_R_AutoFolderRemove";
+        public const string AutoFolderForeign = "Uninst_R_AutoFolderForeign";
+        public const string AutoFolderNotEmpty = "Uninst_R_AutoFolderNotEmpty";
     }
 
     internal static class S
@@ -228,6 +232,7 @@ public static class UninstallPlanner
             StaleTask();
             QuickAccess();
             Tasks();
+            AutoPrivateCopy();
             Folder(user, info);
             User(user, info);
             Firewall();
@@ -425,6 +430,62 @@ public static class UninstallPlanner
                     Add("u.task:" + task, PlanSection.AutoPrivate, PlanAction.RemoveIfOurs, PlanValue.Of(task), Word(Planner.W.Exists), Word(Planner.W.Absent),
                         R.TaskRemove);
                 }
+            }
+        }
+
+        // Right after the task: the copy it ran in Program Files\CPFS, then that folder, only when CPFS created it and
+        // nothing else is in it. A copy the dev3 build recorded inside ProgramData\CPFS goes with u.data.
+        private void AutoPrivateCopy()
+        {
+            var exe = _c!.TrackedAutoPrivateExe;
+            var exeGoes = false;
+            if (exe is not null && SamePath(exe.Path, _s.AutoPrivateExe))
+            {
+                if (!_s.AutoPrivateFiles.IsOk)
+                {
+                    Unread("u.auto.exe", PlanSection.AutoPrivate, PlanValue.Of(_s.AutoPrivateExe), _s.AutoPrivateFiles);
+                    return;
+                }
+
+                if (_s.AutoPrivateFiles.Value!.ExeExists)
+                {
+                    Add("u.auto.exe", PlanSection.AutoPrivate, PlanAction.RemoveIfOurs, PlanValue.Of(_s.AutoPrivateExe), Word(Planner.W.Exists),
+                        Word(Planner.W.Absent), R.AutoExeRemove);
+                    exeGoes = true;
+                }
+            }
+
+            var tracked = _c.TrackedAutoPrivateFolder;
+            var ours = tracked is { CreatedByCpfs: true } && SamePath(tracked.Path, _s.AutoPrivateFolderPath);
+            if (!_s.AutoPrivateFolder.IsOk)
+            {
+                if (ours)
+                {
+                    Unread("u.auto.folder", PlanSection.AutoPrivate, PlanValue.Of(_s.AutoPrivateFolderPath), _s.AutoPrivateFolder);
+                }
+
+                return;
+            }
+
+            var folder = _s.AutoPrivateFolder.Value!;
+            if (!folder.Exists)
+            {
+                return;
+            }
+
+            var subject = PlanValue.Of(_s.AutoPrivateFolderPath);
+            var exeStays = _s.AutoPrivateFiles.IsOk && _s.AutoPrivateFiles.Value!.ExeExists && !exeGoes;
+            if (!ours)
+            {
+                Add("u.auto.folder", PlanSection.AutoPrivate, PlanAction.Keep, subject, Word(Planner.W.Exists), null, R.AutoFolderForeign);
+            }
+            else if (folder.HasOtherEntries || exeStays)
+            {
+                Add("u.auto.folder", PlanSection.AutoPrivate, PlanAction.Keep, subject, Word(Planner.W.Exists), null, R.AutoFolderNotEmpty);
+            }
+            else
+            {
+                Add("u.auto.folder", PlanSection.AutoPrivate, PlanAction.RemoveIfOurs, subject, Word(Planner.W.Exists), Word(Planner.W.Absent), R.AutoFolderRemove);
             }
         }
 
