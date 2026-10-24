@@ -1,8 +1,8 @@
 <Project>
   <PropertyGroup>
-    <!-- Test builds carry a suffix (dev1, dev2, ...); a release drops it. Assembly and file versions stay 0.6.0.0. -->
-    <VersionPrefix>0.6.0</VersionPrefix>
-    <VersionSuffix>dev11</VersionSuffix>
+    <!-- Test builds carry a suffix (dev1, dev2, ...); a release drops it. Assembly and file versions stay 0.7.0.0. -->
+    <VersionPrefix>0.7.0</VersionPrefix>
+    <VersionSuffix>dev1</VersionSuffix>
     <Company>CyClone</Company>
     <Product>CPFS - CyClone Power File Share</Product>
     <Copyright>Copyright (c) 2026 CyClone (https://cyclone9.ir)</Copyright>

@@ -5,7 +5,7 @@ This project uses [semantic versioning](https://semver.org/).
 ## Unreleased
 
 - README in Persian, Arabic and Turkish.
-- The Windows app starts: one exe with Setup, Monitor, Sync, Connect and Uninstall pages, plus Preferences and About. Only Setup has content so far; the other pages say they come in a later version.
+- The Windows app starts: one exe with Setup, Monitor, Connect and Uninstall pages, plus Preferences and About. Only Setup has content so far; the other pages say they come in a later version.
 - Setup shows your existing CPFS install as found, read-only: the settings file, the SMB account, share, firewall rules, tasks, security settings, networks, drive letters, shortcut and data folder. It changes nothing on Windows.
 - "Continue as administrator" restarts CPFS with administrator rights to read what needs them, and shows the drive letters in use in your own session.
 - Theme (System, Light, Dark), language and a font per language are saved for your Windows account. English is complete; Persian, Arabic and Turkish can be picked but still show English.
@@ -93,7 +93,6 @@ This project uses [semantic versioning](https://semver.org/).
 - The drive gets the CPFS icon in File Explorer and the desktop shortcut gets the CPFS icon, both from a copy of the icon in `ProgramData\CPFS`, so they keep it when the exe moves. An icon someone else gave the drive letter is replaced only when you tick it, and Uninstall puts it back.
 - Setup says under the drive name that File Explorer may show the name of the folder's disk instead: Windows uses the disk's own label for a drive mapped to a folder on it.
 - Setup, Uninstall and Monitor show "Reading this PC…" with a progress ring until the first reading is ready, and Setup's fields stay off until then.
-- Monitor keeps a file in the open files list for about 10 seconds after it closes, dimmed and marked "Closed", so quick transfers can be seen.
 - About shows the version, homepage and source code as aligned rows like Windows Settings, with plain links.
 - The motto is no longer shown at the top of the navigation pane.
 - The QR code dialog leaves more room above the Close button.
@@ -106,3 +105,5 @@ This project uses [semantic versioning](https://semver.org/).
 - Monitor: a Recent activity card lists files and folders added, changed, renamed or deleted in the shared folder while Monitor is open, from any device or from this PC, so small files copied from a phone show up even when they are open too briefly to appear under Open files. It keeps up to 200 changes from the last 24 hours in memory, and the app log records counts, never file names.
 - Setup's and Uninstall's summary is now a short list of what you will notice: the folder and the account devices sign in with, the drive, shortcut and File Explorer entry being added or removed, and anything that changes how devices connect. Setting counts, firewall rules, the backup and the data folder stay under Show details.
 - Monitor's Recent activity is a compact table with one header row, each path on one line with the full path in a tooltip; a Clear button empties the list, and an optional "Save to a log file" switch (off by default) writes each change to `activity-log.txt` beside the CPFS log, never included in Copy report.
+- The Sync page is gone from the navigation pane, and the About description no longer mentions sync: server sync is put off until a later version.
+- Monitor's open files card is now "Being copied now": it lists the files devices are copying at that moment, mostly large ones, and points to Recent activity for every file that arrived. A closed file no longer stays on the list for 10 seconds.

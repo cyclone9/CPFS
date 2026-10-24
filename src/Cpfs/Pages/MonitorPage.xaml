@@ -36,15 +36,6 @@
         BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
         BorderThickness="1"
         CornerRadius="4">
-        <Border.Style>
-          <Style TargetType="Border">
-            <Style.Triggers>
-              <DataTrigger Binding="{Binding Dimmed}" Value="True">
-                <Setter Property="Opacity" Value="0.6" />
-              </DataTrigger>
-            </Style.Triggers>
-          </Style>
-        </Border.Style>
         <!--
           The device's data on the start side, its buttons in one column of equal widths on the end side; in a narrow
           window the buttons go below the data. The two naming buttons never show together.

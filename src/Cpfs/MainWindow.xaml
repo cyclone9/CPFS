@@ -51,12 +51,6 @@
           NavigationCacheMode="Enabled"
           TargetPageType="{x:Type pages:MonitorPage}" />
         <ui:NavigationViewItem
-          AutomationProperties.Name="{Binding [Nav_Sync], Source={x:Static local:Loc.Instance}}"
-          Content="{Binding [Nav_Sync], Source={x:Static local:Loc.Instance}}"
-          Icon="{ui:SymbolIcon ArrowSync24}"
-          NavigationCacheMode="Enabled"
-          TargetPageType="{x:Type pages:SyncPage}" />
-        <ui:NavigationViewItem
           AutomationProperties.Name="{Binding [Nav_Connect], Source={x:Static local:Loc.Instance}}"
           Content="{Binding [Nav_Connect], Source={x:Static local:Loc.Instance}}"
           Icon="{ui:SymbolIcon QrCode24}"

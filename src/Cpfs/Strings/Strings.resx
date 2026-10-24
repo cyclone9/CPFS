@@ -14,7 +14,6 @@
   <data name="App_HandOverTimedOut" xml:space="preserve"><value>CPFS could not open as administrator because the previous CPFS window did not close. Close it and try again.</value></data>
   <data name="Nav_Setup" xml:space="preserve"><value>Setup</value></data>
   <data name="Nav_Monitor" xml:space="preserve"><value>Monitor</value></data>
-  <data name="Nav_Sync" xml:space="preserve"><value>Sync</value></data>
   <data name="Nav_Connect" xml:space="preserve"><value>Connect</value></data>
   <data name="Nav_Uninstall" xml:space="preserve"><value>Uninstall</value></data>
   <data name="Nav_Preferences" xml:space="preserve"><value>Preferences</value></data>
@@ -26,8 +25,6 @@
   <data name="State_Raw" xml:space="preserve"><value>Value {0}</value></data>
   <data name="Badge_NeedsAdmin" xml:space="preserve"><value>Needs administrator to read</value></data>
   <data name="Badge_NotFound" xml:space="preserve"><value>Not found</value></data>
-  <data name="Placeholder_Title" xml:space="preserve"><value>Coming in a later version</value></data>
-  <data name="Placeholder_Sync_Desc" xml:space="preserve"><value>Keeping one subfolder of the share in sync with your Linux server will be set up here.</value></data>
   <data name="Placeholder_Uninstall_Desc" xml:space="preserve"><value>Removing CPFS and restoring the original Windows settings will be done here.</value></data>
   <data name="LangNative_en" xml:space="preserve"><value>English</value></data>
   <data name="LangNative_fa" xml:space="preserve"><value>فارسی</value></data>
@@ -192,7 +189,7 @@
   <data name="Setup_DataFolder_Protected" xml:space="preserve"><value>Permissions not inherited</value></data>
   <data name="About_Brand_Name" xml:space="preserve"><value>CPFS - CyClone Power File Share</value></data>
   <data name="About_Brand_Tagline" xml:space="preserve"><value>Your PC's folder, within reach of any device.</value></data>
-  <data name="About_Brand_Description" xml:space="preserve"><value>CPFS shares one folder on a Windows 10 or 11 PC with Windows, macOS, Linux, Android and iOS devices. They connect by the PC's name (ComputerName.local), by its Wi-Fi or LAN address, or by a VPN address, and a phone can connect with a QR code. Sharing is limited to that folder, with a separate account and hardened Windows settings, and the uninstall puts the original settings back. If you run a Linux server, CPFS can also sync one subfolder with it over an encrypted channel. A file deleted or replaced on one side is kept in a versions folder on the other.</value></data>
+  <data name="About_Brand_Description" xml:space="preserve"><value>CPFS shares one folder on a Windows 10 or 11 PC with Windows, macOS, Linux, Android and iOS devices. They connect by the PC's name (ComputerName.local), by its Wi-Fi or LAN address, or by a VPN address, and a phone can connect with a QR code. Sharing is limited to that folder, with a separate account and hardened Windows settings, and the uninstall puts the original settings back.</value></data>
   <data name="About_Brand_SymbolName" xml:space="preserve"><value>CPFS logo</value></data>
   <data name="About_Version" xml:space="preserve"><value>Version</value></data>
   <data name="About_Windows" xml:space="preserve"><value>Windows</value></data>
@@ -329,8 +326,8 @@
   <data name="Monitor_Session_Vpn" xml:space="preserve"><value>Through the VPN</value></data>
   <data name="Monitor_Session_Disconnect" xml:space="preserve"><value>Disconnect</value></data>
   <data name="Monitor_Session_DisconnectName" xml:space="preserve"><value>Disconnect {0}</value></data>
-  <data name="Monitor_Files_Title" xml:space="preserve"><value>Open files ({0})</value></data>
-  <data name="Monitor_Files_Desc" xml:space="preserve"><value>Files that devices have open on this PC, up to {0}. A file stays here for a few seconds after it closes.</value></data>
+  <data name="Monitor_Files_Title" xml:space="preserve"><value>Being copied now ({0})</value></data>
+  <data name="Monitor_Files_Desc" xml:space="preserve"><value>Files that devices are copying to or from this PC right now, up to {0}. Small files are usually done within the 2 seconds between checks, so mostly large ones show here. Recent activity lists every file that arrived.</value></data>
   <data name="Monitor_Files_None" xml:space="preserve"><value>No file is open.</value></data>
   <data name="Monitor_File_Path" xml:space="preserve"><value>File</value></data>
   <data name="Monitor_File_User" xml:space="preserve"><value>Username</value></data>
@@ -846,7 +843,6 @@
   <data name="Uninst_RestartDriveMsg" xml:space="preserve"><value>The removed drive letter may stay in File Explorer until Windows restarts.</value></data>
   <data name="Common_ReadingPc" xml:space="preserve"><value>Reading this PC…</value></data>
   <data name="About_SourceCode" xml:space="preserve"><value>Source code</value></data>
-  <data name="Monitor_File_Closed" xml:space="preserve"><value>Closed</value></data>
   <data name="Setup_Form_DriveName_Note" xml:space="preserve"><value>File Explorer shows this name in its navigation pane. On the drive letter it may show the disk's own name instead.</value></data>
   <data name="Setup_Drive_ExplorerIcon" xml:space="preserve"><value>Icon shown in File Explorer</value></data>
   <data name="Plan_S_Icon" xml:space="preserve"><value>Drive icon</value></data>
