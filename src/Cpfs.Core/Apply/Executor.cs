@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Cpfs.Core.Planning;
+using Cpfs.Core.Text;
 
 namespace Cpfs.Core.Apply;
 
@@ -27,9 +28,9 @@ public enum StepOutcome
     NotRun,
 }
 
-// Error is what the page shows (Windows' words, or CPFS's own sentence); Detail adds the exception's type and the
-// failed call, for the log only.
-public sealed record StepReport(int Index, string Key, StepOutcome Outcome, string? Error = null, string? Detail = null)
+// Error is Windows' words, or CPFS's own sentence in English; Text names that sentence, and the page shows it in the
+// app's language instead. Detail adds the exception's type and the failed call, for the log only.
+public sealed record StepReport(int Index, string Key, StepOutcome Outcome, string? Error = null, string? Detail = null, TextKey? Text = null)
 {
     public string? LogText => Detail ?? Error;
 }
@@ -53,23 +54,45 @@ public interface IChangeStep
     bool Verify();
 }
 
-// Windows refused a call as not supported (an SMB server setting this build does not take): reported, not fatal.
-public sealed class StepUnsupportedException : Exception
+// Windows refused a call as not supported (an SMB server setting this build does not take), or CPFS left something as
+// it was: reported, not fatal. Built from Windows' exception it carries Windows' words; otherwise CPFS's own sentence.
+public sealed class StepUnsupportedException : Exception, IHasText
 {
-    public StepUnsupportedException(string message, Exception? inner = null)
-        : base(message, inner)
+    public StepUnsupportedException(Exception windows)
+        : base((windows ?? throw new ArgumentNullException(nameof(windows))).Message, windows)
     {
     }
+
+    public StepUnsupportedException(string key, params object?[] args)
+        : this(null, new TextKey(key, args))
+    {
+    }
+
+    public StepUnsupportedException(Exception? inner, string key, params object?[] args)
+        : this(inner, new TextKey(key, args))
+    {
+    }
+
+    private StepUnsupportedException(Exception? inner, TextKey text)
+        : base(text.ToEnglish(), inner)
+    {
+        Text = text;
+    }
+
+    public TextKey? Text { get; }
 }
 
 // A step that did part of its work: reported with its counts, not fatal. A step that did none of it throws an
 // ordinary exception and stops the run.
-public sealed class StepPartialException : Exception
+public sealed class StepPartialException : Exception, IHasText
 {
-    public StepPartialException(string message)
-        : base(message)
+    public StepPartialException(string key, params object?[] args)
+        : base(new TextKey(key, args).ToEnglish())
     {
+        Text = new TextKey(key, args);
     }
+
+    public TextKey? Text { get; }
 }
 
 public sealed record ApplyEntry(PlanItem Item, bool Deferred = false);
@@ -165,12 +188,13 @@ public static class ApplyList
 
 public sealed class ExecutionResult
 {
-    public ExecutionResult(IReadOnlyList<StepReport> reports, string? failedKey, string? error, string? detail = null)
+    public ExecutionResult(IReadOnlyList<StepReport> reports, string? failedKey, string? error, string? detail = null, TextKey? errorText = null)
     {
         Reports = reports;
         FailedKey = failedKey;
         Error = error;
         Detail = detail;
+        ErrorText = errorText;
     }
 
     public IReadOnlyList<StepReport> Reports { get; }
@@ -183,6 +207,9 @@ public sealed class ExecutionResult
 
     // The failure with its exception type and call, for the log.
     public string? Detail { get; }
+
+    // CPFS's own sentence for the failure, when it is one; the page shows it in the app's language.
+    public TextKey? ErrorText { get; }
 
     // Items Windows refused or did only in part: the run finished, but not everything planned is in place.
     public int NotDone => Count(StepOutcome.Unsupported) + Count(StepOutcome.Partial);
@@ -267,7 +294,7 @@ public static class Executor
                 var recorded = step.Record(book);
                 if (recorded == BackupWrite.NoBackup && entry.Item.BackupNeeded)
                 {
-                    throw new InvalidOperationException("The original value could not be recorded: config.json has no backup to add it to.");
+                    throw new CpfsException("Err_NoBackupToAddTo");
                 }
 
                 if (recorded == BackupWrite.Recorded)
@@ -282,7 +309,7 @@ public static class Executor
                 dirty = false;
                 if (!step.Verify())
                 {
-                    throw new InvalidOperationException("The change did not take effect: Windows still reports the old value.");
+                    throw new CpfsException("Err_NotTakenEffect");
                 }
 
                 Report(new StepReport(i, key, StepOutcome.Done));
@@ -294,7 +321,7 @@ public static class Executor
                     TrySave(Save);
                 }
 
-                Report(new StepReport(i, key, StepOutcome.Unsupported, ex.Message, StepErrors.ForLog(ex)));
+                Report(new StepReport(i, key, StepOutcome.Unsupported, StepErrors.ForUser(ex), StepErrors.ForLog(ex), StepErrors.TextOf(ex)));
             }
             catch (StepPartialException ex)
             {
@@ -303,7 +330,7 @@ public static class Executor
                     TrySave(Save);
                 }
 
-                Report(new StepReport(i, key, StepOutcome.Partial, ex.Message, StepErrors.ForLog(ex)));
+                Report(new StepReport(i, key, StepOutcome.Partial, StepErrors.ForUser(ex), StepErrors.ForLog(ex), StepErrors.TextOf(ex)));
             }
             catch (Exception ex)
             {
@@ -314,13 +341,14 @@ public static class Executor
 
                 var error = StepErrors.ForUser(ex);
                 var detail = StepErrors.ForLog(ex);
-                Report(new StepReport(i, key, StepOutcome.Failed, error, detail));
+                var text = StepErrors.TextOf(ex);
+                Report(new StepReport(i, key, StepOutcome.Failed, error, detail, text));
                 for (var j = i + 1; j < entries.Count; j++)
                 {
                     reports.Add(new StepReport(j, entries[j].Item.Key, StepOutcome.NotRun));
                 }
 
-                return new ExecutionResult(reports, key, error, detail);
+                return new ExecutionResult(reports, key, error, detail, text);
             }
         }
 

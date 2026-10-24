@@ -33,8 +33,8 @@ internal sealed class Part<T>
         catch (Exception ex) when (State.IsExpected(ex) || ex is EventLogException or FormatException)
         {
             var denied = State.IsAccessDenied(ex) || ex is EventLogException { InnerException: UnauthorizedAccessException };
-            AppLog.Write("monitor", what + ": " + ex.GetType().Name + ": " + ex.Message);
-            return new Part<T> { Status = denied ? ReadStatus.NeedsAdmin : ReadStatus.Failed, Error = ex.GetType().Name + ": " + ex.Message };
+            AppLog.Write("monitor", what + ": " + Core.Apply.StepErrors.ForLog(ex));
+            return new Part<T> { Status = denied ? ReadStatus.NeedsAdmin : ReadStatus.Failed, Error = UiErrors.ForUser(ex) };
         }
     }
 }
@@ -115,7 +115,7 @@ internal static class SmbMonitor
 
     // Closes one SMB session (MSFT_SmbSession.ForceClose): the client is disconnected and its open handles closed.
     // It changes no setting, and the client may connect again. The session is looked up again first, so an id that
-    // has ended (or been reused by another client) is not closed.
+    // has ended (or been reused by another client) is not closed. error is what the page shows.
     public static DisconnectResult Disconnect(SessionInfo session, out string? error)
     {
         error = null;
@@ -150,10 +150,10 @@ internal static class SmbMonitor
                         case DisconnectVerdict.Done:
                             return DisconnectResult.Done;
                         case DisconnectVerdict.StillConnected:
-                            error = "the session is still connected";
+                            error = Loc.Instance["Monitor_Disconnect_StillConnected"];
                             return DisconnectResult.Failed;
                         default:
-                            error = "ForceClose returned " + code?.ToString(CultureInfo.InvariantCulture);
+                            error = Loc.Instance.FormatValues("Monitor_Disconnect_Code", code?.ToString(CultureInfo.InvariantCulture) ?? "?");
                             return DisconnectResult.Failed;
                     }
                 }
@@ -164,8 +164,8 @@ internal static class SmbMonitor
         }
         catch (Exception ex) when (State.IsExpected(ex))
         {
-            error = ex.GetType().Name + ": " + ex.Message;
-            AppLog.Write("monitor", "Disconnect failed: " + error);
+            error = UiErrors.ForUser(ex);
+            AppLog.Write("monitor", "Disconnect failed: " + Core.Apply.StepErrors.ForLog(ex));
             return DisconnectResult.Failed;
         }
     }

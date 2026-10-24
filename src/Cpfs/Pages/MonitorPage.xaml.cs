@@ -79,7 +79,18 @@ public sealed class MonitorField : Observable
     public bool IsText => !IsData;
 }
 
-public sealed class MonitorRow : Observable
+// A row kept by its key across refreshes, so its controls stay and only changed text is redrawn.
+public abstract class KeyedRow : Observable
+{
+    protected KeyedRow(string key)
+    {
+        Key = key;
+    }
+
+    internal string Key { get; }
+}
+
+public sealed class MonitorRow : KeyedRow
 {
     private string _badge = "";
     private string _actionName = "";
@@ -89,11 +100,9 @@ public sealed class MonitorRow : Observable
     private SessionInfo? _session;
 
     internal MonitorRow(string key)
+        : base(key)
     {
-        Key = key;
     }
-
-    internal string Key { get; }
 
     internal SessionInfo? Session
     {
@@ -147,7 +156,6 @@ public sealed class MonitorRow : Observable
 
     public bool CanDisconnect => Session is not null;
 
-    // Open files and failed sign-ins have no buttons; their rows give the data the full width.
     public bool HasActions => Session is not null || HasTitle;
 
     public string ActionName { get => _actionName; set => Set(ref _actionName, value); }
@@ -196,6 +204,70 @@ public class MonitorSection : Observable
     public ObservableCollection<MonitorField> Fields { get; } = new();
 
     public ObservableCollection<MonitorRow> Rows { get; } = new();
+}
+
+// A table under one header row: failed sign-ins (FailHeader, FailRowView) and Being copied now (FileHeader,
+// FileRowView). The header and row templates line their columns up through TableRowPanel.
+public sealed class TableSection : MonitorSection
+{
+    public TableSection(object header)
+    {
+        Header = header;
+        Items.CollectionChanged += (_, _) => Changed(nameof(HasItems));
+    }
+
+    public object Header { get; }
+
+    public ObservableCollection<KeyedRow> Items { get; } = new();
+
+    public bool HasItems => Items.Count > 0;
+}
+
+public sealed class FailHeader
+{
+}
+
+public sealed class FileHeader
+{
+}
+
+public sealed class FailRowView : KeyedRow
+{
+    private string _time = "";
+    private string _user = "";
+    private string _from = "";
+    private string _reason = "";
+
+    internal FailRowView(string key)
+        : base(key)
+    {
+    }
+
+    public string Time { get => _time; set => Set(ref _time, value); }
+
+    public string User { get => _user; set => Set(ref _user, value); }
+
+    public string From { get => _from; set => Set(ref _from, value); }
+
+    public string Reason { get => _reason; set => Set(ref _reason, value); }
+}
+
+public sealed class FileRowView : KeyedRow
+{
+    private string _path = "";
+    private string _user = "";
+    private string _client = "";
+
+    internal FileRowView(string key)
+        : base(key)
+    {
+    }
+
+    public string Path { get => _path; set => Set(ref _path, value); }
+
+    public string User { get => _user; set => Set(ref _user, value); }
+
+    public string Client { get => _client; set => Set(ref _client, value); }
 }
 
 // Recent activity: a table of changes with one header row, a Clear button and the switch for the activity log.
@@ -291,9 +363,9 @@ public partial class MonitorPage : Page
     private readonly DispatcherTimer _activityTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(500) };
     private readonly MonitorSection _server = new();
     private readonly MonitorSection _sessions = new();
-    private readonly MonitorSection _files = new();
+    private readonly TableSection _files = new(new FileHeader());
     private readonly ActivitySection _activitySection = new();
-    private readonly MonitorSection _fails = new();
+    private readonly TableSection _fails = new(new FailHeader());
 
     // Recent activity lives in memory for as long as the app runs, and goes to activity-log.txt only when the user
     // switched that on.
@@ -590,7 +662,7 @@ public partial class MonitorPage : Page
         _sessions.Title = loc.Format("Monitor_Sessions_Title", list.Count);
         _sessions.Empty = cur.Sessions.Status == ReadStatus.Ok && list.Count == 0 ? loc["Monitor_Sessions_None"] : "";
         var macs = cur.Macs.Value;
-        SyncRows(_sessions.Rows, list, s => s.Id.ToString(CultureInfo.InvariantCulture), (row, s) =>
+        SyncRows(_sessions.Rows, list, s => s.Id.ToString(CultureInfo.InvariantCulture), k => new MonitorRow(k), (row, s) =>
         {
             var address = DeviceIdentity.NormalizeAddress(s.Client);
             if (macs is not null && macs.TryGetValue(address, out var seen))
@@ -634,12 +706,13 @@ public partial class MonitorPage : Page
         _files.Title = loc.Format("Monitor_Files_Title", all.Count);
         _files.Empty = cur.Files.Status == ReadStatus.Ok && all.Count == 0 ? loc["Monitor_Files_None"] : "";
         var shown = all.Count > MaxFiles ? all.GetRange(0, MaxFiles) : all;
-        SyncRows(_files.Rows, shown, f => f.Id.ToString(CultureInfo.InvariantCulture), (row, f) => SetFields(row.Fields, new List<(string, string, bool)>
+        SyncRows(_files.Items, shown, f => f.Id.ToString(CultureInfo.InvariantCulture), k => new FileRowView(k), (row, f) =>
         {
-            ("Monitor_File_Path", f.Path, true),
-            ("Monitor_File_User", f.User, true),
-            ("Monitor_File_Client", f.Client, true),
-        }));
+            var view = (FileRowView)row;
+            view.Path = f.Path;
+            view.User = f.User;
+            view.Client = f.Client;
+        });
     }
 
     private void RenderActivity()
@@ -826,16 +899,13 @@ public partial class MonitorPage : Page
             }
         }
 
-        SyncRows(_fails.Rows, list, f => f.Key, (row, f) =>
+        SyncRows(_fails.Items, list, f => f.Key, k => new FailRowView(k), (row, f) =>
         {
-            var reason = f.ReasonKey is { } key ? loc[key] : loc.FormatValues("Monitor_Fail_Unknown", f.ReasonCode ?? loc["Monitor_NoValue"]);
-            SetFields(row.Fields, new List<(string, string, bool)>
-            {
-                ("Monitor_Fail_Time", f.Time is { } t ? t.ToLocalTime().DateTime.ToString("g", loc.Culture) : loc["Monitor_NoValue"], false),
-                ("Monitor_Fail_User", f.User ?? loc["Monitor_NoValue"], true),
-                ("Monitor_Fail_From", f.Source ?? f.Workstation ?? loc["Monitor_NoValue"], true),
-                ("Monitor_Fail_Reason", reason, false),
-            });
+            var view = (FailRowView)row;
+            view.Time = f.Time is { } t ? t.ToLocalTime().DateTime.ToString("g", loc.Culture) : loc["Monitor_NoValue"];
+            view.User = f.User ?? loc["Monitor_NoValue"];
+            view.From = f.Source ?? f.Workstation ?? loc["Monitor_NoValue"];
+            view.Reason = f.ReasonKey is { } key ? loc[key] : loc.FormatValues("Monitor_Fail_Unknown", f.ReasonCode ?? loc["Monitor_NoValue"]);
         });
     }
 
@@ -847,7 +917,8 @@ public partial class MonitorPage : Page
     }
 
     // Keeps the row objects of entries still present, so their controls stay and only changed text is redrawn.
-    private static void SyncRows<T>(ObservableCollection<MonitorRow> rows, IList<T> items, Func<T, string> key, Action<MonitorRow, T> update)
+    private static void SyncRows<TRow, T>(ObservableCollection<TRow> rows, IList<T> items, Func<T, string> key, Func<string, TRow> create, Action<TRow, T> update)
+        where TRow : KeyedRow
     {
         var wanted = new HashSet<string>(StringComparer.Ordinal);
         foreach (var item in items)
@@ -867,10 +938,10 @@ public partial class MonitorPage : Page
         {
             var k = key(items[i]);
             var index = IndexOf(rows, k);
-            MonitorRow row;
+            TRow row;
             if (index < 0)
             {
-                row = new MonitorRow(k);
+                row = create(k);
                 rows.Insert(Math.Min(i, rows.Count), row);
             }
             else
@@ -886,7 +957,8 @@ public partial class MonitorPage : Page
         }
     }
 
-    private static int IndexOf(ObservableCollection<MonitorRow> rows, string key)
+    private static int IndexOf<TRow>(ObservableCollection<TRow> rows, string key)
+        where TRow : KeyedRow
     {
         for (var i = 0; i < rows.Count; i++)
         {
@@ -997,7 +1069,7 @@ public partial class MonitorPage : Page
         catch (Exception ex)
         {
             AppLog.Write("monitor", "Disconnect of session " + id + " failed unexpectedly: " + ex);
-            Show(ActionResult, InfoBarSeverity.Error, loc.FormatValues("Monitor_Disconnect_Failed", ex.GetType().Name + ": " + ex.Message));
+            Show(ActionResult, InfoBarSeverity.Error, loc.FormatValues("Monitor_Disconnect_Failed", UiErrors.ForUser(ex)));
         }
 
         try
@@ -1096,7 +1168,7 @@ public partial class MonitorPage : Page
         catch (Exception ex)
         {
             AppLog.Write("devices", "Naming a device failed unexpectedly: " + ex);
-            Show(ActionResult, InfoBarSeverity.Error, loc.FormatValues("Monitor_Device_SaveFailed", ex.GetType().Name + ": " + ex.Message));
+            Show(ActionResult, InfoBarSeverity.Error, loc.FormatValues("Monitor_Device_SaveFailed", UiErrors.ForUser(ex)));
         }
     }
 
@@ -1132,7 +1204,7 @@ public partial class MonitorPage : Page
         catch (Exception ex)
         {
             AppLog.Write("devices", "Forgetting a device name failed unexpectedly: " + ex);
-            Show(ActionResult, InfoBarSeverity.Error, loc.FormatValues("Monitor_Device_SaveFailed", ex.GetType().Name + ": " + ex.Message));
+            Show(ActionResult, InfoBarSeverity.Error, loc.FormatValues("Monitor_Device_SaveFailed", UiErrors.ForUser(ex)));
         }
     }
 

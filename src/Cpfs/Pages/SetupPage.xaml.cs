@@ -91,7 +91,7 @@ public partial class SetupPage : Page
         catch (Exception ex) when (State.IsExpected(ex))
         {
             AppLog.Exception("setup", ex);
-            Show(AdminResult, InfoBarSeverity.Error, Loc.Instance["Setup_ReadFailed"], ex.Message);
+            Show(AdminResult, InfoBarSeverity.Error, Loc.Instance["Setup_ReadFailed"], UiErrors.ForUser(ex));
         }
         finally
         {

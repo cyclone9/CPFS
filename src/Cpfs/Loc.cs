@@ -89,6 +89,30 @@ public sealed class Loc : INotifyPropertyChanged
         return string.Format(Culture, Get(key), embedded);
     }
 
+    // CPFS's own sentence in the app's language; EnglishText gives it in English, for the log and exception messages.
+    public string Text(TextKey text) => Resolve(text, english: false);
+
+    public string EnglishText(TextKey text) => Resolve(text, english: true);
+
+    private string Resolve(TextKey text, bool english)
+    {
+        var culture = english ? CultureInfo.InvariantCulture : Culture;
+        var args = new object[text.Args.Count];
+        for (var i = 0; i < args.Length; i++)
+        {
+            args[i] = text.Args[i] switch
+            {
+                TextKey word => Resolve(word, english),
+                string value => english ? value : Bidi.Embed(value, IsRtl),
+                IFormattable number => number.ToString(null, culture),
+                var other => Convert.ToString(other, CultureInfo.InvariantCulture) ?? "",
+            };
+        }
+
+        var format = english ? Set("")?.GetString(text.Key) ?? "!" + text.Key + "!" : Get(text.Key);
+        return string.Format(culture, format, args);
+    }
+
     private ResourceSet? Set(string cultureName)
     {
         if (_sets.TryGetValue(cultureName, out var set))

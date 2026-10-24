@@ -43,8 +43,8 @@ internal static class ConfigFile
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException
             or ConfigFormatException or DecoderFallbackException)
         {
-            error = ex.GetType().Name + ": " + ex.Message;
-            AppLog.Write("config", "Could not read " + StateReader.ConfigPath + ": " + error);
+            error = UiErrors.ForUser(ex);
+            AppLog.Write("config", "Could not read " + StateReader.ConfigPath + ": " + Core.Apply.StepErrors.ForLog(ex));
             return ConfigState.Unreadable;
         }
     }

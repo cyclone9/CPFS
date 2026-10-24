@@ -56,6 +56,7 @@ public static class Planner
         R.NetworkPublic, R.NetworkPrivate,
         R.AutoCreate, R.AutoRemove, R.AutoOff, R.LegacyTask, R.StaleTask, R.AutoTaskChange, R.AutoExeCreate, R.AutoExeUpdate, R.AutoExeRemove,
         R.AutoScript, R.AutoSkip, R.AutoFolderCreate, R.AutoFolderLock, R.AutoFolderForeign, R.AutoExeOld,
+        R.AutoFolderRemove, R.AutoFolderKeepForeign, R.AutoFolderKeepNotEmpty,
         R.DriveCreate, R.DriveGone, R.DriveForeign, R.DriveSession, R.DriveOldSession, R.DriveOldRemove, R.DriveOldForeign, R.DriveOff,
         R.LabelSet, R.LabelForeign, R.LabelRenamed, R.LabelOldRemove, R.LabelRestore,
         R.IconSet, R.IconForeign, R.IconChanged, R.IconOldRemove, R.IconRestore,
@@ -208,6 +209,9 @@ public static class Planner
         public const string AutoFolderLock = "Plan_R_AutoFolderLock";
         public const string AutoFolderForeign = "Plan_R_AutoFolderForeign";
         public const string AutoExeOld = "Plan_R_AutoExeOld";
+        public const string AutoFolderRemove = "Plan_R_AutoFolderRemove";
+        public const string AutoFolderKeepForeign = "Plan_R_AutoFolderKeepForeign";
+        public const string AutoFolderKeepNotEmpty = "Plan_R_AutoFolderKeepNotEmpty";
     }
 
     // Word keys for values and subjects.
@@ -1027,10 +1031,14 @@ public static class Planner
                 var exists = tasks.TryGetValue(AutoPrivateTask, out var e) && e;
                 Add("auto.task", PlanSection.AutoPrivate, exists ? PlanAction.RemoveIfOurs : PlanAction.Keep, Data(AutoPrivateTask),
                     Word(exists ? W.Exists : W.Absent), exists ? Word(W.Absent) : null, exists ? R.AutoRemove : R.AutoOff);
+                var exeGoes = false;
                 if (_s.AutoPrivateFiles.IsOk && _s.AutoPrivateFiles.Value!.ExeExists && _c?.TrackedAutoPrivateExe is not null)
                 {
                     Add("auto.exe", PlanSection.AutoPrivate, PlanAction.RemoveIfOurs, Data(_s.AutoPrivateExe), Word(W.Exists), Word(W.Absent), R.AutoExeRemove);
+                    exeGoes = true;
                 }
+
+                CopyFolderOff(exeGoes);
             }
 
             // ProgramData\CPFS is CPFS's own locked folder, so a Cpfs.exe in it is the copy the dev3 build put there.
@@ -1125,6 +1133,34 @@ public static class Planner
             }
 
             return true;
+        }
+
+        // Off: the Program Files\CPFS folder CPFS created goes after the copy once nothing else is in it, as at Uninstall.
+        // A folder of that name CPFS didn't create, or one holding anything else, stays. Unread, it is left for a later
+        // run: an empty folder is harmless.
+        private void CopyFolderOff(bool exeGoes)
+        {
+            var tracked = _c?.TrackedAutoPrivateFolder;
+            if (tracked is null || !SamePath(tracked.Path, _s.AutoPrivateFolderPath) || !_s.AutoPrivateFolder.IsOk || !_s.AutoPrivateFiles.IsOk
+                || !_s.AutoPrivateFolder.Value!.Exists)
+            {
+                return;
+            }
+
+            var subject = Data(_s.AutoPrivateFolderPath);
+            var exeStays = _s.AutoPrivateFiles.Value!.ExeExists && !exeGoes;
+            if (!tracked.CreatedByCpfs)
+            {
+                Add("auto.folder", PlanSection.AutoPrivate, PlanAction.Keep, subject, Word(W.Exists), null, R.AutoFolderKeepForeign);
+            }
+            else if (_s.AutoPrivateFolder.Value!.HasOtherEntries || exeStays)
+            {
+                Add("auto.folder", PlanSection.AutoPrivate, PlanAction.Keep, subject, Word(W.Exists), null, R.AutoFolderKeepNotEmpty);
+            }
+            else
+            {
+                Add("auto.folder", PlanSection.AutoPrivate, PlanAction.RemoveIfOurs, subject, Word(W.Exists), Word(W.Absent), R.AutoFolderRemove);
+            }
         }
 
         private static PlanValue Names(IReadOnlyList<string> names) => names.Count == 0 ? Word(W.None) : Data(string.Join(", ", names));

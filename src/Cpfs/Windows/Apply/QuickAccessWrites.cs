@@ -11,6 +11,7 @@ using System.Threading;
 using Cpfs.Core.Apply;
 using Cpfs.Core.Elevation;
 using Cpfs.Core.Planning;
+using Cpfs.Core.Text;
 using Microsoft.Win32;
 
 namespace Cpfs.Windows.Apply;
@@ -34,7 +35,7 @@ internal static class DosDrives
     public static void Set(char letter, string target)
     {
         using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
-        using var key = hklm.OpenSubKey(Key, writable: true) ?? throw new IOException("Could not open HKLM\\" + Key);
+        using var key = hklm.OpenSubKey(Key, writable: true) ?? throw new CpfsException("Err_RegistryOpen", @"HKLM\" + Key);
         key.SetValue(Name(letter), target, RegistryValueKind.String);
     }
 
@@ -67,7 +68,7 @@ internal static class DriveIconKeys
     {
         using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
         using var key = hklm.CreateSubKey(Icons + "\\" + Letter(letter) + "\\" + subkey, writable: true)
-            ?? throw new IOException("Could not open the DriveIcons key");
+            ?? throw new CpfsException("Err_RegistryOpen", @"HKLM\" + Icons + "\\" + Letter(letter) + "\\" + subkey);
         key.SetValue("", value, RegistryValueKind.String);
     }
 
@@ -178,7 +179,7 @@ internal static class ExplorerEntryKeys
     {
         if (!ExplorerEntry.CanHold(folder))
         {
-            throw new InvalidOperationException("The folder's path contains %, which the File Explorer entry can't hold.");
+            throw new CpfsException("Err_PercentInPath");
         }
 
         using var hive = OpenHive(sid);
@@ -253,13 +254,13 @@ internal static class ExplorerEntryKeys
         try
         {
             var hive = users.OpenSubKey(sid, writable: true)
-                ?? throw new StepUnsupportedException("The Windows user's settings are not loaded (that user is not signed in), so the File Explorer entry can't be changed.");
+                ?? throw new StepUnsupportedException("Err_UserHiveNotLoaded");
             using (var classes = hive.OpenSubKey(@"Software\Classes"))
             {
                 if (classes is null)
                 {
                     hive.Dispose();
-                    throw new StepUnsupportedException("The Windows user's class settings are not loaded, so the File Explorer entry can't be changed.");
+                    throw new StepUnsupportedException("Err_UserClassesNotLoaded");
                 }
             }
 
@@ -272,7 +273,7 @@ internal static class ExplorerEntryKeys
     }
 
     private static RegistryKey Create(RegistryKey parent, string path) =>
-        parent.CreateSubKey(path, writable: true) ?? throw new IOException("Could not create the registry key " + path);
+        parent.CreateSubKey(path, writable: true) ?? throw new CpfsException("Err_RegistryCreate", path);
 
     private static ExplorerEntryInfo? ReadEntry(RegistryKey root)
     {
@@ -334,7 +335,7 @@ internal static class CpfsIconFile
     private static byte[] Bytes()
     {
         using var stream = typeof(CpfsIconFile).Assembly.GetManifestResourceStream("Cpfs.Assets.cpfs.ico")
-            ?? throw new IOException("The CPFS icon is missing from the program file.");
+            ?? throw new CpfsException("Err_IconMissing");
         using var copy = new MemoryStream();
         stream.CopyTo(copy);
         return copy.ToArray();
@@ -380,7 +381,7 @@ internal static class Shortcuts
     {
         if (File.Exists(file))
         {
-            throw new IOException("A file named " + Path.GetFileName(file) + " is already on the Public Desktop; it is left alone.");
+            throw new CpfsException("Err_DesktopFileExists", Path.GetFileName(file));
         }
 
         var link = (IShellLinkW)new ShellLink();
@@ -594,15 +595,15 @@ internal static class Shortcuts
 // registry mapping is the permanent part; when this fails, the change shows after the next restart instead.
 internal static class SessionDrive
 {
-    public const string NoDesktopUser = "No signed-in desktop user was found (no explorer.exe in this session)";
-
-    private const string MapAfter = "the drive appears after a restart";
-    private const string UnmapAfter = "the drive goes at the next restart";
+    public const string NoDesktopUserKey = "Err_NoDesktopUser";
 
     // No session to reach is not a refusal by Windows: the resource key of what the step shows instead, or null.
-    public static string? NoDesktopUserText(string? error) =>
-        error is null || !error.StartsWith(NoDesktopUser, StringComparison.Ordinal) ? null
-        : error.EndsWith(MapAfter + ".", StringComparison.Ordinal) ? "Apply_NoSessionMap" : "Apply_NoSessionUnmap";
+    public static string? NoDesktopUserText(TextKey? text) => text?.Key switch
+    {
+        "Err_NoSessionMap" => "Apply_NoSessionMap",
+        "Err_NoSessionUnmap" => "Apply_NoSessionUnmap",
+        _ => null,
+    };
 
     public static void Map(char letter, string path) => Run(UserSessionAction.MapDrive, letter, path);
 
@@ -610,10 +611,10 @@ internal static class SessionDrive
 
     private static void Run(UserSessionAction action, char letter, string path)
     {
-        var after = action == UserSessionAction.MapDrive ? MapAfter : UnmapAfter;
+        var map = action == UserSessionAction.MapDrive;
 
         // The elevated instance's own finding (explorer's token), never a value from the command line.
-        var sid = DesktopUser.Current.Sid ?? throw new StepUnsupportedException(NoDesktopUser + "; " + after + ".");
+        var sid = DesktopUser.Current.Sid ?? throw new StepUnsupportedException(map ? "Err_NoSessionMap" : "Err_NoSessionUnmap");
         string account;
         try
         {
@@ -621,7 +622,7 @@ internal static class SessionDrive
         }
         catch (IdentityNotMappedException ex)
         {
-            throw new StepUnsupportedException("The desktop user's account name could not be found; " + after + ".", ex);
+            throw new StepUnsupportedException(ex, map ? "Err_SessionAccountMap" : "Err_SessionAccountUnmap");
         }
 
         var arguments = UserSessionVerb.Arguments(action, letter, path);
@@ -633,14 +634,14 @@ internal static class SessionDrive
         catch (Exception ex) when (State.IsExpected(ex))
         {
             var inner = ex is TargetInvocationException { InnerException: { } i } ? i : ex;
-            throw new StepUnsupportedException("The task that changes the drive in your session failed (" + inner.Message + "); " + after + ".", inner);
+            throw new StepUnsupportedException(inner, map ? "Err_SessionTaskMap" : "Err_SessionTaskUnmap", (object?)StepErrors.TextOf(inner) ?? inner.Message);
         }
 
         var name = Enum.IsDefined(typeof(UserSessionResult), code) ? ((UserSessionResult)code).ToString() : "0x" + code.ToString("X8", CultureInfo.InvariantCulture);
-        AppLog.Write("apply", "User session " + (action == UserSessionAction.MapDrive ? "map" : "unmap") + " " + letter + ": " + name);
+        AppLog.Write("apply", "User session " + (map ? "map" : "unmap") + " " + letter + ": " + name);
         if (!UserSessionVerb.IsSuccess(code, action))
         {
-            throw new StepUnsupportedException("The drive could not be changed in your session (" + name + "); " + after + ".");
+            throw new StepUnsupportedException(map ? "Err_SessionResultMap" : "Err_SessionResultUnmap", name);
         }
     }
 }
@@ -716,9 +717,7 @@ internal static class RunAsUser
 
                 if ((!started && watch.Elapsed > StartLimit) || watch.Elapsed > RunLimit)
                 {
-                    throw new StepUnsupportedException(started
-                        ? "The task in your session did not finish in time."
-                        : "The task did not start in your session (is the desktop user signed in?).");
+                    throw new StepUnsupportedException(started ? "Err_SessionTimeout" : "Err_SessionNotStarted");
                 }
             }
 

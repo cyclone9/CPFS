@@ -163,7 +163,7 @@ internal sealed class StateReader
         catch (Exception ex) when (ex is ConfigFormatException or DecoderFallbackException)
         {
             s.Status = ReadStatus.Failed;
-            s.Error = ex.Message;
+            s.Error = UiErrors.ForUser(ex);
             return;
         }
 

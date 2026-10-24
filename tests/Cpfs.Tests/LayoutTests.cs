@@ -43,4 +43,25 @@ public class LayoutTests
         Assert.True(store.IsExpanded("User", needsAttention: false));
         Assert.True(store.IsExpanded("Tasks", needsAttention: false));
     }
+
+    [Fact]
+    public void TableColumnsShareTheirWidthsAndTheLastTakesTheRest()
+    {
+        var wide = TableLayout.Arrange(new double[] { 130, 60, 120, 100 }, 600, 16, 140);
+        Assert.False(wide.LastBelow);
+        Assert.Equal(new double[] { 130, 60, 120, 600 - 310 - 48 }, wide.Widths);
+
+        // Too little left for the last column: it goes under the row at full width, the others keep their widths.
+        var narrow = TableLayout.Arrange(new double[] { 130, 60, 120, 100 }, 400, 16, 140);
+        Assert.True(narrow.LastBelow);
+        Assert.Equal(new double[] { 130, 60, 120, 400 }, narrow.Widths);
+
+        // Even the first three don't fit: they shrink in proportion and fill the width with their gaps.
+        var tiny = TableLayout.Arrange(new double[] { 130, 60, 120, 100 }, 250, 16, 140);
+        Assert.True(tiny.LastBelow);
+        Assert.Equal(250, tiny.Widths[0] + tiny.Widths[1] + tiny.Widths[2] + 32, 6);
+        Assert.Equal(130 / 60.0, tiny.Widths[0] / tiny.Widths[1], 6);
+
+        Assert.Equal(new double[] { 130, 60, 120, 100 }, TableLayout.Arrange(new double[] { 130, 60, 120, 100 }, double.PositiveInfinity, 16, 140).Widths);
+    }
 }

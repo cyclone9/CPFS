@@ -181,7 +181,7 @@ public partial class ConnectPage : Page
         catch (Exception ex) when (State.IsExpected(ex) || ex is System.Net.NetworkInformation.NetworkInformationException)
         {
             AppLog.Exception("connect", ex);
-            Show(ConfigInfo, InfoBarSeverity.Error, Loc.Instance["Connect_ConfigFailed_Title"], ex.Message);
+            Show(ConfigInfo, InfoBarSeverity.Error, Loc.Instance["Connect_ConfigFailed_Title"], UiErrors.ForUser(ex));
         }
         finally
         {
@@ -502,7 +502,7 @@ public partial class ConnectPage : Page
         catch (QrCapacityException ex)
         {
             AppLog.Write("connect", "QR code not made: " + ex.Message);
-            card.Items.Add(new NoteItem { Text = loc.Format("Connect_QrFailed", ex.Message) });
+            card.Items.Add(new NoteItem { Text = loc.Format("Connect_QrFailed", loc.Format("Connect_QrTooLong", ex.Bytes)) });
         }
     }
 

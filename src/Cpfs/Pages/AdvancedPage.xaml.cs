@@ -13,8 +13,10 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using Cpfs.Core.Layout;
+using Cpfs.Core.Planning;
 using Cpfs.Core.Text;
 using Cpfs.Windows;
+using Cpfs.Windows.Apply;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
@@ -111,6 +113,9 @@ public partial class AdvancedPage : Page
     // WindowsChanges.Count when the last reading began.
     private int _readAt = -1;
 
+    // The Auto-Private task's last run as last read; null until read or when there is no task.
+    private AutoPrivateReading? _autoPrivate;
+
     public AdvancedPage()
     {
         InitializeComponent();
@@ -164,6 +169,7 @@ public partial class AdvancedPage : Page
         try
         {
             var dispatcher = Dispatcher;
+            var autoPrivate = ReadAutoPrivateAsync();
             var letters = Task.Run(PcContext.ReadLetters);
             var reader = new StateReader();
             var sections = Task.Run(() => reader.ReadAllAsync(letters, (index, section) =>
@@ -176,11 +182,12 @@ public partial class AdvancedPage : Page
             await letters;
             Render();
             await sections;
+            await autoPrivate;
         }
         catch (Exception ex) when (State.IsExpected(ex))
         {
             AppLog.Exception("advanced", ex);
-            SetupPage.Show(ReadResult, InfoBarSeverity.Error, Loc.Instance["Setup_ReadFailed"], ex.Message);
+            SetupPage.Show(ReadResult, InfoBarSeverity.Error, Loc.Instance["Setup_ReadFailed"], UiErrors.ForUser(ex));
         }
         finally
         {
@@ -191,8 +198,58 @@ public partial class AdvancedPage : Page
         }
     }
 
+    // Read-only, through Task Scheduler; never throws.
+    private async Task ReadAutoPrivateAsync()
+    {
+        AutoPrivateReading reading;
+        try
+        {
+            var run = await Task.Run(AutoPrivateTask.LastRun);
+            reading = run is null ? AutoPrivateReading.NoTask : new AutoPrivateReading(run, null, false);
+            AppLog.Write("advanced", run is null ? "Auto-Private task: none"
+                : "Auto-Private task: last run " + (run.LastRun?.ToString("s", CultureInfo.InvariantCulture) ?? "none")
+                    + ", result 0x" + run.LastResult.ToString("X8", CultureInfo.InvariantCulture));
+        }
+        catch (Exception ex) when (State.IsExpected(ex))
+        {
+            var denied = State.IsAccessDenied(ex) && !Startup.IsElevated;
+            reading = new AutoPrivateReading(null, denied ? null : UiErrors.ForUser(ex), denied);
+            AppLog.Write("advanced", "Auto-Private task: " + (denied ? "needs administrator" : "not read") + " (" + Core.Apply.StepErrors.ForLog(ex) + ")");
+        }
+
+        _autoPrivate = reading;
+        RenderAutoPrivate();
+    }
+
+    private void RenderAutoPrivate()
+    {
+        var loc = Loc.Instance;
+        var reading = _autoPrivate;
+        if (reading is null || reading == AutoPrivateReading.NoTask)
+        {
+            AutoPrivateCard.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        AutoPrivateCard.Visibility = Visibility.Visible;
+        AutoPrivateAdmin.Visibility = reading.NeedsAdmin ? Visibility.Visible : Visibility.Collapsed;
+        if (reading.Run is { } run)
+        {
+            var (key, arg) = AutoPrivateExit.Describe(run.LastResult);
+            var words = arg is null ? loc[key] : loc.FormatValues(key, arg);
+            AutoPrivateValue.Text = AutoPrivateExit.HasRun(run.LastRun, run.LastResult) && run.LastRun is { } time
+                ? loc.Format("Adv_AutoPrivate_LastRan", Formats.DateTime(time, loc.Culture), words)
+                : loc["Adv_AutoPrivate_NotRun"];
+        }
+        else
+        {
+            AutoPrivateValue.Text = reading.NeedsAdmin ? loc["Adv_AutoPrivate_NeedsAdmin"] : loc.FormatValues("Adv_AutoPrivate_Failed", reading.Error);
+        }
+    }
+
     private void Render()
     {
+        RenderAutoPrivate();
         if (PcContext.HandOverRows is { } handOver)
         {
             HandOverCard.Visibility = Visibility.Visible;
@@ -454,4 +511,10 @@ public partial class AdvancedPage : Page
         LogResult.Message = message;
         LogResult.IsOpen = true;
     }
+}
+
+// The Auto-Private task as the Advanced page last read it: its last run, or why it could not be read.
+internal sealed record AutoPrivateReading(TaskRunInfo? Run, string? Error, bool NeedsAdmin)
+{
+    public static readonly AutoPrivateReading NoTask = new(null, null, false);
 }

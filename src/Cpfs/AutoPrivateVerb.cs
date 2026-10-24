@@ -15,8 +15,9 @@ namespace Cpfs;
 
 // "Cpfs.exe --auto-private", run by the CPFS-AutoPrivate task as SYSTEM from the copy in Program Files\CPFS. It switches
 // to Private only a Public network CPFS has never seen (AutoPrivateRules), writes the name to auto-private.log before it
-// switches, and never writes config.json. One line per run goes to auto-private-run.log; no window, no other log.
-// Exit code: the number of networks switched; a refusal or "nothing to do" is 0.
+// switches, and never writes config.json. One line per run goes to auto-private-run.log (only into a locked folder);
+// no window, no other log. The exit code (AutoPrivateExit) tells every refusal apart, so a refused run still leaves a
+// trace in the task's last result: 0 nothing to do, 10-17 a refusal or a failure, 100+N switched N networks.
 internal static class AutoPrivateVerb
 {
     public const string Verb = "--auto-private";
@@ -27,44 +28,44 @@ internal static class AutoPrivateVerb
     {
         try
         {
-            var (count, text) = Work(null);
-            RunLog(text);
-            return count;
+            var (code, text) = Work(null);
+            RunLog(text + " (exit " + code.ToString(CultureInfo.InvariantCulture) + ")");
+            return code;
         }
         catch (Exception ex)
         {
-            RunLog("failed: " + ex.GetType().Name + ": " + ex.Message);
-            return 0;
+            RunLog("failed: " + ex.GetType().Name + ": " + ex.Message + " (exit " + AutoPrivateExit.Crashed.ToString(CultureInfo.InvariantCulture) + ")");
+            return AutoPrivateExit.Crashed;
         }
     }
 
     // configOverride: the CI test's in-process run with its own config (minus the skip list); the task passes null.
-    internal static (int Switched, string Text) Work(ConfigDocument? configOverride)
+    internal static (int Code, string Text) Work(ConfigDocument? configOverride)
     {
         var self = Path.GetFullPath(typeof(AutoPrivateVerb).Assembly.Location);
         if (configOverride is null && !string.Equals(self, Path.GetFullPath(AutoPrivateCopy.Path), StringComparison.OrdinalIgnoreCase))
         {
-            return (0, "refused: not run from " + AutoPrivateCopy.Path);
+            return (AutoPrivateExit.NotFromCopy, "refused: not run from " + AutoPrivateCopy.Path);
         }
 
         using (var identity = WindowsIdentity.GetCurrent())
         {
             if (!new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator))
             {
-                return (0, "refused: not elevated");
+                return (AutoPrivateExit.NotElevated, "refused: not elevated");
             }
         }
 
         if (!SetupSteps.Locked(AutoPrivateCopy.Folder))
         {
-            return (0, "refused: " + AutoPrivateCopy.Folder + " is not locked");
+            return (AutoPrivateExit.CopyFolderNotLocked, "refused: " + AutoPrivateCopy.Folder + " is not locked");
         }
 
         // Before config.json is read, never after: a standard user can re-create a hand-deleted ProgramData\CPFS and put
         // a crafted config.json in it, and this check is what keeps that file from steering the verb.
         if (!SetupSteps.Locked())
         {
-            return (0, "refused: ProgramData\\CPFS is not locked");
+            return (AutoPrivateExit.DataFolderNotLocked, "refused: ProgramData\\CPFS is not locked");
         }
 
         ConfigDocument config;
@@ -81,13 +82,13 @@ internal static class AutoPrivateVerb
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException or ConfigFormatException)
             {
                 // A file an Apply is writing right now reads as broken: do nothing.
-                return (0, "nothing done: config.json not readable (" + ex.GetType().Name + ")");
+                return (AutoPrivateExit.ConfigUnreadable, "nothing done: config.json not readable (" + ex.GetType().Name + ")");
             }
         }
 
         if (!AutoPrivateRules.Enabled(config))
         {
-            return (0, "nothing done: Auto-Private is off");
+            return (AutoPrivateExit.Off, "nothing done: Auto-Private is off");
         }
 
         var vpn = new List<string>();
@@ -102,6 +103,7 @@ internal static class AutoPrivateVerb
 
         var parts = new List<string>();
         var switched = 0;
+        var notTaken = 0;
         var loggedNow = new List<string>(logged);
         foreach (var d in decisions)
         {
@@ -131,9 +133,15 @@ internal static class AutoPrivateVerb
             {
                 switched++;
             }
+            else
+            {
+                notTaken++;
+            }
         }
 
-        return (switched, parts.Count == 0 ? "no networks" : string.Join("; ", parts));
+        // A run that switched some networks says so even when another switch didn't take; the run log has each one.
+        var code = switched > 0 ? AutoPrivateExit.Switched(switched) : notTaken > 0 ? AutoPrivateExit.NotTaken : AutoPrivateExit.NothingToDo;
+        return (code, parts.Count == 0 ? "no networks" : string.Join("; ", parts));
     }
 
     private static int Category(string name, string alias)

@@ -480,8 +480,8 @@ internal static class CiApplyTest
             return;
         }
 
-        var (switched, text) = AutoPrivateVerb.Work(noSkip);
-        o.WriteLine("Worker run: " + switched + " switched; " + text);
+        var (exit, text) = AutoPrivateVerb.Work(noSkip);
+        o.WriteLine("Worker run: exit " + exit + "; " + text);
         var nowPublic = PublicNames();
         Check(expected.All(n => !nowPublic.Contains(n)), "the worker switched every new Public network to Private", string.Join(", ", expected));
         var bytes = File.Exists(log) ? File.ReadAllBytes(log) : Array.Empty<byte>();
@@ -587,7 +587,7 @@ internal static class CiApplyTest
         {
             Check(true, check);
         }
-        else if (report.Outcome == StepOutcome.Unsupported && report.Error?.StartsWith(SessionDrive.NoDesktopUser, StringComparison.Ordinal) == true)
+        else if (report.Outcome == StepOutcome.Unsupported && SessionDrive.NoDesktopUserText(report.Text) is not null)
         {
             Skip(check, "no interactive user on this runner");
         }

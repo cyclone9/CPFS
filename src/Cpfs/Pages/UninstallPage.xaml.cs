@@ -160,7 +160,7 @@ public partial class UninstallPage : Page
         catch (Exception ex) when (State.IsExpected(ex) || ex is ConfigFormatException)
         {
             AppLog.Exception("uninstall", ex);
-            Show(ApplyResult, InfoBarSeverity.Error, Loc.Instance["Setup_ReadFailed"], ex.Message);
+            Show(ApplyResult, InfoBarSeverity.Error, Loc.Instance["Setup_ReadFailed"], UiErrors.ForUser(ex));
         }
         finally
         {
@@ -423,10 +423,10 @@ public partial class UninstallPage : Page
             var userSid = input.Snapshot.User.IsOk ? input.Snapshot.User.Value?.Sid : null;
             var run = new UninstallRun(plan, input.Config, _configBytes, userSid, DesktopUser.Current.Sid, _documents);
             var dispatcher = Dispatcher;
-            var result = await Task.Run(() => run.Execute(r => dispatcher.BeginInvoke(new Action(() => views[r.Index].Set(r.Outcome, r.Error)))));
+            var result = await Task.Run(() => run.Execute(r => dispatcher.BeginInvoke(new Action(() => views[r.Index].Set(r)))));
             foreach (var r in result.Reports)
             {
-                views[r.Index].Set(r.Outcome, r.Error);
+                views[r.Index].Set(r);
             }
 
             if (result.Completed)
@@ -467,7 +467,7 @@ public partial class UninstallPage : Page
                 var failed = entries.First(x => x.Item.Key == result.FailedKey).Item;
 
                 // Windows' words come last, on a line of their own.
-                var message = loc.FormatValues("Uninst_FailedMsg", result.Error);
+                var message = loc.FormatValues("Uninst_FailedMsg", UiErrors.Of(result.Error, result.ErrorText));
                 if (run.SavedCopy is not null)
                 {
                     message = loc.FormatValues("Uninst_CopySaved", run.SavedCopy) + Environment.NewLine + message;
@@ -481,7 +481,7 @@ public partial class UninstallPage : Page
         catch (Exception ex)
         {
             AppLog.Exception("uninstall", ex);
-            Show(ApplyResult, InfoBarSeverity.Error, loc["Apply_ErrorTitle"], StepErrors.ForUser(ex));
+            Show(ApplyResult, InfoBarSeverity.Error, loc["Apply_ErrorTitle"], UiErrors.ForUser(ex));
             ResultActions.Visibility = Visibility.Visible;
         }
         finally

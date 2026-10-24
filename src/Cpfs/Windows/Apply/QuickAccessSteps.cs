@@ -3,6 +3,7 @@ using System.IO;
 using Cpfs.Core.Apply;
 using Cpfs.Core.Config;
 using Cpfs.Core.Planning;
+using Cpfs.Core.Text;
 
 namespace Cpfs.Windows.Apply;
 
@@ -13,7 +14,7 @@ internal static class QuickAccessSteps
     // Setup: the previous letter's name, removed, or put back to what it was before CPFS.
     public static LambdaStep OldLabel(SetupRun run, PlanItem item)
     {
-        var letter = run.OldLetter ?? throw new InvalidOperationException("No previous drive letter is recorded.");
+        var letter = run.OldLetter ?? throw new CpfsException("Err_NoOldLetter");
         var original = run.Original!.BackupDriveLabel(letter);
         bool AtTarget() => original is null ? DriveNames.Read(letter) is null : string.Equals(DriveNames.Read(letter), original, StringComparison.Ordinal);
         return new LambdaStep
@@ -24,7 +25,7 @@ internal static class QuickAccessSteps
                 var current = DriveNames.Read(letter);
                 if (!Ours(current, run.Original))
                 {
-                    throw new InvalidOperationException("The name of drive " + letter + ": changed after the plan was made. Read the plan again.");
+                    throw new CpfsException("Err_DriveNameChanged", letter);
                 }
 
                 if (original is null)
@@ -45,8 +46,8 @@ internal static class QuickAccessSteps
     // so the folder it pointed to is recorded first (an install the scripts made has only SharePath).
     public static LambdaStep OldSession(SetupRun run)
     {
-        var letter = run.OldLetter ?? throw new InvalidOperationException("No previous drive letter is recorded.");
-        var path = run.Original!.OwnDrivePath ?? throw new InvalidOperationException("The previous drive's folder is not recorded.");
+        var letter = run.OldLetter ?? throw new CpfsException("Err_NoOldLetter");
+        var path = run.Original!.OwnDrivePath ?? throw new CpfsException("Err_NoOldDriveFolder");
         return new LambdaStep
         {
             RecordWith = b =>
@@ -66,8 +67,8 @@ internal static class QuickAccessSteps
     // Setup: the previous DOS Devices value, only while it still points at the folder CPFS recorded.
     public static LambdaStep OldMap(SetupRun run)
     {
-        var letter = run.OldLetter ?? throw new InvalidOperationException("No previous drive letter is recorded.");
-        var target = Planner.DosTarget(run.Original!.OwnDrivePath ?? throw new InvalidOperationException("The previous drive's folder is not recorded."));
+        var letter = run.OldLetter ?? throw new CpfsException("Err_NoOldLetter");
+        var target = Planner.DosTarget(run.Original!.OwnDrivePath ?? throw new CpfsException("Err_NoOldDriveFolder"));
         return new LambdaStep
         {
             Read = () => DosDrives.Read(letter) is null,
@@ -75,7 +76,7 @@ internal static class QuickAccessSteps
             {
                 if (!Same(DosDrives.Read(letter), target))
                 {
-                    throw new InvalidOperationException("Drive " + letter + ": points somewhere CPFS did not set; it is left alone.");
+                    throw new CpfsException("Err_DriveForeign", letter);
                 }
 
                 DosDrives.Delete(letter);
@@ -100,7 +101,7 @@ internal static class QuickAccessSteps
             Read = () => Same(DosDrives.Read(letter), target),
             RecordWith = b =>
             {
-                b!.SetField("DriveLetter", letter.ToString());
+                b!.SetField("DriveLetter", letter);
                 b.TrackCreated("DrivePath", run.SharePath);
                 return BackupWrite.Recorded;
             },
@@ -108,7 +109,7 @@ internal static class QuickAccessSteps
             {
                 if (DosDrives.Read(letter) is { } other)
                 {
-                    throw new InvalidOperationException("Drive " + letter + ": appeared after the plan was made (" + other + "). Read the plan again.");
+                    throw new CpfsException("Err_DriveAppeared", letter, other);
                 }
 
                 DosDrives.Set(letter, target);
@@ -156,7 +157,7 @@ internal static class QuickAccessSteps
     // Setup: the previous letter's CPFS icon, removed, or put back to the icon it had before CPFS.
     public static LambdaStep OldIcon(SetupRun run)
     {
-        var letter = run.OldLetter ?? throw new InvalidOperationException("No previous drive letter is recorded.");
+        var letter = run.OldLetter ?? throw new CpfsException("Err_NoOldLetter");
         var original = run.Original!.BackupDriveIcon(letter);
         bool AtTarget() => original is null ? DriveIcons.Read(letter) is null : string.Equals(DriveIcons.Read(letter), original, StringComparison.OrdinalIgnoreCase);
         return new LambdaStep
@@ -166,7 +167,7 @@ internal static class QuickAccessSteps
             {
                 if (!Planner.IsOwnIcon(DriveIcons.Read(letter), CpfsIconFile.Path))
                 {
-                    throw new InvalidOperationException("The icon of drive " + letter + ": changed after the plan was made. Read the plan again.");
+                    throw new CpfsException("Err_DriveIconChanged", letter);
                 }
 
                 if (original is null)
@@ -200,7 +201,7 @@ internal static class QuickAccessSteps
                 {
                     if (item.Action != PlanAction.Ask)
                     {
-                        throw new InvalidOperationException("Drive " + letter + ": got an icon after the plan was made. Read the plan again.");
+                        throw new CpfsException("Err_DriveIconAppeared", letter);
                     }
 
                     if (item.BackupNeeded && b!.BackupDriveIcon(letter, before) == BackupWrite.NoBackup)
@@ -227,11 +228,11 @@ internal static class QuickAccessSteps
     // recorded folder.
     public static LambdaStep Explorer(SetupRun run, PlanItem item)
     {
-        var sid = DesktopUser.Current.Sid ?? throw new InvalidOperationException(SessionDrive.NoDesktopUser + ".");
+        var sid = DesktopUser.Current.Sid ?? throw new CpfsException(SessionDrive.NoDesktopUserKey);
         var recorded = run.Original?.TrackedExplorerEntry;
         if (item.Action == PlanAction.RemoveIfOurs)
         {
-            var old = recorded?.Folder ?? throw new InvalidOperationException("No File Explorer entry is recorded.");
+            var old = recorded?.Folder ?? throw new CpfsException("Err_NoExplorerEntry");
             bool Gone() => ExplorerEntryKeys.Read(sid).Entry is null;
             return new LambdaStep
             {
@@ -240,7 +241,7 @@ internal static class QuickAccessSteps
                 {
                     if (ExplorerEntryKeys.Read(sid).Entry is { } now && !ExplorerEntry.SameFolder(now.TargetFolderPath, old))
                     {
-                        throw new StepUnsupportedException("The File Explorer entry opens another folder now, so it is left as it is.");
+                        throw new StepUnsupportedException("Err_ExplorerOtherFolder");
                     }
 
                     ExplorerEntryKeys.Delete(sid);
@@ -262,13 +263,13 @@ internal static class QuickAccessSteps
                 var now = ExplorerEntryKeys.Read(sid);
                 if (!now.Loaded)
                 {
-                    throw new InvalidOperationException("The desktop user's settings are not loaded. Read the plan again.");
+                    throw new CpfsException("Err_UserSettingsNotLoaded");
                 }
 
                 var ours = now.Entry is { } e && recorded is not null && ExplorerEntry.SameFolder(e.TargetFolderPath, recorded.Folder);
                 if (now.Entry is not null && !ours && item.Action != PlanAction.Ask)
                 {
-                    throw new InvalidOperationException("An entry under CPFS's identifier appeared in File Explorer after the plan was made. Read the plan again.");
+                    throw new CpfsException("Err_ExplorerAppeared");
                 }
 
                 b!.TrackExplorerEntry(sid, folder, name);
@@ -288,7 +289,7 @@ internal static class QuickAccessSteps
     // Setup: CPFS's own shortcut, made before it carried an icon, gets the CPFS icon.
     public static LambdaStep ShortcutIcon(SetupRun run)
     {
-        var file = FindShortcutFile(run) ?? throw new InvalidOperationException("The shortcut has no path.");
+        var file = FindShortcutFile(run) ?? throw new CpfsException("Err_ShortcutNoPath");
         var icon = CpfsIconFile.Path;
         bool AtTarget() => string.Equals(Shortcuts.IconOf(file), icon, StringComparison.OrdinalIgnoreCase) && File.Exists(icon);
         return new LambdaStep
@@ -303,7 +304,7 @@ internal static class QuickAccessSteps
             {
                 if (Shortcuts.IconOf(file) is not { Length: 0 })
                 {
-                    throw new StepUnsupportedException("The shortcut " + Path.GetFileName(file) + " has an icon of its own now, so it is left as it is.");
+                    throw new StepUnsupportedException("Err_ShortcutOwnIcon", Path.GetFileName(file));
                 }
 
                 CpfsIconFile.Write();
@@ -329,7 +330,7 @@ internal static class QuickAccessSteps
     // Setup: the shortcut recorded under another name. It goes only while it still points at the folder it was made for.
     public static LambdaStep OldShortcut(SetupRun run)
     {
-        var file = run.Original?.Shortcut ?? throw new InvalidOperationException("No previous shortcut is recorded.");
+        var file = run.Original?.Shortcut ?? throw new CpfsException("Err_NoOldShortcut");
         return new LambdaStep
         {
             Read = () => !File.Exists(file),
@@ -338,7 +339,7 @@ internal static class QuickAccessSteps
                 var target = Shortcuts.TargetOf(file);
                 if (!SamePath(target, run.Original!.SharePath) && !SamePath(target, run.SharePath))
                 {
-                    throw new StepUnsupportedException("The shortcut " + Path.GetFileName(file) + " no longer points to the shared folder, so it is left in place.");
+                    throw new StepUnsupportedException("Err_ShortcutElsewhere", Path.GetFileName(file));
                 }
 
                 Shortcuts.Delete(file);
@@ -351,7 +352,7 @@ internal static class QuickAccessSteps
     // Setup: the shortcut, recorded before it is created; a file CPFS did not record is never overwritten.
     public static LambdaStep Shortcut(SetupRun run, PlanItem item)
     {
-        var file = item.Subject.Data ?? throw new InvalidOperationException("The shortcut has no path.");
+        var file = item.Subject.Data ?? throw new CpfsException("Err_ShortcutNoPath");
         bool AtTarget() => File.Exists(file) && SamePath(Shortcuts.TargetOf(file), run.SharePath);
         if (item.Action == PlanAction.Change)
         {
@@ -363,7 +364,7 @@ internal static class QuickAccessSteps
                     var target = Shortcuts.TargetOf(file);
                     if (!SamePath(target, run.Original?.SharePath))
                     {
-                        throw new StepUnsupportedException("The shortcut " + Path.GetFileName(file) + " no longer points to the old shared folder, so it is left as it is.");
+                        throw new StepUnsupportedException("Err_ShortcutOldElsewhere", Path.GetFileName(file));
                     }
 
                     Shortcuts.Retarget(file, run.SharePath, run.ShortcutDescription);
@@ -386,7 +387,7 @@ internal static class QuickAccessSteps
                     return true;
                 }
 
-                throw new InvalidOperationException("A file named " + Path.GetFileName(file) + " appeared after the plan was made. Read the plan again.");
+                throw new CpfsException("Err_FileAppeared", Path.GetFileName(file));
             },
             RecordWith = b =>
             {
@@ -423,7 +424,7 @@ internal static class QuickAccessSteps
 
                 if (original is not null || !Ours(current, run.Config))
                 {
-                    throw new InvalidOperationException("The name of drive " + letter + ": changed after the plan was made. Read the plan again.");
+                    throw new CpfsException("Err_DriveNameChanged", letter);
                 }
 
                 DriveNames.Delete(letter);
@@ -446,7 +447,7 @@ internal static class QuickAccessSteps
                 var current = DriveIcons.Read(letter);
                 if (current is not null && !Planner.IsOwnIcon(current, CpfsIconFile.Path))
                 {
-                    throw new InvalidOperationException("The icon of drive " + letter + ": changed after the plan was made. Read the plan again.");
+                    throw new CpfsException("Err_DriveIconChanged", letter);
                 }
 
                 if (original is null)
@@ -475,7 +476,7 @@ internal static class QuickAccessSteps
     public static LambdaStep UninstallSession(UninstallRun run)
     {
         var letter = RecordedLetter(run.Config);
-        var path = run.Config!.OwnDrivePath ?? throw new InvalidOperationException("The drive's folder is not recorded.");
+        var path = run.Config!.OwnDrivePath ?? throw new CpfsException("Err_NoDriveFolder");
         return new LambdaStep { Do = () => SessionDrive.Unmap(letter, path) };
     }
 
@@ -483,7 +484,7 @@ internal static class QuickAccessSteps
     public static LambdaStep UninstallMap(UninstallRun run)
     {
         var letter = RecordedLetter(run.Config);
-        var target = Planner.DosTarget(run.Config!.OwnDrivePath ?? throw new InvalidOperationException("The drive's folder is not recorded."));
+        var target = Planner.DosTarget(run.Config!.OwnDrivePath ?? throw new CpfsException("Err_NoDriveFolder"));
         return new LambdaStep
         {
             Read = () => DosDrives.Read(letter) is null,
@@ -491,7 +492,7 @@ internal static class QuickAccessSteps
             {
                 if (!Same(DosDrives.Read(letter), target))
                 {
-                    throw new InvalidOperationException("Drive " + letter + ": points somewhere CPFS did not set; it is left alone.");
+                    throw new CpfsException("Err_DriveForeign", letter);
                 }
 
                 DosDrives.Delete(letter);
@@ -506,8 +507,8 @@ internal static class QuickAccessSteps
     public static LambdaStep UninstallExplorer(UninstallRun run)
     {
         var recorded = run.Config?.TrackedExplorerEntry;
-        var sid = recorded?.Sid ?? throw new InvalidOperationException("No File Explorer entry is recorded.");
-        var folder = recorded.Folder ?? throw new InvalidOperationException("The File Explorer entry's folder is not recorded.");
+        var sid = recorded?.Sid ?? throw new CpfsException("Err_NoExplorerEntry");
+        var folder = recorded.Folder ?? throw new CpfsException("Err_NoExplorerFolder");
         bool Gone() => ExplorerEntryKeys.Read(sid) is { Loaded: true, Entry: null };
         return new LambdaStep
         {
@@ -517,12 +518,12 @@ internal static class QuickAccessSteps
                 var now = ExplorerEntryKeys.Read(sid);
                 if (!now.Loaded)
                 {
-                    throw new StepUnsupportedException("The Windows user the File Explorer entry belongs to is not signed in, so it stays.");
+                    throw new StepUnsupportedException("Err_ExplorerUserAway");
                 }
 
                 if (now.Entry is { } e && !ExplorerEntry.SameFolder(e.TargetFolderPath, folder))
                 {
-                    throw new StepUnsupportedException("The File Explorer entry opens another folder now, so it is left as it is.");
+                    throw new StepUnsupportedException("Err_ExplorerOtherFolder");
                 }
 
                 ExplorerEntryKeys.Delete(sid);
@@ -534,7 +535,7 @@ internal static class QuickAccessSteps
     // Uninstall: the recorded shortcut, only while it points at the shared folder.
     public static LambdaStep UninstallShortcut(UninstallRun run)
     {
-        var file = run.Config?.Shortcut ?? throw new InvalidOperationException("No shortcut is recorded.");
+        var file = run.Config?.Shortcut ?? throw new CpfsException("Err_NoShortcut");
         return new LambdaStep
         {
             Read = () => !File.Exists(file),
@@ -542,7 +543,7 @@ internal static class QuickAccessSteps
             {
                 if (!SamePath(Shortcuts.TargetOf(file), run.SharePath))
                 {
-                    throw new StepUnsupportedException("The shortcut " + Path.GetFileName(file) + " no longer points to the shared folder, so it is left in place.");
+                    throw new StepUnsupportedException("Err_ShortcutElsewhere", Path.GetFileName(file));
                 }
 
                 Shortcuts.Delete(file);
@@ -552,7 +553,7 @@ internal static class QuickAccessSteps
     }
 
     private static char RecordedLetter(ConfigDocument? config) =>
-        config?.DriveLetter is { Length: 1 } l ? char.ToUpperInvariant(l[0]) : throw new InvalidOperationException("No drive letter is recorded.");
+        config?.DriveLetter is { Length: 1 } l ? char.ToUpperInvariant(l[0]) : throw new CpfsException("Err_NoLetterRecorded");
 
     private static bool Ours(string? label, ConfigDocument? config) =>
         label is not null && config?.OwnDriveLabel is { } own && string.Equals(label, own, StringComparison.OrdinalIgnoreCase);

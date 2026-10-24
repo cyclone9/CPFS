@@ -7,6 +7,7 @@ using System.Security.Principal;
 using Cpfs.Core.Apply;
 using Cpfs.Core.Config;
 using Cpfs.Core.Planning;
+using Cpfs.Core.Text;
 
 namespace Cpfs.Windows.Apply;
 
@@ -148,20 +149,19 @@ internal static class UninstallSteps
     {
         Do = () =>
         {
-            var from = run.UserSid ?? throw new InvalidOperationException("The SMB account's SID is not known.");
-            var to = run.DesktopSid ?? throw new InvalidOperationException("The desktop user could not be found.");
+            var from = run.UserSid ?? throw new CpfsException("Err_SmbSidUnknown");
+            var to = run.DesktopSid ?? throw new CpfsException("Err_DesktopUserUnknown");
             var (changed, failed) = Folders.GiveOwnership(run.SharePath, from, to);
-            var counts = "owner changed for " + changed.ToString(CultureInfo.InvariantCulture) + " items, "
-                + failed.ToString(CultureInfo.InvariantCulture) + " could not be read or changed";
-            AppLog.Write("uninstall", "Ownership: " + counts);
+            AppLog.Write("uninstall", "Ownership: owner changed for " + changed.ToString(CultureInfo.InvariantCulture) + " items, "
+                + failed.ToString(CultureInfo.InvariantCulture) + " could not be read or changed");
             if (failed > 0 && changed == 0)
             {
-                throw new InvalidOperationException("Ownership was not changed: " + counts + ".");
+                throw new CpfsException("Err_OwnerNotChanged", changed, failed);
             }
 
             if (failed > 0)
             {
-                throw new StepPartialException("Ownership partly changed: " + counts + ".");
+                throw new StepPartialException("Err_OwnerPartial", changed, failed);
             }
         },
     };
@@ -312,7 +312,7 @@ internal static class UninstallSteps
         var location = entry?.Location;
         if (entry is null || location is null || location.Root != RegistryRoot.LocalMachine)
         {
-            throw new InvalidOperationException("The backup of " + name + " is not a value CPFS can restore.");
+            throw new CpfsException("Err_BackupNotRestorable", name);
         }
 
         // Present but without a value: the original is unknown, so nothing is written (the planner shows it as kept).
@@ -355,7 +355,7 @@ internal static class UninstallSteps
             "Automatic" => 2,
             "Manual" => 3,
             "Disabled" => 4,
-            _ => throw new InvalidOperationException("The backed-up start type is not one CPFS restores."),
+            _ => throw new CpfsException("Err_StartTypeNotRestorable"),
         };
         return new LambdaStep
         {
@@ -439,8 +439,8 @@ internal static class UninstallSteps
     {
         Do = () =>
         {
-            var folder = run.Documents ?? throw new InvalidOperationException("The desktop user's Documents folder could not be found.");
-            var bytes = run.ConfigBytes ?? throw new InvalidOperationException("config.json could not be read.");
+            var folder = run.Documents ?? throw new CpfsException("Err_NoDocuments");
+            var bytes = run.ConfigBytes ?? throw new CpfsException("Err_ConfigNotRead");
             var stem = Path.Combine(folder, "CPFS-config-backup-" + DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture));
             for (var n = 0; ; n++)
             {
@@ -493,7 +493,7 @@ internal static class UninstallSteps
         {
             if (Directory.EnumerateFileSystemEntries(AutoPrivateCopy.Folder).Any())
             {
-                throw new StepPartialException(AutoPrivateCopy.Folder + " is not empty, so CPFS leaves it.");
+                throw new StepPartialException("Err_FolderNotEmpty", AutoPrivateCopy.Folder);
             }
 
             AutoPrivateCopy.RemoveFolder();
@@ -513,7 +513,7 @@ internal static class UninstallSteps
             {
                 if (!Cpfs.Core.Validation.Validators.ComputerName(original).IsValid)
                 {
-                    throw new StepUnsupportedException("The name in the backup, " + original + ", is not one CPFS can set; the computer keeps its name.");
+                    throw new StepUnsupportedException("Err_BackupNameInvalid", original);
                 }
 
                 ComputerRename.Set(original);

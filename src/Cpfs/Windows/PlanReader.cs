@@ -12,7 +12,9 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using Cpfs.Core.Connect;
 using Cpfs.Core.Drives;
+using Cpfs.Core.Apply;
 using Cpfs.Core.Planning;
+using Cpfs.Core.Text;
 using Cpfs.Core.Validation;
 using Microsoft.Win32;
 
@@ -93,7 +95,7 @@ internal static class PlanReader
     public static Reading<ExplorerHive> ExplorerEntryFor(string? sid) => Part("explorer entry", () =>
         sid is not null ? Apply.ExplorerEntryKeys.Read(sid)
         : !Startup.IsElevated ? Apply.ExplorerEntryKeys.ReadCurrentUser()
-        : throw new InvalidOperationException(Apply.SessionDrive.NoDesktopUser));
+        : throw new CpfsException(Apply.SessionDrive.NoDesktopUserKey));
 
     public static ProtectedFolders ProtectedFolders()
     {
@@ -140,7 +142,10 @@ internal static class PlanReader
             // Elevated, a refusal is a failure: offering "Continue as administrator" again would not help.
             var needsAdmin = State.IsAccessDenied(ex) && !Startup.IsElevated;
             AppLog.Write("plan", name + ": " + (needsAdmin ? "needs administrator" : "failed") + " (" + text + ")");
-            return needsAdmin ? Reading.NeedsAdmin<T>(text) : Reading.Failed<T>(text);
+
+            // CPFS's own sentence goes on screen in the app's language.
+            var shown = StepErrors.TextOf(inner) is { } own ? Loc.Instance.Text(own) : text;
+            return needsAdmin ? Reading.NeedsAdmin<T>(shown) : Reading.Failed<T>(shown);
         }
     }
 
@@ -242,7 +247,7 @@ internal static class PlanReader
     {
         using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
         using var key = hklm.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters")
-            ?? throw new InvalidOperationException("LanmanServer\\Parameters is missing");
+            ?? throw new CpfsException("Err_ServerKeyMissing");
         bool Flag(string name) => key.GetValue(name) is int value ? value != 0 : true;
         return new SmbServerInfo(Flag("SMB1"), Flag("SMB2"), Flag("RejectUnencryptedAccess"));
     }
@@ -297,7 +302,7 @@ internal static class PlanReader
 
                 var sddl = StateReader.Prop(share, "SecurityDescriptor") as string;
                 AppLog.Write("plan", "Share access: GetAccessControlEntries " + why + "; " + (sddl is null ? "no security descriptor" : "read from the security descriptor"));
-                return sddl is null ? throw new InvalidOperationException("No share permissions returned") : FromSddl(sddl);
+                return sddl is null ? throw new CpfsException("Err_NoSharePermissions") : FromSddl(sddl);
             }
         }
 
@@ -424,7 +429,7 @@ internal static class PlanReader
 
             if (info.SubCategory != guid)
             {
-                throw new InvalidOperationException("AuditQuerySystemPolicy returned another subcategory");
+                throw new CpfsException("Err_AuditOtherSubcategory");
             }
 
             return new AuditSetting((info.AuditingInformation & 1) != 0, (info.AuditingInformation & 2) != 0);

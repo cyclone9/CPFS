@@ -147,6 +147,108 @@ public class AutoPrivateRenameTests
     }
 
     [Fact]
+    public void SwitchedOffTheEmptyFolderCpfsCreatedGoesAfterTheCopyAndAnyOtherStays()
+    {
+        static ConfigDocument Recorded(bool? folderOurs, bool exe = true) => With(PlannerTests.Fixture(), r =>
+        {
+            var created = new JsonObject();
+            if (exe)
+            {
+                created["AutoPrivateExe"] = new JsonObject { ["Path"] = Exe, ["Sha256"] = "ab" };
+            }
+
+            if (folderOurs is { } ours)
+            {
+                created["AutoPrivateFolder"] = new JsonObject { ["Path"] = Folder, ["CreatedByCpfs"] = ours };
+            }
+
+            ((JsonObject)r["Tracked"]!)["Created"] = created;
+        });
+
+        var off = Setup(Machine(Wanted(), new AutoPrivateFiles(true, true, false), folder: new AutoPrivateFolderInfo(true, true, false)), Recorded(true),
+            a => a with { AutoPrivate = false });
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(off, "auto.folder").Action);
+        Assert.Equal(Planner.R.AutoFolderRemove, Item(off, "auto.folder").ReasonKey);
+        var keys = ApplyList.Setup(off).Select(e => e.Item.Key).ToList();
+        Assert.True(keys.IndexOf("auto.task") < keys.IndexOf("auto.exe") && keys.IndexOf("auto.exe") < keys.IndexOf("auto.folder"));
+
+        // Already without the copy: the empty folder still goes.
+        var noCopy = Setup(Machine(null, new AutoPrivateFiles(false, false, false), folder: new AutoPrivateFolderInfo(true, true, false)), Recorded(true, exe: false),
+            a => a with { AutoPrivate = false });
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(noCopy, "auto.folder").Action);
+
+        var foreign = Setup(Machine(Wanted(), new AutoPrivateFiles(true, true, false), folder: new AutoPrivateFolderInfo(true, true, false)), Recorded(false),
+            a => a with { AutoPrivate = false });
+        Assert.Equal(PlanAction.Keep, Item(foreign, "auto.folder").Action);
+        Assert.Equal(Planner.R.AutoFolderKeepForeign, Item(foreign, "auto.folder").ReasonKey);
+
+        var others = Setup(Machine(Wanted(), new AutoPrivateFiles(true, true, false), folder: new AutoPrivateFolderInfo(true, true, true)), Recorded(true),
+            a => a with { AutoPrivate = false });
+        Assert.Equal(Planner.R.AutoFolderKeepNotEmpty, Item(others, "auto.folder").ReasonKey);
+
+        // A copy CPFS didn't record stays, and so does its folder.
+        var unrecordedCopy = Setup(Machine(Wanted(), new AutoPrivateFiles(true, true, false), folder: new AutoPrivateFolderInfo(true, true, false)), Recorded(true, exe: false),
+            a => a with { AutoPrivate = false });
+        Assert.Null(unrecordedCopy.Find("auto.exe"));
+        Assert.Equal(Planner.R.AutoFolderKeepNotEmpty, Item(unrecordedCopy, "auto.folder").ReasonKey);
+
+        // Nothing recorded, unread or already gone: no folder item.
+        Assert.Null(Setup(Machine(Wanted(), new AutoPrivateFiles(true, true, false)), PlannerTests.Fixture(), a => a with { AutoPrivate = false }).Find("auto.folder"));
+        Assert.Null(Setup(Machine(Wanted(), new AutoPrivateFiles(true, true, false)) with { AutoPrivateFolder = Reading.Failed<AutoPrivateFolderInfo>("x") }, Recorded(true),
+            a => a with { AutoPrivate = false }).Find("auto.folder"));
+        Assert.Null(Setup(Machine(null, new AutoPrivateFiles(false, false, false), folder: new AutoPrivateFolderInfo(false, false, false)), Recorded(true, exe: false),
+            a => a with { AutoPrivate = false }).Find("auto.folder"));
+    }
+
+    [Theory]
+    [InlineData(0, "AutoResult_NothingToDo", null)]
+    [InlineData(AutoPrivateExit.NotFromCopy, "AutoResult_NotFromCopy", null)]
+    [InlineData(AutoPrivateExit.NotElevated, "AutoResult_NotElevated", null)]
+    [InlineData(AutoPrivateExit.CopyFolderNotLocked, "AutoResult_CopyFolderNotLocked", null)]
+    [InlineData(AutoPrivateExit.DataFolderNotLocked, "AutoResult_DataFolderNotLocked", null)]
+    [InlineData(AutoPrivateExit.ConfigUnreadable, "AutoResult_ConfigUnreadable", null)]
+    [InlineData(AutoPrivateExit.Off, "AutoResult_Off", null)]
+    [InlineData(AutoPrivateExit.NotTaken, "AutoResult_NotTaken", null)]
+    [InlineData(AutoPrivateExit.Crashed, "AutoResult_Crashed", null)]
+    [InlineData(101, "AutoResult_SwitchedOne", "1")]
+    [InlineData(103, "AutoResult_SwitchedMany", "3")]
+    [InlineData(199, "AutoResult_SwitchedMany", "99")]
+    [InlineData(0x00041303, "AutoResult_HasNotRun", null)]
+    [InlineData(0x00041301, "AutoResult_Running", null)]
+    [InlineData(0x00041306, "AutoResult_Terminated", null)]
+    [InlineData(unchecked((int)0x8004131F), "AutoResult_AlreadyRunning", null)]
+    [InlineData(unchecked((int)0x80070002), "AutoResult_ProgramNotFound", null)]
+    [InlineData(2, "AutoResult_Other", "0x00000002")]
+    [InlineData(100, "AutoResult_Other", "0x00000064")]
+    [InlineData(200, "AutoResult_Other", "0x000000C8")]
+    public void EveryAutoPrivateExitCodeHasItsOwnWords(int code, string key, string? arg)
+    {
+        Assert.Equal((key, arg), AutoPrivateExit.Describe(code));
+        Assert.Contains(key, AutoPrivateExit.Keys);
+    }
+
+    [Fact]
+    public void RefusalsAndSwitchedCountsNeverShareACode()
+    {
+        var refusals = new[]
+        {
+            AutoPrivateExit.NotFromCopy, AutoPrivateExit.NotElevated, AutoPrivateExit.CopyFolderNotLocked, AutoPrivateExit.DataFolderNotLocked,
+            AutoPrivateExit.ConfigUnreadable, AutoPrivateExit.Off, AutoPrivateExit.NotTaken, AutoPrivateExit.Crashed,
+        };
+        Assert.Equal(refusals.Length, refusals.Distinct().Count());
+        Assert.DoesNotContain(AutoPrivateExit.NothingToDo, refusals);
+        Assert.All(Enumerable.Range(1, 120).Select(AutoPrivateExit.Switched), c => Assert.DoesNotContain(c, refusals));
+        Assert.Equal(AutoPrivateExit.NothingToDo, AutoPrivateExit.Switched(0));
+        Assert.Equal(101, AutoPrivateExit.Switched(1));
+        Assert.Equal(199, AutoPrivateExit.Switched(500));
+
+        Assert.False(AutoPrivateExit.HasRun(new DateTime(1899, 12, 30), 0));
+        Assert.False(AutoPrivateExit.HasRun(new DateTime(2026, 10, 24), AutoPrivateExit.TaskHasNotRun));
+        Assert.False(AutoPrivateExit.HasRun(null, 0));
+        Assert.True(AutoPrivateExit.HasRun(new DateTime(2026, 10, 24), 101));
+    }
+
+    [Fact]
     public void AutoPrivateCannotBePlannedWithoutTheDataFolderTheFilesOrTheTask()
     {
         foreach (var s in new[]

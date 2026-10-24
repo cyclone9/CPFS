@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security;
 using System.Security.Principal;
 using Cpfs.Core.Apply;
 using Cpfs.Core.Config;
 using Cpfs.Core.Planning;
+using Cpfs.Core.Text;
 
 namespace Cpfs.Windows.Apply;
 
@@ -67,7 +69,7 @@ internal sealed class SetupRun
 
     public char? OldLetter => Original?.DriveLetter is { Length: 1 } l ? char.ToUpperInvariant(l[0]) : null;
 
-    public char Letter => Answers.DriveLetter is { } l ? char.ToUpperInvariant(l) : throw new InvalidOperationException("No drive letter was chosen.");
+    public char Letter => Answers.DriveLetter is { } l ? char.ToUpperInvariant(l) : throw new CpfsException("Err_NoDriveLetter");
 
     public string DriveName => Answers.DriveName.Trim();
 
@@ -122,7 +124,7 @@ internal sealed class SetupRun
     }
 
     public SecurityIdentifier UserSid() =>
-        LocalAccounts.GetUser(User)?.Sid ?? throw new InvalidOperationException("The SMB account does not exist.");
+        LocalAccounts.GetUser(User)?.Sid ?? throw new CpfsException("Err_SmbAccountMissing");
 
     public string UserAccount() => UserSid().Translate(typeof(NTAccount)).Value;
 }
@@ -171,6 +173,7 @@ internal static class SetupSteps
             "fw.builtin" => BuiltIn(run, arg),
             "net" => Network(run, arg),
             "auto.skip" => AutoSkip(run),
+            "auto.folder" when item.Action == PlanAction.RemoveIfOurs => RemoveCopyFolder(),
             "auto.folder" => CopyFolder(run),
             "auto.exe" when item.Action == PlanAction.RemoveIfOurs => RemoveCopy(),
             "auto.exe" => Copy(),
@@ -236,7 +239,7 @@ internal static class SetupSteps
             if (exists && value is null)
             {
                 // Restoring writes a DWORD, as the scripts do; a value of another type would be lost.
-                throw new InvalidOperationException(h.Name + " exists but is not a DWORD; Setup stops before changing anything.");
+                throw new CpfsException("Err_NotDword", h.Name);
             }
 
             registry.Add(new RegistryBackup(@"HKLM:\" + h.Key, h.Name, exists, value));
@@ -246,7 +249,7 @@ internal static class SetupSteps
         var smb = PlanReader.SmbServer();
         if (smb.Smb2 is not { } smb2 || smb.RejectUnencrypted is not { } reject)
         {
-            throw new InvalidOperationException("The SMB server settings could not be read for the backup.");
+            throw new CpfsException("Err_ServerUnreadForBackup");
         }
 
         var names = PlanReader.ComputerName();
@@ -278,14 +281,14 @@ internal static class SetupSteps
     private static LambdaStep CreateAccount(SetupRun run) => new LambdaStep
     {
         Read = () => LocalAccounts.GetUser(run.User) is not null
-            ? throw new InvalidOperationException("The account " + run.User + " appeared after the plan was made. Read the plan again.")
+            ? throw new CpfsException("Err_AccountAppeared", run.User)
             : false,
 
         // Recorded before it exists, so an account created by a step that then fails is still CPFS's to remove.
         RecordWith = b => b!.TrackUser(run.User, false, false, null) ? BackupWrite.Recorded : BackupWrite.NotNeeded,
         Do = () =>
         {
-            Accounts.Create(run.User, run.Password ?? throw new InvalidOperationException("No password was given for the new account."));
+            Accounts.Create(run.User, run.Password ?? throw new CpfsException("Err_NoPasswordNew"));
             run.CreatedAccount = true;
         },
         TrackWith = b => b!.SetField("SmbUser", run.User),
@@ -297,7 +300,7 @@ internal static class SetupSteps
         Read = () => run.Book.IsTrackedUser(run.User),
         RecordWith = b =>
         {
-            var info = PlanReader.User(run.User) ?? throw new InvalidOperationException("The account is gone.");
+            var info = PlanReader.User(run.User) ?? throw new CpfsException("Err_AccountGone");
             var groups = new List<string>();
             if (info.IsAdmin == true)
             {
@@ -319,7 +322,7 @@ internal static class SetupSteps
 
     private static LambdaStep Flag(SetupRun run, Func<LocalUser, bool> atTarget, Func<uint, uint> change) => new LambdaStep
     {
-        Read = () => atTarget(LocalAccounts.GetUser(run.User) ?? throw new InvalidOperationException("The account is gone.")),
+        Read = () => atTarget(LocalAccounts.GetUser(run.User) ?? throw new CpfsException("Err_AccountGone")),
         Do = () => Accounts.SetFlags(run.User, change),
         Check = () => atTarget(LocalAccounts.GetUser(run.User)!),
     };
@@ -352,7 +355,7 @@ internal static class SetupSteps
     private static LambdaStep Password(SetupRun run) => new LambdaStep
     {
         Read = () => run.CreatedAccount,
-        Do = () => Accounts.SetPassword(run.User, run.Password ?? throw new InvalidOperationException("No password was given.")),
+        Do = () => Accounts.SetPassword(run.User, run.Password ?? throw new CpfsException("Err_NoPassword")),
     };
 
     private static LambdaStep FolderExists(SetupRun run) => new LambdaStep
@@ -417,7 +420,7 @@ internal static class SetupSteps
             return new LambdaStep
             {
                 Read = () => ReadShare(run.ShareName) is not null
-                    && (ShareAtTarget(run) ? true : throw new InvalidOperationException("A share named " + run.ShareName + " appeared after the plan was made. Read the plan again.")),
+                    && (ShareAtTarget(run) ? true : throw new CpfsException("Err_ShareAppeared", run.ShareName)),
                 Do = () => Shares.Create(run.ShareName, run.SharePath, run.Answers.Strict, run.UserAccount()),
                 TrackWith = b =>
                 {
@@ -441,10 +444,10 @@ internal static class SetupSteps
                     return;
                 }
 
-                var current = ReadShare(run.ShareName) ?? throw new InvalidOperationException("The share is gone.");
+                var current = ReadShare(run.ShareName) ?? throw new CpfsException("Err_ShareGone");
                 if (!IsOurs(run, current, null) && !string.Equals(current.Name, ConfigName(run), StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new InvalidOperationException("The share " + current.Name + " is not CPFS's; it is left alone.");
+                    throw new CpfsException("Err_ShareNotOurs", current.Name);
                 }
 
                 Shares.CloseSessions(run.User);
@@ -465,7 +468,7 @@ internal static class SetupSteps
         // Recorded before it is removed: Uninstall shows it as a share to recreate by hand.
         RecordWith = b =>
         {
-            using var share = Shares.Find(name) ?? throw new InvalidOperationException("The share is gone.");
+            using var share = Shares.Find(name) ?? throw new CpfsException("Err_ShareGone");
             b!.TrackReplacedShare(name, StateReader.Prop(share, "Path") as string, StateReader.Prop(share, "Description") as string,
                 StateReader.Prop(share, "SecurityDescriptor") as string);
             return BackupWrite.Recorded;
@@ -483,7 +486,7 @@ internal static class SetupSteps
             var config = ConfigReader.Parse(ConfigWriter.Serialize(run.Book.Root));
             if (!IsOurs(run, share, config))
             {
-                throw new InvalidOperationException("The share " + name + " is not CPFS's; it is left alone.");
+                throw new CpfsException("Err_ShareNotOurs", name);
             }
 
             Shares.CloseSessions(run.User);
@@ -662,7 +665,7 @@ internal static class SetupSteps
     private static LambdaStep Guest() => new LambdaStep
     {
         Read = () => PlanReader.GuestEnabled() != true,
-        Do = () => Accounts.SetFlags(Accounts.GuestName() ?? throw new InvalidOperationException("No account with RID 501."), f => f | WinApi.UfAccountDisable),
+        Do = () => Accounts.SetFlags(Accounts.GuestName() ?? throw new CpfsException("Err_NoGuest"), f => f | WinApi.UfAccountDisable),
         Check = () => PlanReader.GuestEnabled() != true,
     };
 
@@ -797,7 +800,7 @@ internal static class SetupSteps
             }
         }
 
-        throw new InvalidOperationException("Windows did not take the firewall rule " + spec.Name + " as written (" + fields + "): " + after + ".");
+        throw new CpfsException("Err_RuleNotTaken", spec.Name, fields, after);
     }
 
     private static LambdaStep RemoveRules(string name) => new LambdaStep
@@ -853,12 +856,12 @@ internal static class SetupSteps
     {
         if (!Locked())
         {
-            throw new InvalidOperationException("ProgramData\\CPFS is not locked to SYSTEM and Administrators, so the Auto-Private task is not set up.");
+            throw new CpfsException("Err_DataNotLocked");
         }
 
         if (!Locked(AutoPrivateCopy.Folder))
         {
-            throw new InvalidOperationException(AutoPrivateCopy.Folder + " is not locked to SYSTEM and Administrators, so the Auto-Private task is not set up.");
+            throw new CpfsException("Err_CopyFolderNotLocked", AutoPrivateCopy.Folder);
         }
     }
 
@@ -882,6 +885,24 @@ internal static class SetupSteps
         },
         Do = () => Folders.LockDataFolder(AutoPrivateCopy.Folder),
         Check = () => Locked(AutoPrivateCopy.Folder),
+    };
+
+    // Auto-Private switched off: the folder CPFS created for the copy, after the copy, only while nothing is in it; its
+    // record goes with it, so a later Setup that switches Auto-Private on records it afresh.
+    private static LambdaStep RemoveCopyFolder() => new LambdaStep
+    {
+        Read = () => !Directory.Exists(AutoPrivateCopy.Folder),
+        Do = () =>
+        {
+            if (Directory.EnumerateFileSystemEntries(AutoPrivateCopy.Folder).Any())
+            {
+                throw new StepUnsupportedException("Err_FolderNotEmpty", AutoPrivateCopy.Folder);
+            }
+
+            AutoPrivateCopy.RemoveFolder();
+        },
+        TrackWith = b => b!.TrackCreated("AutoPrivateFolder", null),
+        Check = () => !Directory.Exists(AutoPrivateCopy.Folder),
     };
 
     // The networks left Public, recorded before the task that reads them is created.
@@ -949,7 +970,7 @@ internal static class SetupSteps
             RequireLocked();
             if (!AutoPrivateCopy.IsCurrent())
             {
-                throw new InvalidOperationException("The copy of CPFS in " + AutoPrivateCopy.Folder + " is missing or differs from this program, so the Auto-Private task is not set up.");
+                throw new CpfsException("Err_CopyMissingOrDiffers", AutoPrivateCopy.Folder);
             }
 
             if (AutoPrivateTask.Exists(Planner.AutoPrivateTask))
@@ -1003,12 +1024,12 @@ internal static class SetupSteps
             {
                 if (!Cpfs.Core.Validation.Validators.ComputerName(name, run.User).IsValid)
                 {
-                    throw new InvalidOperationException("The computer name " + name + " is not valid.");
+                    throw new CpfsException("Err_ComputerNameInvalid", name);
                 }
 
                 if (ComputerRename.PartOfDomain())
                 {
-                    throw new InvalidOperationException("This PC is joined to a domain; rename it through the domain.");
+                    throw new CpfsException("Err_DomainRename");
                 }
 
                 using var hklm = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry64);

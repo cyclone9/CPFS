@@ -14,6 +14,7 @@ using System.Security.Principal;
 using System.ServiceProcess;
 using Cpfs.Core.Apply;
 using Cpfs.Core.Planning;
+using Cpfs.Core.Text;
 using Microsoft.Win32;
 
 namespace Cpfs.Windows.Apply;
@@ -67,7 +68,7 @@ internal static class Accounts
     // which the plan wants anyway.
     public static void SetFlags(string name, Func<uint, uint> change)
     {
-        var user = LocalAccounts.GetUser(name) ?? throw new InvalidOperationException("The account does not exist.");
+        var user = LocalAccounts.GetUser(name) ?? throw new CpfsException("Err_AccountMissing");
         var info = new WinApi.UserInfo1008 { Flags = (change(user.Flags) | WinApi.UfScript) & ~WinApi.UfLockout };
         Check(WinApi.NetUserSetInfo(null, name, 1008, ref info, out _), "NetUserSetInfo 1008");
     }
@@ -188,7 +189,7 @@ internal static class Reg
     public static void SetDword(string subKey, string name, int value)
     {
         using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
-        using var key = hklm.CreateSubKey(subKey, writable: true) ?? throw new IOException("Could not open HKLM\\" + subKey);
+        using var key = hklm.CreateSubKey(subKey, writable: true) ?? throw new CpfsException("Err_RegistryOpen", @"HKLM\" + subKey);
         key.SetValue(name, value, RegistryValueKind.DWord);
     }
 
@@ -464,14 +465,14 @@ internal static class Smb1Feature
             CreateNoWindow = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-        }) ?? throw new InvalidOperationException("dism.exe did not start");
+        }) ?? throw new CpfsException("Err_DismNotStarted");
         process.OutputDataReceived += (_, _) => { };
         process.ErrorDataReceived += (_, _) => { };
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
         if (!process.WaitForExit((int)TimeSpan.FromMinutes(15).TotalMilliseconds))
         {
-            throw new System.TimeoutException("dism.exe did not finish within 15 minutes");
+            throw new CpfsException("Err_DismTimeout");
         }
 
         AppLog.Write("apply", "dism.exe exit code " + process.ExitCode.ToString(CultureInfo.InvariantCulture));
@@ -479,7 +480,7 @@ internal static class Smb1Feature
         {
             0 => false,
             3010 => true,
-            var code => throw new InvalidOperationException("dism.exe ended with exit code " + code.ToString(CultureInfo.InvariantCulture)),
+            var code => throw new CpfsException("Err_DismExit", code.ToString(CultureInfo.InvariantCulture)),
         };
     }
 }
@@ -552,8 +553,7 @@ internal static class Wmi
                 var code = Convert.ToInt64(p.Value, CultureInfo.InvariantCulture);
                 if (code != 0)
                 {
-                    throw new InvalidOperationException(call + " returned " + code.ToString(CultureInfo.InvariantCulture)
-                        + " (0x" + code.ToString("X", CultureInfo.InvariantCulture) + ")");
+                    throw new CpfsException("Err_CallReturned", call, code.ToString(CultureInfo.InvariantCulture), code.ToString("X", CultureInfo.InvariantCulture));
                 }
             }
         }
@@ -596,7 +596,7 @@ internal static class Shares
     // In place, as Set-SmbShare does: the share stays, and so do its sessions.
     public static void Update(string name, bool encrypt)
     {
-        using var share = Find(name) ?? throw new InvalidOperationException("The share is gone.");
+        using var share = Find(name) ?? throw new CpfsException("Err_ShareGone");
         Wmi.Set(share, "EncryptData", encrypt);
         Wmi.Set(share, "FolderEnumerationMode", 0);
         Wmi.Set(share, "CachingMode", 0);
@@ -613,7 +613,7 @@ internal static class Shares
     // GrantAccess(AccountName[], AccessRight 0 Full), RevokeAccess and UnblockAccess(AccountName[]).
     public static void Access(string share, string method, string account, int? right = null)
     {
-        using var obj = Find(share) ?? throw new InvalidOperationException("The share is gone.");
+        using var obj = Find(share) ?? throw new CpfsException("Err_ShareGone");
         using var args = obj.GetMethodParameters(method);
         Wmi.Set(args, "AccountName", new[] { account });
         if (right is { } r)
@@ -667,7 +667,7 @@ internal static class SmbServer
         }
         catch (ManagementException ex) when (Wmi.IsUnsupported(ex))
         {
-            throw new StepUnsupportedException(ex.Message, ex);
+            throw new StepUnsupportedException(ex);
         }
     }
 }
@@ -760,7 +760,7 @@ internal static class Firewall
 
         if (Count(name) > 0)
         {
-            throw new InvalidOperationException("Firewall rules named " + name + " could not all be removed.");
+            throw new CpfsException("Err_RulesNotRemoved", name);
         }
     }
 
@@ -780,7 +780,7 @@ internal static class Firewall
         {
             if (rules.Count == 0)
             {
-                throw new InvalidOperationException("The firewall rule " + id + " is not on this PC.");
+                throw new CpfsException("Err_RuleMissing", id);
             }
 
             foreach (var rule in rules)

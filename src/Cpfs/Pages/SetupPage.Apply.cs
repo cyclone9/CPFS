@@ -187,10 +187,10 @@ public partial class SetupPage
 
             var run = new SetupRun(answers, password, plan, ConfigBook.ForSetup(_config));
             var dispatcher = Dispatcher;
-            var result = await Task.Run(() => run.Execute(r => dispatcher.BeginInvoke(new Action(() => views[r.Index].Set(r.Outcome, r.Error)))));
+            var result = await Task.Run(() => run.Execute(r => dispatcher.BeginInvoke(new Action(() => views[r.Index].Set(r)))));
             foreach (var r in result.Reports)
             {
-                views[r.Index].Set(r.Outcome, r.Error);
+                views[r.Index].Set(r);
             }
 
             if (result.Completed)
@@ -229,14 +229,14 @@ public partial class SetupPage
             {
                 var failed = entries.First(x => x.Item.Key == result.FailedKey).Item;
                 Show(ApplyResult, InfoBarSeverity.Error, loc.FormatValues("Apply_FailedTitle", ToView(failed).Subject),
-                    loc.FormatValues("Apply_FailedMsg", result.Error));
+                    loc.FormatValues("Apply_FailedMsg", UiErrors.Of(result.Error, result.ErrorText)));
                 ShowActions(connect: false, report: true);
             }
         }
         catch (Exception ex)
         {
             AppLog.Exception("apply", ex);
-            Show(ApplyResult, InfoBarSeverity.Error, loc["Apply_ErrorTitle"], StepErrors.ForUser(ex));
+            Show(ApplyResult, InfoBarSeverity.Error, loc["Apply_ErrorTitle"], UiErrors.ForUser(ex));
             ShowActions(connect: false, report: true);
         }
         finally

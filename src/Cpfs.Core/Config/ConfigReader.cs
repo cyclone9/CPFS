@@ -2,15 +2,20 @@ using System;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Cpfs.Core.Text;
 
 namespace Cpfs.Core.Config;
 
-public sealed class ConfigFormatException : Exception
+// Its message is the English text; the screen shows Text in the app's language.
+public sealed class ConfigFormatException : Exception, IHasText
 {
-    public ConfigFormatException(string message, Exception? inner = null)
-        : base(message, inner)
+    public ConfigFormatException(Exception? inner, string key, params object?[] args)
+        : base(new TextKey(key, args).ToEnglish(), inner)
     {
+        Text = new TextKey(key, args);
     }
+
+    public TextKey? Text { get; }
 }
 
 // Reads C:\ProgramData\CPFS\config.json as the scripts wrote it (ConvertTo-Json | Set-Content -Encoding UTF8 on
@@ -81,17 +86,17 @@ public static class ConfigReader
         }
         catch (JsonException ex)
         {
-            throw new ConfigFormatException("config.json is not valid JSON: " + ex.Message, ex);
+            throw new ConfigFormatException(ex, "Err_ConfigNotJson", ex.Message);
         }
         catch (ArgumentException ex)
         {
             // Duplicate property names (also when they differ only in case, as ConvertFrom-Json refuses them).
-            throw new ConfigFormatException("config.json has a duplicate property: " + ex.Message, ex);
+            throw new ConfigFormatException(ex, "Err_ConfigDuplicate", ex.Message);
         }
 
         if (node is not JsonObject root)
         {
-            throw new ConfigFormatException("config.json does not hold a JSON object.");
+            throw new ConfigFormatException(null, "Err_ConfigNotObject");
         }
 
         return new ConfigDocument(root, encoding);
@@ -126,7 +131,7 @@ public static class ConfigReader
         }
         catch (DecoderFallbackException ex)
         {
-            throw new ConfigFormatException("config.json has a byte order mark but invalid text after it.", ex);
+            throw new ConfigFormatException(ex, "Err_ConfigBadBom");
         }
     }
 

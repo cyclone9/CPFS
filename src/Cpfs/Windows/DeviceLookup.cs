@@ -100,9 +100,8 @@ internal static class DeviceLookup
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException or ArgumentException or NotSupportedException)
         {
-            var error = ex.GetType().Name + ": " + ex.Message;
-            AppLog.Write("devices", "Could not save " + DevicesPath + ": " + error);
-            return error;
+            AppLog.Write("devices", "Could not save " + DevicesPath + ": " + Core.Apply.StepErrors.ForLog(ex));
+            return UiErrors.ForUser(ex);
         }
     }
 }

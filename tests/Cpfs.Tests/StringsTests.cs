@@ -84,7 +84,7 @@ public class StringsTests
     {
         var english = Load("Strings.resx");
         var keyLike = new Regex("\"([A-Z][A-Za-z]+_[A-Za-z0-9_]*[A-Za-z0-9])\"");
-        var code = Directory.EnumerateFiles(Path.Combine(TestFiles.RepoRoot, "src", "Cpfs"), "*.cs", SearchOption.AllDirectories)
+        var code = new[] { "Cpfs", "Cpfs.Core" }.SelectMany(p => Directory.EnumerateFiles(Path.Combine(TestFiles.RepoRoot, "src", p), "*.cs", SearchOption.AllDirectories))
             .Where(f => !f.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, System.StringComparison.Ordinal));
         foreach (var file in code)
         {
@@ -116,9 +116,9 @@ public class StringsTests
         built.AddRange(new[] { "0", "1", "2", "3", "4" }.Select(e => "TaskState_" + e));
         built.AddRange(new[] { "SegoeUiVariable", "SegoeUi", "Tahoma", "Vazirmatn" }.Select(e => "Font_" + e));
         built.AddRange(new[] { "en", "fa", "ar", "tr" }.SelectMany(l => new[] { "Lang_" + l, "LangNative_" + l }));
-        built.AddRange(new[] { "Uninstall" }.Select(p => "Placeholder_" + p + "_Desc"));
         built.AddRange(Enumerable.Range(0, 5).Select(u => "Size_" + u));
         built.AddRange(Cpfs.Core.Monitor.FailedLogon.KnownReasonKeys);
+        built.AddRange(Cpfs.Core.Planning.AutoPrivateExit.Keys);
         built.AddRange(System.Enum.GetNames<Cpfs.Core.Validation.ValidationError>().Where(e => e != "None").Select(e => "Setup_Form_Error_" + e));
         built.AddRange(System.Enum.GetNames<Cpfs.Core.Planning.PlanAction>().Select(a => "Plan_Badge_" + a));
         built.AddRange(System.Enum.GetNames<Cpfs.Core.Apply.StepOutcome>().Select(o => "Apply_State_" + o));

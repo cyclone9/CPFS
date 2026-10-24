@@ -160,6 +160,26 @@
 
     <ItemsControl x:Name="Sections" Focusable="False" ItemTemplate="{StaticResource SectionTemplate}" />
 
+    <!--  Only when the CPFS-AutoPrivate task exists (AdvancedPage.ReadAutoPrivateAsync).  -->
+    <ui:Card x:Name="AutoPrivateCard" Margin="0,0,0,4" Visibility="Collapsed">
+      <StackPanel>
+        <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Adv_AutoPrivate_Title], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Adv_AutoPrivate_Desc], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock
+          x:Name="AutoPrivateValue"
+          Margin="0,8,0,0"
+          AutomationProperties.LiveSetting="Polite"
+          Style="{StaticResource CardValue}" />
+        <Border
+          x:Name="AutoPrivateAdmin"
+          Margin="0,8,0,0"
+          Style="{StaticResource Badge}"
+          Visibility="Collapsed">
+          <TextBlock Style="{StaticResource BadgeText}" Text="{Binding [Badge_NeedsAdmin], Source={x:Static local:Loc.Instance}}" />
+        </Border>
+      </StackPanel>
+    </ui:Card>
+
     <ui:Card x:Name="HandOverCard" Margin="0,4,0,4" Visibility="Collapsed">
       <StackPanel>
         <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Setup_HandOver_Title], Source={x:Static local:Loc.Instance}}" />

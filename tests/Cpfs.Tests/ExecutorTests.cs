@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using Cpfs.Core.Apply;
 using Cpfs.Core.Config;
 using Cpfs.Core.Planning;
+using Cpfs.Core.Text;
 using Xunit;
 
 namespace Cpfs.Tests;
@@ -152,14 +153,32 @@ public class ExecutorTests
             new ApplyEntry(Item("hardening.a", PlanAction.Change), false),
         };
         var result = run.Execute(entries, null, e => e.Item.Key == "server.reject"
-            ? new LambdaStep { Do = () => throw new StepUnsupportedException("not supported") }
+            ? new LambdaStep { Do = () => throw new StepUnsupportedException("Err_Test") }
             : new LambdaStep { Do = () => run.Calls.Add("a") });
 
         Assert.True(result.Completed);
         Assert.Equal(StepOutcome.Unsupported, result.Reports[0].Outcome);
+        Assert.Equal("Err_Test", result.Reports[0].Text?.Key);
         Assert.Equal(new[] { "a" }, run.Calls);
         Assert.Equal(0, result.Count(StepOutcome.Deferred));
         Assert.Equal(1, result.NotDone);
+    }
+
+    [Fact]
+    public void OwnSentenceTravelsAsItsKeySoThePageCanTranslateIt()
+    {
+        var run = new Run();
+        var entries = new[] { new ApplyEntry(Item("share.main", PlanAction.Change, PlanSection.Share), false) };
+        var result = run.Execute(entries, null, _ => new LambdaStep { Do = () => throw new CpfsException("Err_ShareNotOurs", "Shared") });
+
+        Assert.False(result.Completed);
+        Assert.Equal("Err_ShareNotOurs", result.ErrorText?.Key);
+        Assert.Equal("Err_ShareNotOurs", result.Reports[0].Text?.Key);
+        Assert.Equal(new object?[] { "Shared" }, result.ErrorText!.Args);
+
+        // Without the app's English strings (as here) the message names the key; the log keeps the exception's type.
+        Assert.Equal("Err_ShareNotOurs(Shared)", result.Error);
+        Assert.StartsWith("CpfsException: ", result.Detail, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -172,12 +191,13 @@ public class ExecutorTests
             new ApplyEntry(Item("hardening.a", PlanAction.Change), false),
         };
         var partial = run.Execute(entries, null, e => e.Item.Key == "u.owner"
-            ? new LambdaStep { Do = () => throw new StepPartialException("2 changed, 1 failed") }
+            ? new LambdaStep { Do = () => throw new StepPartialException("Err_OwnerPartial", 2, 1) }
             : new LambdaStep { Do = () => run.Calls.Add("a") });
 
         Assert.True(partial.Completed);
         Assert.Equal(StepOutcome.Partial, partial.Reports[0].Outcome);
-        Assert.Equal("2 changed, 1 failed", partial.Reports[0].Error);
+        Assert.Equal("Err_OwnerPartial", partial.Reports[0].Text?.Key);
+        Assert.Equal(new object?[] { 2, 1 }, partial.Reports[0].Text!.Args);
         Assert.Equal(StepOutcome.Done, partial.Reports[1].Outcome);
         Assert.Equal(1, partial.NotDone);
 

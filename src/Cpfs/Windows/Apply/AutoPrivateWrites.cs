@@ -12,6 +12,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using Cpfs.Core.Planning;
+using Cpfs.Core.Text;
 using Microsoft.Win32;
 
 namespace Cpfs.Windows.Apply;
@@ -170,7 +171,7 @@ internal static class AutoPrivateTask
     {
         if (!string.Equals(name, Planner.AutoPrivateTask, StringComparison.Ordinal) && !string.Equals(name, Planner.LegacyAutoPrivateTask, StringComparison.Ordinal))
         {
-            throw new InvalidOperationException("CPFS deletes no task named " + name + ".");
+            throw new CpfsException("Err_TaskNotOurs", name);
         }
 
         WithFolder(folder =>
@@ -187,12 +188,35 @@ internal static class AutoPrivateTask
         });
     }
 
+    // For the Advanced page, read-only: when the task last ran and its last result; null when there is no task. A
+    // standard user can't read a task an administrator registered, so unelevated this usually ends in access denied
+    // [Learn: Security Contexts for Tasks], which the page shows as needing administrator rights.
+    public static TaskRunInfo? LastRun() => WithFolder<TaskRunInfo?>(folder =>
+    {
+        var task = Find(folder, Planner.AutoPrivateTask);
+        if (task is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var result = ToInt(Get(task, "LastTaskResult"));
+            DateTime? time = Get(task, "LastRunTime") is DateTime t ? t : null;
+            return new TaskRunInfo(time, result);
+        }
+        finally
+        {
+            Release(task);
+        }
+    });
+
     // For the CI test only: starts the registered task and waits for it; returns its last result and run time.
     public static (int Result, DateTime LastRun) RunAndWait(TimeSpan limit)
     {
         return WithFolder(folder =>
         {
-            var task = Find(folder, Planner.AutoPrivateTask) ?? throw new InvalidOperationException("The task does not exist.");
+            var task = Find(folder, Planner.AutoPrivateTask) ?? throw new CpfsException("Err_TaskMissing");
             try
             {
                 var before = (DateTime)Get(task, "LastRunTime")!;
@@ -300,6 +324,8 @@ internal static class AutoPrivateTask
     }
 }
 
+internal sealed record TaskRunInfo(DateTime? LastRun, int LastResult);
+
 // The copy of this exe the task runs, in Program Files\CPFS: never the exe the user started, which may sit in a folder
 // the user can write to, and not ProgramData\CPFS, which any user can re-create after an admin deletes it by hand
 // (ProgramData grants Users "create folders"; Program Files doesn't). Streamed from one open of the source to a temp
@@ -368,7 +394,7 @@ internal static class AutoPrivateCopy
         var source = Running;
         if (SamePath(source, Path) || SamePath(source, OldPath))
         {
-            throw new InvalidOperationException("CPFS runs from its own copy in " + System.IO.Path.GetDirectoryName(source) + "; start the exe you downloaded to update it.");
+            throw new CpfsException("Err_RunsFromCopy", System.IO.Path.GetDirectoryName(source));
         }
 
         NoteSourceFolder(source);
@@ -400,7 +426,7 @@ internal static class AutoPrivateCopy
         if (!string.Equals(read, expectedSha256, StringComparison.Ordinal))
         {
             TryDelete(temp);
-            throw new IOException("The running program changed while CPFS copied it; nothing was copied to " + Folder + ".");
+            throw new CpfsException("Err_CopyChanged", Folder);
         }
 
         Retry(() =>
@@ -417,7 +443,7 @@ internal static class AutoPrivateCopy
 
         if (!string.Equals(Sha256Of(Path), read, StringComparison.Ordinal))
         {
-            throw new IOException("The copy of CPFS in " + Folder + " does not match the program that was read.");
+            throw new CpfsException("Err_CopyMismatch", Folder);
         }
     }
 
@@ -605,7 +631,7 @@ internal static class Restart
         // The CI runner must never restart.
         if (string.Equals(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"), "true", StringComparison.Ordinal))
         {
-            throw new InvalidOperationException("CPFS doesn't restart a CI runner.");
+            throw new CpfsException("Err_NoCiRestart");
         }
 
         using var privileges = Privileges.Enable("SeShutdownPrivilege");

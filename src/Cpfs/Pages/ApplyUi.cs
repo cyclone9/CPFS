@@ -78,18 +78,22 @@ public sealed class StepView : INotifyPropertyChanged
         return step;
     }
 
-    public void Set(StepOutcome outcome, string? error)
+    public void Set(StepReport report) => Set(report.Outcome, report.Error, report.Text);
+
+    // error is Windows' words or CPFS's sentence in English; text, when given, is that sentence, shown in the app's language.
+    public void Set(StepOutcome outcome, string? error, TextKey? text = null)
     {
         StateKind = outcome.ToString();
-        if (outcome == StepOutcome.Unsupported && SessionDrive.NoDesktopUserText(error) is { } text)
+        if (outcome == StepOutcome.Unsupported && SessionDrive.NoDesktopUserText(text) is { } key)
         {
             State = Loc.Instance["Apply_State_NoSession"];
-            Error = Loc.Instance[text];
+            Error = Loc.Instance[key];
             return;
         }
 
+        var shown = error is null && text is null ? null : UiErrors.Of(error, text);
         State = Loc.Instance["Apply_State_" + outcome];
-        Error = outcome == StepOutcome.Unsupported && error is not null ? Loc.Instance.FormatValues("Apply_RefusedReason", error) : error ?? "";
+        Error = outcome == StepOutcome.Unsupported && shown is not null ? Loc.Instance.FormatValues("Apply_RefusedReason", shown) : shown ?? "";
     }
 
     // A restore point Windows declined without an error (its 24-hour rule): a warning, not a failure.
@@ -327,7 +331,7 @@ internal static class ApplyUi
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
         {
             AppLog.Write("apply", "Restart: " + ex.GetType().Name + ": " + ex.Message);
-            return loc.FormatValues("Restart_Failed", ex.Message);
+            return loc.FormatValues("Restart_Failed", UiErrors.ForUser(ex));
         }
     }
 
@@ -341,7 +345,7 @@ internal static class ApplyUi
         var notes = new List<string>();
         foreach (var r in result.Reports)
         {
-            if (r.Outcome == StepOutcome.Unsupported && SessionDrive.NoDesktopUserText(r.Error) is { } text)
+            if (r.Outcome == StepOutcome.Unsupported && SessionDrive.NoDesktopUserText(r.Text) is { } text)
             {
                 notes.Add(loc[text]);
             }
@@ -350,7 +354,7 @@ internal static class ApplyUi
                 var subject = SetupPage.ToView(entries[r.Index].Item).Subject;
                 // Windows' message, possibly in another language than the app's, goes on a line of its own.
                 notes.Add(loc.Format(r.Outcome == StepOutcome.Unsupported ? "Apply_DoneRefusedItem" : "Apply_DonePartialItem", subject)
-                    + Environment.NewLine + Bidi.Embed(r.Error ?? "?", loc.IsRtl));
+                    + Environment.NewLine + Bidi.Embed(r.Error is null && r.Text is null ? "?" : UiErrors.Of(r), loc.IsRtl));
             }
         }
 

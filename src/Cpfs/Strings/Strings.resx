@@ -25,7 +25,6 @@
   <data name="State_Raw" xml:space="preserve"><value>Value {0}</value></data>
   <data name="Badge_NeedsAdmin" xml:space="preserve"><value>Needs administrator to read</value></data>
   <data name="Badge_NotFound" xml:space="preserve"><value>Not found</value></data>
-  <data name="Placeholder_Uninstall_Desc" xml:space="preserve"><value>Removing CPFS and restoring the original Windows settings will be done here.</value></data>
   <data name="LangNative_en" xml:space="preserve"><value>English</value></data>
   <data name="LangNative_fa" xml:space="preserve"><value>فارسی</value></data>
   <data name="LangNative_ar" xml:space="preserve"><value>العربية</value></data>
@@ -963,4 +962,123 @@
   <data name="Uninst_R_AutoFolderRemove" xml:space="preserve"><value>The folder CPFS created for that copy, once it is empty.</value></data>
   <data name="Uninst_R_AutoFolderForeign" xml:space="preserve"><value>CPFS didn't create this folder, so it stays.</value></data>
   <data name="Uninst_R_AutoFolderNotEmpty" xml:space="preserve"><value>It holds files CPFS didn't put there, so it stays.</value></data>
+  <data name="Err_NoBackupToAddTo" xml:space="preserve"><value>The original value could not be recorded: config.json has no backup to add it to.</value></data>
+  <data name="Err_NotTakenEffect" xml:space="preserve"><value>The change did not take effect: Windows still reports the old value.</value></data>
+  <data name="Err_ConfigNotJson" xml:space="preserve"><value>config.json is not valid JSON: {0}</value></data>
+  <data name="Err_ConfigDuplicate" xml:space="preserve"><value>config.json has a duplicate property: {0}</value></data>
+  <data name="Err_ConfigNotObject" xml:space="preserve"><value>config.json does not hold a JSON object.</value></data>
+  <data name="Err_ConfigBadBom" xml:space="preserve"><value>config.json has a byte order mark but invalid text after it.</value></data>
+  <data name="Err_SmbSidUnknown" xml:space="preserve"><value>The SMB account's SID is not known.</value></data>
+  <data name="Err_DesktopUserUnknown" xml:space="preserve"><value>The desktop user could not be found.</value></data>
+  <data name="Err_OwnerNotChanged" xml:space="preserve"><value>Ownership was not changed: owner changed for {0} items, {1} could not be read or changed.</value></data>
+  <data name="Err_OwnerPartial" xml:space="preserve"><value>Ownership partly changed: owner changed for {0} items, {1} could not be read or changed.</value></data>
+  <data name="Err_BackupNotRestorable" xml:space="preserve"><value>The backup of {0} is not a value CPFS can restore.</value></data>
+  <data name="Err_StartTypeNotRestorable" xml:space="preserve"><value>The backed-up start type is not one CPFS restores.</value></data>
+  <data name="Err_NoDocuments" xml:space="preserve"><value>The desktop user's Documents folder could not be found.</value></data>
+  <data name="Err_ConfigNotRead" xml:space="preserve"><value>config.json could not be read.</value></data>
+  <data name="Err_FolderNotEmpty" xml:space="preserve"><value>{0} is not empty, so CPFS leaves it.</value></data>
+  <data name="Err_BackupNameInvalid" xml:space="preserve"><value>The name in the backup, {0}, is not one CPFS can set; the computer keeps its name.</value></data>
+  <data name="Err_AccountMissing" xml:space="preserve"><value>The account does not exist.</value></data>
+  <data name="Err_RegistryOpen" xml:space="preserve"><value>Could not open {0}.</value></data>
+  <data name="Err_RegistryCreate" xml:space="preserve"><value>Could not create the registry key {0}.</value></data>
+  <data name="Err_DismNotStarted" xml:space="preserve"><value>dism.exe did not start.</value></data>
+  <data name="Err_DismTimeout" xml:space="preserve"><value>dism.exe did not finish within 15 minutes.</value></data>
+  <data name="Err_DismExit" xml:space="preserve"><value>dism.exe ended with exit code {0}.</value></data>
+  <data name="Err_CallReturned" xml:space="preserve"><value>{0} returned {1} (0x{2}).</value></data>
+  <data name="Err_ShareGone" xml:space="preserve"><value>The share is gone.</value></data>
+  <data name="Err_RulesNotRemoved" xml:space="preserve"><value>Firewall rules named {0} could not all be removed.</value></data>
+  <data name="Err_RuleMissing" xml:space="preserve"><value>The firewall rule {0} is not on this PC.</value></data>
+  <data name="Err_TaskNotOurs" xml:space="preserve"><value>CPFS deletes no task named {0}.</value></data>
+  <data name="Err_TaskMissing" xml:space="preserve"><value>The task does not exist.</value></data>
+  <data name="Err_RunsFromCopy" xml:space="preserve"><value>CPFS runs from its own copy in {0}; start the exe you downloaded to update it.</value></data>
+  <data name="Err_CopyChanged" xml:space="preserve"><value>The running program changed while CPFS copied it; nothing was copied to {0}.</value></data>
+  <data name="Err_CopyMismatch" xml:space="preserve"><value>The copy of CPFS in {0} does not match the program that was read.</value></data>
+  <data name="Err_NoCiRestart" xml:space="preserve"><value>CPFS doesn't restart a CI runner.</value></data>
+  <data name="Err_NoDriveLetter" xml:space="preserve"><value>No drive letter was chosen.</value></data>
+  <data name="Err_SmbAccountMissing" xml:space="preserve"><value>The SMB account does not exist.</value></data>
+  <data name="Err_NotDword" xml:space="preserve"><value>{0} exists but is not a DWORD; Setup stops before changing anything.</value></data>
+  <data name="Err_ServerUnreadForBackup" xml:space="preserve"><value>The SMB server settings could not be read for the backup.</value></data>
+  <data name="Err_AccountAppeared" xml:space="preserve"><value>The account {0} appeared after the plan was made. Read the plan again.</value></data>
+  <data name="Err_NoPasswordNew" xml:space="preserve"><value>No password was given for the new account.</value></data>
+  <data name="Err_AccountGone" xml:space="preserve"><value>The account is gone.</value></data>
+  <data name="Err_NoPassword" xml:space="preserve"><value>No password was given.</value></data>
+  <data name="Err_ShareAppeared" xml:space="preserve"><value>A share named {0} appeared after the plan was made. Read the plan again.</value></data>
+  <data name="Err_ShareNotOurs" xml:space="preserve"><value>The share {0} is not CPFS's; it is left alone.</value></data>
+  <data name="Err_NoGuest" xml:space="preserve"><value>No account with RID 501.</value></data>
+  <data name="Err_RuleNotTaken" xml:space="preserve"><value>Windows did not take the firewall rule {0} as written ({1}): {2}.</value></data>
+  <data name="Err_DataNotLocked" xml:space="preserve"><value>ProgramData\CPFS is not locked to SYSTEM and Administrators, so the Auto-Private task is not set up.</value></data>
+  <data name="Err_CopyFolderNotLocked" xml:space="preserve"><value>{0} is not locked to SYSTEM and Administrators, so the Auto-Private task is not set up.</value></data>
+  <data name="Err_CopyMissingOrDiffers" xml:space="preserve"><value>The copy of CPFS in {0} is missing or differs from this program, so the Auto-Private task is not set up.</value></data>
+  <data name="Err_ComputerNameInvalid" xml:space="preserve"><value>The computer name {0} is not valid.</value></data>
+  <data name="Err_DomainRename" xml:space="preserve"><value>This PC is joined to a domain; rename it through the domain.</value></data>
+  <data name="Err_NoOldLetter" xml:space="preserve"><value>No previous drive letter is recorded.</value></data>
+  <data name="Err_DriveNameChanged" xml:space="preserve"><value>The name of drive {0}: changed after the plan was made. Read the plan again.</value></data>
+  <data name="Err_NoOldDriveFolder" xml:space="preserve"><value>The previous drive's folder is not recorded.</value></data>
+  <data name="Err_DriveForeign" xml:space="preserve"><value>Drive {0}: points somewhere CPFS did not set; it is left alone.</value></data>
+  <data name="Err_DriveAppeared" xml:space="preserve"><value>Drive {0}: appeared after the plan was made ({1}). Read the plan again.</value></data>
+  <data name="Err_DriveIconChanged" xml:space="preserve"><value>The icon of drive {0}: changed after the plan was made. Read the plan again.</value></data>
+  <data name="Err_DriveIconAppeared" xml:space="preserve"><value>Drive {0}: got an icon after the plan was made. Read the plan again.</value></data>
+  <data name="Err_NoDesktopUser" xml:space="preserve"><value>No signed-in desktop user was found (no explorer.exe in this session).</value></data>
+  <data name="Err_NoExplorerEntry" xml:space="preserve"><value>No File Explorer entry is recorded.</value></data>
+  <data name="Err_ExplorerOtherFolder" xml:space="preserve"><value>The File Explorer entry opens another folder now, so it is left as it is.</value></data>
+  <data name="Err_UserSettingsNotLoaded" xml:space="preserve"><value>The desktop user's settings are not loaded. Read the plan again.</value></data>
+  <data name="Err_ExplorerAppeared" xml:space="preserve"><value>An entry under CPFS's identifier appeared in File Explorer after the plan was made. Read the plan again.</value></data>
+  <data name="Err_ShortcutNoPath" xml:space="preserve"><value>The shortcut has no path.</value></data>
+  <data name="Err_ShortcutOwnIcon" xml:space="preserve"><value>The shortcut {0} has an icon of its own now, so it is left as it is.</value></data>
+  <data name="Err_NoOldShortcut" xml:space="preserve"><value>No previous shortcut is recorded.</value></data>
+  <data name="Err_ShortcutElsewhere" xml:space="preserve"><value>The shortcut {0} no longer points to the shared folder, so it is left in place.</value></data>
+  <data name="Err_ShortcutOldElsewhere" xml:space="preserve"><value>The shortcut {0} no longer points to the old shared folder, so it is left as it is.</value></data>
+  <data name="Err_FileAppeared" xml:space="preserve"><value>A file named {0} appeared after the plan was made. Read the plan again.</value></data>
+  <data name="Err_NoDriveFolder" xml:space="preserve"><value>The drive's folder is not recorded.</value></data>
+  <data name="Err_NoExplorerFolder" xml:space="preserve"><value>The File Explorer entry's folder is not recorded.</value></data>
+  <data name="Err_ExplorerUserAway" xml:space="preserve"><value>The Windows user the File Explorer entry belongs to is not signed in, so it stays.</value></data>
+  <data name="Err_NoShortcut" xml:space="preserve"><value>No shortcut is recorded.</value></data>
+  <data name="Err_NoLetterRecorded" xml:space="preserve"><value>No drive letter is recorded.</value></data>
+  <data name="Err_PercentInPath" xml:space="preserve"><value>The folder's path contains %, which the File Explorer entry can't hold.</value></data>
+  <data name="Err_UserHiveNotLoaded" xml:space="preserve"><value>The Windows user's settings are not loaded (that user is not signed in), so the File Explorer entry can't be changed.</value></data>
+  <data name="Err_UserClassesNotLoaded" xml:space="preserve"><value>The Windows user's class settings are not loaded, so the File Explorer entry can't be changed.</value></data>
+  <data name="Err_IconMissing" xml:space="preserve"><value>The CPFS icon is missing from the program file.</value></data>
+  <data name="Err_DesktopFileExists" xml:space="preserve"><value>A file named {0} is already on the Public Desktop; it is left alone.</value></data>
+  <data name="Err_NoSessionMap" xml:space="preserve"><value>No signed-in desktop user was found (no explorer.exe in this session); the drive appears after a restart.</value></data>
+  <data name="Err_NoSessionUnmap" xml:space="preserve"><value>No signed-in desktop user was found (no explorer.exe in this session); the drive goes at the next restart.</value></data>
+  <data name="Err_SessionAccountMap" xml:space="preserve"><value>The desktop user's account name could not be found; the drive appears after a restart.</value></data>
+  <data name="Err_SessionAccountUnmap" xml:space="preserve"><value>The desktop user's account name could not be found; the drive goes at the next restart.</value></data>
+  <data name="Err_SessionTaskMap" xml:space="preserve"><value>The task that changes the drive in your session failed ({0}); the drive appears after a restart.</value></data>
+  <data name="Err_SessionTaskUnmap" xml:space="preserve"><value>The task that changes the drive in your session failed ({0}); the drive goes at the next restart.</value></data>
+  <data name="Err_SessionResultMap" xml:space="preserve"><value>The drive could not be changed in your session ({0}); the drive appears after a restart.</value></data>
+  <data name="Err_SessionResultUnmap" xml:space="preserve"><value>The drive could not be changed in your session ({0}); the drive goes at the next restart.</value></data>
+  <data name="Err_SessionTimeout" xml:space="preserve"><value>The task in your session did not finish in time.</value></data>
+  <data name="Err_SessionNotStarted" xml:space="preserve"><value>The task did not start in your session (is the desktop user signed in?).</value></data>
+  <data name="Err_ServerKeyMissing" xml:space="preserve"><value>LanmanServer\Parameters is missing.</value></data>
+  <data name="Err_NoSharePermissions" xml:space="preserve"><value>Windows returned no share permissions.</value></data>
+  <data name="Err_AuditOtherSubcategory" xml:space="preserve"><value>AuditQuerySystemPolicy returned another subcategory.</value></data>
+  <data name="Monitor_Disconnect_StillConnected" xml:space="preserve"><value>The device is still connected.</value></data>
+  <data name="Monitor_Disconnect_Code" xml:space="preserve"><value>Windows answered with code {0}.</value></data>
+  <data name="Connect_QrTooLong" xml:space="preserve"><value>the text is too long for a QR code ({0} bytes).</value></data>
+  <data name="Plan_R_AutoFolderRemove" xml:space="preserve"><value>Auto-Private is off, so the empty folder CPFS created for the copy is removed after it.</value></data>
+  <data name="Plan_R_AutoFolderKeepForeign" xml:space="preserve"><value>CPFS didn't create this folder, so it stays.</value></data>
+  <data name="Plan_R_AutoFolderKeepNotEmpty" xml:space="preserve"><value>It holds files CPFS didn't put there, so it stays.</value></data>
+  <data name="Adv_AutoPrivate_Title" xml:space="preserve"><value>Auto-Private</value></data>
+  <data name="Adv_AutoPrivate_Desc" xml:space="preserve"><value>The CPFS task that marks a network this PC has never seen as Private, once. This is its last run, as Windows recorded it.</value></data>
+  <data name="Adv_AutoPrivate_LastRan" xml:space="preserve"><value>Last ran {0}: {1}</value></data>
+  <data name="Adv_AutoPrivate_NotRun" xml:space="preserve"><value>Hasn't run yet.</value></data>
+  <data name="Adv_AutoPrivate_NeedsAdmin" xml:space="preserve"><value>Windows shows when the task last ran only to an administrator. Use Continue as administrator on the Setup page to see it.</value></data>
+  <data name="Adv_AutoPrivate_Failed" xml:space="preserve"><value>Couldn't read the task: {0}</value></data>
+  <data name="AutoResult_NothingToDo" xml:space="preserve"><value>nothing to do; no new Public network.</value></data>
+  <data name="AutoResult_NotFromCopy" xml:space="preserve"><value>refused, because it didn't run from the copy of CPFS in Program Files\CPFS.</value></data>
+  <data name="AutoResult_NotElevated" xml:space="preserve"><value>refused, because it ran without administrator rights.</value></data>
+  <data name="AutoResult_CopyFolderNotLocked" xml:space="preserve"><value>refused, because Program Files\CPFS is not locked to SYSTEM and Administrators.</value></data>
+  <data name="AutoResult_DataFolderNotLocked" xml:space="preserve"><value>refused, because ProgramData\CPFS is not locked to SYSTEM and Administrators.</value></data>
+  <data name="AutoResult_ConfigUnreadable" xml:space="preserve"><value>nothing done, because config.json could not be read.</value></data>
+  <data name="AutoResult_Off" xml:space="preserve"><value>nothing done, because Auto-Private is off in config.json.</value></data>
+  <data name="AutoResult_NotTaken" xml:space="preserve"><value>tried to mark a network Private, but Windows kept it Public.</value></data>
+  <data name="AutoResult_Crashed" xml:space="preserve"><value>stopped by an unexpected error. auto-private-run.log in ProgramData\CPFS has the details.</value></data>
+  <data name="AutoResult_SwitchedOne" xml:space="preserve"><value>marked 1 network Private.</value></data>
+  <data name="AutoResult_SwitchedMany" xml:space="preserve"><value>marked {0} networks Private.</value></data>
+  <data name="AutoResult_HasNotRun" xml:space="preserve"><value>hasn't run yet.</value></data>
+  <data name="AutoResult_Running" xml:space="preserve"><value>running now.</value></data>
+  <data name="AutoResult_Terminated" xml:space="preserve"><value>stopped before it finished (it may run for one minute at most).</value></data>
+  <data name="AutoResult_AlreadyRunning" xml:space="preserve"><value>didn't start, because it was already running.</value></data>
+  <data name="AutoResult_ProgramNotFound" xml:space="preserve"><value>Windows couldn't start it: the copy of CPFS in Program Files\CPFS is missing. Run Setup again.</value></data>
+  <data name="AutoResult_Other" xml:space="preserve"><value>ended with code {0}.</value></data>
 </root>

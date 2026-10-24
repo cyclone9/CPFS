@@ -92,7 +92,7 @@
       </Border>
     </DataTemplate>
 
-    <!--  Picked by type, so Recent activity gets its table and every other section the cards below.  -->
+    <!--  Picked by type: Recent activity and the table sections have templates of their own; this one is for the server and devices.  -->
     <DataTemplate DataType="{x:Type pages:MonitorSection}">
       <ui:Card Margin="0,0,0,4">
         <StackPanel>
@@ -111,6 +111,107 @@
           <ItemsControl Focusable="False" ItemsSource="{Binding Rows}" />
         </StackPanel>
       </ui:Card>
+    </DataTemplate>
+
+    <!--
+      Failed sign-ins and Being copied now: one header row, then one row per entry, lined up by TableRowPanel. The
+      columns before the last are as wide as their widest entry and trim (full text in the tooltip) only when the
+      window is too narrow for them; the last column takes the rest, or goes under its row when too little is left.
+    -->
+    <Style x:Key="TableHead" BasedOn="{StaticResource CardDescription}" TargetType="TextBlock">
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="TextWrapping" Value="NoWrap" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style x:Key="TableText" BasedOn="{StaticResource CardValue}" TargetType="TextBlock">
+      <Setter Property="TextWrapping" Value="NoWrap" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style x:Key="TableData" BasedOn="{StaticResource DataValue}" TargetType="TextBlock">
+      <Setter Property="TextWrapping" Value="NoWrap" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <DataTemplate DataType="{x:Type pages:TableSection}">
+      <ui:Card Margin="0,0,0,4">
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Description}" />
+          <Border Style="{StaticResource Badge}" Margin="0,8,0,0" Visibility="{Binding NeedsAdmin, Converter={StaticResource Visible}}">
+            <TextBlock Style="{StaticResource BadgeText}" Text="{Binding [Badge_NeedsAdmin], Source={x:Static local:Loc.Instance}}" />
+          </Border>
+          <TextBlock Margin="0,8,0,0" Style="{StaticResource ErrorText}" Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
+          <TextBlock Margin="0,8,0,0" Style="{StaticResource CardValue}" Text="{Binding Empty}" Visibility="{Binding IsEmpty, Converter={StaticResource Visible}}" />
+          <StackPanel Margin="0,12,0,0" local:TableRowPanel.IsScope="True" Visibility="{Binding HasItems, Converter={StaticResource Visible}}">
+            <ContentControl Margin="0,0,0,4" Content="{Binding Header}" Focusable="False" />
+            <ItemsControl Focusable="False" ItemsSource="{Binding Items}" />
+          </StackPanel>
+        </StackPanel>
+      </ui:Card>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type pages:FailHeader}">
+      <local:TableRowPanel>
+        <TextBlock Style="{StaticResource TableHead}" Text="{Binding [Monitor_Fail_Time], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock Style="{StaticResource TableHead}" Text="{Binding [Monitor_Fail_User], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock Style="{StaticResource TableHead}" Text="{Binding [Monitor_Fail_From], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding [Monitor_Fail_Reason], Source={x:Static local:Loc.Instance}}" />
+      </local:TableRowPanel>
+    </DataTemplate>
+
+    <!--  Each cell names its column for screen readers, which read the cells one by one.  -->
+    <DataTemplate DataType="{x:Type pages:FailRowView}">
+      <Border Padding="0,6" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+        <local:TableRowPanel>
+          <TextBlock
+            AutomationProperties.HelpText="{Binding [Monitor_Fail_Time], Source={x:Static local:Loc.Instance}}"
+            Style="{StaticResource TableText}"
+            Text="{Binding Time}"
+            ToolTip="{Binding Time}" />
+          <TextBlock
+            AutomationProperties.HelpText="{Binding [Monitor_Fail_User], Source={x:Static local:Loc.Instance}}"
+            Style="{StaticResource TableData}"
+            Text="{Binding User}"
+            ToolTip="{Binding User}" />
+          <TextBlock
+            AutomationProperties.HelpText="{Binding [Monitor_Fail_From], Source={x:Static local:Loc.Instance}}"
+            Style="{StaticResource TableData}"
+            Text="{Binding From}"
+            ToolTip="{Binding From}" />
+          <TextBlock AutomationProperties.HelpText="{Binding [Monitor_Fail_Reason], Source={x:Static local:Loc.Instance}}" Style="{StaticResource CardValue}" Text="{Binding Reason}" />
+        </local:TableRowPanel>
+      </Border>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type pages:FileHeader}">
+      <local:TableRowPanel>
+        <TextBlock Style="{StaticResource TableHead}" Text="{Binding [Monitor_File_Client], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock Style="{StaticResource TableHead}" Text="{Binding [Monitor_File_User], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock Style="{StaticResource TableHead}" Text="{Binding [Monitor_File_Path], Source={x:Static local:Loc.Instance}}" />
+      </local:TableRowPanel>
+    </DataTemplate>
+
+    <!--  The file's path on one line, trimmed, with the full path as its tooltip, as in Recent activity.  -->
+    <DataTemplate DataType="{x:Type pages:FileRowView}">
+      <Border Padding="0,6" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+        <local:TableRowPanel>
+          <TextBlock
+            AutomationProperties.HelpText="{Binding [Monitor_File_Client], Source={x:Static local:Loc.Instance}}"
+            Style="{StaticResource TableData}"
+            Text="{Binding Client}"
+            ToolTip="{Binding Client}" />
+          <TextBlock
+            AutomationProperties.HelpText="{Binding [Monitor_File_User], Source={x:Static local:Loc.Instance}}"
+            Style="{StaticResource TableData}"
+            Text="{Binding User}"
+            ToolTip="{Binding User}" />
+          <TextBlock
+            AutomationProperties.HelpText="{Binding [Monitor_File_Path], Source={x:Static local:Loc.Instance}}"
+            Style="{StaticResource TableData}"
+            Text="{Binding Path}"
+            ToolTip="{Binding Path}" />
+        </local:TableRowPanel>
+      </Border>
     </DataTemplate>
 
     <!--

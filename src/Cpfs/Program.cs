@@ -44,6 +44,7 @@ internal static class Program
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static int Run(string[] args)
     {
+        Core.Text.TextKey.English = Loc.Instance.EnglishText;
         if (Array.IndexOf(args, SelfTest.Verb) >= 0)
         {
             return SelfTest.Run();
@@ -75,7 +76,12 @@ internal static class Program
     private static int RunUserSession(string[] args) => UserSession.Run(args);
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static int RunAutoPrivate() => AutoPrivateVerb.Run();
+    private static int RunAutoPrivate()
+    {
+        // Its run log keeps CPFS's own sentences in English, as the app's log does.
+        Core.Text.TextKey.English = Loc.Instance.EnglishText;
+        return AutoPrivateVerb.Run();
+    }
 
     // Matches by simple name and ignores the requested version, which stands in for binding redirects.
     private static Assembly? OnAssemblyResolve(object? sender, ResolveEventArgs args)
