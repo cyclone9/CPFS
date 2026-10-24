@@ -1,0 +1,1083 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Xml.Linq;
+using Cpfs.Core.Apply;
+using Cpfs.Core.Config;
+using Cpfs.Core.Drives;
+using Cpfs.Core.Planning;
+using Cpfs.Core.Text;
+using Cpfs.Core.Validation;
+using Xunit;
+
+namespace Cpfs.Tests;
+
+public class PlannerTests
+{
+    internal static readonly ProtectedFolders Protected = new()
+    {
+        Trees = { @"C:\Windows", @"C:\Program Files", @"C:\ProgramData" },
+        Exact = { @"C:\Users", @"C:\Users\Public" },
+    };
+
+    internal static ConfigDocument Fixture() => ConfigReader.Parse(TestFiles.ConfigBytes("v0.2.3-anonymised.json"));
+
+    // The machine a 0.2.3 Setup leaves behind for v0.2.3-anonymised.json (share "Shared" on D:\Shared, account
+    // "ShareUser", shortcut only), read elevated.
+    internal static SystemSnapshot Installed()
+    {
+        var letters = new LetterScan();
+        letters.Add('C', LetterSource.SystemDrive);
+        letters.Add('D', LetterSource.ThisProcess);
+        return new SystemSnapshot
+        {
+            Elevated = true,
+            WindowsUserNames = new[] { "Owner" },
+            ComputerName = "HOST-01",
+            ComputerNames = Reading.Ok(new ComputerNameInfo("HOST-01", null)),
+            Shares = Reading.Ok<IReadOnlyList<ShareInfo>>(new[]
+            {
+                new ShareInfo("Shared", @"D:\Shared", Planner.ShareDescription, false, 0, 0, false),
+                new ShareInfo("IPC$", null, "Remote IPC", false, 1, 0, true),
+            }),
+            SmbServer = Reading.Ok(new SmbServerInfo(false, true, true)),
+            ServerStart = Reading.Ok<int?>(2),
+            Hardening = Planner.Hardening.ToDictionary(h => h.Name, h => Reading.Ok<int?>(h.Target)),
+            Lockout = Reading.Ok(new LockoutInfo(10, 600, 600)),
+            AuditLogon = Reading.Ok(new AuditSetting(true, true)),
+            Smb1Feature = Reading.Ok<int?>(2),
+            GuestEnabled = Reading.Ok<bool?>(false),
+            OwnRules = Reading.Ok<IReadOnlyList<FirewallRuleInfo>>(new[]
+            {
+                Rule(FirewallRules.LanRule, FirewallRules.Tcp, "445", FirewallRules.ProfilePrivate, "LocalSubnet"),
+                Rule(FirewallRules.MdnsRule, FirewallRules.Udp, "5353", FirewallRules.ProfilePrivate, "*"),
+            }),
+            BuiltInRules = Reading.Ok<IReadOnlyList<BuiltInRuleInfo>>(new[]
+            {
+                new BuiltInRuleInfo("FPS-SMB-In-TCP", "File and Printer Sharing (SMB-In)", false, 1, 4, new[] { "445" }),
+                new BuiltInRuleInfo("FPS-SMB-In-TCP-Private", "File and Printer Sharing (SMB-In)", true, 1, 2, new[] { "445" }),
+            }),
+            Networks = Reading.Ok<IReadOnlyList<NetworkInfo>>(new[] { new NetworkInfo("Home", "Wi-Fi", 1) }),
+            Tasks = Reading.Ok<IReadOnlyDictionary<string, bool>>(new Dictionary<string, bool>
+            {
+                [Planner.AutoPrivateTask] = false, [Planner.RunAsUserTask] = false, [Planner.LegacyAutoPrivateTask] = false,
+            }),
+            DataFolder = Reading.Ok(new DataFolderInfo(true, true, true, false)),
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+            DriveIcons = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+            Letters = letters,
+            PublicDesktopFiles = Reading.Ok<IReadOnlyList<string>>(new[] { "Shared (CPFS).lnk", "desktop.ini" }),
+            ShortcutIcons = Reading.Ok<IReadOnlyDictionary<string, string>>(new Dictionary<string, string> { ["Shared (CPFS).lnk"] = CpfsIcon }),
+            ExplorerEntry = ExplorerEntryTests.Hive(null),
+            User = Reading.Ok<UserInfo?>(new UserInfo(UserSid, true, true, false, false, true, 0)),
+            Folder = Reading.Ok(new FolderInfo(true, true)),
+            ShareAccess = Reading.Ok<IReadOnlyList<ShareAccessEntry>?>(new[] { new ShareAccessEntry(@"HOST-01\ShareUser", UserSid, 0, 0) }),
+        };
+    }
+
+    private const string UserSid = "S-1-5-21-1-2-3-1005";
+
+    private const string CpfsIcon = @"C:\ProgramData\CPFS\cpfs.ico";
+
+    private static FirewallRuleInfo Rule(string name, int protocol, string ports, int profiles, string remote, params string[] interfaces) =>
+        new(name, true, FirewallRules.Inbound, FirewallRules.Allow, protocol, ports, profiles, remote, interfaces);
+
+    private static SetupAnswers Answers(ConfigDocument? config, SystemSnapshot s) => SetupDefaults.From(config, s.Letters);
+
+    private static Plan PlanFor(SystemSnapshot s, ConfigDocument? config, Func<SetupAnswers, SetupAnswers>? change = null)
+    {
+        var answers = Answers(config, s);
+        return Planner.Setup(s, change is null ? answers : change(answers), config, Protected);
+    }
+
+    private static PlanItem Item(Plan plan, string key) => plan.Find(key) ?? throw new InvalidOperationException("No plan item " + key);
+
+    private static SetupAnswers NoEntry(SetupAnswers a) => a with { ExplorerEntry = false };
+
+    // The laptop case of dev8: Setup planned a password change, then an Uninstall removed the account and the share.
+    // A plan made again from the new reading must not count as the one the page showed.
+    [Fact]
+    public void APlanMadeAfterAnUninstallIsNotTheSameAsTheOneBefore()
+    {
+        var before = PlanFor(Installed(), Fixture(), a => a with { Password = PasswordEntry.Valid });
+        var again = PlanFor(Installed(), Fixture(), a => a with { Password = PasswordEntry.Valid });
+        Assert.True(before.SameItemsAs(again));
+
+        var gone = Installed() with
+        {
+            User = Reading.Ok<UserInfo?>(null),
+            Shares = Reading.Ok<IReadOnlyList<ShareInfo>>(new[] { new ShareInfo("IPC$", null, "Remote IPC", false, 1, 0, true) }),
+            ShareAccess = Reading.Ok<IReadOnlyList<ShareAccessEntry>?>(null),
+        };
+        var answers = Answers(Fixture(), Installed()) with { Password = PasswordEntry.Valid };
+        var after = Planner.Setup(gone, answers, null, Protected);
+        Assert.Equal(PlanAction.Change, Item(before, "user.password").Action);
+        Assert.False(before.SameItemsAs(after));
+        Assert.Contains("-user.password Change", before.DifferencesFrom(after));
+        Assert.Contains("+user.account Create", before.DifferencesFrom(after));
+
+        // A different tick is a different plan too.
+        var ticked = new Plan(before.Items.Select(i => i.Action == PlanAction.Ask ? i with { Ticked = !i.Ticked } : i).ToList());
+        Assert.Equal(before.Items.Any(i => i.Action == PlanAction.Ask), !before.SameItemsAs(ticked));
+    }
+
+    // The File Explorer entry: created when absent, kept when it is CPFS's and at target, changed for a new name,
+    // folder or icon, or when a documented value is missing.
+    [Fact]
+    public void TheExplorerEntryIsCreatedKeptOrChanged()
+    {
+        const string name = "CPFS - Shared";
+        var created = PlanFor(Installed(), Fixture(), a => a with { Drive = false });
+        var create = Item(created, "explorer.entry");
+        Assert.Equal(PlanAction.Create, create.Action);
+        Assert.Equal(PlanSection.Drive, create.Section);
+        Assert.Equal(name, create.Target!.Data);
+        Assert.Contains(PlanSummary.Setup(created, Answers(Fixture(), Installed()) with { Drive = false }, Fixture()).Lines,
+            l => l.Key == "Summary_Adds_E");
+
+        var recorded = ExplorerEntryTests.Recorded(Fixture(), @"D:\Shared", name);
+        var atTarget = Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(ExplorerEntryTests.Entry(name, @"D:\Shared")) };
+        Assert.Equal(PlanAction.Keep, Item(PlanFor(atTarget, recorded), "explorer.entry").Action);
+
+        var renamed = Item(PlanFor(atTarget, recorded, a => a with { DriveName = "My files" }), "explorer.entry");
+        Assert.Equal(PlanAction.Change, renamed.Action);
+        Assert.Equal(Planner.R.ExplorerChange, renamed.ReasonKey);
+        Assert.Equal("My files", renamed.Target!.Data);
+
+        Assert.Equal(PlanAction.Change, Item(PlanFor(atTarget, recorded, a => a with { SharePath = @"D:\Other" }), "explorer.entry").Action);
+
+        var otherIcon = Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(ExplorerEntryTests.Entry(name, @"D:\Shared", @"C:\Icons\x.ico")) };
+        Assert.Equal(PlanAction.Change, Item(PlanFor(otherIcon, recorded), "explorer.entry").Action);
+
+        var incomplete = Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(ExplorerEntryTests.Entry(name, @"D:\Shared") with { NameSpaceName = null }) };
+        Assert.Equal(PlanAction.Change, Item(PlanFor(incomplete, recorded), "explorer.entry").Action);
+    }
+
+    [Fact]
+    public void AnExplorerEntryCpfsDidNotRecordOrThatIsGoneIsAnUntickedQuestion()
+    {
+        var foreign = Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(ExplorerEntryTests.Entry("Other", @"E:\Elsewhere")) };
+        var notRecorded = Item(PlanFor(foreign, Fixture()), "explorer.entry");
+        Assert.Equal(PlanAction.Ask, notRecorded.Action);
+        Assert.False(notRecorded.Ticked);
+        Assert.Equal(Planner.R.ExplorerForeign, notRecorded.ReasonKey);
+        Assert.Equal(@"E:\Elsewhere", notRecorded.ReasonArgs[0]);
+
+        var recorded = ExplorerEntryTests.Recorded(Fixture(), @"D:\Shared", "CPFS - Shared");
+        var elsewhere = Item(PlanFor(foreign, recorded), "explorer.entry");
+        Assert.Equal(PlanAction.Ask, elsewhere.Action);
+        Assert.False(elsewhere.Ticked);
+        Assert.False(ApplyList.IsRunnable(elsewhere));
+        Assert.True(Item(PlanFor(foreign, recorded, a => Tick(a, "explorer.entry")), "explorer.entry").Ticked);
+
+        var gone = Item(PlanFor(Installed(), recorded), "explorer.entry");
+        Assert.Equal(PlanAction.Ask, gone.Action);
+        Assert.False(gone.Ticked);
+        Assert.Equal(Planner.R.ExplorerGone, gone.ReasonKey);
+    }
+
+    [Fact]
+    public void TurningTheExplorerEntryOffRemovesOnlyCpfsOwn()
+    {
+        var recorded = ExplorerEntryTests.Recorded(Fixture(), @"D:\Shared", "CPFS - Shared");
+        var ours = Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(ExplorerEntryTests.Entry("CPFS - Shared", @"D:\Shared")) };
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(PlanFor(ours, recorded, NoEntry), "explorer.entry").Action);
+
+        var foreign = Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(ExplorerEntryTests.Entry("CPFS - Shared", @"E:\Elsewhere")) };
+        Assert.Equal(PlanAction.Keep, Item(PlanFor(foreign, recorded, NoEntry), "explorer.entry").Action);
+        Assert.Equal(Planner.R.ExplorerOff, Item(PlanFor(Installed(), Fixture(), NoEntry), "explorer.entry").ReasonKey);
+
+        // Off with nothing recorded, the entry is not read at all: an unreadable hive does not block Apply.
+        var unread = Installed() with { ExplorerEntry = Reading.Failed<ExplorerHive>("no desktop user") };
+        Assert.Equal(PlanAction.Keep, Item(PlanFor(unread, Fixture(), NoEntry), "explorer.entry").Action);
+        Assert.Equal(PlanAction.CannotPlan, Item(PlanFor(unread, Fixture()), "explorer.entry").Action);
+    }
+
+    [Fact]
+    public void AnExplorerEntryOfAnotherUserOrAPathWithPercentIsNotPlanned()
+    {
+        var other = ExplorerEntryTests.Recorded(Fixture(), @"D:\Shared", "CPFS - Shared", "S-1-5-21-9-9-9-1002");
+        var on = Item(PlanFor(Installed(), other), "explorer.entry");
+        Assert.Equal(PlanAction.CannotPlan, on.Action);
+        Assert.Equal(Planner.R.ExplorerOtherUser, on.ReasonKey);
+        var off = Item(PlanFor(Installed(), other, NoEntry), "explorer.entry");
+        Assert.Equal(PlanAction.Keep, off.Action);
+        Assert.Equal(Planner.R.ExplorerOtherUserKept, off.ReasonKey);
+
+        var percent = Item(PlanFor(Installed(), Fixture(), a => a with { SharePath = @"D:\100%Shared" }), "explorer.entry");
+        Assert.Equal(PlanAction.CannotPlan, percent.Action);
+        Assert.Equal(Planner.R.ExplorerPercent, percent.ReasonKey);
+        Assert.Equal(PlanAction.Keep, Item(PlanFor(Installed(), Fixture(), a => NoEntry(a) with { SharePath = @"D:\100%Shared" }), "explorer.entry").Action);
+    }
+
+    private static SetupAnswers Tick(SetupAnswers a, string key, bool ticked = true)
+    {
+        var choices = new Dictionary<string, bool>(a.Choices) { [key] = ticked };
+        return a with { Choices = choices };
+    }
+
+    [Fact]
+    public void An023InstallReadAsInstalledPlansOnlyKeep()
+    {
+        // The scripts made no File Explorer entry; the app adds one by default, and that is the only change.
+        var withEntry = PlanFor(Installed(), Fixture());
+        Assert.Equal(new[] { "explorer.entry" }, withEntry.Items.Where(i => i.Action != PlanAction.Keep).Select(i => i.Key));
+
+        var plan = PlanFor(Installed(), Fixture(), NoEntry);
+
+        Assert.All(plan.Items, i => Assert.True(i.Action == PlanAction.Keep, i.Key + " is " + i.Action + " (" + i.ReasonKey + ")"));
+        Assert.Equal(PlanAction.Keep, Item(plan, "backup").Action);
+        Assert.Equal(Planner.R.BackupTaken, Item(plan, "backup").ReasonKey);
+        Assert.Equal(Planner.R.PasswordKeep, Item(plan, "user.password").ReasonKey);
+        Assert.Contains(plan.Items, i => i.Key == "shortcut.file");
+        Assert.DoesNotContain(plan.Items, i => i.BackupNeeded);
+    }
+
+    [Fact]
+    public void ReRunWithTheSameAnswersOnAMachineAtTargetChangesNothing()
+    {
+        var snapshot = Installed();
+        var answers = Answers(Fixture(), snapshot);
+        var first = Planner.Setup(snapshot, answers, Fixture(), Protected);
+        var second = Planner.Setup(snapshot, answers, Fixture(), Protected);
+
+        Assert.Equal(first.Items.Select(i => (i.Key, i.Action)), second.Items.Select(i => (i.Key, i.Action)));
+    }
+
+    [Fact]
+    public void TheBackupIsTakenOnlyOnAFirstSetup()
+    {
+        var loose = Installed() with
+        {
+            Hardening = Planner.Hardening.ToDictionary(h => h.Name, h => Reading.Ok<int?>(h.Name == "LmCompatibilityLevel" ? 3 : h.Target)),
+        };
+
+        var fresh = PlanFor(loose, null);
+        Assert.Equal(PlanAction.Create, Item(fresh, "backup").Action);
+        Assert.True(Item(fresh, "hardening.LmCompatibilityLevel").BackupNeeded);
+
+        var existing = PlanFor(loose, Fixture());
+        Assert.Equal(PlanAction.Keep, Item(existing, "backup").Action);
+        Assert.Equal(PlanAction.Change, Item(existing, "hardening.LmCompatibilityLevel").Action);
+        Assert.False(Item(existing, "hardening.LmCompatibilityLevel").BackupNeeded);
+
+        var noBackup = ConfigReader.Parse(TestFiles.ConfigBytes("v0.2.1-upgraded-from-0.1.json"));
+        var upgraded = PlanFor(loose, noBackup);
+        Assert.Equal(Planner.R.BackupNone, Item(upgraded, "backup").ReasonKey);
+        Assert.False(Item(upgraded, "hardening.LmCompatibilityLevel").BackupNeeded);
+    }
+
+    [Theory]
+    [InlineData("RestrictAnonymous", 2)]
+    [InlineData("LmCompatibilityLevel", 5)]
+    public void AStricterSettingIsNeverLoosened(string name, int value)
+    {
+        var s = Installed() with
+        {
+            Hardening = Planner.Hardening.ToDictionary(h => h.Name, h => Reading.Ok<int?>(h.Name == name ? value : h.Target)),
+        };
+
+        var item = Item(PlanFor(s, Fixture()), "hardening." + name);
+        Assert.Equal(PlanAction.Keep, item.Action);
+    }
+
+    [Fact]
+    public void ALooserOrMissingHardeningValueIsChanged()
+    {
+        var s = Installed() with
+        {
+            Hardening = Planner.Hardening.ToDictionary(h => h.Name, h => Reading.Ok<int?>(h.Name switch
+            {
+                "AutoShareWks" => null,
+                "forceguest" => 1,
+                _ => h.Target,
+            })),
+        };
+
+        var plan = PlanFor(s, Fixture());
+        Assert.Equal(PlanAction.Change, Item(plan, "hardening.AutoShareWks").Action);
+        Assert.Equal(Planner.W.Absent, Item(plan, "hardening.AutoShareWks").Current!.WordKey);
+        Assert.Equal(Planner.W.Off, Item(plan, "hardening.AutoShareWks").Target!.WordKey);
+        Assert.Equal(PlanAction.Change, Item(plan, "hardening.forceguest").Action);
+    }
+
+    [Theory]
+    [InlineData("NoLMHash", 1L, "Plan_V_On", null)]
+    [InlineData("AutoShareWks", 0L, "Plan_V_Off", null)]
+    [InlineData("RestrictAnonymous", 2L, "Plan_V_OnStrictest", null)]
+    [InlineData("LmCompatibilityLevel", 5L, "Plan_V_Level", "5")]
+    [InlineData("NoLMHash", 7L, "Plan_V_Value", "7")]
+    [InlineData("NoLMHash", null, "Plan_V_Absent", null)]
+    public void HardeningValuesAreShownAsWords(string name, long? value, string word, string? number)
+    {
+        var shown = Planner.HardeningWord(name, value);
+        Assert.Equal(word, shown.WordKey);
+        Assert.Equal(number, shown.Data);
+    }
+
+    [Fact]
+    public void TheSignInScreenValueIsShownAsVisibleOrHidden()
+    {
+        Assert.Equal(Planner.W.HiddenNow, Planner.HiddenWord(0).WordKey);
+        Assert.Equal(Planner.W.Visible, Planner.HiddenWord(1).WordKey);
+        Assert.Equal(Planner.W.Visible, Planner.HiddenWord(null).WordKey);
+    }
+
+    [Theory]
+    [InlineData(0u, PlanAction.Change)]
+    [InlineData(3u, PlanAction.Keep)]
+    [InlineData(50u, PlanAction.Keep)]
+    public void TheLockoutThresholdIsSetOnlyWhenItIsZero(uint threshold, PlanAction expected)
+    {
+        var s = Installed() with { Lockout = Reading.Ok(new LockoutInfo(threshold, 600, 600)) };
+        var item = Item(PlanFor(s, Fixture()), "hardening.lockout");
+
+        Assert.Equal(expected, item.Action);
+
+        // The fixture's Backup.Lockout is null (the scripts could not read it), so a 0 found now is the original.
+        Assert.Equal(threshold == 0, item.BackupNeeded);
+    }
+
+    [Fact]
+    public void ANetworkBecomesPrivateOnlyWhenTicked()
+    {
+        var s = Installed() with
+        {
+            Networks = Reading.Ok<IReadOnlyList<NetworkInfo>>(new[] { new NetworkInfo("Cafe", "Wi-Fi", 0), new NetworkInfo("Home", "Ethernet", 1) }),
+        };
+
+        var plan = PlanFor(s, Fixture());
+        Assert.Equal(PlanAction.Ask, Item(plan, "net:Cafe").Action);
+        Assert.False(Item(plan, "net:Cafe").Ticked);
+        Assert.Equal(PlanAction.Keep, Item(plan, "net:Home").Action);
+
+        var ticked = PlanFor(s, Fixture(), a => Tick(a, "net:Cafe"));
+        Assert.True(Item(ticked, "net:Cafe").Ticked);
+    }
+
+    [Fact]
+    public void TheVpnRuleIsBoundToTheVpnAdapter()
+    {
+        var s = Installed() with
+        {
+            VpnAdapters = new[] { new VpnAdapterInfo("Tailscale", "100.101.102.103") },
+            Networks = Reading.Ok<IReadOnlyList<NetworkInfo>>(new[] { new NetworkInfo("Home", "Wi-Fi", 1), new NetworkInfo("tailnet", "Tailscale", 1) }),
+            OwnRules = Reading.Ok<IReadOnlyList<FirewallRuleInfo>>(new[]
+            {
+                Rule(FirewallRules.LanRule, FirewallRules.Tcp, "445", FirewallRules.ProfilePrivate, "LocalSubnet"),
+                Rule(FirewallRules.MdnsRule, FirewallRules.Udp, "5353", FirewallRules.ProfilePrivate, "*"),
+                Rule(FirewallRules.VpnRule, FirewallRules.Tcp, "445", FirewallRules.ProfileAll, "100.64.0.0/255.192.0.0,fd7a:115c:a1e0::/48"),
+            }),
+        };
+
+        var item = Item(PlanFor(s, Fixture()), "fw.rule:" + FirewallRules.VpnRule);
+        Assert.Equal(PlanAction.Change, item.Action);
+        Assert.Equal(new[] { "Interfaces" }, item.ReasonArgs);
+
+        var bound = s with
+        {
+            OwnRules = Reading.Ok<IReadOnlyList<FirewallRuleInfo>>(new[]
+            {
+                Rule(FirewallRules.LanRule, FirewallRules.Tcp, "445", FirewallRules.ProfilePrivate, "LocalSubnet"),
+                Rule(FirewallRules.MdnsRule, FirewallRules.Udp, "5353", FirewallRules.ProfilePrivate, "*"),
+                Rule(FirewallRules.VpnRule, FirewallRules.Tcp, "445", FirewallRules.ProfileAll, "100.64.0.0/255.192.0.0,fd7a:115c:a1e0::/48", "Tailscale"),
+            }),
+        };
+        Assert.Equal(PlanAction.Keep, Item(PlanFor(bound, Fixture()), "fw.rule:" + FirewallRules.VpnRule).Action);
+    }
+
+    [Fact]
+    public void AVpnAdapterOnAPublicNetworkIsUsedOnlyWhenTicked()
+    {
+        var s = Installed() with
+        {
+            VpnAdapters = new[] { new VpnAdapterInfo("Hotel Wi-Fi", "100.70.1.2") },
+            Networks = Reading.Ok<IReadOnlyList<NetworkInfo>>(new[] { new NetworkInfo("Hotel", "Hotel Wi-Fi", 0) }),
+        };
+
+        var plan = PlanFor(s, Fixture());
+        Assert.Equal(PlanAction.Ask, Item(plan, "fw.vpnadapter:Hotel Wi-Fi").Action);
+        Assert.Equal(Planner.R.VpnNone, Item(plan, "fw.rule:" + FirewallRules.VpnRule).ReasonKey);
+
+        var ticked = PlanFor(s, Fixture(), a => Tick(a, "fw.vpnadapter:Hotel Wi-Fi"));
+        Assert.Equal(PlanAction.Create, Item(ticked, "fw.rule:" + FirewallRules.VpnRule).Action);
+    }
+
+    [Fact]
+    public void AVpnRuleWithoutAVpnAdapterIsRemovedAsCpfsOwn()
+    {
+        var s = Installed() with
+        {
+            OwnRules = Reading.Ok<IReadOnlyList<FirewallRuleInfo>>(new[]
+            {
+                Rule(FirewallRules.LanRule, FirewallRules.Tcp, "445", FirewallRules.ProfilePrivate, "LocalSubnet"),
+                Rule(FirewallRules.MdnsRule, FirewallRules.Udp, "5353", FirewallRules.ProfilePrivate, "*"),
+                Rule(FirewallRules.VpnRule, FirewallRules.Tcp, "445", FirewallRules.ProfileAll, "100.64.0.0/10"),
+                Rule("CyShare SMB", FirewallRules.Tcp, "445", FirewallRules.ProfileAll, "*"),
+            }),
+        };
+
+        var plan = PlanFor(s, Fixture());
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(plan, "fw.rule:" + FirewallRules.VpnRule).Action);
+        Assert.Equal(Planner.R.RuleLegacy, Item(plan, "fw.extra:CyShare SMB").ReasonKey);
+    }
+
+    [Fact]
+    public void BuiltInRulesOpenOnPublicFor445AreDisabled()
+    {
+        var s = Installed() with
+        {
+            BuiltInRules = Reading.Ok<IReadOnlyList<BuiltInRuleInfo>>(new[]
+            {
+                new BuiltInRuleInfo("FPS-SMB-In-TCP", null, true, 1, 4, new[] { "445" }),
+                new BuiltInRuleInfo("FPS-NB_Session-In-TCP", null, true, 1, 4, new[] { "139" }),
+                new BuiltInRuleInfo("FPS-Unknown", null, true, 1, FirewallRules.ProfileAll, null),
+            }),
+        };
+
+        var plan = PlanFor(s, Fixture());
+        Assert.Equal(PlanAction.Change, Item(plan, "fw.builtin:FPS-SMB-In-TCP").Action);
+        Assert.Null(plan.Find("fw.builtin:FPS-NB_Session-In-TCP"));
+        Assert.Equal(PlanCause.ReadFailed, Item(plan, "fw.builtin:FPS-Unknown").Cause);
+    }
+
+    [Fact]
+    public void ForeignSharesAreNeverRemovedSilently()
+    {
+        var s = Installed() with
+        {
+            Shares = Reading.Ok<IReadOnlyList<ShareInfo>>(new[]
+            {
+                new ShareInfo("Shared", @"E:\Other", "Someone else's", false, 1, 0, false),
+                new ShareInfo("Media", @"D:\Shared", "", false, 1, 0, false),
+                new ShareInfo("ADMIN$", @"C:\Windows", "Remote Admin", false, 1, 0, true),
+            }),
+        };
+
+        var plan = PlanFor(s, Fixture());
+        Assert.Equal(PlanAction.Ask, Item(plan, "share.foreign:Shared").Action);
+        Assert.Equal(PlanAction.Ask, Item(plan, "share.foreign:Media").Action);
+        Assert.Equal(PlanAction.Ask, Item(plan, "share.adminshares").Action);
+        Assert.DoesNotContain(plan.Items, i => i.Section == PlanSection.Share && i.Action == PlanAction.RemoveIfOurs);
+        Assert.All(plan.Items.Where(i => i.Action == PlanAction.Ask), i => Assert.False(i.Ticked));
+    }
+
+    [Fact]
+    public void ATickedForeignShareWithTheSameNameIsReplacedByCpfsOwn()
+    {
+        var s = Installed() with
+        {
+            Shares = Reading.Ok<IReadOnlyList<ShareInfo>>(new[] { new ShareInfo("Shared", @"E:\Other", "Someone else's", false, 1, 0, false) }),
+        };
+
+        var plan = PlanFor(s, Fixture(), a => Tick(a, "share.foreign:Shared"));
+        var keys = plan.Items.Select(i => i.Key).ToList();
+        Assert.Equal(PlanAction.Create, Item(plan, "share.main").Action);
+        Assert.True(keys.IndexOf("share.foreign:Shared") < keys.IndexOf("share.main"));
+        Assert.Null(PlanFor(s, Fixture()).Find("share.main"));
+    }
+
+    [Fact]
+    public void AShortcutTheEarlierInstallMadeAndTheUserDeletedComesBackOnlyWhenTicked()
+    {
+        var s = Installed() with { PublicDesktopFiles = Reading.Ok<IReadOnlyList<string>>(new[] { "desktop.ini" }) };
+
+        var plan = PlanFor(s, Fixture());
+        Assert.Equal(PlanAction.Ask, Item(plan, "shortcut.file").Action);
+        Assert.False(Item(plan, "shortcut.file").Ticked);
+        Assert.Equal(Planner.R.ShortcutGone, Item(plan, "shortcut.file").ReasonKey);
+        Assert.True(Item(PlanFor(s, Fixture(), a => Tick(a, "shortcut.file")), "shortcut.file").Ticked);
+
+        // A first Setup that asks for a shortcut creates it.
+        Assert.Equal(PlanAction.Create, Item(PlanFor(s, null), "shortcut.file").Action);
+    }
+
+    [Fact]
+    public void ADriveTheEarlierInstallMadeAndTheUserRemovedComesBackOnlyWhenTicked()
+    {
+        var doc = Fixture();
+        doc.Root["DriveLetter"] = "X";
+        doc.Root["Access"] = 3;
+        var config = ConfigReader.Parse(ConfigWriter.Serialize(doc.Root));
+
+        var plan = PlanFor(Installed(), config);
+        Assert.Equal(PlanAction.Ask, Item(plan, "drive.map").Action);
+        Assert.False(Item(plan, "drive.map").Ticked);
+        Assert.Equal(Planner.R.DriveGone, Item(plan, "drive.map").ReasonKey);
+    }
+
+    [Fact]
+    public void ARenamedShareRemovesOnlyTheOldOneCpfsMade()
+    {
+        var plan = PlanFor(Installed(), Fixture(), a => SetupDefaults.FollowShareName(a, a.ShareName, "Files"));
+
+        Assert.Equal(PlanAction.Create, Item(plan, "share.main").Action);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(plan, "share.old:Shared").Action);
+
+        // The shortcut name was the default for the old share name, so it follows the new one.
+        Assert.Equal(PlanAction.Create, Item(plan, "shortcut.file").Action);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(plan, "shortcut.old").Action);
+    }
+
+    [Fact]
+    public void AnAccountCpfsDidNotCreateIsUsedOnlyWhenTicked()
+    {
+        var plan = PlanFor(Installed(), Fixture(), a => a with { SmbUser = "Backup" });
+        Assert.Equal(PlanAction.Ask, Item(plan, "user.takeover").Action);
+        Assert.Null(plan.Find("user.enabled"));
+
+        var s = Installed() with { User = Reading.Ok<UserInfo?>(new UserInfo("S-1-5-21-1-2-3-1006", false, false, false, true, true, null)) };
+        var ticked = PlanFor(s, Fixture(), a => Tick(a with { SmbUser = "Backup" }, "user.takeover"));
+        Assert.True(Item(ticked, "user.takeover").BackupNeeded);
+        Assert.Equal(PlanAction.Change, Item(ticked, "user.enabled").Action);
+        Assert.True(Item(ticked, "user.enabled").BackupNeeded);
+        Assert.Equal(PlanAction.Ask, Item(ticked, "user.admin").Action);
+        Assert.True(Item(ticked, "user.admin").Ticked);
+    }
+
+    [Theory]
+    [InlineData(PasswordEntry.Empty, PlanAction.Keep)]
+    [InlineData(PasswordEntry.Valid, PlanAction.Change)]
+    [InlineData(PasswordEntry.TooShort, PlanAction.CannotPlan)]
+    public void ThePlanOnlySaysWhetherThePasswordIsSet(PasswordEntry entry, PlanAction expected)
+    {
+        var item = Item(PlanFor(Installed(), Fixture(), a => a with { Password = entry }), "user.password");
+
+        Assert.Equal(expected, item.Action);
+        Assert.Null(item.Current);
+    }
+
+    [Fact]
+    public void TypingThePasswordOnAnInstallAtTargetGivesOneRunnableItemOnly()
+    {
+        var installed = PlanFor(Installed(), Fixture(), NoEntry);
+        Assert.DoesNotContain(ApplyList.Setup(installed), e => !e.Deferred);
+
+        var plan = PlanFor(Installed(), Fixture(), a => NoEntry(a) with { Password = PasswordEntry.Valid });
+        var run = ApplyList.Setup(plan).Where(e => !e.Deferred).ToList();
+        Assert.Single(run);
+        Assert.Equal("user.password", run[0].Item.Key);
+        Assert.Equal(PlanAction.Change, run[0].Item.Action);
+        Assert.False(run[0].Item.BackupNeeded);
+        Assert.Empty(ApplyList.Blocking(plan));
+    }
+
+    [Fact]
+    public void ANewAccountNeedsAPassword()
+    {
+        var s = Installed() with { User = Reading.Ok<UserInfo?>(null) };
+
+        var plan = PlanFor(s, null);
+        Assert.Equal(PlanAction.Create, Item(plan, "user.account").Action);
+        Assert.Equal(PlanCause.InvalidAnswer, Item(plan, "user.password").Cause);
+        Assert.Equal(PlanAction.Create, Item(PlanFor(s, null, a => a with { Password = PasswordEntry.Valid }), "user.password").Action);
+    }
+
+    // NetUserAdd's defaults differ between Windows editions, so nothing about a new account is left to them.
+    [Fact]
+    public void ANewAccountPlansEveryPropertyExplicitly()
+    {
+        var plan = PlanFor(Installed() with { User = Reading.Ok<UserInfo?>(null) }, null, a => a with { Password = PasswordEntry.Valid });
+        var run = ApplyList.Setup(plan).Select(e => e.Item.Key).ToList();
+
+        foreach (var key in new[] { "user.account", "user.enabled", "user.neverexpires", "user.users", "user.admin", "user.hidden", "user.password" })
+        {
+            Assert.Equal(PlanAction.Create, Item(plan, key).Action);
+            Assert.Contains(key, run);
+        }
+
+        Assert.True(run.IndexOf("user.account") < run.IndexOf("user.users"));
+        Assert.Equal(PlanValue.Word(Planner.W.NotMember), Item(plan, "user.admin").Target);
+    }
+
+    [Fact]
+    public void UnelevatedReadsThatNeedAnAdministratorCannotBePlanned()
+    {
+        var s = Installed() with
+        {
+            Elevated = false,
+            SmbServer = Reading.NeedsAdmin<SmbServerInfo>(),
+            AuditLogon = Reading.NeedsAdmin<AuditSetting>(),
+        };
+
+        var plan = PlanFor(s, Fixture());
+        foreach (var key in new[] { "server.smb2", "server.reject", "server.smb1", "hardening.audit" })
+        {
+            Assert.Equal(PlanAction.CannotPlan, Item(plan, key).Action);
+            Assert.Equal(PlanCause.NeedsAdmin, Item(plan, key).Cause);
+        }
+    }
+
+    [Fact]
+    public void TheDriveLetterMustBeFreeAndCpfsOwnLetterCountsAsFree()
+    {
+        var letters = new LetterScan();
+        letters.Add('C', LetterSource.SystemDrive);
+        letters.Add('X', LetterSource.DosDevices, @"\??\D:\Shared");
+        letters.Add('Y', LetterSource.UserNetwork);
+        var dos = new Dictionary<char, string> { ['X'] = @"\??\D:\Shared" };
+        var s = Installed() with
+        {
+            Letters = letters,
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(dos),
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['X'] = "CPFS - Shared" }),
+        };
+        var config = WithDrive('X');
+
+        var keep = PlanFor(s, config, a => a with { Drive = true });
+        Assert.Equal('X', SetupDefaults.From(config, letters).DriveLetter);
+        Assert.Equal(PlanAction.Keep, Item(keep, "drive.map").Action);
+        Assert.Equal(PlanAction.Keep, Item(keep, "drive.label").Action);
+
+        var taken = PlanFor(s, config, a => a with { Drive = true, DriveLetter = 'Y' });
+        Assert.Equal(PlanCause.InvalidAnswer, Item(taken, "drive.map").Cause);
+
+        var moved = PlanFor(s, config, a => a with { Drive = true, DriveLetter = 'S' });
+        Assert.Equal(PlanAction.Create, Item(moved, "drive.map").Action);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(moved, "drive.oldmap").Action);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(moved, "drive.oldlabel").Action);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(moved, "drive.oldsession").Action);
+        Assert.Equal(PlanAction.Create, Item(moved, "drive.session").Action);
+
+        // The old letter's name and mapping go before the new letter is mapped.
+        var keys = moved.Items.Select(i => i.Key).Where(k => k.StartsWith("drive.", StringComparison.Ordinal)).ToList();
+        Assert.Equal(new[] { "drive.oldlabel", "drive.oldsession", "drive.oldmap", "drive.map", "drive.session", "drive.label", "drive.icon" }, keys);
+    }
+
+    [Fact]
+    public void CpfsOwnLetterHeldBySomethingElseIsRefused()
+    {
+        var letters = new LetterScan();
+        letters.Add('C', LetterSource.SystemDrive);
+        letters.Add('X', LetterSource.UserNetwork, @"\\nas\photos");
+        var s = Installed() with
+        {
+            Letters = letters,
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+        };
+
+        var plan = PlanFor(s, WithDrive('X'), a => a with { Drive = true, DriveLetter = 'X' });
+
+        Assert.Equal(PlanAction.CannotPlan, Item(plan, "drive.map").Action);
+        Assert.Equal(Planner.R.DriveForeign, Item(plan, "drive.map").ReasonKey);
+        Assert.DoesNotContain(plan.Items, i => i.Key == "drive.session" || i.Key == "drive.label");
+    }
+
+    [Fact]
+    public void AMovedFolderRemapsTheSameLetterAfterRemovingTheOldMapping()
+    {
+        var letters = new LetterScan();
+        letters.Add('C', LetterSource.SystemDrive);
+        letters.Add('X', LetterSource.DosDevices, @"\??\D:\Shared");
+        letters.Add('X', LetterSource.UserSessionReceived);
+        var s = Installed() with
+        {
+            Letters = letters,
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['X'] = @"\??\D:\Shared" }),
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['X'] = "CPFS - Shared" }),
+        };
+
+        var plan = PlanFor(s, WithDrive('X'), a => a with { Drive = true, DriveLetter = 'X', SharePath = @"D:\Moved" });
+
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(plan, "drive.oldsession").Action);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(plan, "drive.oldmap").Action);
+        Assert.Equal(PlanAction.Create, Item(plan, "drive.map").Action);
+        Assert.Equal(@"X: \??\D:\Moved", Item(plan, "drive.map").Target!.Data);
+        Assert.Equal(PlanAction.Create, Item(plan, "drive.session").Action);
+        Assert.Equal(PlanAction.Keep, Item(plan, "drive.label").Action);
+        Assert.DoesNotContain(plan.Items, i => i.Key == "drive.oldlabel");
+    }
+
+    [Fact]
+    public void AGoneDriveComesBackOnlyWhenTickedAndThenAlsoInTheSession()
+    {
+        var s = Installed() with
+        {
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+        };
+
+        var unticked = PlanFor(s, WithDrive('X'), a => a with { Drive = true, DriveLetter = 'X' });
+        Assert.Equal(PlanAction.Ask, Item(unticked, "drive.map").Action);
+        Assert.DoesNotContain(unticked.Items, i => i.Key == "drive.session");
+
+        var ticked = PlanFor(s, WithDrive('X'), a => a with
+        {
+            Drive = true, DriveLetter = 'X', Choices = new Dictionary<string, bool> { ["drive.map"] = true },
+        });
+        Assert.True(Item(ticked, "drive.map").Ticked);
+        Assert.Equal(PlanAction.Create, Item(ticked, "drive.session").Action);
+    }
+
+    [Fact]
+    public void ADriveNameCpfsDidNotSetIsBackedUpAndPutBackWhenTheLetterMoves()
+    {
+        var dos = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>());
+        var first = PlanFor(Installed() with
+        {
+            DosDevices = dos,
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['M'] = "Music" }),
+        }, ConfigReader.Parse(TestFiles.ConfigBytes("v0.2.3-anonymised.json")), a => a with { Drive = true, DriveLetter = 'M' });
+        Assert.Equal(Planner.R.LabelForeign, Item(first, "drive.label").ReasonKey);
+        Assert.True(Item(first, "drive.label").BackupNeeded);
+
+        var book = Cpfs.Core.Apply.ConfigBook.ForSetup(WithDrive('M'));
+        Assert.Equal(Cpfs.Core.Apply.BackupWrite.Recorded, book.BackupDriveLabel('M', "Music"));
+        Assert.Equal(Cpfs.Core.Apply.BackupWrite.AlreadyRecorded, book.BackupDriveLabel('m', "CPFS - Shared"));
+        var config = ConfigReader.Parse(ConfigWriter.Serialize(book.Root));
+        Assert.Equal("Music", config.BackupDriveLabel('M'));
+
+        var moved = PlanFor(Installed() with
+        {
+            DosDevices = dos,
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['M'] = "CPFS - Shared" }),
+        }, config, a => a with { Drive = true, DriveLetter = 'S' });
+        Assert.Equal(PlanAction.Change, Item(moved, "drive.oldlabel").Action);
+        Assert.Equal("Music", Item(moved, "drive.oldlabel").Target!.Data);
+    }
+
+    // The backup of a letter's name is taken once, so a name the user gave CPFS's drive since would be lost on
+    // Uninstall: it is replaced only when ticked. CPFS's own name and the backed-up original are replaced as before.
+    [Fact]
+    public void ADriveNameTheUserGaveSinceTheBackupIsAnUntickedQuestion()
+    {
+        var book = Cpfs.Core.Apply.ConfigBook.ForSetup(WithDrive('M'));
+        book.BackupDriveLabel('M', "Music");
+        var config = ConfigReader.Parse(ConfigWriter.Serialize(book.Root));
+        SystemSnapshot Labelled(string label) => Installed() with
+        {
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['M'] = @"\??\D:\Shared" }),
+            DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['M'] = label }),
+        };
+        SetupAnswers Photos(SetupAnswers a) => a with { Drive = true, DriveLetter = 'M', DriveName = "Photos" };
+
+        var renamed = Item(PlanFor(Labelled("Songs"), config, Photos), "drive.label");
+        Assert.Equal(PlanAction.Ask, renamed.Action);
+        Assert.False(renamed.Ticked);
+        Assert.False(renamed.BackupNeeded);
+        Assert.Equal(Planner.R.LabelRenamed, renamed.ReasonKey);
+        Assert.Equal(new[] { "M:", "Songs", "Photos" }, renamed.ReasonArgs);
+
+        var ticked = Item(PlanFor(Labelled("Songs"), config, a => Photos(a) with { Choices = new Dictionary<string, bool> { ["drive.label"] = true } }), "drive.label");
+        Assert.True(ticked.Ticked);
+
+        var own = Item(PlanFor(Labelled("CPFS - Shared"), config, Photos), "drive.label");
+        Assert.Equal(PlanAction.Change, own.Action);
+        Assert.Equal(Planner.R.LabelSet, own.ReasonKey);
+
+        var original = Item(PlanFor(Labelled("Music"), config, Photos), "drive.label");
+        Assert.Equal(PlanAction.Change, original.Action);
+        Assert.Equal(Planner.R.LabelForeign, original.ReasonKey);
+    }
+
+    // The CPFS icon: set on a letter without one, kept when it is CPFS's, and an icon someone else set is replaced
+    // only when ticked, backed up first; when the letter moves, the old letter's CPFS icon goes or the original comes back.
+    [Fact]
+    public void TheDriveIconIsCpfsOwnAndAForeignIconIsAnUntickedQuestion()
+    {
+        SystemSnapshot WithIcons(Dictionary<char, string> icons) => Installed() with
+        {
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+            DriveIcons = Reading.Ok<IReadOnlyDictionary<char, string>>(icons),
+        };
+        SetupAnswers OnM(SetupAnswers a) => a with { Drive = true, DriveLetter = 'M' };
+        var fresh = ConfigReader.Parse(TestFiles.ConfigBytes("v0.2.3-anonymised.json"));
+
+        var created = PlanFor(WithIcons(new()), fresh, OnM);
+        Assert.Equal(PlanAction.Create, Item(created, "drive.icon").Action);
+        Assert.Equal(CpfsIcon, Item(created, "drive.icon").Target!.Data);
+        Assert.Contains(PlanSummary.Setup(created, OnM(Answers(fresh, WithIcons(new()))), fresh).Lines,
+            l => l.Key.StartsWith("Summary_Adds_D", StringComparison.Ordinal) && (string)l.Args[0] == "M:");
+
+        Assert.Equal(PlanAction.Keep, Item(PlanFor(WithIcons(new() { ['M'] = CpfsIcon + ",0" }), fresh, OnM), "drive.icon").Action);
+
+        var foreign = Item(PlanFor(WithIcons(new() { ['M'] = @"C:\Icons\music.ico" }), fresh, OnM), "drive.icon");
+        Assert.Equal(PlanAction.Ask, foreign.Action);
+        Assert.False(foreign.Ticked);
+        Assert.False(foreign.BackupNeeded);
+        Assert.Equal(Planner.R.IconForeign, foreign.ReasonKey);
+        var ticked = Item(PlanFor(WithIcons(new() { ['M'] = @"C:\Icons\music.ico" }), fresh, a => Tick(OnM(a), "drive.icon")), "drive.icon");
+        Assert.True(ticked.BackupNeeded);
+
+        var book = Cpfs.Core.Apply.ConfigBook.ForSetup(WithDrive('M'));
+        Assert.Equal(Cpfs.Core.Apply.BackupWrite.Recorded, book.BackupDriveIcon('M', @"C:\Icons\music.ico"));
+        Assert.Equal(Cpfs.Core.Apply.BackupWrite.AlreadyRecorded, book.BackupDriveIcon('m', CpfsIcon));
+        var backedUp = ConfigReader.Parse(ConfigWriter.Serialize(book.Root));
+        Assert.Equal(@"C:\Icons\music.ico", backedUp.BackupDriveIcon('M'));
+
+        var restored = Item(PlanFor(WithIcons(new() { ['M'] = CpfsIcon }), backedUp, a => a with { Drive = true, DriveLetter = 'S' }), "drive.oldicon");
+        Assert.Equal(PlanAction.Change, restored.Action);
+        Assert.Equal(@"C:\Icons\music.ico", restored.Target!.Data);
+        var removed = Item(PlanFor(WithIcons(new() { ['M'] = CpfsIcon }), WithDrive('M'), a => a with { Drive = true, DriveLetter = 'S' }), "drive.oldicon");
+        Assert.Equal(PlanAction.RemoveIfOurs, removed.Action);
+    }
+
+    // CPFS's existing shortcut without an icon gets the CPFS icon; one with an icon of its own keeps it.
+    [Fact]
+    public void CpfsOwnShortcutWithoutAnIconGetsTheCpfsIcon()
+    {
+        SystemSnapshot WithIcon(string icon) => Installed() with
+        {
+            ShortcutIcons = Reading.Ok<IReadOnlyDictionary<string, string>>(new Dictionary<string, string> { ["Shared (CPFS).lnk"] = icon }),
+        };
+        var config = ConfigReader.Parse(TestFiles.ConfigBytes("v0.2.3-anonymised.json"));
+
+        var none = PlanFor(WithIcon(""), config, a => a with { Shortcut = true });
+        Assert.Equal(PlanAction.Keep, Item(none, "shortcut.file").Action);
+        Assert.Equal(PlanAction.Change, Item(none, "shortcut.icon").Action);
+        Assert.Equal(CpfsIcon, Item(none, "shortcut.icon").Target!.Data);
+
+        Assert.Null(PlanFor(WithIcon(CpfsIcon), config, a => a with { Shortcut = true }).Find("shortcut.icon"));
+        Assert.Null(PlanFor(WithIcon(@"C:\Icons\mine.ico"), config, a => a with { Shortcut = true }).Find("shortcut.icon"));
+    }
+
+    // A CPFS-RunAsUser task found now is a leftover: it goes with the drive (not deferred with Auto-Private), before
+    // the session step creates CPFS's own for a moment.
+    [Fact]
+    public void AStaleRunAsUserTaskIsRemovedBeforeTheSessionStep()
+    {
+        var none = PlanFor(Installed(), WithDrive('X'), a => a with { Drive = true, DriveLetter = 'X' });
+        Assert.DoesNotContain(none.Items, i => i.Key == "task.runasuser");
+
+        var s = Installed() with
+        {
+            Tasks = Reading.Ok<IReadOnlyDictionary<string, bool>>(new Dictionary<string, bool>
+            {
+                [Planner.AutoPrivateTask] = false, [Planner.RunAsUserTask] = true, [Planner.LegacyAutoPrivateTask] = false,
+            }),
+        };
+        var plan = PlanFor(s, WithDrive('X'), a => a with
+        {
+            Drive = true, DriveLetter = 'X', Choices = new Dictionary<string, bool> { ["drive.map"] = true },
+        });
+        var item = Item(plan, "task.runasuser");
+        Assert.Equal(PlanAction.RemoveIfOurs, item.Action);
+        Assert.Equal(PlanSection.Drive, item.Section);
+        Assert.Equal(Planner.RunAsUserTask, item.Subject.Data);
+
+        var keys = Cpfs.Core.Apply.ApplyList.Setup(plan).Where(e => !e.Deferred).Select(e => e.Item.Key).ToList();
+        Assert.Contains("task.runasuser", keys);
+        Assert.Contains("drive.session", keys);
+        Assert.True(keys.IndexOf("task.runasuser") < keys.IndexOf("drive.session"));
+    }
+
+    [Fact]
+    public void ARecordedShortcutUnderAnotherNameGoesBeforeTheNewOneIsCreated()
+    {
+        var s = Installed() with
+        {
+            PublicDesktopFiles = Reading.Ok<IReadOnlyList<string>>(new[] { "Shared (CPFS).lnk" }),
+        };
+
+        var plan = PlanFor(s, WithDrive('X'), a => a with { Shortcut = true, ShortcutName = "Photos" });
+        var keys = plan.Items.Select(i => i.Key).Where(k => k.StartsWith("shortcut.", StringComparison.Ordinal)).ToList();
+
+        Assert.Equal(new[] { "shortcut.old", "shortcut.file" }, keys);
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(plan, "shortcut.old").Action);
+        Assert.Equal(PlanAction.Create, Item(plan, "shortcut.file").Action);
+    }
+
+    [Fact]
+    public void ARecordedShortcutThatIsGoneIsAnUntickedQuestion()
+    {
+        var s = Installed() with { PublicDesktopFiles = Reading.Ok<IReadOnlyList<string>>(new[] { "desktop.ini" }) };
+
+        var plan = PlanFor(s, WithDrive('X'), a => a with { Shortcut = true, ShortcutName = "Shared (CPFS)" });
+
+        Assert.Equal(PlanAction.Ask, Item(plan, "shortcut.file").Action);
+        Assert.False(Item(plan, "shortcut.file").Ticked);
+        Assert.DoesNotContain(plan.Items, i => i.Key == "shortcut.old");
+    }
+
+    [Fact]
+    public void AnOldDriveMappingThatIsNotCpfsIsLeftAlone()
+    {
+        var s = Installed() with
+        {
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string> { ['X'] = @"\??\E:\Elsewhere" }),
+        };
+
+        var plan = PlanFor(s, WithDrive('X'), a => a with { Drive = false });
+        Assert.Equal(PlanAction.Keep, Item(plan, "drive.oldmap").Action);
+        Assert.Equal(Planner.R.DriveOldForeign, Item(plan, "drive.oldmap").ReasonKey);
+    }
+
+    [Fact]
+    public void AShortcutNameTakenByAnotherFileIsRefused()
+    {
+        var s = Installed() with
+        {
+            PublicDesktopFiles = Reading.Ok<IReadOnlyList<string>>(new[] { "Shared (CPFS).lnk", "Files.lnk" }),
+        };
+
+        var item = Item(PlanFor(s, Fixture(), a => a with { ShortcutName = "Files" }), "shortcut.file");
+        Assert.Equal(PlanAction.CannotPlan, item.Action);
+        Assert.Equal(Planner.R.ShortcutForeign, item.ReasonKey);
+    }
+
+    [Fact]
+    public void AnInvalidAnswerIsShownInsteadOfPlanned()
+    {
+        var plan = PlanFor(Installed(), Fixture(), a => a with { SharePath = @"C:\Windows\Temp", ShareName = "bad name" });
+
+        Assert.Equal(PlanCause.InvalidAnswer, Item(plan, "folder.exists").Cause);
+        Assert.Equal(PlanCause.InvalidAnswer, Item(plan, "share.main").Cause);
+    }
+
+    [Fact]
+    public void OnlyTheSmbAccountKeepsShareAccessAndOthersAreAsked()
+    {
+        var s = Installed() with
+        {
+            ShareAccess = Reading.Ok<IReadOnlyList<ShareAccessEntry>?>(new[]
+            {
+                new ShareAccessEntry(@"HOST-01\ShareUser", UserSid, 0, 1),
+                new ShareAccessEntry("Everyone", "S-1-1-0", 0, 2),
+                new ShareAccessEntry("Everyone", "S-1-1-0", 0, 0),
+                new ShareAccessEntry("Guests", "S-1-5-32-546", 1, 0),
+                new ShareAccessEntry("Orphan", null, 0, 3),
+            }),
+        };
+
+        var plan = PlanFor(s, Fixture());
+        Assert.Equal(PlanAction.Change, Item(plan, "share.access").Action);
+        Assert.Equal(Planner.R.ShareAccessGrant, Item(plan, "share.access").ReasonKey);
+        Assert.Equal(PlanAction.Ask, Item(plan, "share.access:S-1-1-0").Action);
+        Assert.False(Item(plan, "share.access:S-1-1-0").Ticked);
+        Assert.Equal(PlanAction.Ask, Item(plan, "share.access:Orphan").Action);
+        Assert.Single(plan.Items, i => i.Key == "share.access:S-1-1-0");
+        Assert.DoesNotContain(plan.Items, i => i.Key == "share.access:S-1-5-32-546");
+
+        var denied = Installed() with
+        {
+            ShareAccess = Reading.Ok<IReadOnlyList<ShareAccessEntry>?>(new[]
+            {
+                new ShareAccessEntry(@"HOST-01\ShareUser", UserSid, 0, 0),
+                new ShareAccessEntry(@"HOST-01\ShareUser", UserSid, 1, 0),
+            }),
+        };
+        var deny = PlanFor(denied, Fixture());
+        Assert.Equal(PlanAction.Keep, Item(deny, "share.access").Action);
+        Assert.Equal(Planner.R.ShareAccessDeny, Item(deny, "share.access:" + UserSid).ReasonKey);
+
+        var created = PlanFor(Installed() with { User = Reading.Ok<UserInfo?>(null) }, Fixture(), a => a with { Password = PasswordEntry.Valid });
+        Assert.Equal(PlanAction.Create, Item(created, "share.access").Action);
+
+        var unread = PlanFor(Installed() with { Elevated = false, ShareAccess = Reading.NeedsAdmin<IReadOnlyList<ShareAccessEntry>?>() }, Fixture());
+        Assert.Equal(PlanCause.NeedsAdmin, Item(unread, "share.access").Cause);
+    }
+
+    [Fact]
+    public void TheLiveComputerNameIsKeptAndASavedNameThatDiffersIsOnlyShown()
+    {
+        var same = PlanFor(Installed(), Fixture());
+        Assert.Equal(PlanAction.Keep, Item(same, "computer.name").Action);
+        Assert.Null(same.Find("computer.saved"));
+
+        var renamed = PlanFor(Installed() with { ComputerNames = Reading.Ok(new ComputerNameInfo("LAPTOP", null)) }, Fixture());
+        Assert.Equal(PlanAction.Keep, Item(renamed, "computer.name").Action);
+        Assert.Equal(Planner.R.AtTarget, Item(renamed, "computer.name").ReasonKey);
+        Assert.Equal(PlanAction.Keep, Item(renamed, "computer.saved").Action);
+        Assert.Equal(Planner.R.ComputerSavedDiffers, Item(renamed, "computer.saved").ReasonKey);
+        Assert.Equal(new[] { "HOST-01", "LAPTOP" }, Item(renamed, "computer.saved").ReasonArgs);
+        Assert.DoesNotContain(renamed.Items, i => i.Section == PlanSection.Computer && i.Action != PlanAction.Keep);
+
+        var pending = PlanFor(Installed() with { ComputerNames = Reading.Ok(new ComputerNameInfo("LAPTOP", "HOST-01")) }, Fixture());
+        Assert.Equal(Planner.R.ComputerPending, Item(pending, "computer.name").ReasonKey);
+        Assert.Null(pending.Find("computer.saved"));
+
+        Assert.Null(PlanFor(Installed() with { ComputerNames = Reading.Ok(new ComputerNameInfo("LAPTOP", null)) }, null).Find("computer.saved"));
+    }
+
+    [Fact]
+    public void TheLogListsEveryItemThatIsNotKeepWithoutItsArguments()
+    {
+        var s = Installed() with
+        {
+            ShareAccess = Reading.Ok<IReadOnlyList<ShareAccessEntry>?>(new[]
+            {
+                new ShareAccessEntry(@"HOST-01\ShareUser", UserSid, 0, 0),
+                new ShareAccessEntry("Everyone", "S-1-1-0", 0, 2),
+            }),
+            AuditLogon = Reading.NeedsAdmin<AuditSetting>(),
+        };
+
+        var plan = PlanFor(s, Fixture());
+        var lines = plan.LogLines();
+        Assert.Equal(plan.Items.Count(i => i.Action != PlanAction.Keep), lines.Count);
+        Assert.Contains("Ask share.access:S-1-1-0: " + Planner.R.ShareAccessOther, lines);
+        Assert.Contains("CannotPlan/NeedsAdmin hardening.audit: " + Planner.R.NeedsAdmin, lines);
+        Assert.DoesNotContain(lines, l => l.Contains("Everyone", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void FirewallAddressesCompareInMaskOrPrefixForm()
+    {
+        Assert.Equal(
+            FirewallRules.NormalizeAddresses("100.64.0.0/10, FD7A:115C:A1E0::/48"),
+            FirewallRules.NormalizeAddresses("fd7a:115c:a1e0::/48,100.64.0.0/255.192.0.0"));
+        Assert.Equal(new[] { "LocalSubnet" }, FirewallRules.NormalizeAddresses("localsubnet"));
+        Assert.Empty(FirewallRules.NormalizeAddresses("*"));
+    }
+
+    [Fact]
+    public void EveryReasonAndWordHasAnEnglishString()
+    {
+        var english = XDocument.Load(Path.Combine(TestFiles.RepoRoot, "src", "Cpfs", "Strings", "Strings.resx")).Root!
+            .Elements("data").Select(d => (string)d.Attribute("name")!).ToHashSet();
+
+        Assert.DoesNotContain(Planner.ReasonKeys, k => !english.Contains(k));
+        Assert.DoesNotContain(Planner.WordKeys, k => !english.Contains(k));
+        Assert.DoesNotContain(UninstallPlanner.ReasonKeys, k => !english.Contains(k));
+        Assert.DoesNotContain(UninstallPlanner.WordKeys, k => !english.Contains(k));
+        foreach (var section in Enum.GetNames<PlanSection>())
+        {
+            Assert.Contains("Plan_Section_" + section, english);
+        }
+    }
+
+    [Fact]
+    public void EveryItemUsesAKnownReason()
+    {
+        var plans = new[]
+        {
+            PlanFor(Installed(), Fixture()),
+            PlanFor(Installed() with { User = Reading.Ok<UserInfo?>(null), Lockout = Reading.Ok(new LockoutInfo(0, 0, 0)) }, null),
+            PlanFor(Installed() with { Shares = Reading.Failed<IReadOnlyList<ShareInfo>>("boom") }, Fixture()),
+        };
+
+        foreach (var item in plans.SelectMany(p => p.Items))
+        {
+            Assert.Contains(item.ReasonKey, Planner.ReasonKeys);
+        }
+    }
+
+    [Theory]
+    [InlineData("0.5.0-dev1+3d20e71b5c0a8f1e2d3c4b5a69788796a5b4c3d2", "0.5.0-dev1 (3d20e71)")]
+    [InlineData("0.5.0", "0.5.0")]
+    [InlineData("0.5.0-dev1+", "0.5.0-dev1")]
+    public void TheVersionShowsAShortCommit(string informational, string expected)
+    {
+        Assert.Equal(expected, VersionText.Display(informational));
+    }
+
+    [Theory]
+    [InlineData("0.5.0-dev3+3d20e71b5c0a8f1e2d3c4b5a69788796a5b4c3d2", "0.5.0-dev3")]
+    [InlineData("0.5.0", "0.5.0")]
+    public void TheVersionNumberHasNoCommit(string informational, string expected)
+    {
+        Assert.Equal(expected, VersionText.Number(informational));
+    }
+
+    private static ConfigDocument WithDrive(char letter)
+    {
+        var text = System.Text.Encoding.UTF8.GetString(TestFiles.ConfigBytes("v0.2.3-anonymised.json"))
+            .Replace("\"DriveLetter\":  null", "\"DriveLetter\":  \"" + letter + "\"", StringComparison.Ordinal)
+            .Replace("\"Access\":  2", "\"Access\":  3", StringComparison.Ordinal)
+            .Replace("\"DriveLabel\":  null", "\"DriveLabel\":  \"CPFS - Shared\"", StringComparison.Ordinal);
+        return ConfigReader.Parse(System.Text.Encoding.UTF8.GetBytes(text));
+    }
+}

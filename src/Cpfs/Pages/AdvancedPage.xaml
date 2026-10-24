@@ -1,0 +1,288 @@
+<Page
+  x:Class="Cpfs.Pages.AdvancedPage"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:local="clr-namespace:Cpfs"
+  xmlns:pages="clr-namespace:Cpfs.Pages"
+  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+  Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+  <Page.Resources>
+    <BooleanToVisibilityConverter x:Key="Visible" />
+
+    <Style x:Key="InfoName" BasedOn="{StaticResource CardTitle}" TargetType="TextBlock">
+      <Setter Property="Margin" Value="0,0,16,8" />
+    </Style>
+    <Style x:Key="InfoValue" BasedOn="{StaticResource CardValue}" TargetType="TextBlock">
+      <Setter Property="Margin" Value="0,0,0,8" />
+      <Setter Property="Grid.Column" Value="1" />
+    </Style>
+    <Style x:Key="InfoData" BasedOn="{StaticResource DataValue}" TargetType="TextBlock">
+      <Setter Property="Margin" Value="0,0,0,8" />
+      <Setter Property="Grid.Column" Value="1" />
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+    </Style>
+    <DataTemplate x:Key="RowTemplate" DataType="{x:Type pages:RowView}">
+      <Grid Margin="0,0,0,6">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="2*" MinWidth="120" />
+          <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+        <TextBlock
+          Margin="0,0,12,0"
+          Style="{StaticResource CardTitle}"
+          FontWeight="Normal"
+          Text="{Binding Label}"
+          Visibility="{Binding LabelIsText, Converter={StaticResource Visible}}" />
+        <TextBlock
+          Margin="0,0,12,0"
+          Style="{StaticResource DataValue}"
+          Text="{Binding Label}"
+          Visibility="{Binding LabelIsData, Converter={StaticResource Visible}}" />
+        <StackPanel Grid.Column="1">
+          <TextBlock Style="{StaticResource CardValue}" Text="{Binding Value}" Visibility="{Binding ValueIsText, Converter={StaticResource Visible}}" />
+          <TextBlock Style="{StaticResource DataValue}" Text="{Binding Value}" Visibility="{Binding ValueIsData, Converter={StaticResource Visible}}" />
+          <Border Style="{StaticResource Badge}" Visibility="{Binding HasBadge, Converter={StaticResource Visible}}">
+            <TextBlock Style="{StaticResource BadgeText}" Text="{Binding Badge}" />
+          </Border>
+          <TextBlock Style="{StaticResource ErrorText}" Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
+        </StackPanel>
+      </Grid>
+    </DataTemplate>
+
+    <!--
+      A collapsible section: the header shows the name, a one-line summary (or "Reading..." until the section is
+      read) and its status badge; the rows are inside. The header's toggle button is the one tab stop.
+    -->
+    <DataTemplate x:Key="SectionTemplate" DataType="{x:Type pages:SectionView}">
+      <ui:CardExpander
+        Margin="0,0,0,4"
+        AutomationProperties.HelpText="{Binding HelpText}"
+        AutomationProperties.Name="{Binding Title}"
+        Focusable="False"
+        IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
+        Loaded="OnSectionLoaded"
+        PreviewKeyDown="OnSectionKeyDown">
+        <ui:CardExpander.Header>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
+              <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Summary}" Visibility="{Binding HasSummary, Converter={StaticResource Visible}}" />
+            </StackPanel>
+            <Border
+              Grid.Column="1"
+              Margin="12,0,8,0"
+              VerticalAlignment="Center"
+              Visibility="{Binding HasBadge, Converter={StaticResource Visible}}">
+              <Border.Style>
+                <Style BasedOn="{StaticResource Badge}" TargetType="Border">
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding BadgeKind}" Value="Ok">
+                      <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBackgroundBrush}" />
+                      <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding BadgeKind}" Value="Missing">
+                      <Setter Property="Background" Value="{DynamicResource SystemFillColorNeutralBackgroundBrush}" />
+                      <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorNeutralBrush}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding BadgeKind}" Value="Failed">
+                      <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}" />
+                      <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </Border.Style>
+              <TextBlock Style="{StaticResource BadgeText}" Text="{Binding Badge}" />
+            </Border>
+          </Grid>
+        </ui:CardExpander.Header>
+        <StackPanel>
+          <TextBlock Margin="0" Style="{StaticResource CardDescription}" Text="{Binding Description}" />
+          <TextBlock Margin="0,8,0,0" Style="{StaticResource ErrorText}" Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
+          <!--  An ItemsControl has no ScrollViewer of its own: the page scrolls, not the card.  -->
+          <ItemsControl
+            Margin="0,12,0,0"
+            Focusable="False"
+            ItemTemplate="{StaticResource RowTemplate}"
+            ItemsSource="{Binding Rows}" />
+        </StackPanel>
+      </ui:CardExpander>
+    </DataTemplate>
+
+  </Page.Resources>
+
+  <!--  For support and the curious: nothing here is needed to set up, apply or uninstall.  -->
+  <StackPanel Margin="24,16,24,24">
+    <TextBlock Style="{StaticResource PageTitle}" Text="{Binding [Nav_Advanced], Source={x:Static local:Loc.Instance}}" />
+
+    <TextBlock Margin="0,24,0,4" Style="{StaticResource CardTitle}" FontSize="20" Text="{Binding [Setup_State_Title], Source={x:Static local:Loc.Instance}}" />
+    <TextBlock Margin="0,0,0,8" Style="{StaticResource CardDescription}" Text="{Binding [Adv_State_Desc], Source={x:Static local:Loc.Instance}}" />
+
+    <WrapPanel Margin="0,0,0,8">
+      <ui:Button
+        x:Name="RefreshButton"
+        Margin="0,0,12,4"
+        AutomationProperties.Name="{Binding [Setup_Refresh], Source={x:Static local:Loc.Instance}}"
+        Click="OnRefresh"
+        Content="{Binding [Setup_Refresh], Source={x:Static local:Loc.Instance}}"
+        Icon="{ui:SymbolIcon ArrowClockwise24}" />
+      <ui:Button
+        Margin="0,0,8,4"
+        AutomationProperties.Name="{Binding [Setup_ExpandAll], Source={x:Static local:Loc.Instance}}"
+        Click="OnExpandAll"
+        Content="{Binding [Setup_ExpandAll], Source={x:Static local:Loc.Instance}}"
+        Icon="{ui:SymbolIcon ArrowMaximizeVertical24}" />
+      <ui:Button
+        Margin="0,0,12,4"
+        AutomationProperties.Name="{Binding [Setup_CollapseAll], Source={x:Static local:Loc.Instance}}"
+        Click="OnCollapseAll"
+        Content="{Binding [Setup_CollapseAll], Source={x:Static local:Loc.Instance}}"
+        Icon="{ui:SymbolIcon ArrowMinimizeVertical24}" />
+      <ui:ProgressRing
+        x:Name="Busy"
+        Width="20"
+        Height="20"
+        IsIndeterminate="True"
+        Visibility="Collapsed" />
+      <TextBlock
+        x:Name="BusyText"
+        Margin="8,0,0,0"
+        VerticalAlignment="Center"
+        Style="{StaticResource CardValue}"
+        Text="{Binding [Common_ReadingPc], Source={x:Static local:Loc.Instance}}"
+        Visibility="Collapsed" />
+    </WrapPanel>
+
+    <ui:InfoBar x:Name="ReadResult" Margin="0,0,0,4" IsClosable="True" IsOpen="False" />
+
+    <ItemsControl x:Name="Sections" Focusable="False" ItemTemplate="{StaticResource SectionTemplate}" />
+
+    <!--  Only when the CPFS-AutoPrivate task exists (AdvancedPage.ReadAutoPrivateAsync).  -->
+    <ui:Card x:Name="AutoPrivateCard" Margin="0,0,0,4" Visibility="Collapsed">
+      <StackPanel>
+        <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Adv_AutoPrivate_Title], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Adv_AutoPrivate_Desc], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock
+          x:Name="AutoPrivateValue"
+          Margin="0,8,0,0"
+          AutomationProperties.LiveSetting="Polite"
+          Style="{StaticResource CardValue}" />
+        <Border
+          x:Name="AutoPrivateAdmin"
+          Margin="0,8,0,0"
+          Style="{StaticResource Badge}"
+          Visibility="Collapsed">
+          <TextBlock Style="{StaticResource BadgeText}" Text="{Binding [Badge_NeedsAdmin], Source={x:Static local:Loc.Instance}}" />
+        </Border>
+      </StackPanel>
+    </ui:Card>
+
+    <ui:Card x:Name="HandOverCard" Margin="0,4,0,4" Visibility="Collapsed">
+      <StackPanel>
+        <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Setup_HandOver_Title], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_HandOver_Desc], Source={x:Static local:Loc.Instance}}" />
+        <ItemsControl
+          x:Name="HandOverRows"
+          Margin="0,12,0,0"
+          Focusable="False"
+          ItemTemplate="{StaticResource RowTemplate}" />
+      </StackPanel>
+    </ui:Card>
+
+    <TextBlock Margin="0,24,0,8" Style="{StaticResource CardTitle}" FontSize="20" Text="{Binding [Adv_Diagnostics_Title], Source={x:Static local:Loc.Instance}}" />
+
+    <ui:Card Margin="0,0,0,4">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Style="{StaticResource InfoName}" Text="{Binding [About_Version], Source={x:Static local:Loc.Instance}}" />
+        <StackPanel
+          Grid.Row="0"
+          Grid.Column="1"
+          Margin="0,0,0,8"
+          Orientation="Horizontal">
+          <TextBlock
+            x:Name="VersionValue"
+            Margin="0"
+            VerticalAlignment="Center"
+            Style="{StaticResource InfoData}" />
+          <!--  Negative margins keep the row as tall as the others.  -->
+          <ui:Button
+            Margin="8,-6,0,-6"
+            Padding="6"
+            VerticalAlignment="Center"
+            AutomationProperties.Name="{Binding [About_CopyVersion], Source={x:Static local:Loc.Instance}}"
+            Appearance="Transparent"
+            Click="OnCopyVersion"
+            Icon="{ui:SymbolIcon Copy24}"
+            ToolTip="{Binding [About_CopyVersion], Source={x:Static local:Loc.Instance}}" />
+        </StackPanel>
+        <TextBlock Grid.Row="1" Style="{StaticResource InfoName}" Text="{Binding [About_Windows], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock x:Name="WindowsValue" Grid.Row="1" Style="{StaticResource InfoData}" />
+        <TextBlock Grid.Row="2" Style="{StaticResource InfoName}" Text="{Binding [About_Framework], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock x:Name="FrameworkValue" Grid.Row="2" Style="{StaticResource InfoData}" />
+        <TextBlock Grid.Row="3" Style="{StaticResource InfoName}" Text="{Binding [About_Backdrop], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock x:Name="BackdropValue" Grid.Row="3" Style="{StaticResource InfoValue}" />
+        <TextBlock Grid.Row="4" Style="{StaticResource InfoName}" Text="{Binding [About_CurrentTheme], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock x:Name="ThemeValue" Grid.Row="4" Style="{StaticResource InfoData}" />
+        <TextBlock Grid.Row="5" Style="{StaticResource InfoName}" Text="{Binding [About_CurrentFont], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock x:Name="FontValue" Grid.Row="5" Style="{StaticResource InfoData}" />
+        <TextBlock Grid.Row="6" Style="{StaticResource InfoName}" Text="{Binding [About_Elevated], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock x:Name="ElevatedValue" Grid.Row="6" Style="{StaticResource InfoValue}" />
+        <TextBlock Grid.Row="7" Style="{StaticResource InfoName}" Text="{Binding [About_Exe], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock x:Name="ExeValue" Grid.Row="7" Style="{StaticResource InfoData}" />
+        <TextBlock Grid.Row="8" Style="{StaticResource InfoName}" Text="{Binding [About_ExeFile], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock x:Name="ExeFileValue" Grid.Row="8" Style="{StaticResource InfoValue}" />
+        <TextBlock Grid.Row="9" Style="{StaticResource InfoName}" Text="{Binding [About_Libraries], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock x:Name="LibrariesValue" Grid.Row="9" Style="{StaticResource InfoData}" />
+        <TextBlock Grid.Row="10" Style="{StaticResource InfoName}" Text="{Binding [About_LogPath], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock x:Name="LogPathValue" Grid.Row="10" Style="{StaticResource InfoData}" />
+        <TextBlock Grid.Row="11" Style="{StaticResource InfoName}" Text="{Binding [About_LogSize], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock x:Name="LogSizeValue" Grid.Row="11" Style="{StaticResource InfoValue}" />
+      </Grid>
+    </ui:Card>
+
+    <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon DocumentText24}">
+      <ui:CardControl.Header>
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [About_Log_Title], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [About_Log_Desc], Source={x:Static local:Loc.Instance}}" />
+        </StackPanel>
+      </ui:CardControl.Header>
+      <WrapPanel>
+        <ui:Button
+          Margin="0,0,8,0"
+          AutomationProperties.Name="{Binding [About_Log_Open], Source={x:Static local:Loc.Instance}}"
+          Click="OnOpenLog"
+          Content="{Binding [About_Log_Open], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon Open24}" />
+        <ui:Button
+          AutomationProperties.Name="{Binding [About_Log_Copy], Source={x:Static local:Loc.Instance}}"
+          Click="OnCopyReport"
+          Content="{Binding [About_Log_Copy], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon Copy24}" />
+      </WrapPanel>
+    </ui:CardControl>
+
+    <ui:InfoBar x:Name="LogResult" Margin="0,0,0,4" IsClosable="True" IsOpen="False" />
+  </StackPanel>
+</Page>

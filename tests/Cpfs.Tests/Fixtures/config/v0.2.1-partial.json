@@ -1,0 +1,75 @@
+﻿{
+    "Product":  "CPFS - CyClone Power File Share",
+    "Version":  "0.2.1",
+    "Updated":  "2000-01-03T08:00:00",
+    "Partial":  true,
+    "Backup":  {
+                   "Taken":  "2000-01-03T08:00:00",
+                   "HostName":  "HOST-01",
+                   "Registry":  [
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                        "Name":  "forceguest",
+                                        "Exists":  true,
+                                        "Value":  0
+                                    },
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                        "Name":  "LmCompatibilityLevel",
+                                        "Exists":  false,
+                                        "Value":  null
+                                    },
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                        "Name":  "NoLMHash",
+                                        "Exists":  true,
+                                        "Value":  1
+                                    },
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                        "Name":  "RestrictAnonymous",
+                                        "Exists":  true,
+                                        "Value":  0
+                                    },
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                        "Name":  "RestrictAnonymousSAM",
+                                        "Exists":  true,
+                                        "Value":  1
+                                    },
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                        "Name":  "EveryoneIncludesAnonymous",
+                                        "Exists":  true,
+                                        "Value":  0
+                                    },
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters",
+                                        "Name":  "RestrictNullSessAccess",
+                                        "Exists":  true,
+                                        "Value":  1
+                                    },
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters",
+                                        "Name":  "AutoShareWks",
+                                        "Exists":  false,
+                                        "Value":  null
+                                    }
+                                ],
+                   "Smb2":  true,
+                   "RejectUnencrypted":  false,
+                   "ServerStart":  "Manual",
+                   "Lockout":  null
+               },
+    "Tracked":  {
+                    "Users":  [
+
+                              ],
+                    "Networks":  [
+
+                                 ],
+                    "FirewallRules":  [
+
+                                      ]
+                }
+}

@@ -1,0 +1,88 @@
+﻿{
+    "HostName":  "HOST-01",
+    "SmbUser":  "ShareUser",
+    "SharePath":  "D:\\Shared",
+    "ShareName":  "Shared",
+    "Strict":  false,
+    "AutoPrivate":  false,
+    "Access":  2,
+    "DriveLetter":  null,
+    "Shortcut":  "C:\\Users\\Public\\Desktop\\Shared (CPFS).lnk",
+    "DriveLabel":  null,
+    "Product":  "CPFS - CyClone Power File Share",
+    "Version":  "0.2.3",
+    "Updated":  "2000-01-07T04:05:06",
+    "Backup":  {
+                   "Taken":  "2000-01-07T04:00:00",
+                   "HostName":  "HOST-01",
+                   "Registry":  [
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                        "Name":  "forceguest",
+                                        "Exists":  true,
+                                        "Value":  0
+                                    },
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                        "Name":  "LmCompatibilityLevel",
+                                        "Exists":  false,
+                                        "Value":  null
+                                    },
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                        "Name":  "NoLMHash",
+                                        "Exists":  true,
+                                        "Value":  1
+                                    },
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                        "Name":  "RestrictAnonymous",
+                                        "Exists":  true,
+                                        "Value":  0
+                                    },
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                        "Name":  "RestrictAnonymousSAM",
+                                        "Exists":  true,
+                                        "Value":  1
+                                    },
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+                                        "Name":  "EveryoneIncludesAnonymous",
+                                        "Exists":  true,
+                                        "Value":  0
+                                    },
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters",
+                                        "Name":  "RestrictNullSessAccess",
+                                        "Exists":  true,
+                                        "Value":  1
+                                    },
+                                    {
+                                        "Path":  "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters",
+                                        "Name":  "AutoShareWks",
+                                        "Exists":  false,
+                                        "Value":  null
+                                    }
+                                ],
+                   "Smb2":  true,
+                   "RejectUnencrypted":  false,
+                   "ServerStart":  "Manual",
+                   "Lockout":  null
+               },
+    "Tracked":  {
+                    "Users":  [
+                                  {
+                                      "Name":  "ShareUser",
+                                      "Existed":  false,
+                                      "WasAdmin":  false
+                                  }
+                              ],
+                    "Networks":  [
+
+                                 ],
+                    "FirewallRules":  [
+
+                                      ]
+                }
+}

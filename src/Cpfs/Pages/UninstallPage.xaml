@@ -1,0 +1,331 @@
+<Page
+  x:Class="Cpfs.Pages.UninstallPage"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:local="clr-namespace:Cpfs"
+  xmlns:pages="clr-namespace:Cpfs.Pages"
+  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+  Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+  <Page.Resources>
+    <BooleanToVisibilityConverter x:Key="Visible" />
+
+    <!--  One row of Apply's progress: its state (badge), the item, and the error when it failed.  -->
+    <DataTemplate x:Key="StepTemplate" DataType="{x:Type pages:StepView}">
+      <Grid Margin="0,0,0,6" AutomationProperties.HelpText="{Binding State}" AutomationProperties.Name="{Binding Subject}">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" MinWidth="112" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Border Margin="0,0,12,0" VerticalAlignment="Top">
+          <Border.Style>
+            <Style BasedOn="{StaticResource Badge}" TargetType="Border">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding StateKind}" Value="Done">
+                  <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBackgroundBrush}" />
+                  <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKind}" Value="Kept">
+                  <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBackgroundBrush}" />
+                  <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKind}" Value="Deferred">
+                  <Setter Property="Background" Value="{DynamicResource SystemFillColorNeutralBackgroundBrush}" />
+                  <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorNeutralBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKind}" Value="Unsupported">
+                  <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+                  <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKind}" Value="Skipped">
+                  <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+                  <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKind}" Value="Partial">
+                  <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+                  <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StateKind}" Value="Failed">
+                  <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}" />
+                  <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Border.Style>
+          <TextBlock Style="{StaticResource BadgeText}" Text="{Binding State}" />
+        </Border>
+        <StackPanel Grid.Column="1">
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Subject}" Visibility="{Binding SubjectIsText, Converter={StaticResource Visible}}" />
+          <TextBlock Style="{StaticResource DataValue}" Text="{Binding Subject}" Visibility="{Binding SubjectIsData, Converter={StaticResource Visible}}" />
+          <TextBlock Style="{StaticResource CardValue}" Text="{Binding Detail}" Visibility="{Binding HasDetail, Converter={StaticResource Visible}}" />
+          <TextBlock Style="{StaticResource ErrorText}" Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
+        </StackPanel>
+      </Grid>
+    </DataTemplate>
+
+    <!--  One plan item: what happens (badge), to what, old and new value, and why. An Ask item has its tick box.  -->
+    <DataTemplate x:Key="PlanItemTemplate" DataType="{x:Type pages:PlanItemView}">
+      <Grid Margin="0,0,0,8" AutomationProperties.HelpText="{Binding HelpText}" AutomationProperties.Name="{Binding Subject}">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" MinWidth="96" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <StackPanel Margin="0,0,12,0" VerticalAlignment="Top" Orientation="Horizontal">
+          <Border VerticalAlignment="Top">
+            <Border.Style>
+              <Style BasedOn="{StaticResource Badge}" TargetType="Border">
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding BadgeKind}" Value="Keep">
+                    <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBackgroundBrush}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                  </DataTrigger>
+                  <DataTrigger Binding="{Binding BadgeKind}" Value="Ask">
+                    <Setter Property="Background" Value="{DynamicResource SystemFillColorNeutralBackgroundBrush}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorNeutralBrush}" />
+                  </DataTrigger>
+                  <DataTrigger Binding="{Binding BadgeKind}" Value="CannotPlan">
+                    <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </Border.Style>
+            <TextBlock Style="{StaticResource BadgeText}" Text="{Binding Badge}" />
+          </Border>
+          <!--  The Windows convention for "needs administrator": the UAC shield.  -->
+          <ui:SymbolIcon
+            Margin="6,0,0,0"
+            VerticalAlignment="Center"
+            AutomationProperties.Name="{Binding [Common_NeedsAdmin], Source={x:Static local:Loc.Instance}}"
+            FontSize="16"
+            Symbol="Shield24"
+            ToolTip="{Binding [Common_NeedsAdmin], Source={x:Static local:Loc.Instance}}"
+            Visibility="{Binding NeedsAdmin, Converter={StaticResource Visible}}" />
+        </StackPanel>
+        <StackPanel Grid.Column="1">
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Subject}" Visibility="{Binding SubjectIsText, Converter={StaticResource Visible}}" />
+          <TextBlock Style="{StaticResource DataValue}" FontWeight="SemiBold" Text="{Binding Subject}" Visibility="{Binding SubjectIsData, Converter={StaticResource Visible}}" />
+          <TextBlock Style="{StaticResource CardValue}" Text="{Binding Detail}" Visibility="{Binding HasDetail, Converter={StaticResource Visible}}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Reason}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding BackupNote}" Visibility="{Binding HasBackupNote, Converter={StaticResource Visible}}" />
+          <CheckBox
+            Margin="0,4,0,0"
+            AutomationProperties.HelpText="{Binding Reason}"
+            AutomationProperties.Name="{Binding AskName}"
+            Checked="OnPlanTickChanged"
+            Content="{Binding [Setup_Plan_AskDo], Source={x:Static local:Loc.Instance}}"
+            IsChecked="{Binding Ticked, Mode=OneWay}"
+            Tag="{Binding Key}"
+            Unchecked="OnPlanTickChanged"
+            Visibility="{Binding IsAsk, Converter={StaticResource Visible}}" />
+        </StackPanel>
+      </Grid>
+    </DataTemplate>
+
+    <!--  One decision for Your decisions: the tick box with what it does and why. Never collapsed.  -->
+    <DataTemplate x:Key="DecisionTemplate" DataType="{x:Type pages:PlanItemView}">
+      <CheckBox
+        Margin="0,0,0,8"
+        AutomationProperties.HelpText="{Binding Reason}"
+        AutomationProperties.Name="{Binding AskName}"
+        Checked="OnPlanTickChanged"
+        IsChecked="{Binding Ticked, Mode=OneWay}"
+        Tag="{Binding Key}"
+        Unchecked="OnPlanTickChanged">
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Subject}" Visibility="{Binding SubjectIsText, Converter={StaticResource Visible}}" />
+          <TextBlock Style="{StaticResource DataValue}" FontWeight="SemiBold" Text="{Binding Subject}" Visibility="{Binding SubjectIsData, Converter={StaticResource Visible}}" />
+          <TextBlock Style="{StaticResource CardValue}" Text="{Binding Detail}" Visibility="{Binding HasDetail, Converter={StaticResource Visible}}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Reason}" />
+        </StackPanel>
+      </CheckBox>
+    </DataTemplate>
+
+    <DataTemplate x:Key="PlanGroupTemplate" DataType="{x:Type pages:PlanGroupView}">
+      <ui:Card Margin="0,0,0,4" AutomationProperties.Name="{Binding Title}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Summary}" />
+          <ItemsControl
+            Margin="0,12,0,0"
+            Focusable="False"
+            ItemTemplate="{StaticResource PlanItemTemplate}"
+            ItemsSource="{Binding Items}" />
+        </StackPanel>
+      </ui:Card>
+    </DataTemplate>
+  </Page.Resources>
+
+  <StackPanel Margin="24,16,24,24">
+    <TextBlock Style="{StaticResource PageTitle}" Text="{Binding [Nav_Uninstall], Source={x:Static local:Loc.Instance}}" />
+
+    <ui:InfoBar
+      x:Name="IntroBar"
+      Margin="0,0,0,8"
+      IsClosable="False"
+      IsOpen="True"
+      Message="{Binding [Uninst_Intro_Desc], Source={x:Static local:Loc.Instance}}"
+      Severity="Informational"
+      Title="{Binding [Uninst_Intro_Title], Source={x:Static local:Loc.Instance}}" />
+
+    <!--  No CPFS install and nothing of CPFS's found: this card instead of the plan and the button.  -->
+    <ui:CardControl x:Name="NothingCard" Margin="0,0,0,4" Icon="{ui:SymbolIcon Info24}" Visibility="Collapsed">
+      <ui:CardControl.Header>
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Uninst_Nothing_Title], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Uninst_Nothing_Desc], Source={x:Static local:Loc.Instance}}" />
+        </StackPanel>
+      </ui:CardControl.Header>
+      <WrapPanel>
+        <ui:Button
+          Margin="0,0,8,4"
+          Appearance="Primary"
+          AutomationProperties.Name="{Binding [Uninst_GoToSetup], Source={x:Static local:Loc.Instance}}"
+          Click="OnGoToSetup"
+          Content="{Binding [Uninst_GoToSetup], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon WindowWrench24}" />
+        <ui:Button
+          x:Name="NothingRefreshButton"
+          Margin="0,0,0,4"
+          AutomationProperties.Name="{Binding [Setup_Refresh], Source={x:Static local:Loc.Instance}}"
+          Click="OnRefresh"
+          Content="{Binding [Setup_Refresh], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon ArrowClockwise24}" />
+      </WrapPanel>
+    </ui:CardControl>
+
+    <ui:CardControl x:Name="AdminCard" Margin="0,0,0,4" Icon="{ui:SymbolIcon Shield24}" Visibility="Collapsed">
+      <ui:CardControl.Header>
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Uninst_Admin_Title], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Uninst_Admin_Desc], Source={x:Static local:Loc.Instance}}" />
+        </StackPanel>
+      </ui:CardControl.Header>
+      <ui:Button
+        x:Name="ElevateButton"
+        Appearance="Primary"
+        AutomationProperties.Name="{Binding [Setup_Admin_Button], Source={x:Static local:Loc.Instance}}"
+        Click="OnContinueAsAdministrator"
+        Content="{Binding [Setup_Admin_Button], Source={x:Static local:Loc.Instance}}"
+        Icon="{ui:SymbolIcon Shield24}" />
+    </ui:CardControl>
+
+    <ui:InfoBar x:Name="AdminResult" Margin="0,0,0,4" IsClosable="True" IsOpen="False" />
+
+    <StackPanel x:Name="PlanArea" Visibility="Collapsed">
+      <ui:Card x:Name="SummaryCard" Margin="0,0,0,4">
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardTitle}" FontSize="16" Text="{Binding [Uninst_Summary_Title], Source={x:Static local:Loc.Instance}}" />
+          <!--  Until the first plan is ready (UninstallPage.ReadAsync).  -->
+          <StackPanel x:Name="PlanLoading" Margin="0,8,0,0" Orientation="Horizontal" Visibility="Collapsed">
+            <ui:ProgressRing Width="20" Height="20" IsIndeterminate="True" />
+            <TextBlock
+              Margin="12,0,0,0"
+              VerticalAlignment="Center"
+              AutomationProperties.LiveSetting="Polite"
+              Style="{StaticResource Body}"
+              Text="{Binding [Common_ReadingPc], Source={x:Static local:Loc.Instance}}" />
+          </StackPanel>
+          <StackPanel x:Name="SummaryBody" Margin="0,8,0,0" />
+        </StackPanel>
+      </ui:Card>
+
+      <!--  Every Ask item of the plan, never collapsed, above the Uninstall button.  -->
+      <ui:Card x:Name="DecisionsCard" Margin="0,4,0,4" AutomationProperties.Name="{Binding [Setup_Decisions_Title], Source={x:Static local:Loc.Instance}}" Visibility="Collapsed">
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Setup_Decisions_Title], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Decisions_Desc], Source={x:Static local:Loc.Instance}}" />
+          <ItemsControl
+            x:Name="Decisions"
+            Margin="0,12,0,0"
+            Focusable="False"
+            ItemTemplate="{StaticResource DecisionTemplate}" />
+        </StackPanel>
+      </ui:Card>
+
+      <ui:Card x:Name="ApplyCard" Margin="0,4,0,4">
+        <StackPanel>
+          <TextBlock x:Name="ApplyHint" Margin="0,0,0,8" Style="{StaticResource CardDescription}" />
+          <ProgressBar
+            x:Name="ApplyBusy"
+            Margin="0,0,0,8"
+            AutomationProperties.Name="{Binding [Apply_Running], Source={x:Static local:Loc.Instance}}"
+            IsIndeterminate="True"
+            Visibility="Collapsed" />
+          <CheckBox
+            x:Name="RestorePointBox"
+            Margin="0,0,0,8"
+            AutomationProperties.Name="{Binding [Apply_RestorePoint], Source={x:Static local:Loc.Instance}}"
+            Content="{Binding [Apply_RestorePoint], Source={x:Static local:Loc.Instance}}"
+            IsChecked="True" />
+          <ui:Button
+            x:Name="ApplyButton"
+            HorizontalAlignment="Left"
+            Appearance="Danger"
+            AutomationProperties.Name="{Binding [Uninst_Apply], Source={x:Static local:Loc.Instance}}"
+            Click="OnApply"
+            Content="{Binding [Uninst_Apply], Source={x:Static local:Loc.Instance}}"
+            Icon="{ui:SymbolIcon Delete24}"
+            IsEnabled="False" />
+        </StackPanel>
+      </ui:Card>
+
+      <ui:InfoBar x:Name="ApplyResult" Margin="0,0,0,4" IsClosable="True" IsOpen="False" />
+      <WrapPanel x:Name="ResultActions" Margin="0,0,0,4" Visibility="Collapsed">
+        <ui:Button
+          Margin="0,0,8,4"
+          AutomationProperties.Name="{Binding [About_Log_Copy], Source={x:Static local:Loc.Instance}}"
+          Click="OnCopyReport"
+          Content="{Binding [About_Log_Copy], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon Copy24}" />
+        <ui:Button
+          x:Name="RestartButton"
+          Margin="0,0,8,4"
+          AutomationProperties.Name="{Binding [Restart_Button], Source={x:Static local:Loc.Instance}}"
+          Click="OnRestart"
+          Content="{Binding [Restart_Button], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon ArrowClockwise24}"
+          Visibility="Collapsed" />
+      </WrapPanel>
+
+      <!--  The full plan and Uninstall's progress, collapsed unless "Always show details" is on.  -->
+      <ui:CardExpander
+        x:Name="DetailsExpander"
+        Margin="0,4,0,4"
+        AutomationProperties.HelpText="{Binding [Uninst_Details_Desc], Source={x:Static local:Loc.Instance}}"
+        AutomationProperties.Name="{Binding [Common_ShowDetails], Source={x:Static local:Loc.Instance}}"
+        Focusable="False"
+        Icon="{ui:SymbolIcon TextBulletListLtr24}">
+        <ui:CardExpander.Header>
+          <StackPanel>
+            <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Common_ShowDetails], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Uninst_Details_Desc], Source={x:Static local:Loc.Instance}}" />
+          </StackPanel>
+        </ui:CardExpander.Header>
+        <StackPanel>
+          <TextBlock x:Name="PlanCounts" Style="{StaticResource CardValue}" />
+          <WrapPanel Margin="0,8,0,8">
+            <ui:Button
+              x:Name="RefreshButton"
+              AutomationProperties.Name="{Binding [Setup_Refresh], Source={x:Static local:Loc.Instance}}"
+              Click="OnRefresh"
+              Content="{Binding [Setup_Refresh], Source={x:Static local:Loc.Instance}}"
+              Icon="{ui:SymbolIcon ArrowClockwise24}" />
+          </WrapPanel>
+
+          <ui:Card x:Name="ProgressCard" Margin="0,0,0,4" Visibility="Collapsed">
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Apply_ProgressTitle], Source={x:Static local:Loc.Instance}}" />
+              <ItemsControl
+                x:Name="ProgressList"
+                Margin="0,12,0,0"
+                Focusable="False"
+                ItemTemplate="{StaticResource StepTemplate}" />
+            </StackPanel>
+          </ui:Card>
+
+          <ItemsControl x:Name="PlanGroups" Focusable="False" ItemTemplate="{StaticResource PlanGroupTemplate}" />
+        </StackPanel>
+      </ui:CardExpander>
+    </StackPanel>
+  </StackPanel>
+</Page>

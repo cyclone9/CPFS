@@ -1,0 +1,193 @@
+name: Release
+
+# Runs only for a pushed version tag. No branch, pull request or manual trigger.
+on:
+  push:
+    tags: ['v*.*.*']
+
+# Each job asks for what it needs; only the last one can write.
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # The tag must match the version files at the tagged commit, the commit must be on main, and CI must have
+  # passed on it. CI already ran the destructive apply test on this exact commit, so it is not run again here.
+  verify:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Tag matches the version files
+        id: tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          ver="${TAG#v}"
+          head="$(git rev-parse HEAD)"
+          tagged="$(git rev-parse "refs/tags/$TAG^{commit}")"
+          if [ "$head" != "$tagged" ]; then echo "::error::checked out $head, but $TAG points at $tagged"; exit 1; fi
+          bash .github/scripts/release-check.sh check "$ver"
+          if ! git merge-base --is-ancestor "$head" origin/main; then
+            echo "::error::$TAG points at $head, which is not on main. Releases are made from main only."; exit 1
+          fi
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "commit=$head" >> "$GITHUB_OUTPUT"
+
+      # Waits while CI is still running on the commit (a tag pushed together with main), up to the job timeout.
+      - name: CI passed on this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.tag.outputs.commit }}
+        run: |
+          appear=$((SECONDS + 600))
+          while :; do
+            run="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$SHA" --event push --branch main \
+              --limit 1 --json status,conclusion,url --jq '.[0] // empty | "\(.status) \(.conclusion) \(.url)"')"
+            if [ -z "$run" ]; then
+              if [ "$SECONDS" -ge "$appear" ]; then
+                echo "::error::no CI run for a push of $SHA to main. Push the commit to main, let CI pass, then tag it."; exit 1
+              fi
+              echo "No CI run for $SHA yet, waiting"
+            else
+              read -r status conclusion url <<<"$run"
+              if [ "$status" = completed ]; then
+                if [ "$conclusion" = success ]; then echo "CI passed on $SHA: $url"; break; fi
+                echo "::error::CI on $SHA ended with $conclusion: $url"; exit 1
+              fi
+              echo "CI on $SHA is $status, waiting: $url"
+            fi
+            sleep 30
+          done
+
+  build:
+    needs: verify
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ needs.verify.outputs.version }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up .NET 10 SDK
+        uses: actions/setup-dotnet@v6.0.0
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore Cpfs.sln
+
+      - name: Build (Release)
+        run: dotnet build Cpfs.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test tests/Cpfs.Tests/Cpfs.Tests.csproj -c Release --no-build --logger "console;verbosity=normal"
+
+      # As in ci.yml: the self-test only reads Windows and changes nothing on the runner.
+      - name: Self-test (headless)
+        shell: pwsh
+        run: |
+          $exe = Join-Path $PWD 'src\Cpfs\bin\Release\net48\Cpfs.exe'
+          $out = Join-Path $env:RUNNER_TEMP 'selftest-out.txt'
+          $err = Join-Path $env:RUNNER_TEMP 'selftest-err.txt'
+          $p = Start-Process -FilePath $exe -ArgumentList '--selftest' -NoNewWindow -Wait -PassThru `
+            -RedirectStandardOutput $out -RedirectStandardError $err
+          Get-Content -LiteralPath $out
+          if ((Test-Path -LiteralPath $err) -and (Get-Item -LiteralPath $err).Length -gt 0) { Get-Content -LiteralPath $err }
+          $log = Join-Path $env:LOCALAPPDATA 'CPFS\cpfs-log.txt'
+          if (Test-Path -LiteralPath $log) { Write-Host '--- log ---'; Get-Content -LiteralPath $log }
+          Write-Host "Exit code $($p.ExitCode)"
+          exit $p.ExitCode
+
+      # The SDK may append "+<commit>" to the product version; anything else means the build is not X.Y.Z.
+      - name: The exe carries the release version
+        shell: pwsh
+        run: |
+          $exe = Join-Path $PWD 'src\Cpfs\bin\Release\net48\Cpfs.exe'
+          $v = (Get-Item -LiteralPath $exe).VersionInfo.ProductVersion
+          Write-Host "ProductVersion $v"
+          if ($v -cne $env:VERSION -and -not $v.StartsWith("$env:VERSION+", [StringComparison]::Ordinal)) {
+            Write-Host "::error::Cpfs.exe has product version $v, expected $env:VERSION"; exit 1
+          }
+
+      - name: Upload the exe
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: release-exe
+          path: src/Cpfs/bin/Release/net48/Cpfs.exe
+          if-no-files-found: error
+          retention-days: 7
+
+  # Unsigned by decision. Runs no build code, so the write token never meets a NuGet package or MSBuild task.
+  release:
+    needs: [verify, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.verify.outputs.version }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download the exe
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: release-exe
+          path: dist
+
+      - name: Name the exe and write its checksum
+        working-directory: dist
+        run: |
+          mv Cpfs.exe "Cpfs-$VERSION.exe"
+          sha256sum "Cpfs-$VERSION.exe" > "Cpfs-$VERSION.exe.sha256"
+          cat "Cpfs-$VERSION.exe.sha256"
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          bash .github/scripts/release-check.sh notes "$VERSION" "dist/Cpfs-$VERSION.exe.sha256" > "$RUNNER_TEMP/notes.md"
+          cat "$RUNNER_TEMP/notes.md"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "::error::a release for $TAG already exists. Nothing was changed."; exit 1
+          fi
+          gh release create "$TAG" "dist/Cpfs-$VERSION.exe" "dist/Cpfs-$VERSION.exe.sha256" \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --title "CPFS $VERSION" \
+            --notes-file "$RUNNER_TEMP/notes.md" --latest
+
+      - name: Release is published, not a pre-release, Latest, with both files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          state="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,name,assets \
+            --jq '"\(.isDraft) \(.isPrerelease) \([.assets[].name] | sort | join(","))"')"
+          latest="$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)"
+          want="false false Cpfs-$VERSION.exe,Cpfs-$VERSION.exe.sha256"
+          echo "Release: $state; Latest: $latest"
+          if [ "$state" != "$want" ] || [ "$latest" != "$TAG" ]; then
+            echo "::error::release $TAG is not as intended (expected: $want; Latest $TAG)"; exit 1
+          fi

@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <RootNamespace>Cpfs</RootNamespace>
+    <AssemblyName>Cpfs</AssemblyName>
+    <StartupObject>Cpfs.Program</StartupObject>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\cpfs.ico</ApplicationIcon>
+    <!-- No exe.config beside the exe: the resolver in Program matches by simple name, which stands in for binding redirects. -->
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>false</GenerateBindingRedirectsOutputType>
+    <GenerateSupportedRuntime>false</GenerateSupportedRuntime>
+    <DebugType>embedded</DebugType>
+    <!-- Version conflicts between dependencies (System.Text.Json 10.0.0.0 vs 10.0.0.12) are settled at run time by the
+         resolver in Program, which matches by simple name; MSB3276 only suggests binding redirects. -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3276</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+    <PackageReference Include="PolySharp" Version="1.15.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cpfs.Core\Cpfs.Core.csproj" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.ServiceProcess" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Every language goes into the exe as a plain .resources stream; no satellite folder. -->
+    <EmbeddedResource Update="Strings\Strings.resx" LogicalName="Cpfs.Strings.resources" />
+    <EmbeddedResource Update="Strings\Strings.fa.resx" WithCulture="false" LogicalName="Cpfs.Strings.fa.resources" />
+    <EmbeddedResource Update="Strings\Strings.ar.resx" WithCulture="false" LogicalName="Cpfs.Strings.ar.resources" />
+    <EmbeddedResource Update="Strings\Strings.tr.resx" WithCulture="false" LogicalName="Cpfs.Strings.tr.resources" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The app icon (a brand file, outside the MIT licence) and Vazirmatn (SIL OFL) live in Assets/. -->
+    <Resource Include="Assets\cpfs.ico" />
+    <!--  The same icon as a stream, copied to ProgramData\CPFS\cpfs.ico for the drive and the shortcut.  -->
+    <EmbeddedResource Include="Assets\cpfs.ico" LogicalName="Cpfs.Assets.cpfs.ico" WithCulture="false" />
+    <Resource Include="Assets\Fonts\*.ttf" />
+    <!-- The licences ship inside the exe and are shown on the About page. -->
+    <EmbeddedResource Include="..\..\LICENSE" LogicalName="Cpfs.Licenses.LICENSE.txt" WithCulture="false" />
+    <EmbeddedResource Include="..\..\THIRD-PARTY-NOTICES.md" LogicalName="Cpfs.Licenses.THIRD-PARTY-NOTICES.md" WithCulture="false" />
+    <EmbeddedResource Include="Assets\Fonts\OFL.txt" LogicalName="Cpfs.Licenses.Vazirmatn-OFL.txt" WithCulture="false" />
+  </ItemGroup>
+
+  <!-- Embed every copy-local DLL (Cpfs.Core, WPF-UI, System.Text.Json and their dependencies) and stop copying it beside the exe. -->
+  <Target Name="EmbedCopyLocalAssemblies" AfterTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_CpfsEmbed Include="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
+      <EmbeddedResource Include="@(_CpfsEmbed)">
+        <LogicalName>cpfs.lib.%(_CpfsEmbed.Filename)%(_CpfsEmbed.Extension)</LogicalName>
+        <WithCulture>false</WithCulture>
+        <Type>Non-Resx</Type>
+      </EmbeddedResource>
+      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" />
+    </ItemGroup>
+  </Target>
+
+</Project>
