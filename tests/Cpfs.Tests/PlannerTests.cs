@@ -135,7 +135,7 @@ public class PlannerTests
         Assert.Equal(PlanSection.Drive, create.Section);
         Assert.Equal(name, create.Target!.Data);
         Assert.Contains(PlanSummary.Setup(created, Answers(Fixture(), Installed()) with { Drive = false }, Fixture()).Lines,
-            l => l.Key == "Summary_Explorer" && (string)l.Args[0] == name);
+            l => l.Key == "Summary_Adds_E");
 
         var recorded = ExplorerEntryTests.Recorded(Fixture(), @"D:\Shared", name);
         var atTarget = Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(ExplorerEntryTests.Entry(name, @"D:\Shared")) };
@@ -789,7 +789,8 @@ public class PlannerTests
         var created = PlanFor(WithIcons(new()), fresh, OnM);
         Assert.Equal(PlanAction.Create, Item(created, "drive.icon").Action);
         Assert.Equal(CpfsIcon, Item(created, "drive.icon").Target!.Data);
-        Assert.Contains(PlanSummary.Setup(created, OnM(Answers(fresh, WithIcons(new()))), fresh).Lines, l => l.Key == "Summary_DriveIcon");
+        Assert.Contains(PlanSummary.Setup(created, OnM(Answers(fresh, WithIcons(new()))), fresh).Lines,
+            l => l.Key.StartsWith("Summary_Adds_D", StringComparison.Ordinal) && (string)l.Args[0] == "M:");
 
         Assert.Equal(PlanAction.Keep, Item(PlanFor(WithIcons(new() { ['M'] = CpfsIcon + ",0" }), fresh, OnM), "drive.icon").Action);
 

@@ -45,30 +45,54 @@ public class PlanSummaryTests
     }
 
     [Fact]
-    public void APasswordChangeIsNamedBeforeTheCount()
+    public void APasswordChangeIsTheOnlyLine()
     {
         var plan = new Plan(new[]
         {
             Item("share.main", PlanSection.Share, PlanAction.Keep),
             Item("user.password", PlanSection.User, PlanAction.Change),
+
+            // Technical changes that come with it stay under Show details.
+            Item("fw.rule:CPFS SMB (LAN)", PlanSection.Firewall, PlanAction.Change),
         });
 
         var summary = PlanSummary.Setup(plan, Same, Installed);
 
-        Assert.Equal(new[] { "Summary_Password", "Summary_Changes_One" }, Keys(summary));
+        Assert.Equal(new[] { "Summary_Password" }, Keys(summary));
         Assert.Equal("cpfsuser", summary.Lines[0].Args[0]);
-        Assert.Equal(1, summary.Lines[1].Args[0]);
+        Assert.Equal(2, summary.Changes);
     }
 
     [Fact]
-    public void PhoneFactsComeFirstAndOtherFactsAreCappedAtThree()
+    public void OnlyTechnicalChangesAreOneCountedLine()
+    {
+        var plan = new Plan(new[]
+        {
+            Item("share.main", PlanSection.Share, PlanAction.Keep),
+            Item("server.reject", PlanSection.Server, PlanAction.Change),
+            Item("hardening.lockout", PlanSection.Hardening, PlanAction.Change),
+            Item("fw.rule:CPFS SMB (LAN)", PlanSection.Firewall, PlanAction.Create),
+            Item("fw.builtin:FPS-SMB-In-TCP", PlanSection.Firewall, PlanAction.Change),
+            Item("data.folder", PlanSection.DataFolder, PlanAction.Change),
+        });
+
+        var summary = PlanSummary.Setup(plan, Same, Installed);
+
+        Assert.Equal(new[] { "Summary_Corrects_Many" }, Keys(summary));
+        Assert.Equal(5, summary.Lines[0].Args[0]);
+
+        var one = PlanSummary.Setup(new Plan(new[] { Item("data.folder", PlanSection.DataFolder, PlanAction.Change) }), Same, Installed);
+        Assert.Equal(new[] { "Summary_Corrects_One" }, Keys(one));
+    }
+
+    [Fact]
+    public void WhatDevicesNoticeIsNamedAndANetworkLeftPublicIsNeverDropped()
     {
         var answers = Same with { ShareName = "Family", Strict = true };
         var plan = new Plan(new[]
         {
             Item("share.main", PlanSection.Share, PlanAction.Change, reasonArgs: "EncryptData, Description"),
             Item("server.reject", PlanSection.Server, PlanAction.Change),
-            Item("hardening.lockout", PlanSection.Hardening, PlanAction.Change),
             Item("fw.rule:CPFS SMB (LAN)", PlanSection.Firewall, PlanAction.Create),
             Item("net:Home", PlanSection.Networks, PlanAction.Ask, ticked: true, subject: "Home"),
             Item("net:Cafe", PlanSection.Networks, PlanAction.Ask, subject: "Cafe"),
@@ -77,32 +101,78 @@ public class PlanSummaryTests
 
         var summary = PlanSummary.Setup(plan, answers, Installed);
 
-        Assert.Equal(new[]
-        {
-            "Summary_ShareRenamed", "Summary_StrictOn", "Summary_StaysPublic",
-            "Summary_Changes_Many",
-            "Summary_Security_Many", "Summary_Firewall_Created_One", "Summary_Networks_One",
-        }, Keys(summary));
+        Assert.Equal(new[] { "Summary_StrictOn", "Summary_ShareRenamed", "Summary_StaysPublic" }, Keys(summary));
         Assert.Equal("Cafe", summary.Lines[2].Args[0]);
-        Assert.Equal(6, summary.Changes);
+        Assert.Equal(5, summary.Changes);
+
+        // With nothing else to name, the network notice comes after the counted line.
+        var technical = PlanSummary.Setup(new Plan(plan.Items.Where(i => i.Key != "share.main").ToList()), answers, Installed);
+        Assert.Equal(new[] { "Summary_Corrects_Many", "Summary_StaysPublic" }, Keys(technical));
     }
 
     [Fact]
-    public void AFirstSetupNamesTheFolderTheShareAndTheAccount()
+    public void AFirstSetupNamesTheFolderTheAccountAndWhatItAdds()
     {
-        var answers = new SetupAnswers { SharePath = @" E:\Photos ", ShareName = "Photos", SmbUser = "phone" };
+        var answers = new SetupAnswers
+        {
+            SharePath = @" E:\Photos ", ShareName = "Photos", SmbUser = "phone", Drive = true, DriveLetter = 'z', DriveName = "CPFS - Photos",
+            Shortcut = true, ShortcutName = "Photos (CPFS)", ExplorerEntry = true,
+        };
         var plan = new Plan(new[]
         {
             Item("backup", PlanSection.Backup, PlanAction.Create),
             Item("user.account", PlanSection.User, PlanAction.Create),
             Item("user.password", PlanSection.User, PlanAction.Create),
             Item("share.main", PlanSection.Share, PlanAction.Create),
+            Item("server.reject", PlanSection.Server, PlanAction.Change),
+            Item("fw.rule:CPFS SMB (LAN)", PlanSection.Firewall, PlanAction.Create),
+            Item("drive.map", PlanSection.Drive, PlanAction.Create),
+            Item("drive.session", PlanSection.Drive, PlanAction.Create),
+            Item("drive.label", PlanSection.Drive, PlanAction.Create),
+            Item("drive.icon", PlanSection.Drive, PlanAction.Create),
+            Item("shortcut.file", PlanSection.Shortcut, PlanAction.Create),
+            Item("explorer.entry", PlanSection.Drive, PlanAction.Create),
+            Item("data.folder", PlanSection.DataFolder, PlanAction.Change),
         });
 
         var summary = PlanSummary.Setup(plan, answers, null);
 
-        Assert.Equal(new[] { "Summary_Shares", "Summary_Changes_Many", "Summary_Backup" }, Keys(summary));
-        Assert.Equal(new object[] { @"E:\Photos", "Photos", "phone" }, summary.Lines[0].Args);
+        Assert.Equal(new[] { "Summary_SharesWith", "Summary_Adds_DSE", "Summary_UndoAll" }, Keys(summary));
+        Assert.Equal(new object[] { @"E:\Photos", "phone" }, summary.Lines[0].Args);
+        Assert.Equal(new object[] { "Z:" }, summary.Lines[1].Args);
+
+        // Only what is being added is named, in one sentence of its own.
+        var noDrive = PlanSummary.Setup(new Plan(plan.Items.Where(i => !i.Key.StartsWith("drive.", System.StringComparison.Ordinal)).ToList()), answers with { Drive = false }, null);
+        Assert.Equal(new[] { "Summary_SharesWith", "Summary_Adds_SE", "Summary_UndoAll" }, Keys(noDrive));
+        Assert.Empty(noDrive.Lines[1].Args);
+    }
+
+    [Fact]
+    public void ALaterRunSaysWhenTheDriveMovesAndWhatIsRemoved()
+    {
+        var config = ConfigReader.Parse(Encoding.UTF8.GetBytes(
+            """{ "Version": "0.6.0", "SmbUser": "cpfsuser", "SharePath": "D:\\Share", "ShareName": "Share", "DriveLetter": "X", "Shortcut": "C:\\Users\\Public\\Desktop\\Share (CPFS).lnk" }"""));
+        var moved = PlanSummary.Setup(new Plan(new[]
+        {
+            Item("drive.oldmap", PlanSection.Drive, PlanAction.RemoveIfOurs),
+            Item("drive.map", PlanSection.Drive, PlanAction.Create),
+            Item("shortcut.old", PlanSection.Shortcut, PlanAction.RemoveIfOurs),
+            Item("explorer.entry", PlanSection.Drive, PlanAction.RemoveIfOurs),
+        }), Same with { Drive = true, DriveLetter = 'Y', Shortcut = false }, config);
+
+        Assert.Equal(new[] { "Summary_Removes_SE", "Summary_DriveMoves" }, Keys(moved));
+        Assert.Equal(new object[] { "X:", "Y:" }, moved.Lines[1].Args);
+
+        var renamed = PlanSummary.Setup(new Plan(new[]
+        {
+            Item("drive.oldmap", PlanSection.Drive, PlanAction.RemoveIfOurs),
+            Item("shortcut.old", PlanSection.Shortcut, PlanAction.RemoveIfOurs),
+            Item("shortcut.file", PlanSection.Shortcut, PlanAction.Create),
+        }), Same with { Drive = false, Shortcut = true, ShortcutName = " My share " }, config);
+
+        Assert.Equal(new[] { "Summary_Removes_D", "Summary_ShortcutRenamed" }, Keys(renamed));
+        Assert.Equal(new object[] { "X:" }, renamed.Lines[0].Args);
+        Assert.Equal("My share", renamed.Lines[1].Args[0]);
     }
 
     [Fact]
@@ -165,7 +235,7 @@ public class PlanSummaryTests
     }
 
     [Fact]
-    public void UninstallNamesWhatPhonesLoseAndThatFilesStay()
+    public void UninstallNamesTheShareAndTheDeletedAccountAndThatFilesStay()
     {
         var plan = new Plan(new[]
         {
@@ -175,44 +245,47 @@ public class PlanSummaryTests
             Item("u.user.profile", PlanSection.User, PlanAction.Ask),
             Item("u.fw:CPFS SMB (LAN)", PlanSection.Firewall, PlanAction.RemoveIfOurs),
             Item("u.reg:NoLMHash", PlanSection.Hardening, PlanAction.Change),
+            Item("u.net:Home", PlanSection.Networks, PlanAction.Change),
             Item("u.drive", PlanSection.Drive, PlanAction.RemoveIfOurs),
+            Item("u.data", PlanSection.DataFolder, PlanAction.RemoveIfOurs),
         });
 
         var summary = PlanSummary.Uninstall(plan);
 
-        Assert.Equal(new[]
-        {
-            "Summary_U_Share", "Summary_U_DeleteUser", "Summary_Changes_Many", "Summary_U_FilesStay",
-            "Summary_U_Copy", "Summary_U_Restore_One", "Summary_U_Firewall_Removed_One",
-        }, Keys(summary));
-        Assert.Equal("cpfsuser", summary.Lines[1].Args[0]);
-        Assert.Equal(6, summary.Changes);
+        Assert.Equal(new[] { "Summary_U_ShareAndUser", "Summary_U_PutsBack", "Summary_U_FilesStay" }, Keys(summary));
+        Assert.Equal(new object[] { "Share", "cpfsuser" }, summary.Lines[0].Args);
+        Assert.Equal(8, summary.Changes);
         Assert.Equal(0, summary.Deferred);
     }
 
     [Fact]
-    public void AKeptAccountAndEachKindOfFirewallChangeHaveTheirOwnLine()
+    public void UninstallSaysWhenTheAccountIsKeptAndWhatStaysBehind()
     {
-        var uninstall = PlanSummary.Uninstall(new Plan(new[]
+        var kept = PlanSummary.Uninstall(new Plan(new[]
         {
+            Item("u.share:Share", PlanSection.Share, PlanAction.RemoveIfOurs, subject: "Share"),
             new PlanItem { Key = "u.user.delete", Section = PlanSection.User, Action = PlanAction.Ask, Current = PlanValue.Of("phone") },
             Item("u.fw:CPFS SMB (LAN)", PlanSection.Firewall, PlanAction.RemoveIfOurs),
-            Item("u.fw:CPFS SMB (VPN)", PlanSection.Firewall, PlanAction.RemoveIfOurs),
             Item("u.builtin:FPS-SMB-In-TCP", PlanSection.Firewall, PlanAction.Change),
+            new PlanItem
+            {
+                Key = "u.explorer", Section = PlanSection.Drive, Action = PlanAction.Keep, ReasonKey = UninstallPlanner.R.ExplorerNotLoaded,
+                Subject = PlanValue.Of("u.explorer"), Current = PlanValue.Of("CPFS - Share"),
+            },
         }));
 
-        Assert.Equal(new[] { "Summary_U_KeepUser", "Summary_Changes_Many", "Summary_U_FilesStay", "Summary_U_Firewall_Removed_Many", "Summary_U_Firewall_TurnedOn_One" },
-            Keys(uninstall));
-        Assert.Equal("phone", uninstall.Lines[0].Args[0]);
+        Assert.Equal(new[] { "Summary_U_ShareKeepUser", "Summary_U_PutsBack", "Summary_U_ExplorerLeft", "Summary_U_FilesStay" }, Keys(kept));
+        Assert.Equal(new object[] { "Share", "phone" }, kept.Lines[0].Args);
 
-        var setup = PlanSummary.Setup(new Plan(new[]
+        // Without the share or the account, the account and the rest have their own lines.
+        var accountOnly = PlanSummary.Uninstall(new Plan(new[]
         {
-            Item("fw.rule:CPFS SMB (LAN)", PlanSection.Firewall, PlanAction.Change),
-            Item("fw.builtin:FPS-SMB-In-TCP", PlanSection.Firewall, PlanAction.Change),
-            Item("fw.extra:CyShare SMB", PlanSection.Firewall, PlanAction.RemoveIfOurs),
-        }), Same, Installed);
+            new PlanItem { Key = "u.user.delete", Section = PlanSection.User, Action = PlanAction.Ask, Ticked = true, Current = PlanValue.Of("phone") },
+        }));
+        Assert.Equal(new[] { "Summary_U_DeleteUser", "Summary_U_FilesStay" }, Keys(accountOnly));
 
-        Assert.Equal(new[] { "Summary_Changes_Many", "Summary_Firewall_Changed_One", "Summary_Firewall_TurnedOff_One", "Summary_Firewall_Removed_One" }, Keys(setup));
+        var rest = PlanSummary.Uninstall(new Plan(new[] { Item("u.fw:CPFS SMB (LAN)", PlanSection.Firewall, PlanAction.RemoveIfOurs) }));
+        Assert.Equal(new[] { "Summary_U_RemovesSetup", "Summary_U_FilesStay" }, Keys(rest));
     }
 
     [Fact]

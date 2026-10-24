@@ -254,7 +254,7 @@ public partial class UninstallPage : Page
         }
 
         var loc = Loc.Instance;
-        SummaryBody.Text = _summary is null ? "" : ApplyUi.SummaryText(_summary);
+        ApplyUi.FillSummary(SummaryBody, _summary);
         var decisions = SetupPage.AskViews(_plan);
         Decisions.ItemsSource = decisions;
         DecisionsCard.Visibility = decisions.Count > 0 ? Visibility.Visible : Visibility.Collapsed;

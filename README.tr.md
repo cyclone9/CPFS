@@ -2,6 +2,8 @@
 
 # CPFS - CyClone Power File Share
 
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/brand/Logo/cpfs-lockup-on-dark.svg"><img src="assets/brand/Logo/cpfs-lockup-on-light.svg" alt="CPFS" width="348"></picture></p>
+
 **Slogan:** *Bilgisayarınızdaki klasör, her cihazın erişiminde.*  
 **Moto:** *Yalnızca seçtiğiniz klasör.*
 
@@ -10,8 +12,10 @@
 | Sürüm | 0.6.0 (geliştirme aşamasında) |
 | Platform | Windows 10 ve 11 (Ev veya Pro sürümü) |
 | Gereksinimler | .NET Framework 4.8 (Windows 10 1903 ve sonrası ile Windows 11'de yerleşik gelir), Yönetici hakları |
-| Ana sayfa | https://cyclone9.ir/cpfs.html |
+| Ana sayfa | https://cyclone9.ir/cpfs |
 | Lisans | MIT (yalnızca kod; bkz. [Lisans](#lisans)) |
+
+<p align="center"><img src="assets/brand/cpfs-video-en.jpg" alt="CPFS" width="720"></p>
 
 CPFS, Windows uygulaması olarak yeniden yazılıyor. Henüz yayımlanmış bir sürüm yok, yani indirilecek bir şey de yok; aşağıda anlatılanların hepsi uygulamanın yapması hedeflenen şeylerdir.
 

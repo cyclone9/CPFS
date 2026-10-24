@@ -789,7 +789,6 @@
   <data name="Apply_DoneRefusedItem" xml:space="preserve"><value>Windows refused {0}. It said:</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_DonePartialItem" xml:space="preserve"><value>{0} was only partly done. Windows said:</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_NoRestorePointNote" xml:space="preserve"><value>No new restore point was made.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Shares" xml:space="preserve"><value>Shares {0} as {1} for the account {2}.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_StrictOn" xml:space="preserve"><value>Strict mode is on: devices must encrypt the connection, and some older ones can't connect.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_StrictOff" xml:space="preserve"><value>Strict mode is off: devices no longer have to encrypt the connection.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_ShareRenamed" xml:space="preserve"><value>Devices connect to the new share name {0}.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -798,38 +797,11 @@
   <data name="Summary_Password" xml:space="preserve"><value>A new password for {0}. Devices must use it from now on.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_Rename" xml:space="preserve"><value>The computer name changes to {0}.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_StaysPublic" xml:space="preserve"><value>{0} stays a Public network, so devices on it can't connect.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Changes_One" xml:space="preserve"><value>1 change to Windows.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Changes_Many" xml:space="preserve"><value>{0} changes to Windows.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Backup" xml:space="preserve"><value>Your current Windows settings are saved first, so Uninstall can put them back.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Security_One" xml:space="preserve"><value>1 security setting is put in place.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Security_Many" xml:space="preserve"><value>{0} security settings are put in place.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Firewall_Created_One" xml:space="preserve"><value>1 firewall rule is created.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Firewall_Created_Many" xml:space="preserve"><value>{0} firewall rules are created.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Firewall_Changed_One" xml:space="preserve"><value>1 firewall rule is corrected.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Firewall_Changed_Many" xml:space="preserve"><value>{0} firewall rules are corrected.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Firewall_TurnedOff_One" xml:space="preserve"><value>1 built-in firewall rule that opens file sharing to public networks is turned off.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Firewall_TurnedOff_Many" xml:space="preserve"><value>{0} built-in firewall rules that open file sharing to public networks are turned off.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Firewall_Removed_One" xml:space="preserve"><value>1 firewall rule is removed.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Firewall_Removed_Many" xml:space="preserve"><value>{0} firewall rules are removed.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Networks_One" xml:space="preserve"><value>1 network becomes Private.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Networks_Many" xml:space="preserve"><value>{0} networks become Private.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_DataFolder" xml:space="preserve"><value>The CPFS data folder is locked to administrators.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_Nothing" xml:space="preserve"><value>Nothing to change. This PC already matches your settings.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_Blocked" xml:space="preserve"><value>Some items can't be planned yet, so the button stays off until they can.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_U_Share" xml:space="preserve"><value>Removes the share {0}. Devices can no longer connect to it.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_U_DeleteUser" xml:space="preserve"><value>Deletes the account {0}.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_U_KeepUser" xml:space="preserve"><value>The account {0} is kept.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_U_FilesStay" xml:space="preserve"><value>Files in the shared folder stay.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_U_Copy" xml:space="preserve"><value>A copy of your settings backup goes to Documents first.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_U_Restore_One" xml:space="preserve"><value>1 Windows setting goes back to how it was before CPFS.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_U_Restore_Many" xml:space="preserve"><value>{0} Windows settings go back to how they were before CPFS.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_U_Firewall_Removed_One" xml:space="preserve"><value>1 firewall rule is removed.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_U_Firewall_Removed_Many" xml:space="preserve"><value>{0} firewall rules are removed.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_U_Firewall_TurnedOn_One" xml:space="preserve"><value>1 built-in firewall rule is turned back on.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_U_Firewall_TurnedOn_Many" xml:space="preserve"><value>{0} built-in firewall rules are turned back on.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_U_Networks_One" xml:space="preserve"><value>1 network becomes Public again.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_U_Networks_Many" xml:space="preserve"><value>{0} networks become Public again.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_U_Data" xml:space="preserve"><value>The CPFS data folder is removed last.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_KeepUser" xml:space="preserve"><value>Keeps the account {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_FilesStay" xml:space="preserve"><value>Your files stay where they are.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_U_Nothing" xml:space="preserve"><value>Nothing to undo. CPFS has nothing set up on this PC that Uninstall can remove.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_DownTip" xml:space="preserve"><value>From this PC to the device</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_UpTip" xml:space="preserve"><value>From the device to this PC</value><comment>UNTRANSLATED: English text</comment></data>
@@ -842,9 +814,6 @@
   <data name="Apply_ShieldTip" xml:space="preserve"><value>Use Continue as administrator at the top first</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RestartDriveMsg" xml:space="preserve"><value>The previous drive letter may stay in File Explorer until Windows restarts.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_NeedsAdmin" xml:space="preserve"><value>Continue as administrator to see the full plan.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_DriveAndShortcut" xml:space="preserve"><value>Adds drive {0} called ‘{1}’ and a desktop shortcut.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Drive" xml:space="preserve"><value>Adds drive {0} called ‘{1}’.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Shortcut" xml:space="preserve"><value>Adds a desktop shortcut called ‘{0}’.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_DriveForeign" xml:space="preserve"><value>{0} is used by something CPFS didn't create, so it is left alone. Choose another letter.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_DriveSession" xml:space="preserve"><value>Shows the drive in your session now, so File Explorer has it without a restart.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_DriveOldSession" xml:space="preserve"><value>Removes the previous drive from your session.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -890,8 +859,6 @@
   <data name="Plan_R_IconRestore" xml:space="preserve"><value>Puts back the icon the letter had before CPFS.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_ShortcutIcon" xml:space="preserve"><value>Gives the desktop shortcut CPFS made the CPFS icon.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_R_IconRemove" xml:space="preserve"><value>The CPFS icon of the drive.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_DriveIcon" xml:space="preserve"><value>Adds drive {0} called ‘{1}’ with the CPFS icon.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_DriveIconAndShortcut" xml:space="preserve"><value>Adds drive {0} called ‘{1}’ with the CPFS icon, and a desktop shortcut.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Explorer" xml:space="preserve"><value>Show in File Explorer</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Explorer_Desc" xml:space="preserve"><value>Adds the shared folder to the navigation pane of File Explorer, under the name below and with the CPFS icon.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_S_Explorer" xml:space="preserve"><value>File Explorer entry</value><comment>UNTRANSLATED: English text</comment></data>
@@ -908,7 +875,6 @@
   <data name="Uninst_R_ExplorerRemove" xml:space="preserve"><value>CPFS's entry in File Explorer's navigation pane.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_R_ExplorerForeign" xml:space="preserve"><value>The File Explorer entry under CPFS's identifier opens {0} now, not the folder CPFS recorded, so it is left as it is.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_R_ExplorerNotLoaded" xml:space="preserve"><value>CPFS's File Explorer entry belongs to a Windows user who isn't signed in now, so it stays.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Explorer" xml:space="preserve"><value>Adds ‘{0}’ to the navigation pane of File Explorer.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_U_ExplorerLeft" xml:space="preserve"><value>The File Explorer entry ‘{0}’ stays: the Windows user it belongs to isn't signed in.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_Checking" xml:space="preserve"><value>Reading this PC again before the summary.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_StaleTitle" xml:space="preserve"><value>Windows changed since this page was read</value><comment>UNTRANSLATED: English text</comment></data>
@@ -918,8 +884,32 @@
   <data name="Summary_Blocked_Password" xml:space="preserve"><value>Enter a password for the SMB account to continue.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_Blocked_Answers" xml:space="preserve"><value>Some answers need changing before Setup can continue. The fields marked in red, or Show details, say which.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_U_Blocked" xml:space="preserve"><value>Uninstall can't continue as things are now. Show details says why.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_SharesWith" xml:space="preserve"><value>Shares {0} with your devices, which sign in as {1}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Adds_D" xml:space="preserve"><value>Adds drive {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Adds_S" xml:space="preserve"><value>Adds a desktop shortcut.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Adds_E" xml:space="preserve"><value>Adds a File Explorer entry.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Adds_DS" xml:space="preserve"><value>Adds drive {0} and a desktop shortcut.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Adds_DE" xml:space="preserve"><value>Adds drive {0} and a File Explorer entry.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Adds_SE" xml:space="preserve"><value>Adds a desktop shortcut and a File Explorer entry.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Adds_DSE" xml:space="preserve"><value>Adds drive {0}, a desktop shortcut and a File Explorer entry.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Removes_D" xml:space="preserve"><value>Removes drive {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Removes_S" xml:space="preserve"><value>Removes the desktop shortcut.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Removes_E" xml:space="preserve"><value>Removes the File Explorer entry.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Removes_DS" xml:space="preserve"><value>Removes drive {0} and the desktop shortcut.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Removes_DE" xml:space="preserve"><value>Removes drive {0} and the File Explorer entry.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Removes_SE" xml:space="preserve"><value>Removes the desktop shortcut and the File Explorer entry.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Removes_DSE" xml:space="preserve"><value>Removes drive {0}, the desktop shortcut and the File Explorer entry.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_DriveMoves" xml:space="preserve"><value>Moves drive {0} to {1}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_ShortcutRenamed" xml:space="preserve"><value>Renames the desktop shortcut to {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_UndoAll" xml:space="preserve"><value>Uninstall can undo these changes.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Corrects_One" xml:space="preserve"><value>Corrects 1 Windows setting to match your choices.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Corrects_Many" xml:space="preserve"><value>Corrects {0} Windows settings to match your choices.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_ShareAndUser" xml:space="preserve"><value>Removes the share {0} and the account {1}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_ShareKeepUser" xml:space="preserve"><value>Removes the share {0} and keeps the account {1}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_RemovesShare" xml:space="preserve"><value>Removes the share {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_PutsBack" xml:space="preserve"><value>Puts back the Windows settings CPFS changed.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_RemovesSetup" xml:space="preserve"><value>Removes what CPFS set up on this PC.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Activity_Title" xml:space="preserve"><value>Recent activity</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Activity_Desc" xml:space="preserve"><value>Changes in the shared folder while Monitor is open, made from any device or from this PC, up to {0} from the last 24 hours. CPFS can't tell which device made a change.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Activity_None" xml:space="preserve"><value>No changes yet.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Activity_NotConfigured" xml:space="preserve"><value>CPFS isn't set up on this PC yet, so there is no shared folder to watch.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Activity_ConfigUnreadable" xml:space="preserve"><value>CPFS couldn't read its settings file, so it doesn't know which folder to watch.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -930,11 +920,17 @@
   <data name="Monitor_Activity_Time" xml:space="preserve"><value>Time</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Activity_Change" xml:space="preserve"><value>Change</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Activity_Path" xml:space="preserve"><value>Path</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Activity_From" xml:space="preserve"><value>From</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Activity_To" xml:space="preserve"><value>To</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Activity_Added" xml:space="preserve"><value>Added</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Activity_Changed" xml:space="preserve"><value>Changed</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Activity_Renamed" xml:space="preserve"><value>Renamed</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Activity_Deleted" xml:space="preserve"><value>Deleted</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Activity_MissedRow" xml:space="preserve"><value>Some changes may be missing: too many arrived at once.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Activity_Intro" xml:space="preserve"><value>Changes in the shared folder from any device or this PC; CPFS can't tell which device made each one.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Activity_Missed" xml:space="preserve"><value>Missed</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Activity_RenamedTo" xml:space="preserve"><value>→ {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Activity_RenameTip" xml:space="preserve"><value>{0} → {1}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Activity_Clear" xml:space="preserve"><value>Clear</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Activity_ClearTip" xml:space="preserve"><value>Empties this list. A saved log file keeps its lines.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Activity_SaveLog" xml:space="preserve"><value>Save to a log file</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Activity_SaveLogHelp" xml:space="preserve"><value>Each change also goes to {0}. The file is never part of Copy report, and turning this off keeps it.</value><comment>UNTRANSLATED: English text</comment></data>
 </root>

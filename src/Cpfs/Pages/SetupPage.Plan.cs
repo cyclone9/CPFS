@@ -495,7 +495,7 @@ public partial class SetupPage
         var decisions = AskViews(_plan);
         Decisions.ItemsSource = decisions;
         DecisionsCard.Visibility = decisions.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-        SummaryBody.Text = _summary is null ? "" : ApplyUi.SummaryText(_summary);
+        ApplyUi.FillSummary(SummaryBody, _summary);
         UpdateApplyState();
     }
 

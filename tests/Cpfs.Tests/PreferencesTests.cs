@@ -8,7 +8,7 @@ public class PreferencesTests
     [Fact]
     public void RoundTrip()
     {
-        var prefs = new AppPreferences { Theme = "Light", Language = "fa", CheckUpdatesAtStart = true };
+        var prefs = new AppPreferences { Theme = "Light", Language = "fa", CheckUpdatesAtStart = true, SaveActivityLog = true };
         prefs.Fonts["fa"] = "Tahoma";
 
         var back = AppPreferences.Parse(prefs.Serialize());
@@ -17,6 +17,7 @@ public class PreferencesTests
         Assert.Equal("fa", back.Language);
         Assert.Equal("Tahoma", back.Fonts["FA"]);
         Assert.True(back.CheckUpdatesAtStart);
+        Assert.True(back.SaveActivityLog);
     }
 
     // dev4 saved "AlwaysShowDetails"; the switch is gone and the field is ignored.
@@ -43,5 +44,6 @@ public class PreferencesTests
         Assert.Null(prefs.Language);
         Assert.Empty(prefs.Fonts);
         Assert.False(prefs.CheckUpdatesAtStart);
+        Assert.False(prefs.SaveActivityLog);
     }
 }

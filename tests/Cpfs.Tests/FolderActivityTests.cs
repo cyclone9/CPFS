@@ -113,4 +113,56 @@ public class FolderActivityTests
         a.Watch(@"E:\Other");
         Assert.Empty(a.Rows());
     }
+
+    // A finished row goes to the activity log once: only after the copy's burst has settled, never again after.
+    [Fact]
+    public void ARowIsTakenOnceAfterItsEventsSettle()
+    {
+        var a = New();
+        a.Add(C(ActivityKind.Added, @"Photos\a.jpg", 0.0));
+        a.Add(C(ActivityKind.Changed, @"Photos\a.jpg", 1.0));
+        Assert.Empty(a.TakeFinished(TimeSpan.FromSeconds(2.5)));
+
+        var taken = a.TakeFinished(TimeSpan.FromSeconds(3.5));
+        Assert.Equal(new[] { @"Added Photos\a.jpg" }, taken.Select(r => r.Kind + " " + r.Path));
+        Assert.Empty(a.TakeFinished(TimeSpan.FromSeconds(60)));
+
+        // A row trimmed from a full list before it settled is still handed out.
+        var small = New(max: 1);
+        small.Add(C(ActivityKind.Added, "one.txt", 0.0));
+        small.Add(C(ActivityKind.Added, "two.txt", 0.1));
+        Assert.Equal(new[] { "one.txt" }, small.TakeFinished(TimeSpan.FromSeconds(0.2)).Select(r => r.Path));
+        Assert.Equal(new[] { "two.txt" }, small.TakeFinished(TimeSpan.FromSeconds(0.2), all: true).Select(r => r.Path));
+    }
+
+    [Fact]
+    public void ClearEmptiesTheListAndKeepsUnsettledRowsForTheLog()
+    {
+        var a = New();
+        a.Add(C(ActivityKind.Added, "old.txt", 0.0));
+        Assert.Single(a.TakeFinished(TimeSpan.FromSeconds(5)));
+        a.Add(C(ActivityKind.Deleted, "new.txt", 5.0));
+
+        Assert.Equal(2, a.Clear());
+        Assert.Empty(a.Rows());
+        Assert.Equal(new[] { "new.txt" }, a.TakeFinished(TimeSpan.FromSeconds(5.1)).Select(r => r.Path));
+        Assert.Equal(0, a.Clear());
+
+        // Rows after a clear start a fresh list.
+        a.Add(C(ActivityKind.Added, "next.txt", 6.0));
+        Assert.Equal(new[] { "Added next.txt" }, Shown(a));
+    }
+
+    [Fact]
+    public void ActivityLogLinesAndRotation()
+    {
+        var at = new DateTimeOffset(2026, 10, 24, 14, 45, 9, TimeSpan.FromHours(3.5));
+        Assert.Equal("2026-10-24T14:45:09+03:30\tAdded\tPhotos\\a.jpg", ActivityLogFormat.Line(new ActivityRow(1, ActivityKind.Added, @"Photos\a.jpg", "", at)));
+        Assert.Equal("2026-10-24T14:45:09+03:30\tRenamed\ta.txt \u2192 b.txt", ActivityLogFormat.Line(new ActivityRow(2, ActivityKind.Renamed, "b.txt", "a.txt", at)));
+        Assert.StartsWith("2026-10-24T14:45:09+03:30\tMissed\t(", ActivityLogFormat.Line(new ActivityRow(3, ActivityKind.Missed, "", "", at)), StringComparison.Ordinal);
+
+        Assert.False(ActivityLogFormat.ShouldRotate(0, 10 * 1024 * 1024));
+        Assert.False(ActivityLogFormat.ShouldRotate(ActivityLogFormat.RotateAt - 100, 100));
+        Assert.True(ActivityLogFormat.ShouldRotate(ActivityLogFormat.RotateAt - 100, 101));
+    }
 }

@@ -159,7 +159,7 @@ public sealed class MonitorRow : Observable
     public ObservableCollection<MonitorField> Fields { get; } = new();
 }
 
-public sealed class MonitorSection : Observable
+public class MonitorSection : Observable
 {
     private string _title = "";
     private string _description = "";
@@ -202,6 +202,81 @@ public sealed class MonitorSection : Observable
     public ObservableCollection<MonitorRow> Rows { get; } = new();
 }
 
+// Recent activity: a table of changes with one header row, a Clear button and the switch for the activity log.
+public sealed class ActivitySection : MonitorSection
+{
+    private bool _saveToLog;
+    private bool _canOpenLog;
+    private string _logHelp = "";
+
+    public ObservableCollection<ActivityRowView> Items { get; } = new();
+
+    public bool HasItems => Items.Count > 0;
+
+    public bool SaveToLog { get => _saveToLog; set => Set(ref _saveToLog, value); }
+
+    public bool CanOpenLog { get => _canOpenLog; set => Set(ref _canOpenLog, value); }
+
+    public string LogHelp { get => _logHelp; set => Set(ref _logHelp, value); }
+
+    public ActivitySection()
+    {
+        Items.CollectionChanged += (_, _) => Changed(nameof(HasItems));
+    }
+}
+
+// One row of the Recent activity table. Path is one line, trimmed, with the full text as its tooltip; a rename has
+// the old path on the first line and the new one on the second; an overflow row has a note instead of a path.
+public sealed class ActivityRowView : Observable
+{
+    private string _time = "";
+    private string _change = "";
+    private string _path = "";
+    private string _second = "";
+    private string _note = "";
+    private string? _tip;
+
+    internal ActivityRowView(long id)
+    {
+        Id = id;
+    }
+
+    internal long Id { get; }
+
+    public string Time { get => _time; set => Set(ref _time, value); }
+
+    public string Change { get => _change; set => Set(ref _change, value); }
+
+    public string Path { get => _path; set => Set(ref _path, value); }
+
+    public string Second
+    {
+        get => _second;
+        set
+        {
+            Set(ref _second, value);
+            Changed(nameof(HasSecond));
+        }
+    }
+
+    public bool HasSecond => Second.Length > 0;
+
+    public string Note
+    {
+        get => _note;
+        set
+        {
+            Set(ref _note, value);
+            Changed(nameof(HasNote));
+        }
+    }
+
+    public bool HasNote => Note.Length > 0;
+
+    // Null for no tooltip.
+    public string? Tip { get => _tip; set => Set(ref _tip, value); }
+}
+
 // The live view of the SMB server, every 2 seconds. Reads run on the thread pool and their results are merged into
 // the same view objects, so only values that changed are redrawn. The one action is Disconnect, after confirmation.
 public partial class MonitorPage : Page
@@ -221,10 +296,11 @@ public partial class MonitorPage : Page
     private readonly MonitorSection _server = new();
     private readonly MonitorSection _sessions = new();
     private readonly MonitorSection _files = new();
-    private readonly MonitorSection _activitySection = new();
+    private readonly ActivitySection _activitySection = new();
     private readonly MonitorSection _fails = new();
 
-    // Recent activity lives in memory only, for as long as the app runs.
+    // Recent activity lives in memory for as long as the app runs, and goes to activity-log.txt only when the user
+    // switched that on.
     private readonly FolderActivity _activity = new(TimeSpan.FromSeconds(2), MaxActivity, TimeSpan.FromHours(24));
     private FolderWatcher? _watch;
     private WatchState? _loggedWatchState;
@@ -347,6 +423,7 @@ public partial class MonitorPage : Page
             _activity.Add(change);
         }
 
+        SaveFinished(all: true);
         watch.Dispose();
         _watch = null;
         _loggedWatchState = null;
@@ -378,6 +455,7 @@ public partial class MonitorPage : Page
             }
 
             changed |= _activity.Expire(_clock.Elapsed);
+            SaveFinished(all: false);
             if (watch.State != _loggedWatchState)
             {
                 LogWatchState(watch);
@@ -584,7 +662,10 @@ public partial class MonitorPage : Page
     {
         var loc = Loc.Instance;
         _activitySection.Title = loc["Monitor_Activity_Title"];
-        _activitySection.Description = loc.Format("Monitor_Activity_Desc", MaxActivity);
+        _activitySection.Description = loc["Monitor_Activity_Intro"];
+        _activitySection.SaveToLog = Startup.Preferences.SaveActivityLog;
+        _activitySection.CanOpenLog = ActivityLog.Exists();
+        _activitySection.LogHelp = loc.FormatValues("Monitor_Activity_SaveLogHelp", ActivityLog.FilePath ?? loc["Log_None"]);
         var watch = _watch;
         var state = watch?.State;
         var root = watch?.Root ?? "";
@@ -603,37 +684,143 @@ public partial class MonitorPage : Page
             : state == WatchState.Watching && rows.Count == 0 ? loc["Monitor_Activity_None"]
             : "";
 
-        var today = DateTime.Now.Date;
-        SyncRows(_activitySection.Rows, rows.ToList(), r => r.Id.ToString(CultureInfo.InvariantCulture), (row, r) =>
+        // The same row objects stay while their entry does, so a refresh redraws only what changed.
+        var items = _activitySection.Items;
+        var wanted = new HashSet<long>(rows.Select(r => r.Id));
+        for (var i = items.Count - 1; i >= 0; i--)
         {
-            var local = r.Time.ToLocalTime().DateTime;
-            var fields = new List<(string, string, bool)>
+            if (!wanted.Contains(items[i].Id))
             {
-                ("Monitor_Activity_Time", local.ToString(local.Date == today ? "T" : "g", loc.Culture), false),
-            };
+                items.RemoveAt(i);
+            }
+        }
+
+        var today = DateTime.Now.Date;
+        for (var i = 0; i < rows.Count; i++)
+        {
+            var r = rows[i];
+            var index = -1;
+            for (var j = 0; j < items.Count; j++)
+            {
+                if (items[j].Id == r.Id)
+                {
+                    index = j;
+                    break;
+                }
+            }
+
+            ActivityRowView view;
+            if (index < 0)
+            {
+                view = new ActivityRowView(r.Id);
+                items.Insert(Math.Min(i, items.Count), view);
+            }
+            else
+            {
+                view = items[index];
+                if (index != i && i < items.Count)
+                {
+                    items.Move(index, i);
+                }
+            }
+
+            var local = r.Time.ToLocalTime().DateTime;
+            view.Time = local.ToString(local.Date == today ? "T" : "g", loc.Culture);
+            view.Change = loc[r.Kind switch
+            {
+                ActivityKind.Added => "Monitor_Activity_Added",
+                ActivityKind.Deleted => "Monitor_Activity_Deleted",
+                ActivityKind.Renamed => "Monitor_Activity_Renamed",
+                ActivityKind.Missed => "Monitor_Activity_Missed",
+                _ => "Monitor_Activity_Changed",
+            }];
             switch (r.Kind)
             {
                 case ActivityKind.Missed:
-                    fields.Add(("Monitor_Activity_Change", loc["Monitor_Activity_MissedRow"], false));
+                    view.Path = "";
+                    view.Second = "";
+                    view.Note = loc["Monitor_Activity_MissedRow"];
+                    view.Tip = null;
                     break;
                 case ActivityKind.Renamed:
-                    fields.Add(("Monitor_Activity_Change", loc["Monitor_Activity_Renamed"], false));
-                    fields.Add(("Monitor_Activity_From", r.OldPath, true));
-                    fields.Add(("Monitor_Activity_To", r.Path, true));
+                    view.Path = r.OldPath;
+                    view.Second = loc.FormatValues("Monitor_Activity_RenamedTo", r.Path);
+                    view.Note = "";
+                    view.Tip = loc.FormatValues("Monitor_Activity_RenameTip", r.OldPath, r.Path);
                     break;
                 default:
-                    fields.Add(("Monitor_Activity_Change", loc[r.Kind switch
-                    {
-                        ActivityKind.Added => "Monitor_Activity_Added",
-                        ActivityKind.Deleted => "Monitor_Activity_Deleted",
-                        _ => "Monitor_Activity_Changed",
-                    }], false));
-                    fields.Add(("Monitor_Activity_Path", r.Path, true));
+                    view.Path = r.Path;
+                    view.Second = "";
+                    view.Note = "";
+                    view.Tip = r.Path;
                     break;
             }
+        }
+    }
 
-            SetFields(row.Fields, fields);
-        });
+    // Rows that will not change any more go to activity-log.txt while the switch is on; otherwise they are dropped,
+    // so switching it on later doesn't write what came before.
+    private void SaveFinished(bool all)
+    {
+        var finished = _activity.TakeFinished(_clock.Elapsed, all);
+        if (finished.Count > 0 && Startup.Preferences.SaveActivityLog)
+        {
+            ActivityLog.Append(finished);
+            _activitySection.CanOpenLog = true;
+        }
+    }
+
+    private void OnClearActivity(object sender, RoutedEventArgs e)
+    {
+        SaveFinished(all: true);
+        var cleared = _activity.Clear();
+        AppLog.Write("monitor", "Recent activity cleared: " + cleared.ToString(CultureInfo.InvariantCulture) + " rows");
+        RenderActivity();
+    }
+
+    private void OnActivityLogSwitch(object sender, RoutedEventArgs e)
+    {
+        var on = sender is System.Windows.Controls.Primitives.ToggleButton { IsChecked: true };
+        if (on == Startup.Preferences.SaveActivityLog)
+        {
+            return;
+        }
+
+        // Rows finished while it was off are not written when it comes on.
+        if (on)
+        {
+            _activity.TakeFinished(_clock.Elapsed);
+        }
+        else
+        {
+            SaveFinished(all: true);
+        }
+
+        Startup.Preferences.SaveActivityLog = on;
+        Startup.SavePreferences();
+        _activitySection.SaveToLog = on;
+        AppLog.Write("prefs", "Save Recent activity to a log file " + (on ? "on" : "off"));
+    }
+
+    private void OnOpenActivityLog(object sender, RoutedEventArgs e)
+    {
+        if (ActivityLog.FilePath is not { } path || !ActivityLog.Exists())
+        {
+            _activitySection.CanOpenLog = false;
+            return;
+        }
+
+        try
+        {
+            using (Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }))
+            {
+            }
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or System.IO.FileNotFoundException)
+        {
+            AppLog.Write("monitor", "Open activity log failed: " + ex.GetType().Name);
+            Show(ActionResult, InfoBarSeverity.Error, Loc.Instance.Format("Log_OpenFailed", ex.Message));
+        }
     }
 
     private void RenderFails()

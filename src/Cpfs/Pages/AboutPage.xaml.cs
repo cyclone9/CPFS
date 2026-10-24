@@ -49,7 +49,7 @@ public partial class AboutPage : Page
         return reader.ReadToEnd();
     }
 
-    public const string HomepageUrl = "https://cyclone9.ir/cpfs.html";
+    public const string HomepageUrl = "https://cyclone9.ir/cpfs";
 
     public const string GitHubUrl = "https://github.com/cyclone9/CPFS";
 

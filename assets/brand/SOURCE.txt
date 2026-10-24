@@ -22,4 +22,13 @@ cpfs.ico
   SkiaSharp, both MIT) that is not part of this repository and not shipped.
   Entries below 256 px are 32-bit DIBs; the 256 px entry is PNG.
 
+Logo/cpfs-lockup-on-dark.svg
+Logo/cpfs-lockup-on-light.svg
+  The lockup (Path symbol and wordmark), from CPBS cpfs/logo/, copied byte for byte on 2026-10-24.
+  Used at the top of the READMEs.
+
+cpfs-video-en.jpg
+  The still frame of the CPFS launch video (CPBS public/cpfs/video/cpfs-en-2026-10-24.jpg), copied on 2026-10-24.
+  Shown in the READMEs; the video itself is not final yet.
+
 These files, and the drawing in src/Cpfs/Brand.xaml, are not covered by the MIT licence (see README.md in this folder).

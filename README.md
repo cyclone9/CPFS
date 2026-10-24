@@ -2,6 +2,8 @@
 
 # CPFS - CyClone Power File Share
 
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/brand/Logo/cpfs-lockup-on-dark.svg"><img src="assets/brand/Logo/cpfs-lockup-on-light.svg" alt="CPFS" width="348"></picture></p>
+
 **Tagline:** *Your PC's folder, within reach of any device.*  
 **Motto:** *Only the folder you chose.*
 
@@ -10,8 +12,10 @@
 | Version | 0.6.0 (in development) |
 | Platform | Windows 10 and 11 (Home or Pro) |
 | Requires | .NET Framework 4.8 (built into Windows 10 1903 and later and Windows 11), Administrator rights |
-| Homepage | https://cyclone9.ir/cpfs.html |
+| Homepage | https://cyclone9.ir/cpfs |
 | Licence | MIT (code only; see [Licence](#licence)) |
+
+<p align="center"><img src="assets/brand/cpfs-video-en.jpg" alt="CPFS" width="720"></p>
 
 CPFS is being rebuilt as a Windows app. There is no release yet, so there is nothing to download, and everything below describes what the app is meant to do.
 

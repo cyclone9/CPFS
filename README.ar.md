@@ -4,16 +4,20 @@
 
 # CPFS - CyClone Power File Share
 
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/brand/Logo/cpfs-lockup-on-dark.svg"><img src="assets/brand/Logo/cpfs-lockup-on-light.svg" alt="CPFS" width="348"></picture></p>
+
 **العبارة التعريفية:** *مجلد كمبيوترك في متناول كل جهاز.*  
 **الشعار:** *فقط المجلد الذي اخترته.*
 
 | | |
 |---|---|
 | الإصدار | 0.6.0 (قيد التطوير) |
-| المنصة | Windows 10 و 11 (الإصدار المنزلي أو الاحترافي) |
-| المتطلبات | .NET Framework 4.8 (مضمّن في Windows 10 الإصدار 1903 وما بعده وفي Windows 11)، صلاحيات المسؤول |
-| الصفحة الرئيسية | https://cyclone9.ir/cpfs.html |
-| الترخيص | MIT (للشيفرة فقط؛ انظر [الترخيص](#الترخيص)) |
+| المنصة | ‏Windows 10 و 11 (الإصدار المنزلي أو الاحترافي) |
+| المتطلبات | ‏.NET Framework 4.8 (مضمّن في Windows 10 الإصدار 1903 وما بعده وفي Windows 11)، صلاحيات المسؤول |
+| الصفحة الرئيسية | https://cyclone9.ir/cpfs |
+| الترخيص | ‏MIT (للشيفرة فقط؛ انظر [الترخيص](#الترخيص)) |
+
+<p align="center"><img src="assets/brand/cpfs-video-en.jpg" alt="CPFS" width="720"></p>
 
 يُعاد بناء CPFS الآن تطبيقًا لنظام Windows. لم يصدر منه إصدار بعد، فلا يوجد ما يمكن تنزيله، وكل ما يرد أدناه وصف لما يُراد للتطبيق أن يفعله.
 
@@ -37,6 +41,6 @@
 
 الشيفرة مرخّصة بموجب MIT (انظر الملف `LICENSE`). اسم CPFS وشعاره ورموزه وعلامته الكتابية وأيقونة التطبيق غير مشمولة بهذا الترخيص، ولا يجوز استخدامها دون إذن. الملفات الموجودة في `assets/brand/` هي ملفات العلامة التجارية لـ CPFS وهي غير مشمولة بترخيص MIT. وخط Vazirmatn في `assets/fonts/` مرخّص بموجب SIL Open Font License 1.1 (الملف `OFL.txt` موجود هناك).
 
-© CyClone · https://cyclone9.ir/
+‏© CyClone · https://cyclone9.ir/
 
 </div>

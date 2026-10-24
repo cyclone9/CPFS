@@ -116,28 +116,51 @@ public sealed class StepView : INotifyPropertyChanged
 // not created, the result, Copy report and the behaviour of every Show details.
 internal static class ApplyUi
 {
-    // The summary's sentences in the UI language: counts formatted for it, names and paths kept in their own direction.
-    public static string SummaryText(PlanSummary summary)
+    // The summary as a bulleted list, one line per sentence in the UI language: counts formatted for it, names and paths
+    // kept in their own direction and in bold. The translated sentence stays whole; only its placeholders become runs.
+    public static void FillSummary(Panel panel, PlanSummary? summary)
     {
-        var loc = Loc.Instance;
-        var sentences = new List<string>();
-        foreach (var line in summary.Lines)
+        panel.Children.Clear();
+        if (summary is null)
         {
-            var args = new object[line.Args.Count];
-            for (var i = 0; i < args.Length; i++)
-            {
-                args[i] = line.Args[i] switch
-                {
-                    int n => Formats(n),
-                    var other => Bidi.Embed(other?.ToString() ?? "", loc.IsRtl),
-                };
-            }
-
-            sentences.Add(string.Format(loc.Culture, loc[line.Key], args));
+            return;
         }
 
-        return string.Join(" ", sentences);
+        var loc = Loc.Instance;
+        var body = panel.TryFindResource("Body") as Style;
+        foreach (var line in summary.Lines)
+        {
+            var text = new System.Windows.Controls.TextBlock { Style = body, TextWrapping = TextWrapping.Wrap };
+            var format = loc[line.Key];
+            var at = 0;
+            foreach (System.Text.RegularExpressions.Match m in Placeholder.Matches(format))
+            {
+                if (m.Index > at)
+                {
+                    text.Inlines.Add(new System.Windows.Documents.Run(format.Substring(at, m.Index - at)));
+                }
+
+                var i = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+                var arg = i < line.Args.Count ? line.Args[i] : null;
+                text.Inlines.Add(arg switch
+                {
+                    int n => new System.Windows.Documents.Run(Formats(n)),
+                    null => new System.Windows.Documents.Run(m.Value),
+                    var value => new System.Windows.Documents.Bold(new System.Windows.Documents.Run(Bidi.Embed(value.ToString() ?? "", loc.IsRtl))),
+                });
+                at = m.Index + m.Length;
+            }
+
+            if (at < format.Length)
+            {
+                text.Inlines.Add(new System.Windows.Documents.Run(format.Substring(at)));
+            }
+
+            panel.Children.Add(ListLine(text, body));
+        }
     }
+
+    private static readonly System.Text.RegularExpressions.Regex Placeholder = new(@"\{(\d+)\}");
 
     // Three lines, how many changes, how they are undone and whether a restore point comes first, with the item list
     // under Show details.
@@ -219,13 +242,16 @@ internal static class ApplyUi
 
     // One item of a list: the dash in its own column, so a long line wraps under the text, not under the dash. The
     // grid mirrors with the dialog, which puts the dash on the right in a right-to-left language.
-    private static Grid ListLine(string text)
+    private static Grid ListLine(string text) =>
+        ListLine(new System.Windows.Controls.TextBlock { Text = text, TextWrapping = TextWrapping.Wrap }, null);
+
+    // The bullet in its own column, so a wrapped line hangs under the text, on the right in right-to-left.
+    private static Grid ListLine(System.Windows.Controls.TextBlock body, Style? style)
     {
         var line = new Grid { Margin = new Thickness(0, 0, 0, 4) };
         line.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        line.Children.Add(new System.Windows.Controls.TextBlock { Text = Loc.Instance["Common_ListBullet"], Margin = new Thickness(0, 0, 6, 0) });
-        var body = new System.Windows.Controls.TextBlock { Text = text, TextWrapping = TextWrapping.Wrap };
+        line.Children.Add(new System.Windows.Controls.TextBlock { Text = Loc.Instance["Common_ListBullet"], Margin = new Thickness(0, 0, 6, 0), Style = style });
         Grid.SetColumn(body, 1);
         line.Children.Add(body);
         return line;

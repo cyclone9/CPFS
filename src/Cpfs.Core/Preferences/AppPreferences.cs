@@ -22,6 +22,9 @@ public sealed class AppPreferences
     // Asks GitHub for a newer release once when the app starts. Off unless the user switches it on.
     public bool CheckUpdatesAtStart { get; set; }
 
+    // Monitor also writes Recent activity to activity-log.txt. Off unless the user switches it on: it holds file names.
+    public bool SaveActivityLog { get; set; }
+
     // Unknown or malformed content gives the defaults rather than an error: preferences are never worth a failed start.
     // Fields a newer or older version wrote (0.6.0 dev4's AlwaysShowDetails) are ignored.
     public static AppPreferences Parse(string? json)
@@ -63,6 +66,11 @@ public sealed class AppPreferences
             prefs.CheckUpdatesAtStart = true;
         }
 
+        if (Config.ConfigJson.Get(root, "SaveActivityLog") is JsonValue save && save.GetValueKind() == JsonValueKind.True)
+        {
+            prefs.SaveActivityLog = true;
+        }
+
         if (Config.ConfigJson.GetObject(root, "Fonts") is { } fonts)
         {
             foreach (var pair in fonts)
@@ -94,6 +102,7 @@ public sealed class AppPreferences
             [nameof(Language)] = Language,
             [nameof(Fonts)] = fonts,
             [nameof(CheckUpdatesAtStart)] = CheckUpdatesAtStart,
+            [nameof(SaveActivityLog)] = SaveActivityLog,
         };
         return root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
     }

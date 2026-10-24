@@ -101,7 +101,8 @@
       </Border>
     </DataTemplate>
 
-    <DataTemplate x:Key="SectionTemplate" DataType="{x:Type pages:MonitorSection}">
+    <!--  Picked by type, so Recent activity gets its table and every other section the cards below.  -->
+    <DataTemplate DataType="{x:Type pages:MonitorSection}">
       <ui:Card Margin="0,0,0,4">
         <StackPanel>
           <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
@@ -117,6 +118,94 @@
             ItemsPanel="{StaticResource Wrap}"
             ItemsSource="{Binding Fields}" />
           <ItemsControl Focusable="False" ItemsSource="{Binding Rows}" />
+        </StackPanel>
+      </ui:Card>
+    </DataTemplate>
+
+    <!--
+      One row of Recent activity: Time and Change size to their widest entry (shared with the header through
+      ActivityTime and ActivityChange), Path takes the rest on one line, trimmed, with the full path as its tooltip.
+    -->
+    <DataTemplate DataType="{x:Type pages:ActivityRowView}">
+      <Border Padding="0,6" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" SharedSizeGroup="ActivityTime" />
+            <ColumnDefinition Width="Auto" SharedSizeGroup="ActivityChange" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <TextBlock Margin="0,0,16,0" Style="{StaticResource CardValue}" Text="{Binding Time}" TextWrapping="NoWrap" />
+          <TextBlock Grid.Column="1" Margin="0,0,16,0" Style="{StaticResource CardValue}" Text="{Binding Change}" TextWrapping="NoWrap" />
+          <StackPanel Grid.Column="2" AutomationProperties.HelpText="{Binding Tip}" ToolTip="{Binding Tip}">
+            <TextBlock Style="{StaticResource DataValue}" Text="{Binding Path}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+            <TextBlock
+              Style="{StaticResource DataValue}"
+              Text="{Binding Second}"
+              TextTrimming="CharacterEllipsis"
+              TextWrapping="NoWrap"
+              Visibility="{Binding HasSecond, Converter={StaticResource Visible}}" />
+            <TextBlock Style="{StaticResource CardValue}" Text="{Binding Note}" Visibility="{Binding HasNote, Converter={StaticResource Visible}}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type pages:ActivitySection}">
+      <ui:Card Margin="0,0,0,4">
+        <StackPanel>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
+              <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Description}" />
+            </StackPanel>
+            <ui:Button
+              Grid.Column="1"
+              Margin="12,0,0,0"
+              VerticalAlignment="Top"
+              AutomationProperties.Name="{Binding [Monitor_Activity_Clear], Source={x:Static local:Loc.Instance}}"
+              Click="OnClearActivity"
+              Content="{Binding [Monitor_Activity_Clear], Source={x:Static local:Loc.Instance}}"
+              Icon="{ui:SymbolIcon Delete24}"
+              IsEnabled="{Binding HasItems}"
+              ToolTip="{Binding [Monitor_Activity_ClearTip], Source={x:Static local:Loc.Instance}}" />
+          </Grid>
+          <WrapPanel Margin="0,12,0,0">
+            <ui:ToggleSwitch
+              Margin="0,0,24,4"
+              VerticalAlignment="Center"
+              AutomationProperties.HelpText="{Binding LogHelp}"
+              AutomationProperties.Name="{Binding [Monitor_Activity_SaveLog], Source={x:Static local:Loc.Instance}}"
+              Click="OnActivityLogSwitch"
+              Content="{Binding [Monitor_Activity_SaveLog], Source={x:Static local:Loc.Instance}}"
+              IsChecked="{Binding SaveToLog, Mode=OneWay}" />
+            <ui:Button
+              Margin="0,0,0,4"
+              AutomationProperties.Name="{Binding [About_Log_Open], Source={x:Static local:Loc.Instance}}"
+              Click="OnOpenActivityLog"
+              Content="{Binding [About_Log_Open], Source={x:Static local:Loc.Instance}}"
+              Icon="{ui:SymbolIcon Open24}"
+              IsEnabled="{Binding CanOpenLog}" />
+          </WrapPanel>
+          <TextBlock Margin="0,2,0,0" Style="{StaticResource CardDescription}" Text="{Binding LogHelp}" />
+          <TextBlock Margin="0,8,0,0" Style="{StaticResource ErrorText}" Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
+          <TextBlock Margin="0,8,0,0" Style="{StaticResource CardValue}" Text="{Binding Empty}" Visibility="{Binding IsEmpty, Converter={StaticResource Visible}}" />
+          <StackPanel Margin="0,12,0,0" Grid.IsSharedSizeScope="True" Visibility="{Binding HasItems, Converter={StaticResource Visible}}">
+            <Grid Margin="0,0,0,4">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="ActivityTime" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="ActivityChange" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Margin="0,0,16,0" Style="{StaticResource CardDescription}" Text="{Binding [Monitor_Activity_Time], Source={x:Static local:Loc.Instance}}" TextWrapping="NoWrap" />
+              <TextBlock Grid.Column="1" Margin="0,0,16,0" Style="{StaticResource CardDescription}" Text="{Binding [Monitor_Activity_Change], Source={x:Static local:Loc.Instance}}" TextWrapping="NoWrap" />
+              <TextBlock Grid.Column="2" Style="{StaticResource CardDescription}" Text="{Binding [Monitor_Activity_Path], Source={x:Static local:Loc.Instance}}" TextWrapping="NoWrap" />
+            </Grid>
+            <ItemsControl Focusable="False" ItemsSource="{Binding Items}" />
+          </StackPanel>
         </StackPanel>
       </ui:Card>
     </DataTemplate>
@@ -161,7 +250,6 @@
       <ItemsControl
         x:Name="Sections"
         Focusable="False"
-        ItemTemplate="{StaticResource SectionTemplate}"
         Visibility="Collapsed" />
     </StackPanel>
   </StackPanel>

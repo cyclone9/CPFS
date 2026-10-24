@@ -4,16 +4,20 @@
 
 # CPFS - CyClone Power File Share
 
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/brand/Logo/cpfs-lockup-on-dark.svg"><img src="assets/brand/Logo/cpfs-lockup-on-light.svg" alt="CPFS" width="348"></picture></p>
+
 **شعار:** *پوشه‌ی کامپیوتر شما، در دسترس هر دستگاه.*  
 **جمله‌ی برند:** *فقط همان پوشه‌ای که خودتان انتخاب کرده‌اید.*
 
 | | |
 |---|---|
 | نسخه | 0.6.0 (در حال توسعه) |
-| پلتفرم | Windows 10 و 11 (خانگی یا حرفه‌ای) |
-| نیازها | .NET Framework 4.8 (در Windows 10 نسخهٔ 1903 به بعد و در Windows 11 به‌صورت پیش‌فرض وجود دارد)، دسترسی مدیر |
-| صفحهٔ اصلی | https://cyclone9.ir/cpfs.html |
-| مجوز | MIT (فقط کد؛ بخش [مجوز](#مجوز) را ببینید) |
+| پلتفرم | ‏Windows 10 و 11 (خانگی یا حرفه‌ای) |
+| نیازها | ‏.NET Framework 4.8 (در Windows 10 نسخهٔ 1903 به بعد و در Windows 11 به‌صورت پیش‌فرض وجود دارد)، دسترسی مدیر |
+| صفحهٔ اصلی | https://cyclone9.ir/cpfs |
+| مجوز | ‏MIT (فقط کد؛ بخش [مجوز](#مجوز) را ببینید) |
+
+<p align="center"><img src="assets/brand/cpfs-video-en.jpg" alt="CPFS" width="720"></p>
 
 بازنویسی CPFS به‌شکل برنامه‌ای برای Windows در جریان است. هنوز نسخه‌ای منتشر نشده و چیزی برای دانلود نیست؛ هرچه در ادامه آمده توضیح کاری است که قرار است برنامه انجام دهد.
 
@@ -37,6 +41,6 @@
 
 کد تحت مجوز MIT است (فایل `LICENSE` را ببینید). نام CPFS، لوگو، نمادها، لوگوتایپ و آیکن برنامه شامل این مجوز نمی‌شوند و بدون اجازه نباید از آن‌ها استفاده کرد. فایل‌های پوشهٔ `assets/brand/` فایل‌های برند CPFS هستند و مجوز MIT شامل آن‌ها نمی‌شود. قلم Vazirmatn در پوشهٔ `assets/fonts/` تحت مجوز SIL Open Font License 1.1 است (فایل `OFL.txt` همان‌جاست).
 
-© CyClone · https://cyclone9.ir/
+‏© CyClone · https://cyclone9.ir/
 
 </div>

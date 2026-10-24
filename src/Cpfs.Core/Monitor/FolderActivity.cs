@@ -26,6 +26,9 @@ public sealed record ActivityRow(long Id, ActivityKind Kind, string Path, string
 public sealed class FolderActivity
 {
     private readonly List<Entry> _rows = new();
+
+    // Rows that left the list before TakeFinished handed them out: trimmed, expired or cleared.
+    private readonly List<ActivityRow> _finished = new();
     private long _nextId;
 
     public FolderActivity(TimeSpan mergeWindow, int max, TimeSpan keep)
@@ -50,7 +53,7 @@ public sealed class FolderActivity
         root = (root ?? "").Trim();
         if (!string.Equals(Trimmed(root), Trimmed(Root), StringComparison.OrdinalIgnoreCase))
         {
-            _rows.Clear();
+            Clear();
         }
 
         Root = root;
@@ -116,20 +119,40 @@ public sealed class FolderActivity
     }
 
     // Removes rows older than Keep; true when any went.
-    public bool Expire(TimeSpan now) => _rows.RemoveAll(e => now - e.FirstAt > Keep) > 0;
+    public bool Expire(TimeSpan now) => Remove(e => now - e.FirstAt > Keep) > 0;
 
     public IReadOnlyList<ActivityRow> Rows()
     {
         var rows = new List<ActivityRow>(_rows.Count);
         foreach (var e in _rows)
         {
-            rows.Add(new ActivityRow(e.Id, e.Kind, e.Path, e.OldPath, e.Time));
+            rows.Add(e.Row());
         }
 
         return rows;
     }
 
-    public void Clear() => _rows.Clear();
+    // Empties the list and returns how many rows went. Rows not yet handed out by TakeFinished still come from it.
+    public int Clear() => Remove(_ => true);
+
+    // Each row once, oldest first, when nothing can merge into it or drop it any more: MergeWindow after its last
+    // event, or when it left the list. With all, every row not handed out yet.
+    public IReadOnlyList<ActivityRow> TakeFinished(TimeSpan now, bool all = false)
+    {
+        var rows = new List<ActivityRow>(_finished);
+        _finished.Clear();
+        foreach (var e in _rows)
+        {
+            if (!e.Taken && (all || now - e.LastAt > MergeWindow))
+            {
+                e.Taken = true;
+                rows.Add(e.Row());
+            }
+        }
+
+        rows.Sort((a, b) => a.Id.CompareTo(b.Id));
+        return rows;
+    }
 
     // The path below root, or the full path when it is not inside root; empty for root itself.
     public static string RelativePath(string root, string fullPath)
@@ -180,7 +203,35 @@ public sealed class FolderActivity
         Expire(entry.LastAt);
         if (_rows.Count > Max)
         {
+            for (var i = Max; i < _rows.Count; i++)
+            {
+                Finish(_rows[i]);
+            }
+
             _rows.RemoveRange(Max, _rows.Count - Max);
+        }
+    }
+
+    // Removes the rows that match; those not handed out yet wait for TakeFinished.
+    private int Remove(Predicate<Entry> match)
+    {
+        foreach (var e in _rows)
+        {
+            if (match(e))
+            {
+                Finish(e);
+            }
+        }
+
+        return _rows.RemoveAll(match);
+    }
+
+    private void Finish(Entry e)
+    {
+        if (!e.Taken)
+        {
+            e.Taken = true;
+            _finished.Add(e.Row());
         }
     }
 
@@ -248,5 +299,9 @@ public sealed class FolderActivity
         public TimeSpan LastAt { get; set; }
 
         public DateTimeOffset Time { get; }
+
+        public bool Taken { get; set; }
+
+        public ActivityRow Row() => new(Id, Kind, Path, OldPath, Time);
     }
 }
