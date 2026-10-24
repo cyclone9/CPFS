@@ -31,7 +31,11 @@ public sealed record SetupAnswers
 
     public char? DriveLetter { get; init; }
 
+    // The name is used by the drive letter and by the File Explorer navigation-pane entry.
     public string DriveName { get; init; } = "";
+
+    // CPFS's entry in File Explorer's navigation pane, with DriveName as its name.
+    public bool ExplorerEntry { get; init; }
 
     public bool Shortcut { get; init; }
 
@@ -74,7 +78,10 @@ public static class SetupDefaults
             AutoPrivate = config?.AutoPrivate ?? false,
             Drive = (access & 1) != 0,
             DriveLetter = letters.DefaultLetter(oldLetter),
-            DriveName = config?.DriveLabel is { Length: > 0 } label ? label : DriveNameFor(shareName),
+            DriveName = config?.DriveLabel is { Length: > 0 } label ? label
+                : config?.TrackedExplorerEntry?.Name is { Length: > 0 } entryName ? entryName
+                : DriveNameFor(shareName),
+            ExplorerEntry = config?.ExplorerEntry ?? true,
             Shortcut = (access & 2) != 0,
             ShortcutName = config?.Shortcut is { Length: > 0 } lnk ? Path.GetFileNameWithoutExtension(lnk.Replace('\\', '/')) : ShortcutNameFor(shareName),
         };

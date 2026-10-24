@@ -51,6 +51,7 @@ public static class UninstallPlanner
         R.UserDeleteAdmin, R.Profile, R.UserBefore, R.UserAdmin, R.UserHidden, R.UserGone, R.RuleRemove, R.BuiltInEnable,
         R.BuiltInMissing, R.Restore, R.RestoreValue, R.SettingsKept, R.Revert, R.AlwaysKept, R.NetworkPublic, R.NetworkSaved,
         R.SaveCopy, R.DataRemove, R.DataKept, R.Later, R.LabelRemove, R.IconRemove, R.DriveSession, R.DriveRemove, R.DriveForeign, R.ShortcutRemove,
+        R.ExplorerRemove, R.ExplorerForeign, R.ExplorerNotLoaded,
     };
 
     public static readonly IReadOnlyList<string> WordKeys = new[]
@@ -116,6 +117,9 @@ public static class UninstallPlanner
         public const string DriveRemove = "Uninst_R_DriveRemove";
         public const string DriveForeign = "Uninst_R_DriveForeign";
         public const string ShortcutRemove = "Uninst_R_ShortcutRemove";
+        public const string ExplorerRemove = "Uninst_R_ExplorerRemove";
+        public const string ExplorerForeign = "Uninst_R_ExplorerForeign";
+        public const string ExplorerNotLoaded = "Uninst_R_ExplorerNotLoaded";
     }
 
     internal static class S
@@ -311,6 +315,8 @@ public static class UninstallPlanner
                 }
             }
 
+            Explorer();
+
             if (_c.Shortcut is { Length: > 0 } lnk && _s.PublicDesktopFiles.IsOk
                 && SameText(lnk.Substring(0, Math.Max(0, lnk.LastIndexOf('\\'))), _s.CommonDesktop.TrimEnd('\\')))
             {
@@ -322,6 +328,46 @@ public static class UninstallPlanner
                         Add("u.shortcut", PlanSection.Shortcut, PlanAction.RemoveIfOurs, Word(Planner.S.Shortcut), PlanValue.Of(lnk), Word(Planner.W.Absent), R.ShortcutRemove);
                     }
                 }
+            }
+        }
+
+        // The File Explorer entry config.json records, read from the hive of the user it was made for. It goes only
+        // while it still opens the recorded folder; when that user's hive is not loaded it stays, and the plan says so.
+        private void Explorer()
+        {
+            const string key = "u.explorer";
+            var recorded = _c!.TrackedExplorerEntry;
+            if (recorded is null)
+            {
+                return;
+            }
+
+            var subject = Word(Planner.S.Explorer);
+            if (!_s.ExplorerEntry.IsOk)
+            {
+                Unread(key, PlanSection.Drive, subject, _s.ExplorerEntry);
+                return;
+            }
+
+            var hive = _s.ExplorerEntry.Value!;
+            if (!hive.Loaded || !SameText(hive.Sid, recorded.Sid))
+            {
+                Add(key, PlanSection.Drive, PlanAction.Keep, subject, PlanValue.Of(recorded.Name ?? "?"), null, R.ExplorerNotLoaded);
+                return;
+            }
+
+            if (hive.Entry is not { } entry)
+            {
+                return;
+            }
+
+            if (ExplorerEntry.SameFolder(entry.TargetFolderPath, recorded.Folder))
+            {
+                Add(key, PlanSection.Drive, PlanAction.RemoveIfOurs, subject, PlanValue.Of(entry.Name ?? "?"), Word(Planner.W.Absent), R.ExplorerRemove);
+            }
+            else
+            {
+                Add(key, PlanSection.Drive, PlanAction.Keep, subject, PlanValue.Of(entry.Name ?? "?"), null, R.ExplorerForeign, entry.TargetFolderPath ?? "?");
             }
         }
 

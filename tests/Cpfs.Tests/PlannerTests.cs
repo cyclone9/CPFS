@@ -70,6 +70,7 @@ public class PlannerTests
             Letters = letters,
             PublicDesktopFiles = Reading.Ok<IReadOnlyList<string>>(new[] { "Shared (CPFS).lnk", "desktop.ini" }),
             ShortcutIcons = Reading.Ok<IReadOnlyDictionary<string, string>>(new Dictionary<string, string> { ["Shared (CPFS).lnk"] = CpfsIcon }),
+            ExplorerEntry = ExplorerEntryTests.Hive(null),
             User = Reading.Ok<UserInfo?>(new UserInfo(UserSid, true, true, false, false, true, 0)),
             Folder = Reading.Ok(new FolderInfo(true, true)),
             ShareAccess = Reading.Ok<IReadOnlyList<ShareAccessEntry>?>(new[] { new ShareAccessEntry(@"HOST-01\ShareUser", UserSid, 0, 0) }),
@@ -93,6 +94,97 @@ public class PlannerTests
 
     private static PlanItem Item(Plan plan, string key) => plan.Find(key) ?? throw new InvalidOperationException("No plan item " + key);
 
+    private static SetupAnswers NoEntry(SetupAnswers a) => a with { ExplorerEntry = false };
+
+    // The File Explorer entry: created when absent, kept when it is CPFS's and at target, changed for a new name,
+    // folder or icon, or when a documented value is missing.
+    [Fact]
+    public void TheExplorerEntryIsCreatedKeptOrChanged()
+    {
+        const string name = "CPFS - Shared";
+        var created = PlanFor(Installed(), Fixture(), a => a with { Drive = false });
+        var create = Item(created, "explorer.entry");
+        Assert.Equal(PlanAction.Create, create.Action);
+        Assert.Equal(PlanSection.Drive, create.Section);
+        Assert.Equal(name, create.Target!.Data);
+        Assert.Contains(PlanSummary.Setup(created, Answers(Fixture(), Installed()) with { Drive = false }, Fixture()).Lines,
+            l => l.Key == "Summary_Explorer" && (string)l.Args[0] == name);
+
+        var recorded = ExplorerEntryTests.Recorded(Fixture(), @"D:\Shared", name);
+        var atTarget = Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(ExplorerEntryTests.Entry(name, @"D:\Shared")) };
+        Assert.Equal(PlanAction.Keep, Item(PlanFor(atTarget, recorded), "explorer.entry").Action);
+
+        var renamed = Item(PlanFor(atTarget, recorded, a => a with { DriveName = "My files" }), "explorer.entry");
+        Assert.Equal(PlanAction.Change, renamed.Action);
+        Assert.Equal(Planner.R.ExplorerChange, renamed.ReasonKey);
+        Assert.Equal("My files", renamed.Target!.Data);
+
+        Assert.Equal(PlanAction.Change, Item(PlanFor(atTarget, recorded, a => a with { SharePath = @"D:\Other" }), "explorer.entry").Action);
+
+        var otherIcon = Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(ExplorerEntryTests.Entry(name, @"D:\Shared", @"C:\Icons\x.ico")) };
+        Assert.Equal(PlanAction.Change, Item(PlanFor(otherIcon, recorded), "explorer.entry").Action);
+
+        var incomplete = Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(ExplorerEntryTests.Entry(name, @"D:\Shared") with { NameSpaceName = null }) };
+        Assert.Equal(PlanAction.Change, Item(PlanFor(incomplete, recorded), "explorer.entry").Action);
+    }
+
+    [Fact]
+    public void AnExplorerEntryCpfsDidNotRecordOrThatIsGoneIsAnUntickedQuestion()
+    {
+        var foreign = Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(ExplorerEntryTests.Entry("Other", @"E:\Elsewhere")) };
+        var notRecorded = Item(PlanFor(foreign, Fixture()), "explorer.entry");
+        Assert.Equal(PlanAction.Ask, notRecorded.Action);
+        Assert.False(notRecorded.Ticked);
+        Assert.Equal(Planner.R.ExplorerForeign, notRecorded.ReasonKey);
+        Assert.Equal(@"E:\Elsewhere", notRecorded.ReasonArgs[0]);
+
+        var recorded = ExplorerEntryTests.Recorded(Fixture(), @"D:\Shared", "CPFS - Shared");
+        var elsewhere = Item(PlanFor(foreign, recorded), "explorer.entry");
+        Assert.Equal(PlanAction.Ask, elsewhere.Action);
+        Assert.False(elsewhere.Ticked);
+        Assert.False(ApplyList.IsRunnable(elsewhere));
+        Assert.True(Item(PlanFor(foreign, recorded, a => Tick(a, "explorer.entry")), "explorer.entry").Ticked);
+
+        var gone = Item(PlanFor(Installed(), recorded), "explorer.entry");
+        Assert.Equal(PlanAction.Ask, gone.Action);
+        Assert.False(gone.Ticked);
+        Assert.Equal(Planner.R.ExplorerGone, gone.ReasonKey);
+    }
+
+    [Fact]
+    public void TurningTheExplorerEntryOffRemovesOnlyCpfsOwn()
+    {
+        var recorded = ExplorerEntryTests.Recorded(Fixture(), @"D:\Shared", "CPFS - Shared");
+        var ours = Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(ExplorerEntryTests.Entry("CPFS - Shared", @"D:\Shared")) };
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(PlanFor(ours, recorded, NoEntry), "explorer.entry").Action);
+
+        var foreign = Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(ExplorerEntryTests.Entry("CPFS - Shared", @"E:\Elsewhere")) };
+        Assert.Equal(PlanAction.Keep, Item(PlanFor(foreign, recorded, NoEntry), "explorer.entry").Action);
+        Assert.Equal(Planner.R.ExplorerOff, Item(PlanFor(Installed(), Fixture(), NoEntry), "explorer.entry").ReasonKey);
+
+        // Off with nothing recorded, the entry is not read at all: an unreadable hive does not block Apply.
+        var unread = Installed() with { ExplorerEntry = Reading.Failed<ExplorerHive>("no desktop user") };
+        Assert.Equal(PlanAction.Keep, Item(PlanFor(unread, Fixture(), NoEntry), "explorer.entry").Action);
+        Assert.Equal(PlanAction.CannotPlan, Item(PlanFor(unread, Fixture()), "explorer.entry").Action);
+    }
+
+    [Fact]
+    public void AnExplorerEntryOfAnotherUserOrAPathWithPercentIsNotPlanned()
+    {
+        var other = ExplorerEntryTests.Recorded(Fixture(), @"D:\Shared", "CPFS - Shared", "S-1-5-21-9-9-9-1002");
+        var on = Item(PlanFor(Installed(), other), "explorer.entry");
+        Assert.Equal(PlanAction.CannotPlan, on.Action);
+        Assert.Equal(Planner.R.ExplorerOtherUser, on.ReasonKey);
+        var off = Item(PlanFor(Installed(), other, NoEntry), "explorer.entry");
+        Assert.Equal(PlanAction.Keep, off.Action);
+        Assert.Equal(Planner.R.ExplorerOtherUserKept, off.ReasonKey);
+
+        var percent = Item(PlanFor(Installed(), Fixture(), a => a with { SharePath = @"D:\100%Shared" }), "explorer.entry");
+        Assert.Equal(PlanAction.CannotPlan, percent.Action);
+        Assert.Equal(Planner.R.ExplorerPercent, percent.ReasonKey);
+        Assert.Equal(PlanAction.Keep, Item(PlanFor(Installed(), Fixture(), a => NoEntry(a) with { SharePath = @"D:\100%Shared" }), "explorer.entry").Action);
+    }
+
     private static SetupAnswers Tick(SetupAnswers a, string key, bool ticked = true)
     {
         var choices = new Dictionary<string, bool>(a.Choices) { [key] = ticked };
@@ -102,7 +194,11 @@ public class PlannerTests
     [Fact]
     public void An023InstallReadAsInstalledPlansOnlyKeep()
     {
-        var plan = PlanFor(Installed(), Fixture());
+        // The scripts made no File Explorer entry; the app adds one by default, and that is the only change.
+        var withEntry = PlanFor(Installed(), Fixture());
+        Assert.Equal(new[] { "explorer.entry" }, withEntry.Items.Where(i => i.Action != PlanAction.Keep).Select(i => i.Key));
+
+        var plan = PlanFor(Installed(), Fixture(), NoEntry);
 
         Assert.All(plan.Items, i => Assert.True(i.Action == PlanAction.Keep, i.Key + " is " + i.Action + " (" + i.ReasonKey + ")"));
         Assert.Equal(PlanAction.Keep, Item(plan, "backup").Action);
@@ -429,10 +525,10 @@ public class PlannerTests
     [Fact]
     public void TypingThePasswordOnAnInstallAtTargetGivesOneRunnableItemOnly()
     {
-        var installed = PlanFor(Installed(), Fixture());
+        var installed = PlanFor(Installed(), Fixture(), NoEntry);
         Assert.DoesNotContain(ApplyList.Setup(installed), e => !e.Deferred);
 
-        var plan = PlanFor(Installed(), Fixture(), a => a with { Password = PasswordEntry.Valid });
+        var plan = PlanFor(Installed(), Fixture(), a => NoEntry(a) with { Password = PasswordEntry.Valid });
         var run = ApplyList.Setup(plan).Where(e => !e.Deferred).ToList();
         Assert.Single(run);
         Assert.Equal("user.password", run[0].Item.Key);

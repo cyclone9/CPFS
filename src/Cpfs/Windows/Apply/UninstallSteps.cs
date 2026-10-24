@@ -83,6 +83,7 @@ internal static class UninstallSteps
             "u.drive.icon" => QuickAccessSteps.UninstallIcon(run),
             "u.drive.session" => QuickAccessSteps.UninstallSession(run),
             "u.drive" => QuickAccessSteps.UninstallMap(run),
+            "u.explorer" => QuickAccessSteps.UninstallExplorer(run),
             "u.shortcut" => QuickAccessSteps.UninstallShortcut(run),
             "u.owner" => Owner(run),
             "u.ace" => Ace(run),

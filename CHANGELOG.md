@@ -97,3 +97,6 @@ This project uses [semantic versioning](https://semver.org/).
 - About shows the version, homepage and source code as aligned rows like Windows Settings, with plain links.
 - The motto is no longer shown at the top of the navigation pane.
 - The QR code dialog leaves more room above the Close button.
+- About shows a globe icon beside the homepage link.
+- After Apply, Setup no longer shows the changes it just made for a moment while it reads the PC again.
+- Setup adds the shared folder to File Explorer's navigation pane, under the drive name you chose and with the CPFS icon, so the name shows even when the folder's disk has a label of its own. It has its own switch (on by default) and works without a drive letter; Uninstall removes it only while it still opens the recorded folder.

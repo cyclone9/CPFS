@@ -104,6 +104,14 @@ internal sealed class SetupRun
                 {
                     b.SetField("Shortcut", null);
                 }
+
+                // Turned off: an entry recorded for this desktop user is gone now (removed above, or by the user); one
+                // recorded for another user stays recorded.
+                b.SetField("ExplorerEntry", Answers.ExplorerEntry);
+                if (!Answers.ExplorerEntry && string.Equals(Original?.TrackedExplorerEntry?.Sid, DesktopUser.Current.Sid, StringComparison.OrdinalIgnoreCase))
+                {
+                    b.TrackCreated("ExplorerEntry", null);
+                }
             });
     }
 
@@ -165,6 +173,7 @@ internal static class SetupSteps
             "drive.session" => QuickAccessSteps.Session(run),
             "drive.label" => QuickAccessSteps.Label(run, item),
             "drive.icon" => QuickAccessSteps.Icon(run, item),
+            "explorer.entry" => QuickAccessSteps.Explorer(run, item),
             "shortcut.old" => QuickAccessSteps.OldShortcut(run),
             "shortcut.file" => QuickAccessSteps.Shortcut(run, item),
             "shortcut.icon" => QuickAccessSteps.ShortcutIcon(run),

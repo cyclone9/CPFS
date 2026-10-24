@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using Cpfs.Core.Apply;
 using Cpfs.Core.Elevation;
+using Cpfs.Core.Planning;
 using Microsoft.Win32;
 
 namespace Cpfs.Windows.Apply;
@@ -144,6 +145,172 @@ internal static class DriveIcons
         DriveIconKeys.Delete(letter, "DefaultIcon");
         ShellIcons.Refresh();
     }
+}
+
+// CPFS's entry at the root of File Explorer's navigation pane, in one user's hive [Learn: "Integrate a Cloud Storage
+// Provider", steps 1-12]: the class key under Software\Classes\CLSID, Desktop\NameSpace and HideDesktopIcons. Elevated,
+// that is HKEY_USERS\<SID>; its Software\Classes is the user's per-user classes (UsrClass.dat), which Windows links in
+// only while the user is signed in, so nothing is written when that link is missing.
+internal static class ExplorerEntryKeys
+{
+    public static ExplorerHive Read(string sid)
+    {
+        sid = Checked(sid);
+        using var users = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
+        using var hive = users.OpenSubKey(sid);
+        return hive is null ? new ExplorerHive(sid, false, null) : new ExplorerHive(sid, true, ReadEntry(hive));
+    }
+
+    // Not elevated: the user's own HKCU, which is the desktop user's.
+    public static ExplorerHive ReadCurrentUser()
+    {
+        string sid;
+        using (var identity = WindowsIdentity.GetCurrent())
+        {
+            sid = identity.User!.Value;
+        }
+
+        using var hkcu = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64);
+        return new ExplorerHive(sid, true, ReadEntry(hkcu));
+    }
+
+    public static void Write(string sid, string name, string folder, string icon)
+    {
+        if (!ExplorerEntry.CanHold(folder))
+        {
+            throw new InvalidOperationException("The folder's path contains %, which the File Explorer entry can't hold.");
+        }
+
+        using var hive = OpenHive(sid);
+        using (var cls = Create(hive, ExplorerEntry.ClassKey))
+        {
+            cls.SetValue("", name, RegistryValueKind.String);
+            cls.SetValue("System.IsPinnedToNameSpaceTree", ExplorerEntry.Pinned, RegistryValueKind.DWord);
+            cls.SetValue("SortOrderIndex", ExplorerEntry.SortOrderIndex, RegistryValueKind.DWord);
+            using (var key = Create(cls, "DefaultIcon"))
+            {
+                key.SetValue("", icon, RegistryValueKind.ExpandString);
+            }
+
+            using (var key = Create(cls, "InProcServer32"))
+            {
+                key.SetValue("", ExplorerEntry.InProcServer, RegistryValueKind.ExpandString);
+            }
+
+            using (var key = Create(cls, "Instance"))
+            {
+                key.SetValue("CLSID", ExplorerEntry.InstanceClsid, RegistryValueKind.String);
+            }
+
+            using (var key = Create(cls, @"Instance\InitPropertyBag"))
+            {
+                key.SetValue("Attributes", ExplorerEntry.BagAttributes, RegistryValueKind.DWord);
+                key.SetValue("TargetFolderPath", folder, RegistryValueKind.ExpandString);
+            }
+
+            using (var key = Create(cls, "ShellFolder"))
+            {
+                key.SetValue("FolderValueFlags", ExplorerEntry.FolderValueFlags, RegistryValueKind.DWord);
+                key.SetValue("Attributes", ExplorerEntry.ShellAttributes, RegistryValueKind.DWord);
+            }
+        }
+
+        using (var hide = Create(hive, ExplorerEntry.HideDesktopIconsKey))
+        {
+            hide.SetValue(ExplorerEntry.Clsid, ExplorerEntry.HiddenOnDesktop, RegistryValueKind.DWord);
+        }
+
+        // Last, so Explorer finds the class complete when it lists the namespace.
+        using (var ns = Create(hive, ExplorerEntry.NameSpaceKey))
+        {
+            ns.SetValue("", name, RegistryValueKind.String);
+        }
+
+        ShellIcons.Refresh();
+    }
+
+    // The namespace entry first, so Explorer stops listing it, then the HideDesktopIcons value and the class key.
+    public static void Delete(string sid)
+    {
+        using var hive = OpenHive(sid);
+        hive.DeleteSubKeyTree(ExplorerEntry.NameSpaceKey, throwOnMissingSubKey: false);
+        using (var hide = hive.OpenSubKey(ExplorerEntry.HideDesktopIconsKey, writable: true))
+        {
+            hide?.DeleteValue(ExplorerEntry.Clsid, throwOnMissingValue: false);
+        }
+
+        hive.DeleteSubKeyTree(ExplorerEntry.ClassKey, throwOnMissingSubKey: false);
+        ShellIcons.Refresh();
+    }
+
+    // A SID from config.json is only ever a SID, never a path into another key.
+    private static string Checked(string sid) => new SecurityIdentifier(sid).Value;
+
+    private static RegistryKey OpenHive(string sid)
+    {
+        sid = Checked(sid);
+        var users = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
+        try
+        {
+            var hive = users.OpenSubKey(sid, writable: true)
+                ?? throw new StepUnsupportedException("The Windows user's settings are not loaded (that user is not signed in), so the File Explorer entry can't be changed.");
+            using (var classes = hive.OpenSubKey(@"Software\Classes"))
+            {
+                if (classes is null)
+                {
+                    hive.Dispose();
+                    throw new StepUnsupportedException("The Windows user's class settings are not loaded, so the File Explorer entry can't be changed.");
+                }
+            }
+
+            return hive;
+        }
+        finally
+        {
+            users.Dispose();
+        }
+    }
+
+    private static RegistryKey Create(RegistryKey parent, string path) =>
+        parent.CreateSubKey(path, writable: true) ?? throw new IOException("Could not create the registry key " + path);
+
+    private static ExplorerEntryInfo? ReadEntry(RegistryKey root)
+    {
+        using var cls = root.OpenSubKey(ExplorerEntry.ClassKey);
+        if (cls is null)
+        {
+            return null;
+        }
+
+        using var icon = cls.OpenSubKey("DefaultIcon");
+        using var inproc = cls.OpenSubKey("InProcServer32");
+        using var instance = cls.OpenSubKey("Instance");
+        using var bag = cls.OpenSubKey(@"Instance\InitPropertyBag");
+        using var shell = cls.OpenSubKey("ShellFolder");
+        using var ns = root.OpenSubKey(ExplorerEntry.NameSpaceKey);
+        using var hide = root.OpenSubKey(ExplorerEntry.HideDesktopIconsKey);
+        return new ExplorerEntryInfo
+        {
+            Name = Text(cls, ""),
+            NameSpaceName = Text(ns, ""),
+            Icon = Text(icon, ""),
+            TargetFolderPath = Text(bag, "TargetFolderPath"),
+            Pinned = Dword(cls, "System.IsPinnedToNameSpaceTree"),
+            SortOrder = Dword(cls, "SortOrderIndex"),
+            InProcServer = Text(inproc, ""),
+            InstanceClsid = Text(instance, "CLSID"),
+            BagAttributes = Dword(bag, "Attributes"),
+            FolderValueFlags = Dword(shell, "FolderValueFlags"),
+            ShellAttributes = Dword(shell, "Attributes"),
+            HiddenOnDesktop = Dword(hide, ExplorerEntry.Clsid),
+        };
+    }
+
+    private static string? Text(RegistryKey? key, string name) =>
+        key?.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames) as string;
+
+    // A REG_DWORD comes back as int; a missing value, or one of another type, as something else.
+    private static int? Dword(RegistryKey? key, string name) => key?.GetValue(name) is int v ? v : null;
 }
 
 // The CPFS icon as a file of its own, ProgramData\CPFS\cpfs.ico (SYSTEM and Administrators write, Users read), so the

@@ -879,7 +879,7 @@
   <data name="Common_ReadingPc" xml:space="preserve"><value>Reading this PC…</value></data>
   <data name="About_SourceCode" xml:space="preserve"><value>Source code</value></data>
   <data name="Monitor_File_Closed" xml:space="preserve"><value>Closed</value></data>
-  <data name="Setup_Form_DriveName_Note" xml:space="preserve"><value>If the disk that holds the folder has a name of its own, File Explorer may show that name for this drive instead.</value></data>
+  <data name="Setup_Form_DriveName_Note" xml:space="preserve"><value>File Explorer shows this name in its navigation pane. On the drive letter it may show the disk's own name instead.</value></data>
   <data name="Setup_Drive_ExplorerIcon" xml:space="preserve"><value>Icon shown in File Explorer</value></data>
   <data name="Plan_S_Icon" xml:space="preserve"><value>Drive icon</value></data>
   <data name="Plan_S_OldIcon" xml:space="preserve"><value>Previous drive icon</value></data>
@@ -893,4 +893,22 @@
   <data name="Uninst_R_IconRemove" xml:space="preserve"><value>The CPFS icon of the drive.</value></data>
   <data name="Summary_DriveIcon" xml:space="preserve"><value>Adds drive {0} called ‘{1}’ with the CPFS icon.</value></data>
   <data name="Summary_DriveIconAndShortcut" xml:space="preserve"><value>Adds drive {0} called ‘{1}’ with the CPFS icon, and a desktop shortcut.</value></data>
+  <data name="Setup_Form_Explorer" xml:space="preserve"><value>Show in File Explorer</value></data>
+  <data name="Setup_Form_Explorer_Desc" xml:space="preserve"><value>Adds the shared folder to the navigation pane of File Explorer, under the name below and with the CPFS icon.</value></data>
+  <data name="Plan_S_Explorer" xml:space="preserve"><value>File Explorer entry</value></data>
+  <data name="Plan_R_ExplorerCreate" xml:space="preserve"><value>Adds ‘{0}’ to File Explorer's navigation pane, opening the shared folder.</value></data>
+  <data name="Plan_R_ExplorerChange" xml:space="preserve"><value>Gives CPFS's File Explorer entry the name ‘{0}’, the shared folder and the CPFS icon.</value></data>
+  <data name="Plan_R_ExplorerGone" xml:space="preserve"><value>The File Explorer entry CPFS added earlier is gone. Add ‘{0}’ again?</value></data>
+  <data name="Plan_R_ExplorerForeign" xml:space="preserve"><value>File Explorer already has an entry under CPFS's identifier that CPFS didn't record (it opens {0}). Replace it?</value></data>
+  <data name="Plan_R_ExplorerRemove" xml:space="preserve"><value>Removes CPFS's entry from File Explorer's navigation pane.</value></data>
+  <data name="Plan_R_ExplorerOff" xml:space="preserve"><value>No File Explorer entry.</value></data>
+  <data name="Plan_R_ExplorerPercent" xml:space="preserve"><value>The folder's path contains %, which a File Explorer entry can't hold. Choose another folder, or turn off Show in File Explorer.</value></data>
+  <data name="Plan_R_ExplorerOtherUser" xml:space="preserve"><value>CPFS's File Explorer entry belongs to another Windows user on this PC. Turn off Show in File Explorer, or run Setup as that user.</value></data>
+  <data name="Plan_R_ExplorerOtherUserKept" xml:space="preserve"><value>CPFS's File Explorer entry belongs to another Windows user on this PC and is left as it is.</value></data>
+  <data name="Plan_R_ExplorerNotLoaded" xml:space="preserve"><value>The desktop user's settings aren't loaded, so the File Explorer entry can't be planned.</value></data>
+  <data name="Uninst_R_ExplorerRemove" xml:space="preserve"><value>CPFS's entry in File Explorer's navigation pane.</value></data>
+  <data name="Uninst_R_ExplorerForeign" xml:space="preserve"><value>The File Explorer entry under CPFS's identifier opens {0} now, not the folder CPFS recorded, so it is left as it is.</value></data>
+  <data name="Uninst_R_ExplorerNotLoaded" xml:space="preserve"><value>CPFS's File Explorer entry belongs to a Windows user who isn't signed in now, so it stays.</value></data>
+  <data name="Summary_Explorer" xml:space="preserve"><value>Adds ‘{0}’ to the navigation pane of File Explorer.</value></data>
+  <data name="Summary_U_ExplorerLeft" xml:space="preserve"><value>The File Explorer entry ‘{0}’ stays: the Windows user it belongs to isn't signed in.</value></data>
 </root>

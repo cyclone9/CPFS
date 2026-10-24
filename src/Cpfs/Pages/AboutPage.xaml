@@ -117,6 +117,7 @@
           AutomationProperties.HelpText="{Binding [About_Homepage_Help], Source={x:Static local:Loc.Instance}}"
           AutomationProperties.Name="{Binding [About_Homepage], Source={x:Static local:Loc.Instance}}"
           Click="OnOpenHomepage"
+          Icon="{ui:SymbolIcon Globe24}"
           ToolTip="{Binding [About_Homepage_Help], Source={x:Static local:Loc.Instance}}">
           <TextBlock x:Name="HomepageText" FlowDirection="LeftToRight" />
         </ui:HyperlinkButton>

@@ -14,6 +14,7 @@ using Cpfs.Core.Drives;
 using Cpfs.Core.Planning;
 using Cpfs.Windows;
 using Cpfs.Windows.Apply;
+using Microsoft.Win32;
 
 namespace Cpfs;
 
@@ -32,6 +33,9 @@ internal static class CiApplyTest
 
     private static char? _letter;
     private static string? _shortcut;
+
+    // The desktop user the File Explorer entry goes to: on the runner, the runner's own account (its explorer.exe).
+    private static string? _entrySid;
 
     public static int Run()
     {
@@ -130,13 +134,19 @@ internal static class CiApplyTest
     }
 
     private static SystemSnapshot Read(string user, string path, string share) =>
-        PlanReader.ReadAnswerParts(PlanReader.ReadStatic(DriveLetters.Scan(null), null), user, path, share);
+        PlanReader.ReadAnswerParts(PlanReader.ReadStatic(DriveLetters.Scan(null), DesktopUser.Current.Sid), user, path, share);
 
     private static void SetupPhase(TextWriter o, string folder, string temp)
     {
         var snapshot = Read(TestUser, folder, TestShare);
         _letter = snapshot.Letters.DefaultLetter();
         Check(_letter is not null, "a free drive letter for the test", _letter?.ToString() ?? "none");
+        _entrySid = DesktopUser.Current.Sid;
+        if (_entrySid is null)
+        {
+            Skip("the File Explorer entry", "no desktop user on this runner: " + DesktopUser.Current.Describe());
+        }
+
         var answers = new SetupAnswers
         {
             SharePath = folder,
@@ -146,6 +156,7 @@ internal static class CiApplyTest
             Drive = _letter is not null,
             DriveLetter = _letter,
             DriveName = SetupDefaults.DriveNameFor(TestShare),
+            ExplorerEntry = _entrySid is not null,
             Shortcut = true,
             ShortcutName = SetupDefaults.ShortcutNameFor(TestShare),
         };
@@ -242,6 +253,11 @@ internal static class CiApplyTest
         Check(File.Exists(CpfsIconFile.Path), "the CPFS icon file is in ProgramData\\CPFS", CpfsIconFile.Path);
         Check(string.Equals(config.TrackedIconFile, CpfsIconFile.Path, StringComparison.OrdinalIgnoreCase), "config.json records the icon file", config.TrackedIconFile ?? "null");
 
+        if (_entrySid is { } sid)
+        {
+            EntryChecks(config, sid, folder);
+        }
+
         _shortcut = config.Shortcut;
         var lnkTarget = _shortcut is null ? null : Shortcuts.TargetOf(_shortcut);
         Check(_shortcut is not null && string.Equals(Path.GetFileName(_shortcut), SetupDefaults.ShortcutNameFor(TestShare) + ".lnk", StringComparison.OrdinalIgnoreCase),
@@ -300,6 +316,41 @@ internal static class CiApplyTest
         }
     }
 
+    // Every documented value of the navigation-pane entry, read back from the desktop user's hive, and the same class
+    // key seen through HKEY_USERS\<SID>_Classes, which proves the write reached the user's per-user classes.
+    private static void EntryChecks(ConfigDocument config, string sid, string folder)
+    {
+        var name = SetupDefaults.DriveNameFor(TestShare);
+        var hive = ExplorerEntryKeys.Read(sid);
+        var e = hive.Entry;
+        Check(hive.Loaded && e is not null, "the File Explorer entry exists in the desktop user's hive", sid);
+        if (e is null)
+        {
+            return;
+        }
+
+        Check(e.Name == name && e.NameSpaceName == name, "the File Explorer entry has the drive name", (e.Name ?? "absent") + " / " + (e.NameSpaceName ?? "absent"));
+        Check(ExplorerEntry.SameFolder(e.TargetFolderPath, folder), "the File Explorer entry opens the shared folder", e.TargetFolderPath ?? "absent");
+        Check(Planner.IsOwnIcon(e.Icon, CpfsIconFile.Path), "the File Explorer entry has the CPFS icon", e.Icon ?? "absent");
+        Check(e.Pinned == ExplorerEntry.Pinned && e.SortOrder == ExplorerEntry.SortOrderIndex, "the File Explorer entry is pinned with its sort order");
+        Check(string.Equals(e.InProcServer, ExplorerEntry.InProcServer, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(e.InstanceClsid, ExplorerEntry.InstanceClsid, StringComparison.OrdinalIgnoreCase), "the File Explorer entry uses shell32's folder instance");
+        Check(e.BagAttributes == ExplorerEntry.BagAttributes && e.FolderValueFlags == ExplorerEntry.FolderValueFlags
+            && e.ShellAttributes == ExplorerEntry.ShellAttributes, "the File Explorer entry has the documented flags");
+        Check(e.HiddenOnDesktop == ExplorerEntry.HiddenOnDesktop, "the File Explorer entry is hidden on the desktop");
+        Check(ExplorerEntry.IsComplete(e), "the File Explorer entry is complete");
+
+        using (var users = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64))
+        using (var classes = users.OpenSubKey(sid + "_Classes\\CLSID\\" + ExplorerEntry.Clsid))
+        {
+            Check(classes?.GetValue("") as string == name, "the File Explorer entry is in the user's classes hive", classes is null ? "absent" : "");
+        }
+
+        var t = config.TrackedExplorerEntry;
+        Check(t is not null && t.Sid == sid && t.Clsid == ExplorerEntry.Clsid && ExplorerEntry.SameFolder(t.Folder, folder) && t.Name == name,
+            "config.json records the File Explorer entry", t is null ? "null" : t.Sid + " " + t.Folder);
+    }
+
     // The runner has no signed-in desktop user, so the step that changes the drive in that user's session reports
     // that and is skipped. That doesn't fail the run here, in CI, and nowhere else; with a desktop user it must be done.
     private static void SessionCheck(ExecutionResult result, string key, string check)
@@ -342,6 +393,23 @@ internal static class CiApplyTest
         {
             Check(!File.Exists(_shortcut), "the shortcut is gone", _shortcut);
         }
+
+        if (_entrySid is { } sid)
+        {
+            var hive = ExplorerEntryKeys.Read(sid);
+            Check(hive.Loaded && hive.Entry is null, "the File Explorer entry's class key is gone");
+            using var users = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
+            using (var ns = users.OpenSubKey(sid + "\\" + ExplorerEntry.NameSpaceKey))
+            {
+                Check(ns is null, "the File Explorer entry's NameSpace key is gone");
+            }
+
+            using (var hide = users.OpenSubKey(sid + "\\" + ExplorerEntry.HideDesktopIconsKey))
+            {
+                Check(hide?.GetValue(ExplorerEntry.Clsid) is null, "the File Explorer entry's HideDesktopIcons value is gone");
+            }
+        }
+
         foreach (var pair in before.Hardening)
         {
             Check(after.Hardening[pair.Key] == pair.Value, "restored " + pair.Key, Show(pair.Value) + " -> " + Show(after.Hardening[pair.Key]));

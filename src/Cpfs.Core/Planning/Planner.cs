@@ -59,6 +59,8 @@ public static class Planner
         R.LabelSet, R.LabelForeign, R.LabelRenamed, R.LabelOldRemove, R.LabelRestore,
         R.IconSet, R.IconForeign, R.IconChanged, R.IconOldRemove, R.IconRestore,
         R.ShortcutCreate, R.ShortcutGone, R.ShortcutRetarget, R.ShortcutForeign, R.ShortcutOldRemove, R.ShortcutOff, R.ShortcutIcon,
+        R.ExplorerCreate, R.ExplorerChange, R.ExplorerGone, R.ExplorerForeign, R.ExplorerRemove, R.ExplorerOff, R.ExplorerPercent,
+        R.ExplorerOtherUser, R.ExplorerOtherUserKept, R.ExplorerNotLoaded,
         R.DataCreate, R.DataLock,
         R.ShareAccessGrant, R.ShareAccessOther, R.ShareAccessDeny, R.ComputerSavedDiffers, R.ComputerPending,
     };
@@ -77,6 +79,7 @@ public static class Planner
         p.AutoPrivate();
         p.StaleTask();
         p.Drive(path);
+        p.Explorer(path);
         p.Shortcut(path);
         p.DataFolder();
         p.Computer();
@@ -171,6 +174,16 @@ public static class Planner
         public const string ShortcutOldRemove = "Plan_R_ShortcutOldRemove";
         public const string ShortcutOff = "Plan_R_ShortcutOff";
         public const string ShortcutIcon = "Plan_R_ShortcutIcon";
+        public const string ExplorerCreate = "Plan_R_ExplorerCreate";
+        public const string ExplorerChange = "Plan_R_ExplorerChange";
+        public const string ExplorerGone = "Plan_R_ExplorerGone";
+        public const string ExplorerForeign = "Plan_R_ExplorerForeign";
+        public const string ExplorerRemove = "Plan_R_ExplorerRemove";
+        public const string ExplorerOff = "Plan_R_ExplorerOff";
+        public const string ExplorerPercent = "Plan_R_ExplorerPercent";
+        public const string ExplorerOtherUser = "Plan_R_ExplorerOtherUser";
+        public const string ExplorerOtherUserKept = "Plan_R_ExplorerOtherUserKept";
+        public const string ExplorerNotLoaded = "Plan_R_ExplorerNotLoaded";
         public const string DataCreate = "Plan_R_DataCreate";
         public const string DataLock = "Plan_R_DataLock";
         public const string ShareAccessGrant = "Plan_R_ShareAccessGrant";
@@ -236,7 +249,7 @@ public static class Planner
         S.Backup, S.Account, S.TakeOver, S.AccountEnabled, S.NeverExpires, S.Lockout, S.Users, S.Admins, S.Hidden, S.Password,
         S.Folder, S.Ace, S.Share, S.AdminShares, S.ServerStart, S.Smb2, S.Reject, S.Smb1, S.Smb1Feature, S.Guest,
         S.LockoutThreshold, S.Audit, S.BuiltIn, S.VpnAdapter, S.Drive, S.OldDrive, S.DriveSession, S.OldDriveSession, S.Label,
-        S.OldLabel, S.Icon, S.OldIcon, S.Shortcut, S.OldShortcut, S.ShortcutIcon, S.DataFolder, S.ShareAccess, S.ComputerName, S.SavedComputerName,
+        S.OldLabel, S.Icon, S.OldIcon, S.Explorer, S.Shortcut, S.OldShortcut, S.ShortcutIcon, S.DataFolder, S.ShareAccess, S.ComputerName, S.SavedComputerName,
     };
 
     // A setting of a share or a firewall rule that differs from Setup's, by the field name the planner reports.
@@ -290,6 +303,7 @@ public static class Planner
         public const string OldLabel = "Plan_S_OldLabel";
         public const string Icon = "Plan_S_Icon";
         public const string OldIcon = "Plan_S_OldIcon";
+        public const string Explorer = "Plan_S_Explorer";
         public const string Shortcut = "Plan_S_Shortcut";
         public const string OldShortcut = "Plan_S_OldShortcut";
         public const string ShortcutIcon = "Plan_S_ShortcutIcon";
@@ -1212,6 +1226,108 @@ public static class Planner
                 AskItem("drive.icon", PlanSection.Drive, Word(S.Icon), Data(current), Data(_s.CpfsIcon), changed ? R.IconChanged : R.IconForeign, d + ":", current);
                 var ticked = Items[Items.Count - 1].Ticked;
                 Items[Items.Count - 1] = Items[Items.Count - 1] with { BackupNeeded = ticked && original is null };
+            }
+        }
+
+        // CPFS's entry in File Explorer's navigation pane, under its own class identifier in the desktop user's hive.
+        // It is changed or removed only while it opens the folder config.json recorded; an entry CPFS did not record,
+        // or one the user removed, comes back only when ticked. An entry made for another Windows user is left alone.
+        public void Explorer(string? path)
+        {
+            const string key = "explorer.entry";
+            var subject = Word(S.Explorer);
+            var recorded = _c?.TrackedExplorerEntry;
+            if (!_a.ExplorerEntry && recorded is null)
+            {
+                Add(key, PlanSection.Drive, PlanAction.Keep, subject, Word(W.None), null, R.ExplorerOff);
+                return;
+            }
+
+            if (!_s.ExplorerEntry.IsOk)
+            {
+                Unread(key, PlanSection.Drive, subject, _s.ExplorerEntry.State, _s.ExplorerEntry.Error);
+                return;
+            }
+
+            var hive = _s.ExplorerEntry.Value!;
+            if (recorded is not null && !SameText(recorded.Sid, hive.Sid))
+            {
+                if (_a.ExplorerEntry)
+                {
+                    Items.Add(Cannot(key, PlanSection.Drive, subject, PlanCause.InvalidAnswer, R.ExplorerOtherUser));
+                }
+                else
+                {
+                    Add(key, PlanSection.Drive, PlanAction.Keep, subject, Data(recorded.Name), null, R.ExplorerOtherUserKept);
+                }
+
+                return;
+            }
+
+            if (!hive.Loaded)
+            {
+                Items.Add(Cannot(key, PlanSection.Drive, subject, PlanCause.ReadFailed, R.ExplorerNotLoaded));
+                return;
+            }
+
+            var entry = hive.Entry;
+            var ours = entry is not null && recorded is not null && ExplorerEntry.SameFolder(entry.TargetFolderPath, recorded.Folder);
+            if (!_a.ExplorerEntry)
+            {
+                if (ours)
+                {
+                    Add(key, PlanSection.Drive, PlanAction.RemoveIfOurs, subject, Data(entry!.Name), Word(W.Absent), R.ExplorerRemove);
+                }
+                else
+                {
+                    Add(key, PlanSection.Drive, PlanAction.Keep, subject, Word(W.None), null, R.ExplorerOff);
+                }
+
+                return;
+            }
+
+            var name = Validators.DriveName(_a.DriveName);
+            if (!name.IsValid)
+            {
+                Invalid(key, PlanSection.Drive, subject, _a.DriveName, "DriveName");
+                return;
+            }
+
+            if (path is null)
+            {
+                Items.Add(Cannot(key, PlanSection.Drive, subject, PlanCause.InvalidAnswer, R.Invalid, "SharePath"));
+                return;
+            }
+
+            if (!ExplorerEntry.CanHold(path))
+            {
+                Items.Add(Cannot(key, PlanSection.Drive, subject, PlanCause.InvalidAnswer, R.ExplorerPercent) with { Current = Data(path) });
+                return;
+            }
+
+            if (entry is null)
+            {
+                if (recorded is not null)
+                {
+                    // The entry config.json records is gone: the user removed it, so it comes back only when ticked.
+                    AskItem(key, PlanSection.Drive, subject, Word(W.Absent), Data(name.Value), R.ExplorerGone, name.Value!);
+                }
+                else
+                {
+                    Add(key, PlanSection.Drive, PlanAction.Create, subject, Word(W.Absent), Data(name.Value), R.ExplorerCreate, name.Value!);
+                }
+            }
+            else if (!ours)
+            {
+                AskItem(key, PlanSection.Drive, subject, Data(entry.Name), Data(name.Value), R.ExplorerForeign, entry.TargetFolderPath ?? "?");
+            }
+            else if (ExplorerEntry.IsAtTarget(entry, name.Value!, path, _s.CpfsIcon))
+            {
+                Add(key, PlanSection.Drive, PlanAction.Keep, subject, Data(entry.Name), null, R.AtTarget);
+            }
+            else
+            {
+                Add(key, PlanSection.Drive, PlanAction.Change, subject, Data(entry.Name), Data(name.Value), R.ExplorerChange, name.Value!);
             }
         }
 

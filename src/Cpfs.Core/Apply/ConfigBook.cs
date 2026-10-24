@@ -274,6 +274,10 @@ public sealed class ConfigBook
         ConfigWriter.Set(created, name, value);
     }
 
+    // The File Explorer entry about to be written (Tracked.Created.ExplorerEntry), or null once it is removed.
+    public void TrackExplorerEntry(string sid, string folder, string name) =>
+        TrackCreated("ExplorerEntry", new JsonObject { ["Sid"] = sid, ["Clsid"] = ExplorerEntry.Clsid, ["Folder"] = folder, ["Name"] = name });
+
     public void SetField(string name, JsonNode? value) => ConfigWriter.Set(Root, name, value);
 
     // The scripts drop Partial at the end of a run that went through.

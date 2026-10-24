@@ -57,6 +57,7 @@ internal static class PlanReader
             DosDevices = Part("dos devices", DosDevices),
             DriveLabels = Part<IReadOnlyDictionary<char, string>>("drive labels", () => DriveIconValues("DefaultLabel")),
             DriveIcons = Part<IReadOnlyDictionary<char, string>>("drive icons", () => DriveIconValues("DefaultIcon")),
+            ExplorerEntry = ExplorerEntryFor(desktopSid),
             CpfsIcon = Apply.CpfsIconFile.Path,
             Letters = letters,
             CommonDesktop = string.IsNullOrEmpty(commonDesktop) ? @"C:\Users\Public\Desktop" : commonDesktop,
@@ -79,6 +80,13 @@ internal static class PlanReader
             ShareAccess = Part<IReadOnlyList<ShareAccessEntry>?>("share access", () => ShareAccess(shareName)),
         };
     }
+
+    // CPFS's File Explorer entry in the hive of the given user (the desktop user the elevated instance found, or the one
+    // config.json recorded); not elevated, the user's own HKCU.
+    public static Reading<ExplorerHive> ExplorerEntryFor(string? sid) => Part("explorer entry", () =>
+        sid is not null ? Apply.ExplorerEntryKeys.Read(sid)
+        : !Startup.IsElevated ? Apply.ExplorerEntryKeys.ReadCurrentUser()
+        : throw new InvalidOperationException(Apply.SessionDrive.NoDesktopUser));
 
     public static ProtectedFolders ProtectedFolders()
     {

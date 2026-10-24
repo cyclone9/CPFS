@@ -138,6 +138,9 @@ public partial class SetupPage
     // Refresh keeps what the user typed.
     private async Task PreparePlanAsync(ConfigDocument? config, LetterScan letters)
     {
+        // The old reading no longer matches the new config; a form event raised before the new one arrives must not
+        // plan from it (seen after an Apply: the summary briefly offered the changes just made).
+        _snapshot = null;
         _config = config;
         _letters = letters;
         RenderMode();
@@ -176,15 +179,19 @@ public partial class SetupPage
             AutoPrivateSwitch.IsChecked = a.AutoPrivate;
             DriveSwitch.IsChecked = a.Drive;
             DriveNameBox.Text = a.DriveName;
+            ExplorerSwitch.IsChecked = a.ExplorerEntry;
             ShortcutSwitch.IsChecked = a.Shortcut;
             ShortcutNameBox.Text = a.ShortcutName;
             FillLetters(a.DriveLetter);
+            UpdateNameField();
         }
         finally
         {
             _suppressForm = false;
         }
     }
+
+    private void UpdateNameField() => DriveNameBox.IsEnabled = DriveSwitch.IsChecked == true || ExplorerSwitch.IsChecked == true;
 
     private void FillLetters(char? selected)
     {
@@ -213,6 +220,11 @@ public partial class SetupPage
 
     private void OnFormChanged(object sender, RoutedEventArgs e)
     {
+        if (ReferenceEquals(sender, DriveSwitch) || ReferenceEquals(sender, ExplorerSwitch))
+        {
+            UpdateNameField();
+        }
+
         if (_suppressForm || !_formReady)
         {
             return;
@@ -290,6 +302,7 @@ public partial class SetupPage
         Drive = DriveSwitch.IsChecked == true,
         DriveLetter = SelectedLetter(),
         DriveName = DriveNameBox.Text,
+        ExplorerEntry = ExplorerSwitch.IsChecked == true,
         Shortcut = ShortcutSwitch.IsChecked == true,
         ShortcutName = ShortcutNameBox.Text,
         Password = PasswordState(),
@@ -430,7 +443,7 @@ public partial class SetupPage
         SetError(SharePathError, Validators.SharePath(a.SharePath, _protected).Error);
         SetError(ShareNameError, Validators.ShareName(a.ShareName).Error);
         SetError(SmbUserError, Validators.SmbUserName(a.SmbUser, s.WindowsUserNames, s.ComputerName).Error);
-        SetError(DriveNameError, a.Drive ? Validators.DriveName(a.DriveName).Error : ValidationError.None);
+        SetError(DriveNameError, a.Drive || a.ExplorerEntry ? Validators.DriveName(a.DriveName).Error : ValidationError.None);
         SetError(ShortcutNameError, a.Shortcut ? Validators.ShortcutName(a.ShortcutName).Error : ValidationError.None);
         if (a.Drive && DriveLetterBox.Items.Count == 0)
         {

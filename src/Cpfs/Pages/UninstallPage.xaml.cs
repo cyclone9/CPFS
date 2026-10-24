@@ -114,6 +114,12 @@ public partial class UninstallPage : Page
         var snapshot = PlanReader.ReadStatic(new LetterScan(), desktop.Sid);
         snapshot = PlanReader.ReadAnswerParts(snapshot, config?.SmbUser ?? "", config?.SharePath ?? "", config?.ShareName ?? "");
 
+        // The File Explorer entry lives in the hive of the user it was made for, who may not be the desktop user now.
+        if (config?.TrackedExplorerEntry?.Sid is { } entrySid && !string.Equals(entrySid, desktop.Sid, StringComparison.OrdinalIgnoreCase))
+        {
+            snapshot = snapshot with { ExplorerEntry = PlanReader.ExplorerEntryFor(entrySid) };
+        }
+
         var protectedSids = new List<string>();
         using (var self = WindowsIdentity.GetCurrent())
         {

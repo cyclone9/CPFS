@@ -78,6 +78,16 @@ public sealed class ConfigDocument
     // The CPFS icon file in the data folder, used by the drive and the shortcut (Tracked.Created.IconFile, added by the app).
     public string? TrackedIconFile => ConfigJson.GetString(ConfigJson.GetObject(ConfigJson.GetObject(Root, "Tracked"), "Created"), "IconFile");
 
+    // Whether Setup adds the File Explorer navigation-pane entry (added by the app); null in older files.
+    public bool? ExplorerEntry => ConfigJson.GetBool(Root, "ExplorerEntry");
+
+    // The navigation-pane entry CPFS made (Tracked.Created.ExplorerEntry, added by the app): whose hive, which class
+    // key, the folder it opens and the name it shows. Null when CPFS made none.
+    public TrackedExplorerEntry? TrackedExplorerEntry =>
+        ConfigJson.GetObject(ConfigJson.GetObject(ConfigJson.GetObject(Root, "Tracked"), "Created"), "ExplorerEntry") is { } e
+            ? new TrackedExplorerEntry(ConfigJson.GetString(e, "Sid"), ConfigJson.GetString(e, "Clsid"), ConfigJson.GetString(e, "Folder"), ConfigJson.GetString(e, "Name"))
+            : null;
+
     // The path the recorded drive letter maps to: what CPFS created, never anything else.
     public string? OwnDrivePath => (TrackedDrivePath ?? SharePath)?.Trim().TrimEnd('\\');
 
@@ -257,6 +267,8 @@ public sealed class ConfigDocument
 public sealed record TrackedUser(string? Name, bool? Existed, bool? WasAdmin);
 
 public sealed record TrackedShare(string Name, string? Path);
+
+public sealed record TrackedExplorerEntry(string? Sid, string? Clsid, string? Folder, string? Name);
 
 public sealed record TrackedNetwork(string? Id, string Name);
 

@@ -280,6 +280,36 @@ public class UninstallPlannerTests
         Assert.Equal("Music", item.Target!.Data);
     }
 
+    // The File Explorer entry goes only while it opens the recorded folder; when its user's hive is not loaded it
+    // stays, and the summary says so.
+    [Fact]
+    public void TheExplorerEntryIsRemovedOnlyWhenItOpensTheRecordedFolder()
+    {
+        var entry = ExplorerEntryTests.Entry("CPFS - Shared", @"D:\Shared");
+        Assert.Null(PlanFor(Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(entry) }, Fixture()).Find("u.explorer"));
+
+        var recorded = ExplorerEntryTests.Recorded(Fixture(), @"D:\Shared", "CPFS - Shared");
+        var ours = Item(PlanFor(Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(entry with { TargetFolderPath = @"D:\Shared\" }) }, recorded), "u.explorer");
+        Assert.Equal(PlanAction.RemoveIfOurs, ours.Action);
+        Assert.Equal(PlanSection.Drive, ours.Section);
+
+        var elsewhere = Item(PlanFor(Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(entry with { TargetFolderPath = @"E:\Other" }) }, recorded), "u.explorer");
+        Assert.Equal(PlanAction.Keep, elsewhere.Action);
+        Assert.Equal(UninstallPlanner.R.ExplorerForeign, elsewhere.ReasonKey);
+
+        Assert.Null(PlanFor(Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(null) }, recorded).Find("u.explorer"));
+
+        var notLoadedPlan = PlanFor(Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(null, loaded: false) }, recorded);
+        var notLoaded = Item(notLoadedPlan, "u.explorer");
+        Assert.Equal(PlanAction.Keep, notLoaded.Action);
+        Assert.Equal(UninstallPlanner.R.ExplorerNotLoaded, notLoaded.ReasonKey);
+        Assert.Contains(PlanSummary.Uninstall(notLoadedPlan).Lines, l => l.Key == "Summary_U_ExplorerLeft");
+        Assert.Empty(ApplyList.Blocking(notLoadedPlan));
+
+        var otherUser = PlanFor(Installed() with { ExplorerEntry = ExplorerEntryTests.Hive(entry, "S-1-5-21-9-9-9-1002") }, recorded);
+        Assert.Equal(UninstallPlanner.R.ExplorerNotLoaded, Item(otherUser, "u.explorer").ReasonKey);
+    }
+
     // The CPFS icon goes, the icon from before CPFS comes back, and an icon someone else set since stays.
     [Fact]
     public void TheDriveIconIsRemovedOrPutBackAndAForeignOneStays()

@@ -140,6 +140,11 @@ public sealed class PlanSummary
             phone.Add(SummaryLine.Of("Summary_Shortcut", answers.ShortcutName.Trim()));
         }
 
+        if (plan.Find("explorer.entry") is { Action: PlanAction.Create or PlanAction.Ask } entry && Runs(entry))
+        {
+            phone.Add(SummaryLine.Of("Summary_Explorer", driveName));
+        }
+
         var other = new List<SummaryLine>();
         if (plan.Find("backup") is { } backup && Runs(backup))
         {
@@ -192,6 +197,12 @@ public sealed class PlanSummary
             {
                 publicAgain++;
             }
+        }
+
+        // The entry stays when its user's hive is not loaded: said in the simple view, not only in the details.
+        if (plan.Find("u.explorer") is { Action: PlanAction.Keep } left && left.ReasonKey == UninstallPlanner.R.ExplorerNotLoaded)
+        {
+            phone.Add(SummaryLine.Of("Summary_U_ExplorerLeft", left.Current?.Data ?? "?"));
         }
 
         if (plan.Find("u.savecopy") is { } copy && Runs(copy))

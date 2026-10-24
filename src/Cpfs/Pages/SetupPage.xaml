@@ -387,6 +387,20 @@
 
       <ui:Card Margin="0,0,0,4">
         <local:FieldCardPanel>
+          <StackPanel>
+            <TextBlock x:Name="ExplorerLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_Explorer], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_Explorer_Desc], Source={x:Static local:Loc.Instance}}" />
+          </StackPanel>
+          <ui:ToggleSwitch
+            x:Name="ExplorerSwitch"
+            AutomationProperties.LabeledBy="{Binding ElementName=ExplorerLabel}"
+            Checked="OnFormChanged"
+            Unchecked="OnFormChanged" />
+        </local:FieldCardPanel>
+      </ui:Card>
+
+      <ui:Card Margin="0,0,0,4">
+        <local:FieldCardPanel>
           <TextBlock x:Name="DriveNameLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_DriveName], Source={x:Static local:Loc.Instance}}" />
           <StackPanel>
             <Grid>
@@ -398,11 +412,10 @@
                 x:Name="DriveNameBox"
                 AutomationProperties.HelpText="{Binding [Setup_Form_DriveName_Note], Source={x:Static local:Loc.Instance}}"
                 AutomationProperties.LabeledBy="{Binding ElementName=DriveNameLabel}"
-                IsEnabled="{Binding IsChecked, ElementName=DriveSwitch}"
                 TextChanged="OnFormChanged" />
               <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}" />
             </Grid>
-            <!--  Explorer shows the label of the folder's disk instead of this name when that disk has one.  -->
+            <!--  The name is used by the drive letter and the navigation-pane entry; enabled in code while either is on.  -->
             <TextBlock Margin="0,4,0,0" Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_DriveName_Note], Source={x:Static local:Loc.Instance}}" />
             <TextBlock x:Name="DriveNameError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
           </StackPanel>

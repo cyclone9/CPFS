@@ -222,6 +222,69 @@ internal static class QuickAccessSteps
         };
     }
 
+    // Setup: CPFS's entry in File Explorer's navigation pane, in the hive of the desktop user this instance found
+    // itself. Recorded in config.json before it is written; removed (the switch is off) only while it opens the
+    // recorded folder.
+    public static LambdaStep Explorer(SetupRun run, PlanItem item)
+    {
+        var sid = DesktopUser.Current.Sid ?? throw new InvalidOperationException(SessionDrive.NoDesktopUser + ".");
+        var recorded = run.Original?.TrackedExplorerEntry;
+        if (item.Action == PlanAction.RemoveIfOurs)
+        {
+            var old = recorded?.Folder ?? throw new InvalidOperationException("No File Explorer entry is recorded.");
+            bool Gone() => ExplorerEntryKeys.Read(sid).Entry is null;
+            return new LambdaStep
+            {
+                Read = Gone,
+                Do = () =>
+                {
+                    if (ExplorerEntryKeys.Read(sid).Entry is { } now && !ExplorerEntry.SameFolder(now.TargetFolderPath, old))
+                    {
+                        throw new StepUnsupportedException("The File Explorer entry opens another folder now, so it is left as it is.");
+                    }
+
+                    ExplorerEntryKeys.Delete(sid);
+                },
+                TrackWith = b => b!.TrackCreated("ExplorerEntry", null),
+                Check = Gone,
+            };
+        }
+
+        var name = run.DriveName;
+        var folder = run.SharePath;
+        var icon = CpfsIconFile.Path;
+        bool AtTarget() => ExplorerEntryKeys.Read(sid).Entry is { } e && ExplorerEntry.IsAtTarget(e, name, folder, icon) && File.Exists(icon);
+        return new LambdaStep
+        {
+            Read = AtTarget,
+            RecordWith = b =>
+            {
+                var now = ExplorerEntryKeys.Read(sid);
+                if (!now.Loaded)
+                {
+                    throw new InvalidOperationException("The desktop user's settings are not loaded. Read the plan again.");
+                }
+
+                var ours = now.Entry is { } e && recorded is not null && ExplorerEntry.SameFolder(e.TargetFolderPath, recorded.Folder);
+                if (now.Entry is not null && !ours && item.Action != PlanAction.Ask)
+                {
+                    throw new InvalidOperationException("An entry under CPFS's identifier appeared in File Explorer after the plan was made. Read the plan again.");
+                }
+
+                b!.TrackExplorerEntry(sid, folder, name);
+                b.TrackCreated("IconFile", icon);
+                return BackupWrite.Recorded;
+            },
+            Do = () =>
+            {
+                CpfsIconFile.Write();
+                ExplorerEntryKeys.Write(sid, name, folder, icon);
+                AppLog.Write("apply", "File Explorer entry " + ExplorerEntry.Clsid + " written for " + sid);
+            },
+            Check = AtTarget,
+        };
+    }
+
     // Setup: CPFS's own shortcut, made before it carried an icon, gets the CPFS icon.
     public static LambdaStep ShortcutIcon(SetupRun run)
     {
@@ -435,6 +498,36 @@ internal static class QuickAccessSteps
                 run.DriveRestartNeeded = true;
             },
             Check = () => DosDrives.Read(letter) is null,
+        };
+    }
+
+    // Uninstall: the File Explorer entry, from the hive of the user it was recorded for, only while it opens the
+    // recorded folder.
+    public static LambdaStep UninstallExplorer(UninstallRun run)
+    {
+        var recorded = run.Config?.TrackedExplorerEntry;
+        var sid = recorded?.Sid ?? throw new InvalidOperationException("No File Explorer entry is recorded.");
+        var folder = recorded.Folder ?? throw new InvalidOperationException("The File Explorer entry's folder is not recorded.");
+        bool Gone() => ExplorerEntryKeys.Read(sid) is { Loaded: true, Entry: null };
+        return new LambdaStep
+        {
+            Read = Gone,
+            Do = () =>
+            {
+                var now = ExplorerEntryKeys.Read(sid);
+                if (!now.Loaded)
+                {
+                    throw new StepUnsupportedException("The Windows user the File Explorer entry belongs to is not signed in, so it stays.");
+                }
+
+                if (now.Entry is { } e && !ExplorerEntry.SameFolder(e.TargetFolderPath, folder))
+                {
+                    throw new StepUnsupportedException("The File Explorer entry opens another folder now, so it is left as it is.");
+                }
+
+                ExplorerEntryKeys.Delete(sid);
+            },
+            Check = Gone,
         };
     }
 

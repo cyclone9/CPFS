@@ -79,7 +79,7 @@ public partial class SetupPage
 
     private async void OnApply(object sender, RoutedEventArgs e)
     {
-        if (_applying || !Startup.IsElevated)
+        if (_applying || _reading || !Startup.IsElevated)
         {
             return;
         }

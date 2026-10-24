@@ -148,6 +148,9 @@ public sealed record SystemSnapshot
     // The CPFS icon copied into the data folder, used by the drive and the shortcut; a value naming it is CPFS's.
     public string CpfsIcon { get; init; } = @"C:\ProgramData\CPFS\cpfs.ico";
 
+    // CPFS's File Explorer navigation-pane entry in the desktop user's hive.
+    public Reading<ExplorerHive> ExplorerEntry { get; init; } = Reading.Failed<ExplorerHive>(null);
+
     public LetterScan Letters { get; init; } = new();
 
     public string CommonDesktop { get; init; } = @"C:\Users\Public\Desktop";
