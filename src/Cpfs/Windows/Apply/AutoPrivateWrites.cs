@@ -507,7 +507,6 @@ internal static class AutoPrivateCopy
 internal static class ComputerRename
 {
     private const int ComputerNamePhysicalDnsHostname = 5;
-    private const int DsregDeviceJoin = 1;
 
     public static void Set(string name)
     {
@@ -535,8 +534,8 @@ internal static class ComputerRename
         return false;
     }
 
-    // Learn documents only S_OK or "an HRESULT error code", with no code that means "not joined", so every failure is
-    // "unknown" (Windows Server 2025 on the CI runner fails here).
+    // Learn documents S_OK on success and an HRESULT error code otherwise; Windows Server 2025 returns S_FALSE, a
+    // success code by the HRESULT rules, so only a negative HRESULT is "unknown".
     private static bool? TryEntraJoined()
     {
         try
@@ -544,25 +543,30 @@ internal static class ComputerRename
             var hr = NetGetAadJoinInformation(null, out var info);
             if (hr != 0)
             {
-                AppLog.Write("plan", "Entra ID join: not known, NetGetAadJoinInformation returned HRESULT 0x" + hr.ToString("X8", CultureInfo.InvariantCulture));
+                AppLog.Write("plan", "Entra ID join: NetGetAadJoinInformation returned HRESULT 0x" + hr.ToString("X8", CultureInfo.InvariantCulture)
+                    + (hr < 0 ? ", not known" : ", a success code"));
+            }
+
+            if (hr < 0)
+            {
                 return null;
             }
 
-            // A null join info means neither a device join nor a work account [Learn: NetGetAadJoinInformation]; joinType
-            // is the structure's first field.
-            if (info == IntPtr.Zero)
+            // A null join info means neither a device join nor a work account [Learn: NetGetAadJoinInformation].
+            int? joinType = null;
+            if (info != IntPtr.Zero)
             {
-                return false;
+                try
+                {
+                    joinType = Marshal.ReadInt32(info);
+                }
+                finally
+                {
+                    NetFreeAadJoinInformation(info);
+                }
             }
 
-            try
-            {
-                return Marshal.ReadInt32(info) == DsregDeviceJoin;
-            }
-            finally
-            {
-                NetFreeAadJoinInformation(info);
-            }
+            return ComputerJoin.EntraJoinedFrom(hr, joinType);
         }
         catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
         {

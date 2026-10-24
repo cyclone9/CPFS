@@ -327,6 +327,22 @@ public class AutoPrivateRenameTests
     }
 
     [Fact]
+    public void TheEntraReadFollowsSucceededSoSFalseIsASuccess()
+    {
+        const int SOk = 0, SFalse = 1, EFail = unchecked((int)0x80004005);
+        Assert.False(ComputerJoin.EntraJoinedFrom(SFalse, null));
+        Assert.False(ComputerJoin.EntraJoinedFrom(SOk, null));
+        Assert.True(ComputerJoin.EntraJoinedFrom(SFalse, ComputerJoin.DsregDeviceJoin));
+        Assert.False(ComputerJoin.EntraJoinedFrom(SOk, 2));
+        Assert.Null(ComputerJoin.EntraJoinedFrom(EFail, null));
+
+        // Not joined: the rename is a plain Change, no Ask.
+        var plan = Setup(Machine() with { Join = Reading.Ok(new ComputerJoin(false, ComputerJoin.EntraJoinedFrom(SFalse, null))) },
+            PlannerTests.Fixture(), a => a with { ComputerName = "LAPTOP" });
+        Assert.Equal(PlanAction.Change, Item(plan, "computer.name").Action);
+    }
+
+    [Fact]
     public void AnEntraJoinThatCouldNotBeReadAsksUntickedInsteadOfBlocking()
     {
         var unknown = Machine() with { Join = Reading.Ok(new ComputerJoin(false, null)) };

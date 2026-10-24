@@ -230,28 +230,13 @@ public partial class UninstallPage : Page
         {
             Snapshot = snapshot,
             Config = config,
-            AutoPrivateNames = AutoPrivateNames(),
+            AutoPrivateNames = PlanReader.AutoPrivateNames(),
             ProfilePath = profile,
             ProtectedSids = protectedSids,
             DesktopUser = desktopName,
             ProtectedFolders = PlanReader.ProtectedFolders(),
         };
         return (input, bytes, desktop.Documents);
-    }
-
-    // The names the Auto-Private task logged: ANSI from the 0.2.x scripts, UTF-8 from the app; both readings are taken.
-    private static List<string> AutoPrivateNames()
-    {
-        var log = Path.Combine(StateReader.DataFolder, AutoPrivateLog.FileName);
-        try
-        {
-            return File.Exists(log) ? new List<string>(AutoPrivateLog.Names(File.ReadAllBytes(log), Encoding.Default)) : new List<string>();
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            AppLog.Write("uninstall", "auto-private.log: " + ex.Message);
-            return new List<string>();
-        }
     }
 
     private void Recompute()

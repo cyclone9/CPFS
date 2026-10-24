@@ -618,6 +618,22 @@ internal static class PlanReader
         return list;
     }
 
+    // The networks the Auto-Private task switched, from auto-private.log: Uninstall's record of them (the task writes
+    // nothing into config.json). Read by the Uninstall page and the CI test alike.
+    internal static List<string> AutoPrivateNames()
+    {
+        var log = Path.Combine(StateReader.DataFolder, AutoPrivateLog.FileName);
+        try
+        {
+            return File.Exists(log) ? new List<string>(AutoPrivateLog.Names(File.ReadAllBytes(log), System.Text.Encoding.Default)) : new List<string>();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            AppLog.Write("uninstall", "auto-private.log: " + ex.Message);
+            return new List<string>();
+        }
+    }
+
     internal static List<VpnAdapterInfo> VpnAdapters()
     {
         var list = new List<VpnAdapterInfo>();

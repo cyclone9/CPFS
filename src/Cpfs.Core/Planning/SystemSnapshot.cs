@@ -60,7 +60,15 @@ public sealed record ComputerNameInfo(string? Active, string? Pending);
 // Whether a rename is CPFS's to make: never on a domain member; only after asking on a device joined to Entra ID
 // (NetGetAadJoinInformation's device join; a work account the user added doesn't count). EntraJoined is null when
 // the Entra read failed: a rename is then asked, unticked, instead of blocking the plan.
-public sealed record ComputerJoin(bool PartOfDomain, bool? EntraJoined);
+public sealed record ComputerJoin(bool PartOfDomain, bool? EntraJoined)
+{
+    // DSREG_JOIN_TYPE's device join, the first field of DSREG_JOIN_INFO.
+    public const int DsregDeviceJoin = 1;
+
+    // NetGetAadJoinInformation's HRESULT read by SUCCEEDED (hr >= 0): S_FALSE is a success too (Server 2025 returns it).
+    // A success without join info (joinType null) is "not joined"; only a failure code is "unknown".
+    public static bool? EntraJoinedFrom(int hresult, int? joinType) => hresult < 0 ? null : joinType == DsregDeviceJoin;
+}
 
 public sealed record LockoutInfo(uint Threshold, uint DurationSeconds, uint WindowSeconds);
 

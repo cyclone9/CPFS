@@ -217,8 +217,8 @@ internal static class CiApplyTest
         // back is exercised by the in-process run of the --auto-private worker below.
         var plan = Planner.Setup(snapshot, answers, null, PlanReader.ProtectedFolders());
 
-        // A runner where the Entra ID join can't be read (Windows Server 2025 did) asks about the rename, unticked; the
-        // test ticks it so the rename is still tested.
+        // A plain Change, or an unticked Ask where the Entra ID join can't be read; the test ticks an Ask so the rename
+        // is still tested.
         var rename = plan.Find("computer.name");
         o.WriteLine("computer.name: " + (rename is null ? "no item" : rename.Action + " " + rename.ReasonKey));
         if (rename is { Action: PlanAction.Ask })
@@ -345,10 +345,12 @@ internal static class CiApplyTest
             self = identity.User!.Value;
         }
 
+        var logged = PlanReader.AutoPrivateNames();
         var plan = UninstallPlanner.Uninstall(new UninstallInput
         {
             Snapshot = snapshot,
             Config = config,
+            AutoPrivateNames = logged,
             ProtectedSids = new[] { self },
             DesktopUser = self,
             ProtectedFolders = PlanReader.ProtectedFolders(),
@@ -369,6 +371,13 @@ internal static class CiApplyTest
             }
         });
         Check(ApplyList.Blocking(plan).Count == 0, "Uninstall plan has nothing that cannot be planned");
+        foreach (var name in logged)
+        {
+            var net = plan.Find("u.net:" + name);
+            Check(net is { Action: PlanAction.Ask, Ticked: true }, "Uninstall plans the network from auto-private.log back to Public, ticked: " + name,
+                net is null ? "no item" : net.Action + (net.Ticked ? " ticked" : " unticked"));
+        }
+
         var rename = plan.Find("u.computer");
         Check(rename is { Action: PlanAction.Ask, Ticked: true }, "Uninstall offers the original computer name back, ticked",
             rename is null ? "no item" : rename.Action + (rename.Ticked ? " ticked" : " unticked"));

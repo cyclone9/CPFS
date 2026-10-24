@@ -116,6 +116,37 @@ public class UninstallPlannerTests
     }
 
     [Fact]
+    public void ANetworkTheAutoPrivateTaskLoggedIsSwitchedBackToPublicTicked()
+    {
+        var s = Installed() with
+        {
+            Networks = Reading.Ok<IReadOnlyList<NetworkInfo>>(new[]
+            {
+                new NetworkInfo("Network", "Ethernet", 1), new NetworkInfo("Cafe", "Wi-Fi", 0),
+            }),
+        };
+        var plan = UninstallPlanner.Uninstall(new UninstallInput
+        {
+            Snapshot = s,
+            Config = Fixture(),
+            AutoPrivateNames = new[] { "Network", "Cafe", "Gone" },
+            DesktopUser = @"HOST-01\Owner",
+        });
+
+        var net = Item(plan, "u.net:Network");
+        Assert.Equal(PlanAction.Ask, net.Action);
+        Assert.True(net.Ticked);
+        Assert.Equal(UninstallPlanner.R.NetworkPublic, net.ReasonKey);
+        Assert.Contains(ApplyList.Uninstall(plan), e => e.Item.Key == "u.net:Network");
+
+        // Set back to Public by the user since: nothing to do.
+        Assert.Equal(PlanAction.Keep, Item(plan, "u.net:Cafe").Action);
+
+        // Not connected now: only its saved profile can be set back, as for Tracked.Networks.
+        Assert.Equal(UninstallPlanner.R.NetworkSaved, Item(plan, "u.net:Gone").ReasonKey);
+    }
+
+    [Fact]
     public void DecliningTheRestoreKeepsTheSettingsSavesACopyAndStillTurnsTheBuiltInRulesOn()
     {
         var plan = PlanFor(Installed(), WithTracked(), (UninstallPlanner.RestoreKey, false));
