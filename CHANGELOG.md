@@ -4,6 +4,7 @@ This project uses [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+- Clearer, consistent wording throughout the app.
 - README in Persian, Arabic and Turkish.
 - The Windows app starts: one exe with Setup, Monitor, Connect and Uninstall pages, plus Preferences and About. Only Setup has content so far; the other pages say they come in a later version.
 - Setup shows your existing CPFS install as found, read-only: the settings file, the SMB account, share, firewall rules, tasks, security settings, networks, drive letters, shortcut and data folder. It changes nothing on Windows.
@@ -121,3 +122,4 @@ This project uses [semantic versioning](https://semver.org/).
 - Auto-Private: every reason the task can refuse or stop has its own exit code, so a refused run shows in the task's last result. The Advanced page shows when the task last ran and what happened, or that it hasn't run yet.
 - CPFS's own messages from Setup, Uninstall and Monitor (a share that is gone, a change that didn't take, a shortcut left in place) come from the translatable strings and are logged in English. Windows' own messages stay as Windows wrote them, and Monitor no longer shows error type names.
 - Switching Auto-Private off in Setup also removes the empty `Program Files\CPFS` folder CPFS created, after the copy. A folder CPFS didn't create, or one with other files in it, stays.
+- The whole app is translated into Persian, Arabic and Turkish.

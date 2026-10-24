@@ -38,12 +38,11 @@ public class StringsTests
     }
 
     [Fact]
-    public void EnglishIsMarkedTranslatedAndTheOthersNot()
+    public void EveryLanguageIsMarkedTranslated()
     {
-        Assert.Equal("true", Load("Strings.resx")["Meta_Translated"]);
-        foreach (var file in new[] { "Strings.fa.resx", "Strings.ar.resx", "Strings.tr.resx" })
+        foreach (var file in new[] { "Strings.resx", "Strings.fa.resx", "Strings.ar.resx", "Strings.tr.resx" })
         {
-            Assert.Equal("false", Load(file)["Meta_Translated"]);
+            Assert.Equal("true", Load(file)["Meta_Translated"]);
         }
     }
 
