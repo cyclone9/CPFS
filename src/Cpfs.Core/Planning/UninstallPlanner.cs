@@ -65,6 +65,31 @@ public static class UninstallPlanner
     // A choice that is not itself a change: it decides which other items appear.
     public static bool IsChoiceOnly(string key) => string.Equals(key, RestoreKey, StringComparison.Ordinal);
 
+    // No config.json and nothing of CPFS's found: the page says so instead of a plan. Anything to remove, to decide or
+    // that could not be read keeps the plan on screen.
+    public static bool NothingInstalled(Plan plan)
+    {
+        if (plan is null)
+        {
+            throw new ArgumentNullException(nameof(plan));
+        }
+
+        if (plan.Find("u.config") is not { ReasonKey: R.NoConfig })
+        {
+            return false;
+        }
+
+        foreach (var item in plan.Items)
+        {
+            if (item.Action != PlanAction.Keep)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public static Plan Uninstall(UninstallInput input)
     {
         if (input is null)

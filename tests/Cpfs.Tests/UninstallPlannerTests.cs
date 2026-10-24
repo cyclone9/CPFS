@@ -172,6 +172,20 @@ public class UninstallPlannerTests
     }
 
     [Fact]
+    public void NothingIsInstalledOnlyWithoutConfigAndWithoutAnythingOfCpfsFound()
+    {
+        var none = Installed() with { OwnRules = Reading.Ok<IReadOnlyList<FirewallRuleInfo>>(Array.Empty<FirewallRuleInfo>()) };
+        var empty = PlanFor(none, null);
+        Assert.True(UninstallPlanner.NothingInstalled(empty));
+        Assert.Equal(new[] { "Summary_U_Nothing" }, PlanSummary.Uninstall(empty).Lines.Select(l => l.Key));
+
+        // A CPFS rule left behind, rules that could not be read, or any install at all keep the plan on screen.
+        Assert.False(UninstallPlanner.NothingInstalled(PlanFor(Installed(), null)));
+        Assert.False(UninstallPlanner.NothingInstalled(PlanFor(new SystemSnapshot { Elevated = true }, null)));
+        Assert.False(UninstallPlanner.NothingInstalled(PlanFor(Installed(), WithTracked())));
+    }
+
+    [Fact]
     public void TheRecordedShortcutIsRemovedAndTheDataFolderGoesLast()
     {
         var s = Installed() with { PublicDesktopFiles = Reading.Ok<IReadOnlyList<string>>(new[] { "Shared (CPFS).lnk" }) };

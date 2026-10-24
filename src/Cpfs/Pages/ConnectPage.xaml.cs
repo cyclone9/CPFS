@@ -55,7 +55,7 @@ public sealed class GuideCard
 
     public List<GuideItem> Items { get; } = new();
 
-    // Set before the card is shown; a card without one (Windows, or CPFS not set up yet) has no QR button.
+    // Set before the card is shown; only the phones get one, and not until CPFS is set up.
     public QrItem? Qr { get; set; }
 
     public bool HasQr => Qr is not null;
@@ -93,8 +93,8 @@ public sealed class AddressOption
     public override string ToString() => Host + ", " + Description;
 }
 
-// The connect guide: every address of this PC, and for each kind of device the steps, the values to copy and a QR
-// code where the device can use one. Needs no administrator rights and changes nothing; the password appears nowhere.
+// The connect guide: every address of this PC, and for each kind of device the steps, the values to copy and, for
+// phones, a QR code. Needs no administrator rights and changes nothing; the password appears nowhere.
 public partial class ConnectPage : Page
 {
     private ConfigDocument? _config;
@@ -364,8 +364,8 @@ public partial class ConnectPage : Page
             Ios(v, installed),
             Android(v, installed),
             Windows(v),
-            Mac(v, installed),
-            Linux(v, installed),
+            Mac(v),
+            Linux(v),
         };
     }
 
@@ -388,13 +388,12 @@ public partial class ConnectPage : Page
         return card;
     }
 
-    private static GuideCard Mac(ConnectValues v, bool qr)
+    private static GuideCard Mac(ConnectValues v)
     {
         var card = Card("Connect_Mac_Title", SymbolRegular.Laptop24);
         card.Items.Add(Step("Connect_Mac_Step1"));
         card.Items.Add(Value("Connect_Label_SmbUrl", v.SmbUrl));
         card.Items.Add(Step("Connect_Mac_Step2", v.User));
-        AddQr(card, qr, v.SmbUrl, "Connect_Mac_Qr");
         if (v.Strict)
         {
             card.Items.Add(Note("Connect_Mac_Strict"));
@@ -403,13 +402,12 @@ public partial class ConnectPage : Page
         return card;
     }
 
-    private static GuideCard Linux(ConnectValues v, bool qr)
+    private static GuideCard Linux(ConnectValues v)
     {
         var card = Card("Connect_Linux_Title", SymbolRegular.WindowConsole20);
         card.Items.Add(Step("Connect_Linux_Step1"));
         card.Items.Add(Value("Connect_Label_SmbUrl", v.SmbUrl));
         card.Items.Add(Step("Connect_Linux_Step2", v.User));
-        AddQr(card, qr, v.SmbUrl, "Connect_Linux_Qr");
         card.Items.Add(Step("Connect_Linux_Step3"));
         card.Items.Add(Value("Connect_Label_MountDir", ConnectValues.MountDir));
         card.Items.Add(Value("Connect_Label_Mount", v.Mount));

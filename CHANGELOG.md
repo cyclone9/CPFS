@@ -107,3 +107,5 @@ This project uses [semantic versioning](https://semver.org/).
 - Monitor's Recent activity is a compact table with one header row, each path on one line with the full path in a tooltip; a Clear button empties the list, and an optional "Save to a log file" switch (off by default) writes each change to `activity-log.txt` beside the CPFS log, never included in Copy report.
 - The Sync page is gone from the navigation pane, and the About description no longer mentions sync: server sync is put off until a later version.
 - Monitor's open files card is now "Being copied now": it lists the files devices are copying at that moment, mostly large ones, and points to Recent activity for every file that arrived. A closed file no longer stays on the list for 10 seconds.
+- Uninstall: when CPFS isn't set up on this PC, the page shows one card saying there is nothing to uninstall, with Go to Setup and Refresh, instead of greyed-out options. Without administrator rights it does so only when it can see there is no `config.json`.
+- Connect: only iPhone/iPad and Android get a QR code. macOS and Linux keep their steps and the copy button for the `smb://` address.

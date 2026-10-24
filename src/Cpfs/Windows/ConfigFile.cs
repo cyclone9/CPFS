@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Security;
 using System.Text;
 using Cpfs.Core.Config;
@@ -45,6 +46,25 @@ internal static class ConfigFile
             error = ex.GetType().Name + ": " + ex.Message;
             AppLog.Write("config", "Could not read " + StateReader.ConfigPath + ": " + error);
             return ConfigState.Unreadable;
+        }
+    }
+
+    // True only when config.json is known to be absent: ProgramData lists no CPFS folder, or that folder lists no
+    // config.json. File.Exists says false on access denied too, so it can't tell "absent" from "can't see"; a listing
+    // that fails is unknown, never absent.
+    public static bool KnownMissing()
+    {
+        try
+        {
+            var parent = Path.GetDirectoryName(StateReader.DataFolder)!;
+            var name = Path.GetFileName(StateReader.DataFolder);
+            return !Directory.EnumerateFileSystemEntries(parent, name).Any()
+                || !Directory.EnumerateFileSystemEntries(StateReader.DataFolder, Path.GetFileName(StateReader.ConfigPath)).Any();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
+        {
+            AppLog.Write("config", "Could not list " + StateReader.DataFolder + ": " + ex.GetType().Name + ": " + ex.Message);
+            return false;
         }
     }
 }

@@ -159,12 +159,39 @@
     <TextBlock Style="{StaticResource PageTitle}" Text="{Binding [Nav_Uninstall], Source={x:Static local:Loc.Instance}}" />
 
     <ui:InfoBar
+      x:Name="IntroBar"
       Margin="0,0,0,8"
       IsClosable="False"
       IsOpen="True"
       Message="{Binding [Uninst_Intro_Desc], Source={x:Static local:Loc.Instance}}"
       Severity="Informational"
       Title="{Binding [Uninst_Intro_Title], Source={x:Static local:Loc.Instance}}" />
+
+    <!--  No CPFS install and nothing of CPFS's found: this card instead of the plan and the button.  -->
+    <ui:CardControl x:Name="NothingCard" Margin="0,0,0,4" Icon="{ui:SymbolIcon Info24}" Visibility="Collapsed">
+      <ui:CardControl.Header>
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Uninst_Nothing_Title], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Uninst_Nothing_Desc], Source={x:Static local:Loc.Instance}}" />
+        </StackPanel>
+      </ui:CardControl.Header>
+      <WrapPanel>
+        <ui:Button
+          Margin="0,0,8,4"
+          Appearance="Primary"
+          AutomationProperties.Name="{Binding [Uninst_GoToSetup], Source={x:Static local:Loc.Instance}}"
+          Click="OnGoToSetup"
+          Content="{Binding [Uninst_GoToSetup], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon WindowWrench24}" />
+        <ui:Button
+          x:Name="NothingRefreshButton"
+          Margin="0,0,0,4"
+          AutomationProperties.Name="{Binding [Setup_Refresh], Source={x:Static local:Loc.Instance}}"
+          Click="OnRefresh"
+          Content="{Binding [Setup_Refresh], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon ArrowClockwise24}" />
+      </WrapPanel>
+    </ui:CardControl>
 
     <ui:CardControl x:Name="AdminCard" Margin="0,0,0,4" Icon="{ui:SymbolIcon Shield24}" Visibility="Collapsed">
       <ui:CardControl.Header>
@@ -185,7 +212,7 @@
     <ui:InfoBar x:Name="AdminResult" Margin="0,0,0,4" IsClosable="True" IsOpen="False" />
 
     <StackPanel x:Name="PlanArea" Visibility="Collapsed">
-      <ui:Card Margin="0,0,0,4">
+      <ui:Card x:Name="SummaryCard" Margin="0,0,0,4">
         <StackPanel>
           <TextBlock Style="{StaticResource CardTitle}" FontSize="16" Text="{Binding [Uninst_Summary_Title], Source={x:Static local:Loc.Instance}}" />
           <!--  Until the first plan is ready (UninstallPage.ReadAsync).  -->
@@ -215,7 +242,7 @@
         </StackPanel>
       </ui:Card>
 
-      <ui:Card Margin="0,4,0,4">
+      <ui:Card x:Name="ApplyCard" Margin="0,4,0,4">
         <StackPanel>
           <TextBlock x:Name="ApplyHint" Margin="0,0,0,8" Style="{StaticResource CardDescription}" />
           <ProgressBar

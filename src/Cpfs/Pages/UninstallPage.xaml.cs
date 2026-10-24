@@ -42,6 +42,9 @@ public partial class UninstallPage : Page
     // WindowsChanges.Count when the last reading began.
     private int _readAt = -1;
 
+    // Whether the page shows "nothing to uninstall"; null until the first reading.
+    private bool? _nothingShown;
+
     public UninstallPage()
     {
         InitializeComponent();
@@ -62,7 +65,11 @@ public partial class UninstallPage : Page
         if (_loaded)
         {
             // Back on the page after Windows was changed elsewhere in CPFS (a Setup): the reading is stale.
-            if (Startup.IsElevated && _readAt != WindowsChanges.Count)
+            if (!Startup.IsElevated)
+            {
+                ShowUnelevated();
+            }
+            else if (_readAt != WindowsChanges.Count)
             {
                 await ReadAsync();
             }
@@ -73,7 +80,7 @@ public partial class UninstallPage : Page
         _loaded = true;
         if (!Startup.IsElevated)
         {
-            AdminCard.Visibility = Visibility.Visible;
+            ShowUnelevated();
             return;
         }
 
@@ -81,7 +88,49 @@ public partial class UninstallPage : Page
         await ReadAsync();
     }
 
-    private async void OnRefresh(object sender, RoutedEventArgs e) => await ReadAsync();
+    private async void OnRefresh(object sender, RoutedEventArgs e)
+    {
+        if (!Startup.IsElevated)
+        {
+            ShowUnelevated();
+            return;
+        }
+
+        await ReadAsync();
+    }
+
+    private void OnGoToSetup(object sender, RoutedEventArgs e) => MainWindow.Current?.Open(typeof(SetupPage));
+
+    // Unelevated, the page can tell only that config.json is absent. Anything else needs the elevated plan.
+    private void ShowUnelevated()
+    {
+        var nothing = ConfigFile.KnownMissing();
+        ShowState(nothing);
+        AdminCard.Visibility = nothing ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    // "Nothing to uninstall" replaces the intro, the summary, the decisions, the button and the details. The progress
+    // of an Uninstall that just ran stays reachable under Show details.
+    private void ShowState(bool nothing)
+    {
+        if (_nothingShown != nothing)
+        {
+            _nothingShown = nothing;
+            AppLog.Write("uninstall", nothing ? "Nothing installed: the page says there is nothing to uninstall" : "Showing the plan");
+        }
+
+        var normal = nothing ? Visibility.Collapsed : Visibility.Visible;
+        IntroBar.Visibility = normal;
+        NothingCard.Visibility = nothing ? Visibility.Visible : Visibility.Collapsed;
+        SummaryCard.Visibility = normal;
+        ApplyCard.Visibility = normal;
+        if (nothing)
+        {
+            DecisionsCard.Visibility = Visibility.Collapsed;
+        }
+
+        DetailsExpander.Visibility = nothing && _steps.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+    }
 
     // False when the reading failed, so the plan on screen is not from it.
     private async Task<bool> ReadAsync()
@@ -95,6 +144,7 @@ public partial class UninstallPage : Page
         _readAt = WindowsChanges.Count;
         var ok = false;
         RefreshButton.IsEnabled = false;
+        NothingRefreshButton.IsEnabled = false;
         var first = _plan is null;
         PlanLoading.Visibility = first ? Visibility.Visible : Visibility.Collapsed;
         SummaryBody.Visibility = first ? Visibility.Collapsed : Visibility.Visible;
@@ -116,6 +166,7 @@ public partial class UninstallPage : Page
         {
             _reading = false;
             RefreshButton.IsEnabled = true;
+            NothingRefreshButton.IsEnabled = true;
             PlanLoading.Visibility = Visibility.Collapsed;
             SummaryBody.Visibility = Visibility.Visible;
             UpdateApplyState();
@@ -258,6 +309,7 @@ public partial class UninstallPage : Page
         var decisions = SetupPage.AskViews(_plan);
         Decisions.ItemsSource = decisions;
         DecisionsCard.Visibility = decisions.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ShowState(UninstallPlanner.NothingInstalled(_plan));
         PlanCounts.Text = loc.Format("Setup_Plan_Summary",
             ApplyUi.Formats(_plan.Count(PlanAction.Keep)),
             ApplyUi.Formats(_plan.Count(PlanAction.Change)),

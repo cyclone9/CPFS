@@ -280,14 +280,12 @@
   <data name="Connect_Mac_Title" xml:space="preserve"><value>macOS</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Mac_Step1" xml:space="preserve"><value>In Finder, choose Go, then Connect to Server. Type the address below and click Connect.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Mac_Step2" xml:space="preserve"><value>Choose Registered User and enter the username {0} and the SMB password.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Mac_Qr" xml:space="preserve"><value>The server address as text.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Mac_Strict" xml:space="preserve"><value>Strict mode: macOS 10.10 Yosemite and later support SMB 3 encryption.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Linux_Title" xml:space="preserve"><value>Linux</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Linux_Step1" xml:space="preserve"><value>In the file manager, open the address below: in GNOME Files under Other Locations, in Dolphin in the address bar.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Linux_Step2" xml:space="preserve"><value>Sign in with the username {0} and the SMB password.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Linux_Step3" xml:space="preserve"><value>To mount it from a terminal (needs the cifs-utils package), create the folder once, then run the mount command. It asks for the SMB password.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Linux_Local" xml:space="preserve"><value>Names ending in .local need Avahi with nss-mdns on that machine.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Linux_Qr" xml:space="preserve"><value>The server address as text.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Linux_Strict" xml:space="preserve"><value>Strict mode: keep the seal option in the mount command. It asks for SMB 3 encryption.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Android_Title" xml:space="preserve"><value>Android</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Android_Step1" xml:space="preserve"><value>Use a file manager with SMB support: Material Files, CIFS Documents Provider, or Samsung My Files (Network storage).</value><comment>UNTRANSLATED: English text</comment></data>
@@ -689,6 +687,9 @@
   <data name="Uninst_Intro_Desc" xml:space="preserve"><value>Files in the shared folder stay. Nothing changes until you press Uninstall and confirm.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_Admin_Title" xml:space="preserve"><value>Administrator rights needed</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_Admin_Desc" xml:space="preserve"><value>Uninstall reads and changes settings only an administrator can. Restart CPFS as administrator to see the plan.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_Nothing_Title" xml:space="preserve"><value>Nothing to uninstall</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_Nothing_Desc" xml:space="preserve"><value>CPFS isn't set up on this PC, so there's nothing here to remove.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_GoToSetup" xml:space="preserve"><value>Go to Setup</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_Apply" xml:space="preserve"><value>Uninstall</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_ConfirmTitle" xml:space="preserve"><value>Uninstall CPFS?</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_ConfirmMsg" xml:space="preserve"><value>{0} changes will be made to Windows. Files in the shared folder are not deleted.</value><comment>UNTRANSLATED: English text</comment></data>

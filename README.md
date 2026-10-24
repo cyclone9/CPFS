@@ -29,7 +29,7 @@ CPFS shares one folder on a Windows 10 or 11 PC with Windows, macOS, Linux, Andr
 - A Windows 11 look with System, Light and Dark themes.
 - English first, then Persian, Arabic and Turkish.
 - Setup can give the shared folder a drive letter, a desktop shortcut and an entry in File Explorer's navigation pane. You choose the letter and the names, and all three carry the CPFS icon. On the drive letter, Explorer may show the disk's own name instead of yours. The navigation pane entry is the "Show in File Explorer" switch, on by default.
-- A connect guide with QR codes for Windows, macOS, Linux, Android and iOS, over the `.local` name, the Wi-Fi or LAN IP address, or the VPN address.
+- A connect guide for Windows, macOS, Linux, Android and iOS, with QR codes for phones, over the `.local` name, the Wi-Fi or LAN IP address, or the VPN address.
 - Monitor shows the connected devices and their traffic, the large transfers being copied now ("Being copied now"), Recent activity and failed sign-ins. Recent activity lists every file added, changed, renamed or deleted in the shared folder, whether from any device or from this PC. CPFS can't tell which device made a change.
 - An optional "Save to a log file" switch for Recent activity, off by default.
 - A "Check for updates" button in About, and an optional check when CPFS starts, off by default. It asks GitHub only and downloads nothing.

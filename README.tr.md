@@ -29,7 +29,7 @@ CPFS, bir Windows 10 veya 11 bilgisayarındaki tek bir klasörü Windows, macOS,
 - Sistem, Açık ve Koyu temalı Windows 11 görünümü.
 - Önce İngilizce, ardından Farsça, Arapça ve Türkçe.
 - Kurulum, paylaşılan klasöre bir sürücü harfi, bir masaüstü kısayolu ve Dosya Gezgini'nin gezinti bölmesinde bir giriş verebilir. Harfi ve adları siz seçersiniz; üçünde de CPFS simgesi bulunur. Sürücü harfinde Gezgin, sizin adınız yerine diskin kendi adını gösterebilir. Gezinti bölmesi girişi, varsayılan olarak açık olan "Dosya Gezgini'nde göster" anahtarıdır.
-- Windows, macOS, Linux, Android ve iOS için QR kodlu bağlantı kılavuzu; `.local` adı, Wi-Fi veya LAN IP adresi ya da VPN adresi üzerinden.
+- Windows, macOS, Linux, Android ve iOS için bağlantı kılavuzu, telefonlar için QR kodlarıyla; `.local` adı, Wi-Fi veya LAN IP adresi ya da VPN adresi üzerinden.
 - İzleme, bağlı cihazları ve trafiklerini gösterir; o anda kopyalanan büyük aktarımları ("Şu anda kopyalananlar"), Son etkinliği ve başarısız oturum açma denemelerini de listeler. Son etkinlik, paylaşılan klasörde eklenen, değiştirilen, yeniden adlandırılan veya silinen her dosyayı gösterir; değişiklik herhangi bir cihazdan ya da bu bilgisayardan gelmiş olabilir. CPFS değişikliğin hangi cihazdan geldiğini söyleyemez.
 - Son etkinlik için isteğe bağlı "Günlük dosyasına kaydet" anahtarı; varsayılan olarak kapalıdır.
 - Hakkında sayfasında "Güncellemeleri denetle" düğmesi ve CPFS açılırken isteğe bağlı denetim; varsayılan olarak kapalıdır. Yalnızca GitHub'a sorar, hiçbir şey indirmez.
