@@ -30,7 +30,7 @@ public partial class SetupPage
     private static bool HasWork(Plan plan) => ApplyList.Setup(plan).Any(e => !e.Deferred);
 
     // A config.json that exists but could not be read is not a first Setup: applying would take a new backup over it.
-    private bool ConfigUnreadable => _config is null && System.IO.File.Exists(StateReader.ConfigPath);
+    private bool ConfigUnreadable => _config is null && !_configIgnored && System.IO.File.Exists(StateReader.ConfigPath);
 
     private void UpdateApplyState()
     {

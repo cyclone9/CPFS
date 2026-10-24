@@ -123,3 +123,9 @@ This project uses [semantic versioning](https://semver.org/).
 - CPFS's own messages from Setup, Uninstall and Monitor (a share that is gone, a change that didn't take, a shortcut left in place) come from the translatable strings and are logged in English. Windows' own messages stay as Windows wrote them, and Monitor no longer shows error type names.
 - Switching Auto-Private off in Setup also removes the empty `Program Files\CPFS` folder CPFS created, after the copy. A folder CPFS didn't create, or one with other files in it, stays.
 - The whole app is translated into Persian, Arabic and Turkish.
+- Releases are built and published by GitHub Actions from a version tag.
+- Setup refuses a `ProgramData\CPFS` that is a link to another place, and locking that folder or `Program Files\CPFS` never changes the owner or permissions of a link or hard-linked file inside; the Auto-Private logs, the settings file and the drive icon are never written through a link.
+- A settings file CPFS didn't write (owned by neither SYSTEM, Administrators nor a member of Administrators) is ignored: Setup sets it aside under a new name and takes a fresh backup, and Uninstall restores nothing and deletes no account from it.
+- Uninstall never puts anonymous-access, null-session or LM hash protections back below a fresh Windows install's defaults, even when the backup recorded a weaker value.
+- Uninstall copies every settings file Setup set aside (`config-ignored-*.json`) to Documents before it removes `ProgramData\CPFS`, and keeps the folder if one of them can't be copied.
+- README: download and first-run steps for the unsigned exe with its SHA-256 check, a Security hardening section, and complete Uninstall and storage tables, in all four languages.

@@ -227,6 +227,11 @@ public sealed class PlanSummary
             notices.Add(SummaryLine.Of("Summary_U_ExplorerLeft", left.Current?.Data ?? "?"));
         }
 
+        if (plan.Find("u.config") is { ReasonKey: UninstallPlanner.R.ConfigIgnored })
+        {
+            notices.Add(SummaryLine.Of("Summary_U_ConfigIgnored"));
+        }
+
         var closing = new List<SummaryLine> { SummaryLine.Of("Summary_U_FilesStay") };
         return Build(facts, notices, closing, SummaryLine.Of("Summary_U_RemovesSetup"), changes, deferred, plan, "Summary_U_Nothing", "Summary_U_Blocked");
     }

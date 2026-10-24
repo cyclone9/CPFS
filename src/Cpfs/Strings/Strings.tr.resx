@@ -506,6 +506,7 @@
   <data name="Plan_S_Shortcut" xml:space="preserve"><value>Masaüstü kısayolu</value></data>
   <data name="Plan_S_OldShortcut" xml:space="preserve"><value>Önceki kısayol</value></data>
   <data name="Plan_S_DataFolder" xml:space="preserve"><value>CPFS veri klasörü</value></data>
+  <data name="Plan_S_ConfigFile" xml:space="preserve"><value>Ayar dosyası (config.json)</value></data>
   <data name="Plan_V_Absent" xml:space="preserve"><value>yok</value></data>
   <data name="Plan_V_Exists" xml:space="preserve"><value>var</value></data>
   <data name="Plan_V_On" xml:space="preserve"><value>açık</value></data>
@@ -608,6 +609,9 @@
   <data name="Plan_R_ShortcutOff" xml:space="preserve"><value>Masaüstü kısayolu yok.</value></data>
   <data name="Plan_R_DataCreate" xml:space="preserve"><value>CPFS veri klasörünü oluşturur; sahibi Administrators olur ve yalnızca SYSTEM ile Administrators yazabilir.</value></data>
   <data name="Plan_R_DataLock" xml:space="preserve"><value>CPFS veri klasörüne başkaları da yazabiliyor. Klasör SYSTEM ve Administrators ile sınırlanır, sahibi Administrators olur.</value></data>
+  <data name="Plan_R_DataLink" xml:space="preserve"><value>ProgramData\CPFS zaten var ve başka bir yere giden bir bağlantı, bu yüzden CPFS erişimini sınırlamaz. Bağlantıyı kaldırın ve Kurulum'u yeniden çalıştırın.</value></data>
+  <data name="Plan_R_ConfigIgnored" xml:space="preserve"><value>CPFS'nin yazmadığı bir ayar dosyası bulundu ve yok sayılıyor. Dosya klasörde yeni bir adla (config-ignored-date.json) kalır; Kurulum ayarlarınızın yeni bir yedeğini alır.</value></data>
+  <data name="Plan_R_ConfigIgnoredNeeded" xml:space="preserve"><value>Klasörde CPFS'nin yazmadığı bir ayar dosyası varken Kurulum devam edemez. Kenara ayırmak için dosyayı Kararlarınız altında işaretleyin ya da dosyayı kaldırın.</value></data>
   <data name="Plan_Section_Computer" xml:space="preserve"><value>Bilgisayar adı</value></data>
   <data name="Plan_S_ShareAccess" xml:space="preserve"><value>Paylaşım izinleri</value></data>
   <data name="Plan_S_ComputerName" xml:space="preserve"><value>Bilgisayar adı</value></data>
@@ -621,6 +625,7 @@
   <data name="Plan_V_OnStrictest" xml:space="preserve"><value>açık, en katı</value></data>
   <data name="Plan_V_Level" xml:space="preserve"><value>düzey {0}</value></data>
   <data name="Plan_V_Value" xml:space="preserve"><value>değer {0}</value></data>
+  <data name="Plan_V_SetAside" xml:space="preserve"><value>yeni bir adla kenara ayrılır</value></data>
   <data name="Plan_ListSeparator" xml:space="preserve"><value>, </value></data>
   <data name="Plan_F_EncryptData" xml:space="preserve"><value>şifreleme</value></data>
   <data name="Plan_F_FolderEnumerationMode" xml:space="preserve"><value>klasör listeleme</value></data>
@@ -697,6 +702,7 @@
   <data name="Uninst_FailedTitle" xml:space="preserve"><value>Kaldırma şurada durdu: {0}</value></data>
   <data name="Uninst_FailedMsg" xml:space="preserve"><value>CPFS ayar dosyası hâlâ duruyor, bu yüzden Kaldır'ı yeniden çalıştırabilirsiniz.&#xD;&#xA;Ayrıntılar:&#xD;&#xA;{0}</value></data>
   <data name="Uninst_R_NoConfig" xml:space="preserve"><value>CPFS ayar dosyası yok, bu yüzden CPFS'nin bulabildiği tek şey kendi güvenlik duvarı kuralları.</value></data>
+  <data name="Uninst_R_ConfigIgnored" xml:space="preserve"><value>CPFS'nin yazmadığı bir ayar dosyası bulundu ve yok sayılıyor. Ondan hiçbir şey geri yüklenmez, hiçbir hesap silinmez; yalnızca CPFS'nin kendi güvenlik duvarı kuralları kaldırılır.</value></data>
   <data name="Uninst_R_RefuseUser" xml:space="preserve"><value>{0}, bu bilgisayarda bir Windows oturum açma hesabı. Kaldır onu korumak için durur.</value></data>
   <data name="Uninst_R_RefusePath" xml:space="preserve"><value>CPFS ayar dosyası paylaşılan klasör olarak {0} yolunu gösteriyor; Kurulum bunu reddederdi (bir sürücünün tamamı ya da bir Windows klasörü). Kaldır durur ve hiçbir şeyi değiştirmez.</value></data>
   <data name="Uninst_R_ShareRemove" xml:space="preserve"><value>Bu paylaşımı CPFS oluşturdu. Ona bağlı cihazların bağlantısı kesilir, sonra paylaşım kaldırılır. Klasör ve dosyaları kalır.</value></data>
@@ -718,6 +724,7 @@
   <data name="Uninst_R_BuiltInMissing" xml:space="preserve"><value>Kurulum'un kapattığı bir Windows kuralı artık bu bilgisayarda yok.</value></data>
   <data name="Uninst_R_Restore" xml:space="preserve"><value>Windows ayarlarını CPFS'den önceki hâline geri koyar (yedek tarihi: {0}).</value></data>
   <data name="Uninst_R_RestoreValue" xml:space="preserve"><value>CPFS'den önceki değere döner.</value></data>
+  <data name="Uninst_R_RestoreFloor" xml:space="preserve"><value>Windows varsayılanında bırakıldı: CPFS, yeni bir Windows kurulumundan daha zayıf bir değeri asla geri koymaz.</value></data>
   <data name="Uninst_R_RestoreUnknown" xml:space="preserve"><value>Yedekte bu ayar için özgün bir değer yok, bu yüzden olduğu gibi bırakılır.</value></data>
   <data name="Uninst_R_SettingsKept" xml:space="preserve"><value>Güvenlik ayarları olduğu gibi kalır.</value></data>
   <data name="Uninst_R_Revert" xml:space="preserve"><value>Bu kurulum erken bir CPFS sürümü tarafından yapıldığı için yedek yok. Yönetimsel paylaşımları, oturum açma güvenlik düzeyini (NTLM) ve anonim erişimi Windows'un varsayılanlarına döndürmek için işaretleyin.</value></data>
@@ -725,6 +732,7 @@
   <data name="Uninst_R_NetworkPublic" xml:space="preserve"><value>Bu ağı CPFS Özel yaptı. Yeniden Genel yapmak için işaretleyin.</value></data>
   <data name="Uninst_R_NetworkSaved" xml:space="preserve"><value>Bu ağı CPFS Özel yaptı. Şu anda bağlı değil; kayıtlı ağ listesinde Genel yapmak için işaretleyin.</value></data>
   <data name="Uninst_R_SaveCopy" xml:space="preserve"><value>Herhangi bir şey değişmeden önce, özgün ayarlarınızın yedeğini içeren CPFS ayar dosyasının (config.json) bir kopyası Belgeler klasörünüze konur. İçinde parola yoktur.</value></data>
+  <data name="Uninst_R_SaveIgnored" xml:space="preserve"><value>CPFS'nin yazmadığı ve Kurulum'un kenara ayırdığı ayar dosyaları ({0}), CPFS veri klasörü kaldırılmadan önce Belgeler klasörünüze de kopyalanır. Biri kopyalanamazsa klasör kalır.</value></data>
   <data name="Uninst_R_DataRemove" xml:space="preserve"><value>Ayar dosyasıyla birlikte CPFS veri klasörü. En son kaldırılır.</value></data>
   <data name="Uninst_S_Owner" xml:space="preserve"><value>Yüklenen dosyaların sahibi</value></data>
   <data name="Uninst_S_Ace" xml:space="preserve"><value>Klasör izni</value></data>
@@ -734,6 +742,7 @@
   <data name="Uninst_S_Restore" xml:space="preserve"><value>Ayarları geri yükle</value></data>
   <data name="Uninst_S_Revert" xml:space="preserve"><value>Windows varsayılanları</value></data>
   <data name="Uninst_S_SaveCopy" xml:space="preserve"><value>Yedeğin kopyası</value></data>
+  <data name="Uninst_S_SaveIgnored" xml:space="preserve"><value>Kenara ayrılan ayar dosyalarını Belgeler'e kopyala</value></data>
   <data name="Uninst_S_Config" xml:space="preserve"><value>Ayar dosyası</value></data>
   <data name="Uninst_S_Kept" xml:space="preserve"><value>Her zaman korunanlar</value></data>
   <data name="Apply_ConfigUnreadable" xml:space="preserve"><value>CPFS ayar dosyası var ama okunamadı. İçindeki yedek değiştirilmesin diye düğme kapalı kalır.</value></data>
@@ -868,6 +877,7 @@
   <data name="Uninst_R_ExplorerForeign" xml:space="preserve"><value>CPFS'nin tanımlayıcısı altındaki Dosya Gezgini girdisi artık CPFS'nin kaydettiği klasörü değil, şunu açıyor: {0}. Bu yüzden olduğu gibi bırakılır.</value></data>
   <data name="Uninst_R_ExplorerNotLoaded" xml:space="preserve"><value>CPFS'nin Dosya Gezgini girdisi şu anda oturum açmamış bir Windows kullanıcısına ait, bu yüzden kalır.</value></data>
   <data name="Summary_U_ExplorerLeft" xml:space="preserve"><value>"{0}" Dosya Gezgini girdisi kalır: ait olduğu Windows kullanıcısı oturum açmamış.</value></data>
+  <data name="Summary_U_ConfigIgnored" xml:space="preserve"><value>CPFS'nin yazmadığı bir ayar dosyası bulundu ve yok sayılıyor; bu yüzden ondan hiçbir şey geri yüklenmez ya da silinmez.</value></data>
   <data name="Apply_Checking" xml:space="preserve"><value>Özetten önce bu bilgisayar yeniden okunuyor.</value></data>
   <data name="Apply_StaleTitle" xml:space="preserve"><value>Sayfa okunduktan sonra bu bilgisayar değişti</value></data>
   <data name="Apply_StaleMsg_SetUp" xml:space="preserve"><value>Özet güncellendi. Denetleyin, sonra Kur'u yeniden seçin.</value></data>
@@ -977,6 +987,9 @@
   <data name="Err_NoDocuments" xml:space="preserve"><value>CPFS, yedeğin bir kopyasını kaydedeceği, oturum açmış kullanıcının Belgeler klasörünü bulamadı.</value></data>
   <data name="Err_ConfigNotRead" xml:space="preserve"><value>CPFS ayar dosyasını okuyamadı.</value></data>
   <data name="Err_FolderNotEmpty" xml:space="preserve"><value>{0} boş değil, bu yüzden CPFS onu yerinde bırakır.</value></data>
+  <data name="Err_FolderIsLink" xml:space="preserve"><value>{0}, başka bir yere giden bir bağlantı, bu yüzden CPFS onu değiştirmez. Bağlantıyı kaldırıp yeniden deneyin.</value></data>
+  <data name="Err_IgnoredNotCopied" xml:space="preserve"><value>Kenara ayrılan şu ayar dosyaları Belgeler'e kopyalanamadı: {0}. Kaybolmasınlar diye CPFS veri klasörü korundu.</value></data>
+  <data name="Err_DataKeptIgnored" xml:space="preserve"><value>{0} korundu, çünkü Belgeler'e kopyalanmamış, kenara ayrılmış ayar dosyaları hâlâ içinde: {1}.</value></data>
   <data name="Err_BackupNameInvalid" xml:space="preserve"><value>Yedekteki ad ({0}) CPFS'nin ayarlayabileceği bir ad değil, bu yüzden bilgisayar geçerli adını korur.</value></data>
   <data name="Err_AccountMissing" xml:space="preserve"><value>Hesap yok.</value></data>
   <data name="Err_RegistryOpen" xml:space="preserve"><value>CPFS, {0} kayıt defteri anahtarını açamadı.</value></data>

@@ -506,6 +506,7 @@
   <data name="Plan_S_Shortcut" xml:space="preserve"><value>میان‌بر دسکتاپ</value></data>
   <data name="Plan_S_OldShortcut" xml:space="preserve"><value>میان‌بر قبلی</value></data>
   <data name="Plan_S_DataFolder" xml:space="preserve"><value>پوشه‌ی داده‌ی CPFS</value></data>
+  <data name="Plan_S_ConfigFile" xml:space="preserve"><value>فایل تنظیمات (config.json)</value></data>
   <data name="Plan_V_Absent" xml:space="preserve"><value>وجود ندارد</value></data>
   <data name="Plan_V_Exists" xml:space="preserve"><value>وجود دارد</value></data>
   <data name="Plan_V_On" xml:space="preserve"><value>روشن</value></data>
@@ -608,6 +609,9 @@
   <data name="Plan_R_ShortcutOff" xml:space="preserve"><value>بدون میان‌بر دسکتاپ.</value></data>
   <data name="Plan_R_DataCreate" xml:space="preserve"><value>پوشه‌ی داده‌ی CPFS را می‌سازد، با مالکیت Administrators و دسترسی نوشتن فقط برای SYSTEM و Administrators.</value></data>
   <data name="Plan_R_DataLock" xml:space="preserve"><value>دیگران می‌توانند در پوشه‌ی داده‌ی CPFS بنویسند. دسترسی آن به SYSTEM و Administrators محدود و مالکش Administrators می‌شود.</value></data>
+  <data name="Plan_R_DataLink" xml:space="preserve"><value>ProgramData\CPFS از قبل وجود دارد و پیوندی به مکانی دیگر است، پس CPFS دسترسی آن را محدود نمی‌کند. پیوند را حذف کنید و راه‌اندازی را دوباره اجرا کنید.</value></data>
+  <data name="Plan_R_ConfigIgnored" xml:space="preserve"><value>فایل تنظیماتی پیدا شد که CPFS ننوشته است و نادیده گرفته می‌شود. این فایل با نامی تازه (config-ignored-date.json) در پوشه می‌ماند و راه‌اندازی از تنظیمات شما پشتیبان تازه می‌گیرد.</value></data>
+  <data name="Plan_R_ConfigIgnoredNeeded" xml:space="preserve"><value>تا وقتی در پوشه فایل تنظیماتی هست که CPFS ننوشته، راه‌اندازی ادامه پیدا نمی‌کند. آن را زیر «تصمیم‌های شما» علامت بزنید تا کنار گذاشته شود، یا فایل را حذف کنید.</value></data>
   <data name="Plan_Section_Computer" xml:space="preserve"><value>نام رایانه</value></data>
   <data name="Plan_S_ShareAccess" xml:space="preserve"><value>مجوزهای اشتراک</value></data>
   <data name="Plan_S_ComputerName" xml:space="preserve"><value>نام رایانه</value></data>
@@ -621,6 +625,7 @@
   <data name="Plan_V_OnStrictest" xml:space="preserve"><value>روشن، سخت‌گیرانه‌ترین</value></data>
   <data name="Plan_V_Level" xml:space="preserve"><value>سطح {0}</value></data>
   <data name="Plan_V_Value" xml:space="preserve"><value>مقدار {0}</value></data>
+  <data name="Plan_V_SetAside" xml:space="preserve"><value>با نامی تازه کنار گذاشته می‌شود</value></data>
   <data name="Plan_ListSeparator" xml:space="preserve"><value>، </value></data>
   <data name="Plan_F_EncryptData" xml:space="preserve"><value>رمزگذاری</value></data>
   <data name="Plan_F_FolderEnumerationMode" xml:space="preserve"><value>فهرست پوشه</value></data>
@@ -704,6 +709,7 @@
 جزئیات:
 {0}</value></data>
   <data name="Uninst_R_NoConfig" xml:space="preserve"><value>فایل تنظیمات CPFS وجود ندارد، پس تنها چیزی که CPFS می‌تواند پیدا کند قانون‌های فایروال خودش است.</value></data>
+  <data name="Uninst_R_ConfigIgnored" xml:space="preserve"><value>فایل تنظیماتی پیدا شد که CPFS ننوشته است و نادیده گرفته می‌شود. چیزی از آن بازیابی نمی‌شود و حسابی بر پایه‌ی آن حذف نمی‌شود: فقط قانون‌های فایروال خود CPFS حذف می‌شوند.</value></data>
   <data name="Uninst_R_RefuseUser" xml:space="preserve"><value>{0} حساب ورود ویندوز در این رایانه است، پس حذف نصب برای محافظت از آن متوقف می‌شود.</value></data>
   <data name="Uninst_R_RefusePath" xml:space="preserve"><value>فایل تنظیمات CPFS برای پوشه‌ی اشتراکی {0} را نوشته است، که راه‌اندازی آن را نمی‌پذیرفت (یک درایو کامل یا پوشه‌ی ویندوز). حذف نصب متوقف می‌شود و چیزی را تغییر نمی‌دهد.</value></data>
   <data name="Uninst_R_ShareRemove" xml:space="preserve"><value>CPFS این اشتراک را ساخته است. دستگاه‌های متصل به آن قطع می‌شوند و بعد اشتراک حذف می‌شود. پوشه و فایل‌هایش می‌مانند.</value></data>
@@ -725,6 +731,7 @@
   <data name="Uninst_R_BuiltInMissing" xml:space="preserve"><value>قانونی از ویندوز که راه‌اندازی خاموشش کرده بود دیگر روی این رایانه نیست.</value></data>
   <data name="Uninst_R_Restore" xml:space="preserve"><value>تنظیمات ویندوز را به حالت پیش از CPFS برمی‌گرداند (پشتیبان مربوط به {0}).</value></data>
   <data name="Uninst_R_RestoreValue" xml:space="preserve"><value>به مقدار پیش از CPFS برمی‌گردد.</value></data>
+  <data name="Uninst_R_RestoreFloor" xml:space="preserve"><value>روی پیش‌فرض Windows می‌ماند: CPFS هرگز مقداری ضعیف‌تر از نصب تازه‌ی Windows برنمی‌گرداند.</value></data>
   <data name="Uninst_R_RestoreUnknown" xml:space="preserve"><value>پشتیبان مقدار اصلی این تنظیم را ندارد، پس همان‌طور که هست می‌ماند.</value></data>
   <data name="Uninst_R_SettingsKept" xml:space="preserve"><value>تنظیمات امنیتی همان‌طور که هستند می‌مانند.</value></data>
   <data name="Uninst_R_Revert" xml:space="preserve"><value>پشتیبانی وجود ندارد، چون یکی از نسخه‌های اولیه‌ی CPFS این نصب را ساخته است. برای برگرداندن اشتراک‌های مدیریتی، سطح امنیت ورود (NTLM) و دسترسی ناشناس به مقدارهای پیش‌فرض ویندوز علامت بزنید.</value></data>
@@ -732,6 +739,7 @@
   <data name="Uninst_R_NetworkPublic" xml:space="preserve"><value>CPFS این شبکه را «خصوصی» کرده است. برای برگرداندن آن به «عمومی» علامت بزنید.</value></data>
   <data name="Uninst_R_NetworkSaved" xml:space="preserve"><value>CPFS این شبکه را «خصوصی» کرده است. اکنون وصل نیست؛ برای «عمومی» کردن آن در فهرست شبکه‌های ذخیره‌شده علامت بزنید.</value></data>
   <data name="Uninst_R_SaveCopy" xml:space="preserve"><value>پیش از هر تغییر، رونوشتی از فایل تنظیمات CPFS (config.json) همراه با پشتیبان تنظیمات اصلی شما در پوشه‌ی Documents ذخیره می‌شود. گذرواژه‌ای در آن نیست.</value></data>
+  <data name="Uninst_R_SaveIgnored" xml:space="preserve"><value>فایل‌های تنظیماتی که CPFS ننوشته و راه‌اندازی کنار گذاشته است ({0}) پیش از حذف پوشه‌ی داده‌ی CPFS در پوشه‌ی Documents شما هم کپی می‌شوند. اگر یکی کپی نشود، پوشه می‌ماند.</value></data>
   <data name="Uninst_R_DataRemove" xml:space="preserve"><value>پوشه‌ی داده‌ی CPFS همراه با فایل تنظیماتش. آخر از همه حذف می‌شود.</value></data>
   <data name="Uninst_S_Owner" xml:space="preserve"><value>مالک فایل‌های بارگذاری‌شده</value></data>
   <data name="Uninst_S_Ace" xml:space="preserve"><value>مجوز پوشه</value></data>
@@ -741,6 +749,7 @@
   <data name="Uninst_S_Restore" xml:space="preserve"><value>بازیابی تنظیمات</value></data>
   <data name="Uninst_S_Revert" xml:space="preserve"><value>پیش‌فرض‌های ویندوز</value></data>
   <data name="Uninst_S_SaveCopy" xml:space="preserve"><value>رونوشت پشتیبان</value></data>
+  <data name="Uninst_S_SaveIgnored" xml:space="preserve"><value>کپی فایل‌های تنظیمات کنار گذاشته‌شده در Documents</value></data>
   <data name="Uninst_S_Config" xml:space="preserve"><value>فایل تنظیمات</value></data>
   <data name="Uninst_S_Kept" xml:space="preserve"><value>همیشه می‌ماند</value></data>
   <data name="Apply_ConfigUnreadable" xml:space="preserve"><value>فایل تنظیمات CPFS هست اما خوانده نشد. دکمه غیرفعال می‌ماند تا پشتیبان داخل آن جایگزین نشود.</value></data>
@@ -875,6 +884,7 @@
   <data name="Uninst_R_ExplorerForeign" xml:space="preserve"><value>ورودی کاوشگر فایل با شناسه‌ی CPFS اکنون {0} را باز می‌کند، نه پوشه‌ای که CPFS ثبت کرده بود، پس همان‌طور که هست می‌ماند.</value></data>
   <data name="Uninst_R_ExplorerNotLoaded" xml:space="preserve"><value>ورودی CPFS در کاوشگر فایل متعلق به کاربری از ویندوز است که اکنون وارد نشده است، پس می‌ماند.</value></data>
   <data name="Summary_U_ExplorerLeft" xml:space="preserve"><value>ورودی کاوشگر فایل «{0}» می‌ماند: کاربر ویندوزی که متعلق به اوست وارد نشده است.</value></data>
+  <data name="Summary_U_ConfigIgnored" xml:space="preserve"><value>فایل تنظیماتی پیدا شد که CPFS ننوشته است و نادیده گرفته می‌شود، پس چیزی از آن بازیابی یا حذف نمی‌شود.</value></data>
   <data name="Apply_Checking" xml:space="preserve"><value>پیش از خلاصه، دوباره اطلاعات این رایانه خوانده می‌شود.</value></data>
   <data name="Apply_StaleTitle" xml:space="preserve"><value>از زمان خواندن صفحه، این رایانه تغییر کرده است</value></data>
   <data name="Apply_StaleMsg_SetUp" xml:space="preserve"><value>خلاصه به‌روز شد. آن را بررسی کنید و دوباره «راه‌اندازی» را انتخاب کنید.</value></data>
@@ -984,6 +994,9 @@
   <data name="Err_NoDocuments" xml:space="preserve"><value>CPFS پوشه‌ی Documents کاربر واردشده را که رونوشت پشتیبان را در آن ذخیره می‌کند پیدا نکرد.</value></data>
   <data name="Err_ConfigNotRead" xml:space="preserve"><value>CPFS نتوانست فایل تنظیمات خود را بخواند.</value></data>
   <data name="Err_FolderNotEmpty" xml:space="preserve"><value>{0} خالی نیست، پس CPFS آن را سر جایش می‌گذارد.</value></data>
+  <data name="Err_FolderIsLink" xml:space="preserve"><value>{0} پیوندی به مکانی دیگر است، پس CPFS آن را تغییر نمی‌دهد. پیوند را حذف کنید و دوباره امتحان کنید.</value></data>
+  <data name="Err_IgnoredNotCopied" xml:space="preserve"><value>این فایل‌های تنظیمات کنار گذاشته‌شده در Documents کپی نشدند: {0}. پوشه‌ی داده‌ی CPFS نگه داشته شد تا از بین نروند.</value></data>
+  <data name="Err_DataKeptIgnored" xml:space="preserve"><value>{0} نگه داشته شد، چون هنوز فایل‌های تنظیمات کنار گذاشته‌شده‌ای در آن است که در Documents کپی نشده‌اند: {1}.</value></data>
   <data name="Err_BackupNameInvalid" xml:space="preserve"><value>نام داخل پشتیبان، {0}، نامی نیست که CPFS بتواند تنظیم کند، پس رایانه نام فعلی‌اش را نگه می‌دارد.</value></data>
   <data name="Err_AccountMissing" xml:space="preserve"><value>حساب وجود ندارد.</value></data>
   <data name="Err_RegistryOpen" xml:space="preserve"><value>CPFS نتوانست کلید رجیستری {0} را باز کند.</value></data>

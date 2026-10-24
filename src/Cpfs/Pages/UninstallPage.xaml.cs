@@ -182,6 +182,15 @@ public partial class UninstallPage : Page
         var config = bytes is null ? null : ConfigReader.Parse(bytes, Encoding.Default);
         var desktop = DesktopUser.Current;
         var snapshot = PlanReader.ReadStatic(new LetterScan(), desktop.Sid);
+
+        // A config.json CPFS can't trust names nothing to restore, delete or copy (ConfigTrust); the plan says it was found.
+        if (config is not null && ConfigTrust.Ignored(snapshot.DataFolder))
+        {
+            AppLog.Write("uninstall", "config.json was not written by CPFS (owner or link check); it is ignored");
+            config = null;
+            bytes = null;
+        }
+
         snapshot = PlanReader.ReadAnswerParts(snapshot, config?.SmbUser ?? "", config?.SharePath ?? "", config?.ShareName ?? "");
 
         // The File Explorer entry lives in the hive of the user it was made for, who may not be the desktop user now.

@@ -28,17 +28,32 @@ public static class Planner
     public const string ShareDescription = "CPFS - CyClone Power File Share";
 
     // Logon subcategory audit flags: success 1, failure 2.
+    // WindowsDefault: a client Windows' own value (null: not defined). Floor: that default is the secure value, so
+    // Uninstall never writes back anything weaker than it.
     public static readonly IReadOnlyList<HardeningValue> Hardening = new[]
     {
-        new HardeningValue(@"SYSTEM\CurrentControlSet\Control\Lsa", "forceguest", 0, Stricter.Lower),
-        new HardeningValue(@"SYSTEM\CurrentControlSet\Control\Lsa", "LmCompatibilityLevel", 5, Stricter.Higher),
-        new HardeningValue(@"SYSTEM\CurrentControlSet\Control\Lsa", "NoLMHash", 1, Stricter.Higher),
-        new HardeningValue(@"SYSTEM\CurrentControlSet\Control\Lsa", "RestrictAnonymous", 1, Stricter.Higher),
-        new HardeningValue(@"SYSTEM\CurrentControlSet\Control\Lsa", "RestrictAnonymousSAM", 1, Stricter.Higher),
-        new HardeningValue(@"SYSTEM\CurrentControlSet\Control\Lsa", "EveryoneIncludesAnonymous", 0, Stricter.Lower),
-        new HardeningValue(@"SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters", "RestrictNullSessAccess", 1, Stricter.Higher),
-        new HardeningValue(@"SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters", "AutoShareWks", 0, Stricter.Lower),
+        new HardeningValue(@"SYSTEM\CurrentControlSet\Control\Lsa", "forceguest", 0, Stricter.Lower, 0, false),
+        new HardeningValue(@"SYSTEM\CurrentControlSet\Control\Lsa", "LmCompatibilityLevel", 5, Stricter.Higher, null, false),
+        new HardeningValue(@"SYSTEM\CurrentControlSet\Control\Lsa", "NoLMHash", 1, Stricter.Higher, 1, true),
+        new HardeningValue(@"SYSTEM\CurrentControlSet\Control\Lsa", "RestrictAnonymous", 1, Stricter.Higher, 0, false),
+        new HardeningValue(@"SYSTEM\CurrentControlSet\Control\Lsa", "RestrictAnonymousSAM", 1, Stricter.Higher, 1, true),
+        new HardeningValue(@"SYSTEM\CurrentControlSet\Control\Lsa", "EveryoneIncludesAnonymous", 0, Stricter.Lower, 0, true),
+        new HardeningValue(@"SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters", "RestrictNullSessAccess", 1, Stricter.Higher, 1, true),
+        new HardeningValue(@"SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters", "AutoShareWks", 0, Stricter.Lower, null, false),
     };
+
+    public static HardeningValue? HardeningFor(string name)
+    {
+        foreach (var h in Hardening)
+        {
+            if (string.Equals(h.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                return h;
+            }
+        }
+
+        return null;
+    }
 
     // Every reason key the planner can produce; Cpfs.Tests checks each has an English string.
     public static readonly IReadOnlyList<string> ReasonKeys = new[]
@@ -63,15 +78,20 @@ public static class Planner
         R.ShortcutCreate, R.ShortcutGone, R.ShortcutRetarget, R.ShortcutForeign, R.ShortcutOldRemove, R.ShortcutOff, R.ShortcutIcon,
         R.ExplorerCreate, R.ExplorerChange, R.ExplorerGone, R.ExplorerForeign, R.ExplorerRemove, R.ExplorerOff, R.ExplorerPercent,
         R.ExplorerOtherUser, R.ExplorerOtherUserKept, R.ExplorerNotLoaded,
-        R.DataCreate, R.DataLock,
+        R.DataCreate, R.DataLock, R.DataLink, R.ConfigIgnored, R.ConfigIgnoredNeeded,
         R.ShareAccessGrant, R.ShareAccessOther, R.ShareAccessDeny, R.ComputerSavedDiffers, R.ComputerPending,
         R.ComputerRename, R.ComputerDomain, R.ComputerNoBackup, R.ComputerEntra, R.ComputerEntraUnknown,
     };
 
+    // The key of the Ask item that sets aside a config.json CPFS can't trust (ConfigTrust); it runs before anything else.
+    public const string IgnoredConfigKey = "config.ignored";
+
     public static Plan Setup(SystemSnapshot snapshot, SetupAnswers answers, ConfigDocument? config, ProtectedFolders protectedFolders)
     {
-        var p = new Builder(snapshot, answers, config);
-        p.Backup();
+        var ignored = ConfigTrust.Ignored(snapshot.DataFolder);
+        var p = new Builder(snapshot, answers, ignored ? null : config);
+        var setAside = !ignored || p.IgnoredConfig();
+        p.Backup(setAside);
         var user = p.User();
         var path = p.Folder(protectedFolders, user);
         p.Share(path, user);
@@ -195,6 +215,9 @@ public static class Planner
         public const string ExplorerNotLoaded = "Plan_R_ExplorerNotLoaded";
         public const string DataCreate = "Plan_R_DataCreate";
         public const string DataLock = "Plan_R_DataLock";
+        public const string DataLink = "Plan_R_DataLink";
+        public const string ConfigIgnored = "Plan_R_ConfigIgnored";
+        public const string ConfigIgnoredNeeded = "Plan_R_ConfigIgnoredNeeded";
         public const string ShareAccessGrant = "Plan_R_ShareAccessGrant";
         public const string ShareAccessOther = "Plan_R_ShareAccessOther";
         public const string ShareAccessDeny = "Plan_R_ShareAccessDeny";
@@ -257,6 +280,7 @@ public static class Planner
         public const string Level = "Plan_V_Level";
         public const string Value = "Plan_V_Value";
         public const string Unknown = "State_Unknown";
+        public const string SetAside = "Plan_V_SetAside";
     }
 
     public static readonly IReadOnlyList<string> WordKeys = new[]
@@ -271,7 +295,7 @@ public static class Planner
         S.Folder, S.Ace, S.Share, S.AdminShares, S.ServerStart, S.Smb2, S.Reject, S.Smb1, S.Smb1Feature, S.Guest,
         S.LockoutThreshold, S.Audit, S.BuiltIn, S.VpnAdapter, S.Drive, S.OldDrive, S.DriveSession, S.OldDriveSession, S.Label,
         S.OldLabel, S.Icon, S.OldIcon, S.Explorer, S.Shortcut, S.OldShortcut, S.ShortcutIcon, S.DataFolder, S.ShareAccess, S.ComputerName, S.SavedComputerName,
-        S.AutoSkip, S.AutoScript,
+        S.AutoSkip, S.AutoScript, S.ConfigFile, W.SetAside,
     };
 
     // A setting of a share or a firewall rule that differs from Setup's, by the field name the planner reports.
@@ -330,6 +354,7 @@ public static class Planner
         public const string OldShortcut = "Plan_S_OldShortcut";
         public const string ShortcutIcon = "Plan_S_ShortcutIcon";
         public const string DataFolder = "Plan_S_DataFolder";
+        public const string ConfigFile = "Plan_S_ConfigFile";
         public const string ShareAccess = "Plan_S_ShareAccess";
         public const string ComputerName = "Plan_S_ComputerName";
         public const string SavedComputerName = "Plan_S_SavedComputerName";
@@ -356,9 +381,26 @@ public static class Planner
         // be CPFS's own.
         private bool FreshInstall => _c is null;
 
-        public void Backup()
+        // A config.json CPFS didn't write: shown as a decision, ticked, and set aside under a new name (never deleted).
+        // Unticked, nothing can run: its Backup and Tracked are never used, and the first backup can't be taken over it.
+        public bool IgnoredConfig()
         {
-            if (FreshInstall)
+            var ticked = _a.IsTicked(IgnoredConfigKey, true);
+            Items.Add(new PlanItem
+            {
+                Key = IgnoredConfigKey, Section = PlanSection.Backup, Action = PlanAction.Ask, Subject = Word(S.ConfigFile),
+                Current = Word(W.Exists), Target = Word(W.SetAside), Ticked = ticked, ReasonKey = R.ConfigIgnored,
+            });
+            return ticked;
+        }
+
+        public void Backup(bool setAside)
+        {
+            if (!setAside)
+            {
+                Items.Add(Cannot("backup", PlanSection.Backup, Word(S.Backup), PlanCause.InvalidAnswer, R.ConfigIgnoredNeeded));
+            }
+            else if (FreshInstall)
             {
                 Add("backup", PlanSection.Backup, PlanAction.Create, Word(S.Backup), Word(W.Absent), Word(W.WillTake), R.BackupFresh);
             }
@@ -1595,7 +1637,12 @@ public static class Planner
             }
 
             var d = _s.DataFolder.Value!;
-            if (!d.Exists)
+            if (d.IsLink)
+            {
+                // Locking a junction or link would re-own and re-ACL whatever it points at.
+                Items.Add(Cannot("data.folder", PlanSection.DataFolder, Word(S.DataFolder), PlanCause.InvalidAnswer, R.DataLink));
+            }
+            else if (!d.Exists)
             {
                 Add("data.folder", PlanSection.DataFolder, PlanAction.Create, Word(S.DataFolder), Word(W.Absent), Word(W.Locked2), R.DataCreate);
             }
@@ -1904,7 +1951,14 @@ public enum Stricter
     Lower,
 }
 
-public sealed record HardeningValue(string Key, string Name, int Target, Stricter Direction)
+public sealed record HardeningValue(string Key, string Name, int Target, Stricter Direction, int? WindowsDefault, bool Floor)
 {
     public bool IsStricter(int current) => Direction == Stricter.Higher ? current > Target : current < Target;
+
+    // A recorded original (null: absent, which Windows reads as its default) weaker than the default of a Floor key.
+    public bool IsBelowFloor(long? original) =>
+        Floor && original is { } o && WindowsDefault is { } d && (Direction == Stricter.Higher ? o < d : o > d);
+
+    // What Uninstall writes back: the original, or the Windows default when the original is below the floor.
+    public long? RestoreValue(long? original) => IsBelowFloor(original) ? WindowsDefault : original;
 }

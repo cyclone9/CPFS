@@ -72,6 +72,9 @@ public partial class SetupPage
     private PasswordReveal? _reveal;
     private Window? _window;
     private ConfigDocument? _config;
+
+    // config.json exists but CPFS can't trust it (ConfigTrust): _config is null and the plan sets the file aside.
+    private bool _configIgnored;
     private LetterScan _letters = new();
     private ProtectedFolders _protected = new();
     private SystemSnapshot? _snapshot;
@@ -143,15 +146,23 @@ public partial class SetupPage
         // plan from it (seen after an Apply: the summary briefly offered the changes just made).
         _snapshot = null;
         _config = config;
+        _configIgnored = false;
         _letters = letters;
         RenderMode();
         var desktopSid = Startup.IsElevated ? DesktopUser.Current.Sid : null;
         var watch = System.Diagnostics.Stopwatch.StartNew();
         var (snapshot, protectedFolders) = await Task.Run(() => (PlanReader.ReadStatic(letters, desktopSid), PlanReader.ProtectedFolders()));
         _protected = protectedFolders;
+        _configIgnored = ConfigTrust.Ignored(snapshot.DataFolder);
+        if (_configIgnored)
+        {
+            _config = null;
+            AppLog.Write("plan", "config.json was not written by CPFS (owner or link check); it is ignored");
+        }
+
         if (!_formReady)
         {
-            FillForm(SetupDefaults.From(config, letters));
+            FillForm(SetupDefaults.From(_config, letters));
             _formReady = true;
         }
         else

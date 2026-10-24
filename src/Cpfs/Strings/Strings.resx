@@ -506,6 +506,7 @@
   <data name="Plan_S_Shortcut" xml:space="preserve"><value>Desktop shortcut</value></data>
   <data name="Plan_S_OldShortcut" xml:space="preserve"><value>Previous shortcut</value></data>
   <data name="Plan_S_DataFolder" xml:space="preserve"><value>CPFS data folder</value></data>
+  <data name="Plan_S_ConfigFile" xml:space="preserve"><value>Settings file (config.json)</value></data>
   <data name="Plan_V_Absent" xml:space="preserve"><value>not present</value></data>
   <data name="Plan_V_Exists" xml:space="preserve"><value>present</value></data>
   <data name="Plan_V_On" xml:space="preserve"><value>on</value></data>
@@ -608,6 +609,9 @@
   <data name="Plan_R_ShortcutOff" xml:space="preserve"><value>No desktop shortcut.</value></data>
   <data name="Plan_R_DataCreate" xml:space="preserve"><value>Creates the CPFS data folder, owned by Administrators and writable only by SYSTEM and Administrators.</value></data>
   <data name="Plan_R_DataLock" xml:space="preserve"><value>Others can write to the CPFS data folder. It is locked to SYSTEM and Administrators and owned by Administrators.</value></data>
+  <data name="Plan_R_DataLink" xml:space="preserve"><value>ProgramData\CPFS already exists and is a link to another place, so CPFS won't lock it. Remove the link and run Setup again.</value></data>
+  <data name="Plan_R_ConfigIgnored" xml:space="preserve"><value>A settings file CPFS didn't write was found; it is ignored. It stays in the folder under a new name (config-ignored-date.json), and Setup takes a fresh backup of your settings.</value></data>
+  <data name="Plan_R_ConfigIgnoredNeeded" xml:space="preserve"><value>Setup can't continue while a settings file CPFS didn't write is in the folder. Tick it under Your decisions to set it aside, or remove the file.</value></data>
   <data name="Plan_Section_Computer" xml:space="preserve"><value>Computer name</value></data>
   <data name="Plan_S_ShareAccess" xml:space="preserve"><value>Share permissions</value></data>
   <data name="Plan_S_ComputerName" xml:space="preserve"><value>Computer name</value></data>
@@ -621,6 +625,7 @@
   <data name="Plan_V_OnStrictest" xml:space="preserve"><value>on, strictest</value></data>
   <data name="Plan_V_Level" xml:space="preserve"><value>level {0}</value></data>
   <data name="Plan_V_Value" xml:space="preserve"><value>value {0}</value></data>
+  <data name="Plan_V_SetAside" xml:space="preserve"><value>set aside under a new name</value></data>
   <data name="Plan_ListSeparator" xml:space="preserve"><value>, </value></data>
   <data name="Plan_F_EncryptData" xml:space="preserve"><value>encryption</value></data>
   <data name="Plan_F_FolderEnumerationMode" xml:space="preserve"><value>folder listing</value></data>
@@ -697,6 +702,7 @@
   <data name="Uninst_FailedTitle" xml:space="preserve"><value>Uninstall stopped at: {0}</value></data>
   <data name="Uninst_FailedMsg" xml:space="preserve"><value>The CPFS settings file is still there, so you can run Uninstall again.&#xD;&#xA;Details:&#xD;&#xA;{0}</value></data>
   <data name="Uninst_R_NoConfig" xml:space="preserve"><value>There is no CPFS settings file, so the only things CPFS can find are its own firewall rules.</value></data>
+  <data name="Uninst_R_ConfigIgnored" xml:space="preserve"><value>A settings file CPFS didn't write was found; it is ignored. Nothing is restored and no account is deleted from it: only CPFS's own firewall rules are removed.</value></data>
   <data name="Uninst_R_RefuseUser" xml:space="preserve"><value>{0} is a Windows sign-in account on this PC, so Uninstall stops to protect it.</value></data>
   <data name="Uninst_R_RefusePath" xml:space="preserve"><value>The CPFS settings file names {0} as the shared folder, which Setup would refuse (a whole drive or a Windows folder). Uninstall stops and changes nothing.</value></data>
   <data name="Uninst_R_ShareRemove" xml:space="preserve"><value>CPFS made this share. Devices connected to it are disconnected, then it is removed. The folder and its files stay.</value></data>
@@ -718,6 +724,7 @@
   <data name="Uninst_R_BuiltInMissing" xml:space="preserve"><value>A Windows rule that Setup turned off is no longer on this PC.</value></data>
   <data name="Uninst_R_Restore" xml:space="preserve"><value>Puts the Windows settings back as they were before CPFS (backup from {0}).</value></data>
   <data name="Uninst_R_RestoreValue" xml:space="preserve"><value>Back to the value from before CPFS.</value></data>
+  <data name="Uninst_R_RestoreFloor" xml:space="preserve"><value>Left at the Windows default: CPFS never puts back a value weaker than a fresh Windows install.</value></data>
   <data name="Uninst_R_RestoreUnknown" xml:space="preserve"><value>The backup has no original value for this setting, so it is left as it is.</value></data>
   <data name="Uninst_R_SettingsKept" xml:space="preserve"><value>The security settings stay as they are.</value></data>
   <data name="Uninst_R_Revert" xml:space="preserve"><value>There is no backup, because an early CPFS version made this install. Tick to set the administrative shares, the sign-in security level (NTLM) and anonymous access back to Windows' defaults.</value></data>
@@ -725,6 +732,7 @@
   <data name="Uninst_R_NetworkPublic" xml:space="preserve"><value>CPFS made this network Private. Tick to make it Public again.</value></data>
   <data name="Uninst_R_NetworkSaved" xml:space="preserve"><value>CPFS made this network Private. It isn't connected now; tick to make it Public in the saved network list.</value></data>
   <data name="Uninst_R_SaveCopy" xml:space="preserve"><value>Before anything changes, a copy of the CPFS settings file (config.json), with the backup of your original settings, goes to your Documents folder. It holds no password.</value></data>
+  <data name="Uninst_R_SaveIgnored" xml:space="preserve"><value>Settings files CPFS didn't write, which Setup set aside ({0}), are copied to your Documents folder too before the CPFS data folder is removed. If one can't be copied, the folder stays.</value></data>
   <data name="Uninst_R_DataRemove" xml:space="preserve"><value>The CPFS data folder with its settings file. Removed last.</value></data>
   <data name="Uninst_S_Owner" xml:space="preserve"><value>Owner of uploaded files</value></data>
   <data name="Uninst_S_Ace" xml:space="preserve"><value>Folder permission</value></data>
@@ -734,6 +742,7 @@
   <data name="Uninst_S_Restore" xml:space="preserve"><value>Restore settings</value></data>
   <data name="Uninst_S_Revert" xml:space="preserve"><value>Windows defaults</value></data>
   <data name="Uninst_S_SaveCopy" xml:space="preserve"><value>Copy of the backup</value></data>
+  <data name="Uninst_S_SaveIgnored" xml:space="preserve"><value>Copy the set-aside settings files to Documents</value></data>
   <data name="Uninst_S_Config" xml:space="preserve"><value>Settings file</value></data>
   <data name="Uninst_S_Kept" xml:space="preserve"><value>Always kept</value></data>
   <data name="Apply_ConfigUnreadable" xml:space="preserve"><value>The CPFS settings file exists but couldn't be read. The button stays off so the backup in it isn't replaced.</value></data>
@@ -868,6 +877,7 @@
   <data name="Uninst_R_ExplorerForeign" xml:space="preserve"><value>The File Explorer entry under CPFS's identifier opens {0} now, not the folder CPFS recorded, so it is left as it is.</value></data>
   <data name="Uninst_R_ExplorerNotLoaded" xml:space="preserve"><value>CPFS's File Explorer entry belongs to a Windows user who isn't signed in now, so it stays.</value></data>
   <data name="Summary_U_ExplorerLeft" xml:space="preserve"><value>The File Explorer entry "{0}" stays: the Windows user it belongs to isn't signed in.</value></data>
+  <data name="Summary_U_ConfigIgnored" xml:space="preserve"><value>A settings file CPFS didn't write was found and is ignored, so nothing is restored or deleted from it.</value></data>
   <data name="Apply_Checking" xml:space="preserve"><value>Reading this PC again before the summary.</value></data>
   <data name="Apply_StaleTitle" xml:space="preserve"><value>This PC changed since the page was read</value></data>
   <data name="Apply_StaleMsg_SetUp" xml:space="preserve"><value>The summary has been updated. Check it, then select Set up again.</value></data>
@@ -977,6 +987,9 @@
   <data name="Err_NoDocuments" xml:space="preserve"><value>CPFS couldn't find the Documents folder of the signed-in user, where it saves a copy of the backup.</value></data>
   <data name="Err_ConfigNotRead" xml:space="preserve"><value>CPFS couldn't read its settings file.</value></data>
   <data name="Err_FolderNotEmpty" xml:space="preserve"><value>{0} isn't empty, so CPFS leaves it in place.</value></data>
+  <data name="Err_FolderIsLink" xml:space="preserve"><value>{0} is a link to another place, so CPFS won't change it. Remove the link and try again.</value></data>
+  <data name="Err_IgnoredNotCopied" xml:space="preserve"><value>These set-aside settings files couldn't be copied to Documents: {0}. The CPFS data folder is kept so they aren't lost.</value></data>
+  <data name="Err_DataKeptIgnored" xml:space="preserve"><value>{0} was kept because it still holds set-aside settings files that weren't copied to Documents: {1}.</value></data>
   <data name="Err_BackupNameInvalid" xml:space="preserve"><value>The name in the backup, {0}, isn't one CPFS can set, so the computer keeps its current name.</value></data>
   <data name="Err_AccountMissing" xml:space="preserve"><value>The account doesn't exist.</value></data>
   <data name="Err_RegistryOpen" xml:space="preserve"><value>CPFS couldn't open the registry key {0}.</value></data>

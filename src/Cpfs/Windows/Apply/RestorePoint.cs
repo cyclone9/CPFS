@@ -93,12 +93,12 @@ internal static class RestorePoint
 internal static class ConfigStore
 {
     // Atomic: a temporary file next to config.json, flushed to disk, then swapped in (File.Replace keeps the
-    // existing file's permissions).
+    // existing file's permissions). The temporary file is never written through a link.
     public static void Save(byte[] bytes)
     {
         var path = StateReader.ConfigPath;
         var temp = path + ".tmp";
-        using (var stream = new System.IO.FileStream(temp, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+        using (var stream = PlainFiles.OpenWrite(temp, append: false))
         {
             stream.Write(bytes, 0, bytes.Length);
             stream.Flush(true);

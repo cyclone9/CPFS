@@ -43,6 +43,9 @@ internal sealed class UninstallRun
 
     public string? SavedCopy { get; set; }
 
+    // The set-aside config-ignored-*.json files copied to Documents; the data folder goes only when none is left out.
+    public HashSet<string> IgnoredCopied { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     // Windows keeps the letter it mapped at start until the next restart.
     public bool DriveRestartNeeded { get; set; }
 
@@ -111,7 +114,8 @@ internal static class UninstallSteps
             "u.net" => Network(arg),
             "u.computer" => Computer(run),
             "u.savecopy" => SaveCopy(run),
-            "u.data" => Data(),
+            UninstallPlanner.IgnoredCopyKey => SaveIgnored(run),
+            "u.data" => Data(run),
             _ => throw new NotSupportedException("No step for plan item " + key),
         };
     }
@@ -297,7 +301,8 @@ internal static class UninstallSteps
         Check = () => Firewall.BuiltInEnabled(id) != false,
     };
 
-    // Back to the value recorded before CPFS, written as a DWORD as the scripts do, or deleted when it did not exist.
+    // Back to the value recorded before CPFS, written as a DWORD as the scripts do, or deleted when it did not exist;
+    // never below a fresh Windows (HardeningValue.RestoreValue), the same rule the planner shows.
     private static LambdaStep Registry(UninstallRun run, string name)
     {
         RegistryBackup? entry = null;
@@ -321,7 +326,14 @@ internal static class UninstallSteps
             return new LambdaStep { Read = () => true };
         }
 
-        var original = entry.Exists == true ? (int?)entry.Value : null;
+        var recorded = entry.Exists == true ? (int?)entry.Value : null;
+        var hardening = Planner.HardeningFor(name);
+        var original = hardening is null ? recorded : (int?)hardening.RestoreValue(recorded);
+        if (original != recorded)
+        {
+            AppLog.Write("uninstall", name + ": the recorded value is below the Windows default; the default " + original?.ToString(CultureInfo.InvariantCulture) + " is written instead");
+        }
+
         bool Same() => original is { } o ? Reg.ReadDword(location.SubKey, name) == o : !Reg.Exists(location.SubKey, name);
         return new LambdaStep
         {
@@ -442,32 +454,89 @@ internal static class UninstallSteps
             var folder = run.Documents ?? throw new CpfsException("Err_NoDocuments");
             var bytes = run.ConfigBytes ?? throw new CpfsException("Err_ConfigNotRead");
             var stem = Path.Combine(folder, "CPFS-config-backup-" + DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture));
-            for (var n = 0; ; n++)
-            {
-                var path = n == 0 ? stem + ".json" : stem + "-" + n.ToString(CultureInfo.InvariantCulture) + ".json";
-                FileStream file;
-                try
-                {
-                    file = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-                }
-                catch (IOException) when (File.Exists(path) && n < 20)
-                {
-                    continue;
-                }
-
-                using (file)
-                {
-                    file.Write(bytes, 0, bytes.Length);
-                    file.Flush(true);
-                }
-
-                run.SavedCopy = path;
-                AppLog.Write("uninstall", "A copy of config.json was saved to " + path);
-                return;
-            }
+            run.SavedCopy = WriteNew(stem, bytes);
+            AppLog.Write("uninstall", "A copy of config.json was saved to " + run.SavedCopy);
         },
         Check = () => run.SavedCopy is not null && File.Exists(run.SavedCopy),
     };
+
+    // The settings files Setup set aside, each read without following a link (a link or hard link is refused) and
+    // written as a new file in Documents. One that can't be copied is reported as not done; u.data then keeps the folder.
+    private static LambdaStep SaveIgnored(UninstallRun run) => new LambdaStep
+    {
+        Do = () =>
+        {
+            var folder = run.Documents ?? throw new CpfsException("Err_NoDocuments");
+            var failed = new List<string>();
+            foreach (var name in IgnoredFiles())
+            {
+                try
+                {
+                    var bytes = PlainFiles.ReadAll(Path.Combine(StateReader.DataFolder, name));
+                    var path = WriteNew(Path.Combine(folder, "CPFS-" + Path.GetFileNameWithoutExtension(name)), bytes);
+                    run.IgnoredCopied.Add(name);
+                    AppLog.Write("uninstall", "A copy of " + name + " was saved to " + path);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    failed.Add(name);
+                    AppLog.Write("uninstall", "Could not copy " + name + ": " + ex.GetType().Name + ": " + ex.Message);
+                }
+            }
+
+            if (failed.Count > 0)
+            {
+                throw new StepUnsupportedException("Err_IgnoredNotCopied", string.Join(", ", failed));
+            }
+        },
+        Check = () => IgnoredFiles().All(run.IgnoredCopied.Contains),
+    };
+
+    private static List<string> IgnoredFiles()
+    {
+        var list = new List<string>();
+        if (!Directory.Exists(StateReader.DataFolder))
+        {
+            return list;
+        }
+
+        foreach (var file in Directory.EnumerateFiles(StateReader.DataFolder))
+        {
+            var name = Path.GetFileName(file);
+            if (ConfigTrust.IsIgnoredFileName(name))
+            {
+                list.Add(name);
+            }
+        }
+
+        return list;
+    }
+
+    // A new file every time, never over an existing one: stem.json, else stem-1.json and so on.
+    private static string WriteNew(string stem, byte[] bytes)
+    {
+        for (var n = 0; ; n++)
+        {
+            var path = n == 0 ? stem + ".json" : stem + "-" + n.ToString(CultureInfo.InvariantCulture) + ".json";
+            FileStream file;
+            try
+            {
+                file = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+            }
+            catch (IOException) when (File.Exists(path) && n < 20)
+            {
+                continue;
+            }
+
+            using (file)
+            {
+                file.Write(bytes, 0, bytes.Length);
+                file.Flush(true);
+            }
+
+            return path;
+        }
+    }
 
     // The Auto-Private tasks go before ProgramData\CPFS, which holds the program they run.
     private static LambdaStep Task(string name) => new LambdaStep
@@ -527,11 +596,21 @@ internal static class UninstallSteps
         };
     }
 
-    // The exe copy in it may still be closing after the task's last run.
-    private static LambdaStep Data() => new LambdaStep
+    // The exe copy in it may still be closing after the task's last run. A set-aside settings file that wasn't copied
+    // to Documents keeps the whole folder: reported as not done, nothing deleted.
+    private static LambdaStep Data(UninstallRun run) => new LambdaStep
     {
         Read = () => !Directory.Exists(StateReader.DataFolder),
-        Do = () => AutoPrivateCopy.Retry(() => Directory.Delete(StateReader.DataFolder, recursive: true)),
+        Do = () =>
+        {
+            var left = IgnoredFiles().Where(n => !run.IgnoredCopied.Contains(n)).ToList();
+            if (left.Count > 0)
+            {
+                throw new StepUnsupportedException("Err_DataKeptIgnored", StateReader.DataFolder, string.Join(", ", left));
+            }
+
+            AutoPrivateCopy.Retry(() => Directory.Delete(StateReader.DataFolder, recursive: true));
+        },
         Check = () => !Directory.Exists(StateReader.DataFolder),
     };
 }

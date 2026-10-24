@@ -329,7 +329,8 @@ internal static class CpfsIconFile
         }
 
         Directory.CreateDirectory(StateReader.DataFolder);
-        File.WriteAllBytes(Path, bytes);
+        using var file = PlainFiles.OpenWrite(Path, append: false);
+        file.Write(bytes, 0, bytes.Length);
     }
 
     private static byte[] Bytes()
@@ -755,7 +756,7 @@ internal static class RunAsUser
         try
         {
             Invoke(service, "Connect");
-            folder = Invoke(service, "GetFolder", @"")!;
+            folder = Invoke(service, "GetFolder", @"\")!;
             Invoke(folder, "DeleteTask", Core.Planning.Planner.RunAsUserTask, 0);
         }
         finally

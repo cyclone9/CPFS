@@ -259,10 +259,17 @@ internal static class Folders
     }
 
     // ProgramData\CPFS: owned by Administrators (an owner can always rewrite the ACL), SYSTEM and Administrators full,
-    // Users read, nothing inherited. What is inside goes back to inheriting only that.
+    // Users read, nothing inherited. What is inside goes back to inheriting only that. The same for Program Files\CPFS.
+    // SetAccessControl works by path and follows links, so a folder that is a link is refused and a link or hard-linked
+    // file inside is left alone (logged): the lock never reaches what such an entry points at.
     public static void LockDataFolder(string path)
     {
         Directory.CreateDirectory(path);
+        if (!PlainFiles.IsPlain(path, directory: true))
+        {
+            throw new CpfsException("Err_FolderIsLink", path);
+        }
+
         var dir = new DirectoryInfo(path);
 
         var owner = new DirectorySecurity();
@@ -278,6 +285,12 @@ internal static class Folders
 
         foreach (var entry in Walk(path, includeRoot: false))
         {
+            if (!Plain(entry))
+            {
+                AppLog.Write("apply", "Lock: " + entry.FullName + " is a link or has more than one name; its owner and permissions are left as they are");
+                continue;
+            }
+
             if (entry is DirectoryInfo d)
             {
                 var o = new DirectorySecurity();
@@ -296,6 +309,19 @@ internal static class Folders
                 reset.SetAccessRuleProtection(false, false);
                 f.SetAccessControl(reset);
             }
+        }
+    }
+
+    // Read again right before the change, from the entry itself.
+    private static bool Plain(FileSystemInfo entry)
+    {
+        try
+        {
+            return PlainFiles.IsPlain(entry.FullName, entry is DirectoryInfo);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        {
+            return false;
         }
     }
 

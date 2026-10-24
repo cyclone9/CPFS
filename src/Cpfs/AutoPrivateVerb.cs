@@ -117,7 +117,7 @@ internal static class AutoPrivateVerb
             if (!loggedNow.Contains(d.Name))
             {
                 var bytes = AutoPrivateLog.Append(File.Exists(LogPath) ? File.ReadAllBytes(LogPath) : null, d.Name);
-                using (var file = new FileStream(LogPath, FileMode.Append, FileAccess.Write, FileShare.Read))
+                using (var file = PlainFiles.OpenWrite(LogPath, append: true))
                 {
                     file.Write(bytes, 0, bytes.Length);
                     file.Flush(true);
@@ -179,8 +179,8 @@ internal static class AutoPrivateVerb
     {
         try
         {
-            // SYSTEM never writes into a ProgramData\CPFS someone else may have re-created: a link planted there would
-            // turn the write into one anywhere on the disk.
+            // SYSTEM never writes into a ProgramData\CPFS someone else may have re-created, nor through a link left in
+            // it: either would turn the write into one anywhere on the disk.
             var path = Path.Combine(StateReader.DataFolder, AutoPrivateLog.RunLogFileName);
             if (!SetupSteps.Locked())
             {
@@ -189,7 +189,12 @@ internal static class AutoPrivateVerb
 
             var existing = File.Exists(path) ? File.ReadAllText(path, Encoding.UTF8) : null;
             var line = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) + " " + text;
-            File.WriteAllText(path, AutoPrivateLog.RunLog(existing, line), new UTF8Encoding(true));
+            var utf8 = new UTF8Encoding(true);
+            var bom = utf8.GetPreamble();
+            var body = utf8.GetBytes(AutoPrivateLog.RunLog(existing, line));
+            using var file = PlainFiles.OpenWrite(path, append: false);
+            file.Write(bom, 0, bom.Length);
+            file.Write(body, 0, body.Length);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
         {

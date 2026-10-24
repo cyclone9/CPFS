@@ -94,7 +94,31 @@ public sealed record NetworkInfo(string Name, string? InterfaceAlias, int Catego
 
 public sealed record VpnAdapterInfo(string Name, string Address);
 
-public sealed record DataFolderInfo(bool Exists, bool OwnerIsAdministrators, bool Protected, bool OthersCanWrite);
+public sealed record DataFolderInfo(bool Exists, bool OwnerIsAdministrators, bool Protected, bool OthersCanWrite)
+{
+    // The folder itself is a junction or symbolic link (read without following it).
+    public bool IsLink { get; init; }
+
+    public OwnerKind Owner { get; init; } = OwnerKind.Unknown;
+
+    // The owner of config.json in it; null when there is no config.json.
+    public OwnerKind? ConfigOwner { get; init; }
+
+    // The config-ignored-*.json files Setup set aside in it (file names only).
+    public IReadOnlyList<string> IgnoredConfigs { get; init; } = Array.Empty<string>();
+}
+
+public enum OwnerKind
+{
+    Unknown,
+    System,
+    Administrators,
+    TrustedInstaller,
+
+    // A user who is a direct member of the local Administrators group.
+    AdminMember,
+    Other,
+}
 
 public sealed record UserInfo(string Sid, bool Enabled, bool PasswordNeverExpires, bool Locked, bool? IsAdmin, bool? InUsers, int? HiddenValue);
 

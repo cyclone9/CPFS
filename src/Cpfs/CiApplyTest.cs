@@ -79,6 +79,7 @@ internal static class CiApplyTest
             Directory.CreateDirectory(folder);
             File.WriteAllText(Path.Combine(folder, MarkerName), MarkerText, new UTF8Encoding(false));
             Premises(o);
+            LinkPhase(o, temp);
             try
             {
                 SetupPhase(o, folder, temp);
@@ -146,6 +147,55 @@ internal static class CiApplyTest
 
     // What the move to Program Files\CPFS rests on, asserted once on a real Windows: a standard user can't create a
     // folder in Program Files. ProgramData's Users entries are only logged (expected: create folders, write data).
+    // A ProgramData\CPFS that is a link (planted before the first Setup) is read as one and refused by the lock, and
+    // the folder it points at keeps its owner and permissions.
+    private static void LinkPhase(TextWriter o, string temp)
+    {
+        var target = Path.Combine(temp, "cpfs-ci", "LinkTarget");
+        Directory.CreateDirectory(target);
+        var before = Directory.GetAccessControl(target).GetSecurityDescriptorSddlForm(System.Security.AccessControl.AccessControlSections.Owner
+            | System.Security.AccessControl.AccessControlSections.Access);
+        if (!CreateSymbolicLinkW(StateReader.DataFolder, target, 1))
+        {
+            Skip("a ProgramData\\CPFS that is a link is refused", "CreateSymbolicLink failed with " + System.Runtime.InteropServices.Marshal.GetLastWin32Error().ToString(CultureInfo.InvariantCulture));
+            return;
+        }
+
+        try
+        {
+            var info = PlanReader.DataFolder();
+            Check(info.IsLink, "a ProgramData\\CPFS that is a link reads as a link");
+            Check(!SetupSteps.Locked(), "a linked ProgramData\\CPFS never reads as locked");
+            var refused = false;
+            try
+            {
+                Folders.LockDataFolder(StateReader.DataFolder);
+            }
+            catch (Cpfs.Core.Text.CpfsException ex)
+            {
+                refused = true;
+                o.WriteLine("Lock refused the link: " + ex.Message);
+            }
+
+            Check(refused, "the lock refuses a ProgramData\\CPFS that is a link");
+            var after = Directory.GetAccessControl(target).GetSecurityDescriptorSddlForm(System.Security.AccessControl.AccessControlSections.Owner
+                | System.Security.AccessControl.AccessControlSections.Access);
+            Check(string.Equals(before, after, StringComparison.Ordinal), "the link's target keeps its owner and permissions", after);
+        }
+        finally
+        {
+            // RemoveDirectory on a directory link removes the link, not the folder it points at.
+            Directory.Delete(StateReader.DataFolder);
+        }
+
+        Check(!Directory.Exists(StateReader.DataFolder) && Directory.Exists(target), "the link is gone and its target is still there");
+        Directory.Delete(target);
+    }
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
+    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.I1)]
+    private static extern bool CreateSymbolicLinkW(string link, string target, int flags);
+
     private static void Premises(TextWriter o)
     {
         var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
@@ -640,9 +690,27 @@ internal static class CiApplyTest
             }
         }
 
+        // The floor rule: a recorded value weaker than a secure Windows default comes back as that default.
+        var floored = 0;
         foreach (var pair in before.Hardening)
         {
-            Check(after.Hardening[pair.Key] == pair.Value, "restored " + pair.Key, Show(pair.Value) + " -> " + Show(after.Hardening[pair.Key]));
+            var h = Planner.HardeningFor(pair.Key);
+            var expected = pair.Value is { } v && v >= 0 && h is not null ? (int?)h.RestoreValue(v) : pair.Value;
+            if (expected != pair.Value)
+            {
+                floored++;
+                Check(after.Hardening[pair.Key] == expected, "restored " + pair.Key + " at the Windows default, not the weaker original",
+                    Show(pair.Value) + " -> " + Show(after.Hardening[pair.Key]));
+            }
+            else
+            {
+                Check(after.Hardening[pair.Key] == pair.Value, "restored " + pair.Key, Show(pair.Value) + " -> " + Show(after.Hardening[pair.Key]));
+            }
+        }
+
+        if (floored == 0)
+        {
+            Skip("the floor rule for anonymous, null-session and LM hash settings", "no original on this runner was weaker than the Windows default");
         }
 
         Check(after.Smb2 == before.Smb2 && after.Reject == before.Reject, "restored SMB2 and RejectUnencryptedAccess");

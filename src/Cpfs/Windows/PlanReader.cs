@@ -697,12 +697,48 @@ internal static class PlanReader
         return result;
     }
 
-    internal static DataFolderInfo DataFolder() => FolderLock(StateReader.DataFolder);
+    // The lock, plus who owns config.json: ConfigTrust decides from both owners whether the file may be believed.
+    internal static DataFolderInfo DataFolder()
+    {
+        var info = FolderLock(StateReader.DataFolder);
+        if (!info.Exists || info.IsLink)
+        {
+            return info.IsLink && File.Exists(StateReader.ConfigPath) ? info with { ConfigOwner = OwnerKind.Other } : info;
+        }
 
-    // Owner, protection and who can write: the lock check for ProgramData\CPFS and Program Files\CPFS alike.
+        var ignored = new List<string>();
+        foreach (var file in Directory.EnumerateFiles(StateReader.DataFolder))
+        {
+            var name = Path.GetFileName(file);
+            if (ConfigTrust.IsIgnoredFileName(name))
+            {
+                ignored.Add(name);
+            }
+        }
+
+        info = info with { IgnoredConfigs = ignored };
+        if (!File.Exists(StateReader.ConfigPath))
+        {
+            return info;
+        }
+
+        // A link's owner would be read from its target, so a config.json that is a link is never trusted.
+        var config = !PlainFiles.IsPlain(StateReader.ConfigPath, directory: false)
+            ? OwnerKind.Other
+            : Kind(File.GetAccessControl(StateReader.ConfigPath, AccessControlSections.Owner).GetOwner(typeof(SecurityIdentifier)) as SecurityIdentifier);
+        return info with { ConfigOwner = config };
+    }
+
+    // Owner, protection and who can write: the lock check for ProgramData\CPFS and Program Files\CPFS alike. A folder
+    // that is a junction or link is reported as one and not read further: its ACL would be its target's.
     internal static DataFolderInfo FolderLock(string path)
     {
         var dir = new DirectoryInfo(path);
+        if (PlainFiles.IsLink(path))
+        {
+            return new DataFolderInfo(true, false, false, true) { IsLink = true, Owner = OwnerKind.Unknown };
+        }
+
         if (!dir.Exists)
         {
             return new DataFolderInfo(false, false, false, false);
@@ -720,8 +756,48 @@ internal static class PlanReader
             }
         }
 
-        return new DataFolderInfo(true, owner?.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid) == true, security.AreAccessRulesProtected, othersWrite);
+        return new DataFolderInfo(true, owner?.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid) == true, security.AreAccessRulesProtected, othersWrite)
+        {
+            Owner = Kind(owner),
+        };
     }
+
+    // By SID, so a localized Windows works. A user counts as an administrator only as a direct member of the local
+    // Administrators group (S-1-5-32-544): an administrator who made the folder or put config.json back by hand.
+    internal static OwnerKind Kind(SecurityIdentifier? sid)
+    {
+        if (sid is null)
+        {
+            return OwnerKind.Unknown;
+        }
+
+        if (sid.IsWellKnown(WellKnownSidType.LocalSystemSid))
+        {
+            return OwnerKind.System;
+        }
+
+        if (sid.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid))
+        {
+            return OwnerKind.Administrators;
+        }
+
+        if (string.Equals(sid.Value, TrustedInstallerSid, StringComparison.Ordinal))
+        {
+            return OwnerKind.TrustedInstaller;
+        }
+
+        try
+        {
+            return LocalAccounts.IsMember(sid, Apply.Accounts.AdminsSid) == true ? OwnerKind.AdminMember : OwnerKind.Other;
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IdentityNotMappedException or SystemException)
+        {
+            AppLog.Write("plan", "Owner membership: " + ex.GetType().Name + ": " + ex.Message);
+            return OwnerKind.Unknown;
+        }
+    }
+
+    private const string TrustedInstallerSid = "S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464";
 
     private const FileSystemRights WriteRights = FileSystemRights.WriteData | FileSystemRights.AppendData | FileSystemRights.WriteAttributes
         | FileSystemRights.WriteExtendedAttributes | FileSystemRights.Delete | FileSystemRights.DeleteSubdirectoriesAndFiles
@@ -731,7 +807,7 @@ internal static class PlanReader
     private static bool IsTrustedWriter(SecurityIdentifier sid) =>
         sid.IsWellKnown(WellKnownSidType.LocalSystemSid) || sid.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid)
         || sid.IsWellKnown(WellKnownSidType.CreatorOwnerSid)
-        || string.Equals(sid.Value, "S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464", StringComparison.Ordinal);
+        || string.Equals(sid.Value, TrustedInstallerSid, StringComparison.Ordinal);
 
     private static IReadOnlyDictionary<char, string> DosDevices()
     {

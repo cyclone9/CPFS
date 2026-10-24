@@ -506,6 +506,7 @@
   <data name="Plan_S_Shortcut" xml:space="preserve"><value>اختصار سطح المكتب</value></data>
   <data name="Plan_S_OldShortcut" xml:space="preserve"><value>الاختصار السابق</value></data>
   <data name="Plan_S_DataFolder" xml:space="preserve"><value>مجلد بيانات CPFS</value></data>
+  <data name="Plan_S_ConfigFile" xml:space="preserve"><value>ملف الإعدادات (config.json)</value></data>
   <data name="Plan_V_Absent" xml:space="preserve"><value>غير موجود</value></data>
   <data name="Plan_V_Exists" xml:space="preserve"><value>موجود</value></data>
   <data name="Plan_V_On" xml:space="preserve"><value>قيد التشغيل</value></data>
@@ -608,6 +609,9 @@
   <data name="Plan_R_ShortcutOff" xml:space="preserve"><value>لا يوجد اختصار على سطح المكتب.</value></data>
   <data name="Plan_R_DataCreate" xml:space="preserve"><value>ينشئ مجلد بيانات CPFS، مملوكًا لمجموعة Administrators ولا يمكن الكتابة فيه إلا لـ SYSTEM وAdministrators.</value></data>
   <data name="Plan_R_DataLock" xml:space="preserve"><value>يمكن لآخرين الكتابة في مجلد بيانات CPFS. يُقفل ليقتصر على SYSTEM وAdministrators وتؤول ملكيته إلى Administrators.</value></data>
+  <data name="Plan_R_DataLink" xml:space="preserve"><value>ProgramData\CPFS موجود مسبقًا وهو رابط إلى مكان آخر، لذلك لن يقيّد CPFS الوصول إليه. أزل الرابط ثم شغّل الإعداد من جديد.</value></data>
+  <data name="Plan_R_ConfigIgnored" xml:space="preserve"><value>عُثر على ملف إعدادات لم يكتبه CPFS، وسيُتجاهل. يبقى في المجلد باسم جديد (config-ignored-date.json)، ويأخذ الإعداد نسخة احتياطية جديدة من إعداداتك.</value></data>
+  <data name="Plan_R_ConfigIgnoredNeeded" xml:space="preserve"><value>لا يمكن للإعداد المتابعة ما دام في المجلد ملف إعدادات لم يكتبه CPFS. حدّده ضمن «قراراتك» ليُستبعد، أو احذف الملف.</value></data>
   <data name="Plan_Section_Computer" xml:space="preserve"><value>اسم الكمبيوتر</value></data>
   <data name="Plan_S_ShareAccess" xml:space="preserve"><value>أذونات المشاركة</value></data>
   <data name="Plan_S_ComputerName" xml:space="preserve"><value>اسم الكمبيوتر</value></data>
@@ -621,6 +625,7 @@
   <data name="Plan_V_OnStrictest" xml:space="preserve"><value>قيد التشغيل، بأشد مستوى</value></data>
   <data name="Plan_V_Level" xml:space="preserve"><value>المستوى {0}</value></data>
   <data name="Plan_V_Value" xml:space="preserve"><value>القيمة {0}</value></data>
+  <data name="Plan_V_SetAside" xml:space="preserve"><value>يُستبعد باسم جديد</value></data>
   <data name="Plan_ListSeparator" xml:space="preserve"><value>،</value></data>
   <data name="Plan_F_EncryptData" xml:space="preserve"><value>التشفير</value></data>
   <data name="Plan_F_FolderEnumerationMode" xml:space="preserve"><value>عرض محتويات المجلد</value></data>
@@ -697,6 +702,7 @@
   <data name="Uninst_FailedTitle" xml:space="preserve"><value>توقف إلغاء التثبيت عند: {0}</value></data>
   <data name="Uninst_FailedMsg" xml:space="preserve"><value>ملف إعدادات CPFS ما زال موجودًا، لذلك يمكنك تشغيل إلغاء التثبيت مرة أخرى.&#xD;&#xA;التفاصيل:&#xD;&#xA;{0}</value></data>
   <data name="Uninst_R_NoConfig" xml:space="preserve"><value>لا يوجد ملف إعدادات لـ CPFS، لذلك فإن الشيء الوحيد الذي يستطيع CPFS العثور عليه هو قواعد جدار الحماية الخاصة به.</value></data>
+  <data name="Uninst_R_ConfigIgnored" xml:space="preserve"><value>عُثر على ملف إعدادات لم يكتبه CPFS، وسيُتجاهل. لن تُستعاد منه أي إعدادات ولن يُحذف أي حساب بناءً عليه، وتُزال فقط قواعد جدار الحماية الخاصة بـ CPFS.</value></data>
   <data name="Uninst_R_RefuseUser" xml:space="preserve"><value>{0} حساب لتسجيل الدخول إلى Windows على هذا الكمبيوتر، لذلك يتوقف إلغاء التثبيت لحمايته.</value></data>
   <data name="Uninst_R_RefusePath" xml:space="preserve"><value>يذكر ملف إعدادات CPFS أن {0} هو المجلد المشترك، وهو ما كان الإعداد سيرفضه (محرك أقراص كامل أو مجلد من Windows). يتوقف إلغاء التثبيت ولا يغيّر شيئًا.</value></data>
   <data name="Uninst_R_ShareRemove" xml:space="preserve"><value>أنشأ CPFS هذه المشاركة. تُقطع الأجهزة المتصلة بها ثم تُزال. يبقى المجلد وملفاته.</value></data>
@@ -718,6 +724,7 @@
   <data name="Uninst_R_BuiltInMissing" xml:space="preserve"><value>قاعدة في Windows أوقفها الإعداد لم تعد موجودة على هذا الكمبيوتر.</value></data>
   <data name="Uninst_R_Restore" xml:space="preserve"><value>يعيد إعدادات Windows إلى ما كانت عليه قبل CPFS (النسخة الاحتياطية من {0}).</value></data>
   <data name="Uninst_R_RestoreValue" xml:space="preserve"><value>يعود إلى القيمة التي كانت قبل CPFS.</value></data>
+  <data name="Uninst_R_RestoreFloor" xml:space="preserve"><value>يبقى على الإعداد الافتراضي في Windows: لا يعيد CPFS أبدًا قيمة أضعف مما يضعه تثبيت Windows جديد.</value></data>
   <data name="Uninst_R_RestoreUnknown" xml:space="preserve"><value>لا تحتوي النسخة الاحتياطية على قيمة أصلية لهذا الإعداد، لذلك يُترك كما هو.</value></data>
   <data name="Uninst_R_SettingsKept" xml:space="preserve"><value>تبقى إعدادات الأمان كما هي.</value></data>
   <data name="Uninst_R_Revert" xml:space="preserve"><value>لا توجد نسخة احتياطية لأن هذا التثبيت أنشأه إصدار قديم من CPFS. حدّد هذا الخيار لإعادة المشاركات الإدارية ومستوى أمان تسجيل الدخول (NTLM) والوصول المجهول إلى القيم الافتراضية في Windows.</value></data>
@@ -725,6 +732,7 @@
   <data name="Uninst_R_NetworkPublic" xml:space="preserve"><value>جعل CPFS هذه الشبكة خاصة. حدّد هذا الخيار لإعادتها عامة.</value></data>
   <data name="Uninst_R_NetworkSaved" xml:space="preserve"><value>جعل CPFS هذه الشبكة خاصة. هي غير متصلة الآن؛ حدّد هذا الخيار لإعادتها عامة في قائمة الشبكات المحفوظة.</value></data>
   <data name="Uninst_R_SaveCopy" xml:space="preserve"><value>قبل تغيير أي شيء، تُحفظ نسخة من ملف إعدادات CPFS (config.json)، وفيها النسخة الاحتياطية من إعداداتك الأصلية، في مجلد «المستندات». لا تحتوي على كلمة مرور.</value></data>
+  <data name="Uninst_R_SaveIgnored" xml:space="preserve"><value>ملفات الإعدادات التي لم يكتبها CPFS والتي استبعدها الإعداد ({0}) تُنسخ أيضًا إلى مجلد «المستندات» قبل إزالة مجلد بيانات CPFS. إذا تعذّر نسخ أحدها يبقى المجلد.</value></data>
   <data name="Uninst_R_DataRemove" xml:space="preserve"><value>مجلد بيانات CPFS مع ملف إعداداته. يُزال أخيرًا.</value></data>
   <data name="Uninst_S_Owner" xml:space="preserve"><value>مالك الملفات المرفوعة</value></data>
   <data name="Uninst_S_Ace" xml:space="preserve"><value>إذن المجلد</value></data>
@@ -734,6 +742,7 @@
   <data name="Uninst_S_Restore" xml:space="preserve"><value>استعادة الإعدادات</value></data>
   <data name="Uninst_S_Revert" xml:space="preserve"><value>القيم الافتراضية في Windows</value></data>
   <data name="Uninst_S_SaveCopy" xml:space="preserve"><value>نسخة من النسخة الاحتياطية</value></data>
+  <data name="Uninst_S_SaveIgnored" xml:space="preserve"><value>نسخ ملفات الإعدادات المستبعدة إلى «المستندات»</value></data>
   <data name="Uninst_S_Config" xml:space="preserve"><value>ملف الإعدادات</value></data>
   <data name="Uninst_S_Kept" xml:space="preserve"><value>يبقى دائمًا</value></data>
   <data name="Apply_ConfigUnreadable" xml:space="preserve"><value>ملف إعدادات CPFS موجود لكن تعذّرت قراءته. يبقى الزر معطّلًا حتى لا تُستبدل النسخة الاحتياطية الموجودة فيه.</value></data>
@@ -868,6 +877,7 @@
   <data name="Uninst_R_ExplorerForeign" xml:space="preserve"><value>عنصر مستكشف الملفات الذي يحمل معرّف CPFS يفتح الآن {0}، لا المجلد الذي سجّله CPFS، لذلك يُترك كما هو.</value></data>
   <data name="Uninst_R_ExplorerNotLoaded" xml:space="preserve"><value>عنصر CPFS في مستكشف الملفات يخص مستخدم Windows غير مسجّل الدخول الآن، لذلك يبقى.</value></data>
   <data name="Summary_U_ExplorerLeft" xml:space="preserve"><value>يبقى عنصر مستكشف الملفات "{0}": مستخدم Windows الذي يخصه غير مسجّل الدخول.</value></data>
+  <data name="Summary_U_ConfigIgnored" xml:space="preserve"><value>عُثر على ملف إعدادات لم يكتبه CPFS، وسيُتجاهل، لذلك لن يُستعاد منه شيء ولن يُحذف.</value></data>
   <data name="Apply_Checking" xml:space="preserve"><value>جارٍ قراءة هذا الكمبيوتر مرة أخرى قبل الملخص.</value></data>
   <data name="Apply_StaleTitle" xml:space="preserve"><value>تغيّر هذا الكمبيوتر منذ قراءة الصفحة</value></data>
   <data name="Apply_StaleMsg_SetUp" xml:space="preserve"><value>حُدّث الملخص. راجعه ثم اختر «إعداد» مرة أخرى.</value></data>
@@ -977,6 +987,9 @@
   <data name="Err_NoDocuments" xml:space="preserve"><value>تعذّر على CPFS العثور على مجلد «المستندات» للمستخدم المسجّل الدخول، الذي يحفظ فيه نسخة من النسخة الاحتياطية.</value></data>
   <data name="Err_ConfigNotRead" xml:space="preserve"><value>تعذّرت على CPFS قراءة ملف إعداداته.</value></data>
   <data name="Err_FolderNotEmpty" xml:space="preserve"><value>{0} ليس فارغًا، لذلك يتركه CPFS في مكانه.</value></data>
+  <data name="Err_FolderIsLink" xml:space="preserve"><value>{0} رابط إلى مكان آخر، لذلك لن يغيّره CPFS. أزل الرابط وحاول مرة أخرى.</value></data>
+  <data name="Err_IgnoredNotCopied" xml:space="preserve"><value>تعذّر نسخ ملفات الإعدادات المستبعدة هذه إلى «المستندات»: {0}. يبقى مجلد بيانات CPFS كي لا تضيع.</value></data>
+  <data name="Err_DataKeptIgnored" xml:space="preserve"><value>بقي {0} لأنه ما زال يحتوي ملفات إعدادات مستبعدة لم تُنسخ إلى «المستندات»: {1}.</value></data>
   <data name="Err_BackupNameInvalid" xml:space="preserve"><value>الاسم في النسخة الاحتياطية، {0}، ليس اسمًا يستطيع CPFS ضبطه، لذلك يحتفظ الكمبيوتر باسمه الحالي.</value></data>
   <data name="Err_AccountMissing" xml:space="preserve"><value>الحساب غير موجود.</value></data>
   <data name="Err_RegistryOpen" xml:space="preserve"><value>تعذّر على CPFS فتح مفتاح السجل {0}.</value></data>

@@ -45,18 +45,20 @@ public static class UninstallPlanner
 {
     public const string RestoreKey = "u.restore";
 
+    public const string IgnoredCopyKey = "u.savecopy.ignored";
+
     public static readonly IReadOnlyList<string> ReasonKeys = new[]
     {
-        R.NoConfig, R.RefuseUser, R.RefusePath, R.ShareRemove, R.ShareForeign, R.UserDeleteUntracked, R.RestoreUnknown, R.ShareReplaced, R.Owner, R.AceRemove, R.UserDelete, R.UserDeleteExisted,
+        R.NoConfig, R.ConfigIgnored, R.RefuseUser, R.RefusePath, R.ShareRemove, R.ShareForeign, R.UserDeleteUntracked, R.RestoreUnknown, R.ShareReplaced, R.Owner, R.AceRemove, R.UserDelete, R.UserDeleteExisted,
         R.UserDeleteAdmin, R.Profile, R.UserBefore, R.UserAdmin, R.UserHidden, R.UserGone, R.RuleRemove, R.BuiltInEnable,
-        R.BuiltInMissing, R.Restore, R.RestoreValue, R.SettingsKept, R.Revert, R.AlwaysKept, R.NetworkPublic, R.NetworkSaved,
-        R.SaveCopy, R.DataRemove, R.TaskRemove, R.ComputerRestore, R.ComputerRenamedSince, R.ComputerBackupInvalid, R.LabelRemove, R.IconRemove, R.DriveSession, R.DriveRemove, R.DriveForeign, R.ShortcutRemove,
+        R.BuiltInMissing, R.Restore, R.RestoreValue, R.RestoreFloor, R.SettingsKept, R.Revert, R.AlwaysKept, R.NetworkPublic, R.NetworkSaved,
+        R.SaveCopy, R.SaveIgnored, R.DataRemove, R.TaskRemove, R.ComputerRestore, R.ComputerRenamedSince, R.ComputerBackupInvalid, R.LabelRemove, R.IconRemove, R.DriveSession, R.DriveRemove, R.DriveForeign, R.ShortcutRemove,
         R.ExplorerRemove, R.ExplorerForeign, R.ExplorerNotLoaded, R.AutoExeRemove, R.AutoFolderRemove, R.AutoFolderForeign, R.AutoFolderNotEmpty,
     };
 
     public static readonly IReadOnlyList<string> WordKeys = new[]
     {
-        S.Owner, S.Ace, S.Delete, S.Profile, S.Before, S.Restore, S.Revert, S.SaveCopy, S.Config, S.Kept,
+        S.Owner, S.Ace, S.Delete, S.Profile, S.Before, S.Restore, S.Revert, S.SaveCopy, S.SaveIgnored, S.Config, S.Kept,
     };
 
     // A backed-up value recorded as present but without a value: it is left as it is, never written as 0.
@@ -105,6 +107,7 @@ public static class UninstallPlanner
     internal static class R
     {
         public const string NoConfig = "Uninst_R_NoConfig";
+        public const string ConfigIgnored = "Uninst_R_ConfigIgnored";
         public const string RefuseUser = "Uninst_R_RefuseUser";
         public const string RefusePath = "Uninst_R_RefusePath";
         public const string ShareForeign = "Uninst_R_ShareForeign";
@@ -127,12 +130,14 @@ public static class UninstallPlanner
         public const string BuiltInMissing = "Uninst_R_BuiltInMissing";
         public const string Restore = "Uninst_R_Restore";
         public const string RestoreValue = "Uninst_R_RestoreValue";
+        public const string RestoreFloor = "Uninst_R_RestoreFloor";
         public const string SettingsKept = "Uninst_R_SettingsKept";
         public const string Revert = "Uninst_R_Revert";
         public const string AlwaysKept = "Uninst_R_AlwaysKept";
         public const string NetworkPublic = "Uninst_R_NetworkPublic";
         public const string NetworkSaved = "Uninst_R_NetworkSaved";
         public const string SaveCopy = "Uninst_R_SaveCopy";
+        public const string SaveIgnored = "Uninst_R_SaveIgnored";
         public const string DataRemove = "Uninst_R_DataRemove";
         public const string TaskRemove = "Uninst_R_TaskRemove";
         public const string ComputerRestore = "Uninst_R_ComputerRestore";
@@ -163,6 +168,7 @@ public static class UninstallPlanner
         public const string Restore = "Uninst_S_Restore";
         public const string Revert = "Uninst_S_Revert";
         public const string SaveCopy = "Uninst_S_SaveCopy";
+        public const string SaveIgnored = "Uninst_S_SaveIgnored";
         public const string Config = "Uninst_S_Config";
         public const string Kept = "Uninst_S_Kept";
     }
@@ -177,8 +183,13 @@ public static class UninstallPlanner
         {
             _in = input;
             _s = input.Snapshot;
-            _c = input.Config;
+
+            // A config.json CPFS can't trust (ConfigTrust) is never a source of what to restore or delete.
+            _ignored = ConfigTrust.Ignored(_s.DataFolder);
+            _c = _ignored ? null : input.Config;
         }
+
+        private readonly bool _ignored;
 
         public List<PlanItem> Items { get; } = new();
 
@@ -190,7 +201,9 @@ public static class UninstallPlanner
         {
             if (_c is null)
             {
-                Add("u.config", PlanSection.Backup, PlanAction.Keep, Word(S.Config), Word(Planner.W.Absent), null, R.NoConfig);
+                // Only what carries CPFS's name is removed then: its firewall rules.
+                Add("u.config", PlanSection.Backup, PlanAction.Keep, Word(S.Config), Word(_ignored ? Planner.W.Exists : Planner.W.Absent), null,
+                    _ignored ? R.ConfigIgnored : R.NoConfig);
                 Firewall();
                 return;
             }
@@ -227,6 +240,14 @@ public static class UninstallPlanner
 
             // First, before anything changes: ProgramData\CPFS, and with it the only copy of the backup, goes last.
             Add("u.savecopy", PlanSection.DataFolder, PlanAction.Create, Word(S.SaveCopy), null, null, R.SaveCopy);
+
+            // Settings files Setup set aside are CPFS's to keep, not to delete: they go to Documents too, and the data
+            // folder stays when one of them can't be copied.
+            if (_s.DataFolder.IsOk && _s.DataFolder.Value!.IgnoredConfigs is { Count: > 0 } ignored)
+            {
+                var names = string.Join(", ", ignored);
+                Add(IgnoredCopyKey, PlanSection.DataFolder, PlanAction.Create, Word(S.SaveIgnored), PlanValue.Of(names), null, R.SaveIgnored, names);
+            }
 
             Shares();
             StaleTask();
@@ -653,17 +674,20 @@ public static class UninstallPlanner
                         continue;
                     }
 
-                    var target = Planner.HardeningWord(name, original);
+                    // Never below a fresh Windows: an original weaker than a secure default is written as that default.
+                    var floored = Planner.HardeningFor(name)?.IsBelowFloor(original) == true;
+                    var restore = floored ? Planner.HardeningFor(name)!.WindowsDefault : original;
+                    var target = Planner.HardeningWord(name, restore);
                     if (_s.Hardening.TryGetValue(name, out var reading) && reading.IsOk)
                     {
                         var current = reading.Value;
-                        var same = current == original;
+                        var same = current == restore;
                         Add(key, PlanSection.Hardening, same ? PlanAction.Keep : PlanAction.Change, subject,
-                            Planner.HardeningWord(name, current), same ? null : target, same ? Planner.R.AtTarget : R.RestoreValue);
+                            Planner.HardeningWord(name, current), same ? null : target, floored ? R.RestoreFloor : same ? Planner.R.AtTarget : R.RestoreValue);
                     }
                     else
                     {
-                        Add(key, PlanSection.Hardening, PlanAction.Change, subject, Word(Planner.W.Unknown), target, R.RestoreValue);
+                        Add(key, PlanSection.Hardening, PlanAction.Change, subject, Word(Planner.W.Unknown), target, floored ? R.RestoreFloor : R.RestoreValue);
                     }
                 }
 

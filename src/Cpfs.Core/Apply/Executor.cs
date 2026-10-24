@@ -125,11 +125,11 @@ public static class ApplyList
         return list;
     }
 
-    // The data folder is locked first (config.json lives in it), then the backup is taken, then the rest in the
-    // planner's order.
+    // A config.json CPFS can't trust is set aside first (before the lock would make it look like CPFS's own), then the
+    // data folder is locked (config.json lives in it), then the backup is taken, then the rest in the planner's order.
     public static IReadOnlyList<ApplyEntry> Setup(Plan plan)
     {
-        var first = new List<ApplyEntry>();
+        ApplyEntry? ignored = null, data = null, backup = null;
         var rest = new List<ApplyEntry>();
         foreach (var item in plan.Items)
         {
@@ -139,17 +139,29 @@ public static class ApplyList
             }
 
             var entry = new ApplyEntry(item);
-            if (item.Key == "data.folder")
+            switch (item.Key)
             {
-                first.Insert(0, entry);
+                case Planner.IgnoredConfigKey:
+                    ignored = entry;
+                    break;
+                case "data.folder":
+                    data = entry;
+                    break;
+                case "backup":
+                    backup = entry;
+                    break;
+                default:
+                    rest.Add(entry);
+                    break;
             }
-            else if (item.Key == "backup")
+        }
+
+        var first = new List<ApplyEntry>();
+        foreach (var entry in new[] { ignored, data, backup })
+        {
+            if (entry is not null)
             {
                 first.Add(entry);
-            }
-            else
-            {
-                rest.Add(entry);
             }
         }
 

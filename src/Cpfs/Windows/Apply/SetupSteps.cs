@@ -141,6 +141,7 @@ internal static class SetupSteps
         var arg = colon < 0 ? "" : key.Substring(colon + 1);
         return family switch
         {
+            Planner.IgnoredConfigKey => SetAsideConfig(),
             "data.folder" => DataFolder(),
             "backup" => Backup(run),
             "user.account" => CreateAccount(run),
@@ -200,6 +201,26 @@ internal static class SetupSteps
             _ => throw new NotSupportedException("No step for plan item " + key),
         };
     }
+
+    // A config.json CPFS can't trust goes out of the way under a new name in the same folder, before the lock makes
+    // it look like CPFS's own; nothing is deleted, and an existing file of the new name is never overwritten.
+    private static LambdaStep SetAsideConfig() => new LambdaStep
+    {
+        Read = () => !File.Exists(StateReader.ConfigPath),
+        Do = () =>
+        {
+            if (PlainFiles.IsLink(StateReader.DataFolder))
+            {
+                throw new CpfsException("Err_FolderIsLink", StateReader.DataFolder);
+            }
+
+            var name = ConfigTrust.IgnoredFileName(DateTime.Now);
+            var target = Path.Combine(StateReader.DataFolder, name);
+            File.Move(StateReader.ConfigPath, target);
+            AppLog.Write("apply", "config.json was not written by CPFS; it was renamed to " + name + " and is not used");
+        },
+        Check = () => !File.Exists(StateReader.ConfigPath),
+    };
 
     private static LambdaStep DataFolder() => new LambdaStep
     {
