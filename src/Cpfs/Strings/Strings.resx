@@ -918,4 +918,23 @@
   <data name="Summary_Blocked_Password" xml:space="preserve"><value>Enter a password for the SMB account to continue.</value></data>
   <data name="Summary_Blocked_Answers" xml:space="preserve"><value>Some answers need changing before Setup can continue. The fields marked in red, or Show details, say which.</value></data>
   <data name="Summary_U_Blocked" xml:space="preserve"><value>Uninstall can't continue as things are now. Show details says why.</value></data>
+  <data name="Monitor_Activity_Title" xml:space="preserve"><value>Recent activity</value></data>
+  <data name="Monitor_Activity_Desc" xml:space="preserve"><value>Changes in the shared folder while Monitor is open, made from any device or from this PC, up to {0} from the last 24 hours. CPFS can't tell which device made a change.</value></data>
+  <data name="Monitor_Activity_None" xml:space="preserve"><value>No changes yet.</value></data>
+  <data name="Monitor_Activity_NotConfigured" xml:space="preserve"><value>CPFS isn't set up on this PC yet, so there is no shared folder to watch.</value></data>
+  <data name="Monitor_Activity_ConfigUnreadable" xml:space="preserve"><value>CPFS couldn't read its settings file, so it doesn't know which folder to watch.</value></data>
+  <data name="Monitor_Activity_Missing" xml:space="preserve"><value>The shared folder {0} wasn't found. Monitor checks again every 10 seconds.</value></data>
+  <data name="Monitor_Activity_Failed" xml:space="preserve"><value>Monitor can't watch the shared folder {0} for changes. Check that the folder is available. Monitor tries again every 10 seconds.</value></data>
+  <data name="Monitor_Activity_Stopped" xml:space="preserve"><value>Monitor stopped watching the shared folder {0}. Windows said: {1} Monitor tries again every 10 seconds.</value></data>
+  <data name="Monitor_Activity_NotStarted" xml:space="preserve"><value>Monitor couldn't start watching the shared folder.</value></data>
+  <data name="Monitor_Activity_Time" xml:space="preserve"><value>Time</value></data>
+  <data name="Monitor_Activity_Change" xml:space="preserve"><value>Change</value></data>
+  <data name="Monitor_Activity_Path" xml:space="preserve"><value>Path</value></data>
+  <data name="Monitor_Activity_From" xml:space="preserve"><value>From</value></data>
+  <data name="Monitor_Activity_To" xml:space="preserve"><value>To</value></data>
+  <data name="Monitor_Activity_Added" xml:space="preserve"><value>Added</value></data>
+  <data name="Monitor_Activity_Changed" xml:space="preserve"><value>Changed</value></data>
+  <data name="Monitor_Activity_Renamed" xml:space="preserve"><value>Renamed</value></data>
+  <data name="Monitor_Activity_Deleted" xml:space="preserve"><value>Deleted</value></data>
+  <data name="Monitor_Activity_MissedRow" xml:space="preserve"><value>Some changes may be missing: too many arrived at once.</value></data>
 </root>

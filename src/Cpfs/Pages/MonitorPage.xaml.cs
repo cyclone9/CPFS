@@ -208,15 +208,30 @@ public partial class MonitorPage : Page
 {
     private const int MaxFiles = 50;
     private const int MaxFailedLogons = 20;
+    private const int MaxActivity = 200;
 
     // The Security log is read every fifth refresh (10 seconds), as in 0.2.3.
     private const int FailedLogonEvery = 5;
 
+    // A watch of the shared folder that failed or stopped is tried again every 20th drain (10 seconds).
+    private const int ActivityRetryEvery = 20;
+
     private readonly DispatcherTimer _timer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(2) };
+    private readonly DispatcherTimer _activityTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(500) };
     private readonly MonitorSection _server = new();
     private readonly MonitorSection _sessions = new();
     private readonly MonitorSection _files = new();
+    private readonly MonitorSection _activitySection = new();
     private readonly MonitorSection _fails = new();
+
+    // Recent activity lives in memory only, for as long as the app runs.
+    private readonly FolderActivity _activity = new(TimeSpan.FromSeconds(2), MaxActivity, TimeSpan.FromHours(24));
+    private FolderWatcher? _watch;
+    private WatchState? _loggedWatchState;
+    private int _watchGeneration;
+    private int _activityTicks;
+    private bool _watchBusy;
+    private bool _watchCrashed;
     private readonly HashSet<string> _loggedFails = new(StringComparer.Ordinal);
     private readonly HostNameCache _hostNames = new();
 
@@ -238,10 +253,11 @@ public partial class MonitorPage : Page
     public MonitorPage()
     {
         InitializeComponent();
-        Sections.ItemsSource = new[] { _server, _sessions, _files, _fails };
+        Sections.ItemsSource = new[] { _server, _sessions, _files, _activitySection, _fails };
         AdminPanel.Visibility = Startup.IsElevated ? Visibility.Collapsed : Visibility.Visible;
         MonitorPanel.Visibility = Startup.IsElevated ? Visibility.Visible : Visibility.Collapsed;
         _timer.Tick += async (_, _) => await RefreshAsync();
+        _activityTimer.Tick += async (_, _) => await ActivityTickAsync();
         _hostNames.Resolved += (_, _) => Render();
         IsVisibleChanged += OnVisibleChanged;
         Loc.Instance.PropertyChanged += (_, e) =>
@@ -268,13 +284,141 @@ public partial class MonitorPage : Page
             _hostNames.Clear();
             _knownMacs.Clear();
             _timer.Start();
+            var watching = StartWatchingAsync();
             await RefreshAsync();
+            await watching;
         }
         else
         {
             _timer.Stop();
+            StopWatching();
             AppLog.Write("monitor", "Stopped");
         }
+    }
+
+    // Never throws: a failure shows on the Recent activity card and in the log.
+    private async Task StartWatchingAsync()
+    {
+        var generation = ++_watchGeneration;
+        _watchBusy = true;
+        _watchCrashed = false;
+        try
+        {
+            var watch = await Task.Run(() => FolderWatcher.Open(_clock));
+            if (generation != _watchGeneration)
+            {
+                watch.Dispose();
+                return;
+            }
+
+            _watch = watch;
+            _activity.Watch(watch.Root);
+            _activityTicks = 0;
+            LogWatchState(watch);
+            _activityTimer.Start();
+        }
+        catch (Exception ex)
+        {
+            _watchCrashed = true;
+            AppLog.Write("monitor", "Folder watcher could not start: " + ex.GetType().Name + " 0x" + ex.HResult.ToString("X8", CultureInfo.InvariantCulture));
+        }
+        finally
+        {
+            if (generation == _watchGeneration)
+            {
+                _watchBusy = false;
+                RenderActivity();
+            }
+        }
+    }
+
+    private void StopWatching()
+    {
+        _watchGeneration++;
+        _watchBusy = false;
+        _activityTimer.Stop();
+        if (_watch is not { } watch)
+        {
+            return;
+        }
+
+        foreach (var change in watch.Drain())
+        {
+            _activity.Add(change);
+        }
+
+        watch.Dispose();
+        _watch = null;
+        _loggedWatchState = null;
+
+        // Counts only: file names are personal and the log goes to support.
+        AppLog.Write("monitor", "Folder watcher stopped: " + watch.Received.ToString(CultureInfo.InvariantCulture) + " changes received, "
+            + watch.Overflows.ToString(CultureInfo.InvariantCulture) + " buffer overflows, " + _activity.Rows().Count.ToString(CultureInfo.InvariantCulture) + " rows kept");
+    }
+
+    // Every 500 ms: moves the watcher's queued changes into the list and redraws only when something changed.
+    private async Task ActivityTickAsync()
+    {
+        try
+        {
+            if (_watch is not { } watch)
+            {
+                return;
+            }
+
+            var changed = false;
+            foreach (var change in watch.Drain())
+            {
+                var added = _activity.Add(change);
+                changed |= added;
+                if (added && change.Kind == ActivityKind.Missed)
+                {
+                    AppLog.Write("monitor", "Folder watcher: some changes may be missing (" + watch.Overflows.ToString(CultureInfo.InvariantCulture) + " buffer overflows so far)");
+                }
+            }
+
+            changed |= _activity.Expire(_clock.Elapsed);
+            if (watch.State != _loggedWatchState)
+            {
+                LogWatchState(watch);
+                changed = true;
+            }
+
+            if (changed)
+            {
+                RenderActivity();
+            }
+
+            if (++_activityTicks % ActivityRetryEvery == 0 && watch.CanRetry && !_watchBusy)
+            {
+                var generation = _watchGeneration;
+                _watchBusy = true;
+                try
+                {
+                    await Task.Run(watch.TryStart);
+                }
+                finally
+                {
+                    if (generation == _watchGeneration)
+                    {
+                        _watchBusy = false;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLog.Write("monitor", "Recent activity update failed: " + ex.GetType().Name);
+        }
+    }
+
+    private void LogWatchState(FolderWatcher watch)
+    {
+        var state = watch.State;
+        _loggedWatchState = state;
+        AppLog.Write("monitor", state == WatchState.Watching
+            ? "Folder watcher started (subfolders included)"
+            : "Folder watcher not running: " + state + (watch.LogReason.Length > 0 ? " (" + watch.LogReason + ")" : ""));
     }
 
     private async Task RefreshAsync()
@@ -321,6 +465,7 @@ public partial class MonitorPage : Page
         _files.Description = loc.Format("Monitor_Files_Desc", MaxFiles);
         _fails.Title = loc["Monitor_Fails_Title"];
         _fails.Description = loc["Monitor_Fails_Desc"];
+        RenderActivity();
 
         var cur = _current;
         if (cur is null)
@@ -432,6 +577,62 @@ public partial class MonitorPage : Page
                 ("Monitor_File_User", r.Item.User, true),
                 ("Monitor_File_Client", r.Item.Client, true),
             });
+        });
+    }
+
+    private void RenderActivity()
+    {
+        var loc = Loc.Instance;
+        _activitySection.Title = loc["Monitor_Activity_Title"];
+        _activitySection.Description = loc.Format("Monitor_Activity_Desc", MaxActivity);
+        var watch = _watch;
+        var state = watch?.State;
+        var root = watch?.Root ?? "";
+        _activitySection.Error = state switch
+        {
+            WatchState.ConfigUnreadable => loc["Monitor_Activity_ConfigUnreadable"],
+            WatchState.Missing => loc.FormatValues("Monitor_Activity_Missing", root),
+            WatchState.Failed => loc.FormatValues("Monitor_Activity_Failed", root),
+            WatchState.Stopped => loc.FormatValues("Monitor_Activity_Stopped", root, watch!.Error),
+            null when _watchCrashed => loc["Monitor_Activity_NotStarted"],
+            _ => "",
+        };
+
+        var rows = _activity.Rows();
+        _activitySection.Empty = state == WatchState.NotConfigured ? loc["Monitor_Activity_NotConfigured"]
+            : state == WatchState.Watching && rows.Count == 0 ? loc["Monitor_Activity_None"]
+            : "";
+
+        var today = DateTime.Now.Date;
+        SyncRows(_activitySection.Rows, rows.ToList(), r => r.Id.ToString(CultureInfo.InvariantCulture), (row, r) =>
+        {
+            var local = r.Time.ToLocalTime().DateTime;
+            var fields = new List<(string, string, bool)>
+            {
+                ("Monitor_Activity_Time", local.ToString(local.Date == today ? "T" : "g", loc.Culture), false),
+            };
+            switch (r.Kind)
+            {
+                case ActivityKind.Missed:
+                    fields.Add(("Monitor_Activity_Change", loc["Monitor_Activity_MissedRow"], false));
+                    break;
+                case ActivityKind.Renamed:
+                    fields.Add(("Monitor_Activity_Change", loc["Monitor_Activity_Renamed"], false));
+                    fields.Add(("Monitor_Activity_From", r.OldPath, true));
+                    fields.Add(("Monitor_Activity_To", r.Path, true));
+                    break;
+                default:
+                    fields.Add(("Monitor_Activity_Change", loc[r.Kind switch
+                    {
+                        ActivityKind.Added => "Monitor_Activity_Added",
+                        ActivityKind.Deleted => "Monitor_Activity_Deleted",
+                        _ => "Monitor_Activity_Changed",
+                    }], false));
+                    fields.Add(("Monitor_Activity_Path", r.Path, true));
+                    break;
+            }
+
+            SetFields(row.Fields, fields);
         });
     }
 
