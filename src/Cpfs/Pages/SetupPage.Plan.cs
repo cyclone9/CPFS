@@ -84,6 +84,7 @@ public partial class SetupPage
     private int _planVersion;
     private string _lastShareName = "";
     private string? _lastLogged;
+    private string? _computerNameShown;
 
     private void InitPlan()
     {
@@ -160,7 +161,7 @@ public partial class SetupPage
 
         _snapshot = snapshot;
         _snapshotFor = null;
-        ComputerNameBox.Text = snapshot.ComputerName ?? "";
+        FillComputerName(snapshot);
         RenderMode();
         AppLog.Write("plan", "Plan state ready in " + StateReader.Ms(watch) + (Startup.IsElevated ? " (elevated)" : " (not elevated)"));
         return await RecomputeAsync();
@@ -189,6 +190,28 @@ public partial class SetupPage
         {
             _suppressForm = false;
         }
+    }
+
+    // The pending name, or the live one: shown again after each reading unless the user typed another. A domain member
+    // is renamed through its domain, so the box is off there.
+    private void FillComputerName(SystemSnapshot snapshot)
+    {
+        var name = snapshot.ComputerName ?? "";
+        _suppressForm = true;
+        try
+        {
+            if (_computerNameShown is null || string.Equals(ComputerNameBox.Text.Trim(), _computerNameShown, StringComparison.OrdinalIgnoreCase))
+            {
+                ComputerNameBox.Text = name;
+            }
+        }
+        finally
+        {
+            _suppressForm = false;
+        }
+
+        _computerNameShown = name;
+        ComputerNameBox.IsEnabled = !(snapshot.Join.IsOk && snapshot.Join.Value!.PartOfDomain);
     }
 
     private void UpdateNameField() => DriveNameBox.IsEnabled = DriveSwitch.IsChecked == true || ExplorerSwitch.IsChecked == true;
@@ -306,6 +329,7 @@ public partial class SetupPage
         ExplorerEntry = ExplorerSwitch.IsChecked == true,
         Shortcut = ShortcutSwitch.IsChecked == true,
         ShortcutName = ShortcutNameBox.Text,
+        ComputerName = ComputerNameBox.Text,
         Password = PasswordState(),
         Choices = new Dictionary<string, bool>(_choices, StringComparer.Ordinal),
     };
@@ -449,6 +473,10 @@ public partial class SetupPage
         SetError(SmbUserError, Validators.SmbUserName(a.SmbUser, s.WindowsUserNames, s.ComputerName).Error);
         SetError(DriveNameError, a.Drive || a.ExplorerEntry ? Validators.DriveName(a.DriveName).Error : ValidationError.None);
         SetError(ShortcutNameError, a.Shortcut ? Validators.ShortcutName(a.ShortcutName).Error : ValidationError.None);
+
+        // Only a new name is checked: the PC's own name stays even when CPFS's rules are stricter.
+        var renamed = a.ComputerName.Trim().Length > 0 && !string.Equals(a.ComputerName.Trim(), s.ComputerName, StringComparison.OrdinalIgnoreCase);
+        SetError(ComputerNameError, renamed ? Validators.ComputerName(a.ComputerName, a.SmbUser).Error : ValidationError.None);
         if (a.Drive && DriveLetterBox.Items.Count == 0)
         {
             SetText(DriveError, Loc.Instance["Setup_Form_NoFreeLetter"]);

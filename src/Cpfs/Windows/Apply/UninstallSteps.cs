@@ -44,6 +44,9 @@ internal sealed class UninstallRun
     // Windows keeps the letter it mapped at start until the next restart.
     public bool DriveRestartNeeded { get; set; }
 
+    // The name Windows takes back at the next restart, once the step ran.
+    public string? RenamedTo { get; set; }
+
     public ExecutionResult Execute(Action<StepReport> progress)
     {
         foreach (var item in Plan.Items)
@@ -79,6 +82,7 @@ internal static class UninstallSteps
         {
             "u.share" => Share(run, arg),
             "u.task.runasuser" => QuickAccessSteps.StaleTask(),
+            "u.task" => Task(arg),
             "u.drive.label" => QuickAccessSteps.UninstallLabel(run),
             "u.drive.icon" => QuickAccessSteps.UninstallIcon(run),
             "u.drive.session" => QuickAccessSteps.UninstallSession(run),
@@ -101,6 +105,7 @@ internal static class UninstallSteps
             "u.lockout" => LockoutStep(run),
             "u.revert" => Revert(),
             "u.net" => Network(arg),
+            "u.computer" => Computer(run),
             "u.savecopy" => SaveCopy(run),
             "u.data" => Data(),
             _ => throw new NotSupportedException("No step for plan item " + key),
@@ -461,10 +466,45 @@ internal static class UninstallSteps
         Check = () => run.SavedCopy is not null && File.Exists(run.SavedCopy),
     };
 
+    // The Auto-Private tasks go before ProgramData\CPFS, which holds the program they run.
+    private static LambdaStep Task(string name) => new LambdaStep
+    {
+        Read = () => !AutoPrivateTask.Exists(name),
+        Do = () => AutoPrivateTask.Delete(name),
+        Check = () => !AutoPrivateTask.Exists(name),
+    };
+
+    // The name from the first Setup's backup, checked before Windows is asked for it; Windows takes it after a restart.
+    private static LambdaStep Computer(UninstallRun run)
+    {
+        var original = run.Config?.BackupHostName?.Trim() ?? "";
+        bool Same() => string.Equals(PlanReader.ComputerName(), original, StringComparison.OrdinalIgnoreCase);
+        return new LambdaStep
+        {
+            Read = Same,
+            Do = () =>
+            {
+                if (!Cpfs.Core.Validation.Validators.ComputerName(original).IsValid)
+                {
+                    throw new StepUnsupportedException("The name in the backup, " + original + ", is not one CPFS can set; the computer keeps its name.");
+                }
+
+                ComputerRename.Set(original);
+                run.RenamedTo = original;
+            },
+            Check = () =>
+            {
+                AppLog.Write("uninstall", "Rename: NV Hostname now " + (PlanReader.ComputerName() ?? "absent"));
+                return Same();
+            },
+        };
+    }
+
+    // The exe copy in it may still be closing after the task's last run.
     private static LambdaStep Data() => new LambdaStep
     {
         Read = () => !Directory.Exists(StateReader.DataFolder),
-        Do = () => Directory.Delete(StateReader.DataFolder, recursive: true),
+        Do = () => AutoPrivateCopy.Retry(() => Directory.Delete(StateReader.DataFolder, recursive: true)),
         Check = () => !Directory.Exists(StateReader.DataFolder),
     };
 }

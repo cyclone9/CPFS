@@ -15,17 +15,17 @@ namespace Cpfs.Tests;
 
 public class PlannerTests
 {
-    private static readonly ProtectedFolders Protected = new()
+    internal static readonly ProtectedFolders Protected = new()
     {
         Trees = { @"C:\Windows", @"C:\Program Files", @"C:\ProgramData" },
         Exact = { @"C:\Users", @"C:\Users\Public" },
     };
 
-    private static ConfigDocument Fixture() => ConfigReader.Parse(TestFiles.ConfigBytes("v0.2.3-anonymised.json"));
+    internal static ConfigDocument Fixture() => ConfigReader.Parse(TestFiles.ConfigBytes("v0.2.3-anonymised.json"));
 
     // The machine a 0.2.3 Setup leaves behind for v0.2.3-anonymised.json (share "Shared" on D:\Shared, account
     // "ShareUser", shortcut only), read elevated.
-    private static SystemSnapshot Installed()
+    internal static SystemSnapshot Installed()
     {
         var letters = new LetterScan();
         letters.Add('C', LetterSource.SystemDrive);

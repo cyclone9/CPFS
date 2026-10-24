@@ -39,7 +39,7 @@ public class ExecutorTests
     }
 
     [Fact]
-    public void OnlyCreateChangeRemoveAndTickedAskItemsRunAndLaterVersionsAreDeferred()
+    public void OnlyCreateChangeRemoveAndTickedAskItemsRunAndNothingIsDeferred()
     {
         var plan = new Plan(new[]
         {
@@ -53,21 +53,23 @@ public class ExecutorTests
             Item("shortcut.file", PlanAction.Create, PlanSection.Shortcut),
             Item("auto.task", PlanAction.RemoveIfOurs, PlanSection.AutoPrivate),
             Item("fw.extra:CyShare", PlanAction.RemoveIfOurs, PlanSection.Firewall),
+            Item("computer.name", PlanAction.Change, PlanSection.Computer),
             Item("backup", PlanAction.Create, PlanSection.Backup),
             Item("data.folder", PlanAction.Change, PlanSection.DataFolder),
         });
 
         var entries = ApplyList.Setup(plan);
-        Assert.Equal(new[] { "data.folder", "backup", "hardening.b", "net:Home", "drive.map", "shortcut.file", "auto.task", "fw.extra:CyShare" },
+        Assert.Equal(new[] { "data.folder", "backup", "hardening.b", "net:Home", "drive.map", "shortcut.file", "auto.task", "fw.extra:CyShare", "computer.name" },
             entries.Select(e => e.Item.Key));
-        Assert.Equal(new[] { "auto.task" }, entries.Where(e => e.Deferred).Select(e => e.Item.Key));
+        Assert.DoesNotContain(entries, e => e.Deferred);
 
         var run = new Run();
         var result = run.Execute(entries, null, e => new LambdaStep { Do = () => run.Calls.Add(e.Item.Key) });
         Assert.True(result.Completed);
         Assert.Contains("drive.map", run.Calls);
-        Assert.DoesNotContain("auto.task", run.Calls);
-        Assert.Equal(1, result.Count(StepOutcome.Deferred));
+        Assert.Contains("auto.task", run.Calls);
+        Assert.Contains("computer.name", run.Calls);
+        Assert.Equal(0, result.Count(StepOutcome.Deferred));
         Assert.Single(ApplyList.Blocking(plan));
     }
 

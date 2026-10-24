@@ -37,6 +37,10 @@ internal static class CiApplyTest
     // The desktop user the File Explorer entry goes to: on the runner, the runner's own account (its explorer.exe).
     private static string? _entrySid;
 
+    // The runner's own computer name, and the one Setup sets (pending until a restart, which never comes here).
+    private static string? _originalName;
+    private static string? _testName;
+
     public static int Run()
     {
         SelfTest.AttachToParentConsole();
@@ -139,6 +143,9 @@ internal static class CiApplyTest
     private static void SetupPhase(TextWriter o, string folder, string temp)
     {
         var snapshot = Read(TestUser, folder, TestShare);
+        _originalName = PlanReader.ComputerName();
+        _testName = "CPFS-CI-" + RandomLetters(4);
+        o.WriteLine("Computer name " + _originalName + ", test name " + _testName);
         _letter = snapshot.Letters.DefaultLetter();
         Check(_letter is not null, "a free drive letter for the test", _letter?.ToString() ?? "none");
         _entrySid = DesktopUser.Current.Sid;
@@ -159,22 +166,14 @@ internal static class CiApplyTest
             ExplorerEntry = _entrySid is not null,
             Shortcut = true,
             ShortcutName = SetupDefaults.ShortcutNameFor(TestShare),
+            AutoPrivate = true,
+            ComputerName = _testName,
         };
 
+        // Public networks stay unticked: they must stay Public and land in AutoPrivateSkip. Switching one to Private and
+        // back is exercised by the in-process run of the --auto-private worker below.
         var plan = Planner.Setup(snapshot, answers, null, PlanReader.ProtectedFolders());
-
-        // Public networks are ticked, so switching to Private and back is exercised too.
-        var choices = new Dictionary<string, bool>(StringComparer.Ordinal);
-        foreach (var item in plan.Items)
-        {
-            if (item.Action == PlanAction.Ask && item.Key.StartsWith("net:", StringComparison.Ordinal))
-            {
-                choices[item.Key] = true;
-            }
-        }
-
-        answers = answers with { Choices = choices };
-        plan = Planner.Setup(snapshot, answers, null, PlanReader.ProtectedFolders());
+        var leftPublic = plan.Items.Where(i => i.Action == PlanAction.Ask && i.Key.StartsWith("net:", StringComparison.Ordinal)).Select(i => i.Key.Substring(4)).Distinct(StringComparer.Ordinal).ToList();
         o.WriteLine("Setup plan:");
         foreach (var line in plan.LogLines())
         {
@@ -267,7 +266,10 @@ internal static class CiApplyTest
         Check(string.Equals(lnkIcon, CpfsIconFile.Path, StringComparison.OrdinalIgnoreCase), "the shortcut has the CPFS icon", lnkIcon ?? "absent");
         Check(config.Access == 3, "config.json records drive and shortcut in Access", config.Access?.ToString(CultureInfo.InvariantCulture) ?? "null");
 
-        // Re-running with the same answers changes nothing.
+        AutoPrivateChecks(o, config, leftPublic, temp);
+        RenameChecks(config);
+
+        // Re-running with the same answers changes nothing: the copy, the task and the pending rename are Keep.
         var again = Planner.Setup(Read(TestUser, folder, TestShare), answers with { Password = PasswordEntry.Empty, Choices = new Dictionary<string, bool>() },
             config, PlanReader.ProtectedFolders());
         var left = ApplyList.Setup(again).Where(e => !e.Deferred).Select(e => e.Item.Key).ToList();
@@ -309,11 +311,152 @@ internal static class CiApplyTest
             }
         });
         Check(ApplyList.Blocking(plan).Count == 0, "Uninstall plan has nothing that cannot be planned");
+        var rename = plan.Find("u.computer");
+        Check(rename is { Action: PlanAction.Ask, Ticked: true }, "Uninstall offers the original computer name back, ticked",
+            rename is null ? "no item" : rename.Action + (rename.Ticked ? " ticked" : " unticked"));
+        foreach (var task in new[] { Planner.AutoPrivateTask })
+        {
+            Check(plan.Find("u.task:" + task) is { Action: PlanAction.RemoveIfOurs }, "Uninstall removes the task " + task);
+        }
+
         Check(result.Completed, "Uninstall ran to the end", result.Detail ?? result.Error ?? "");
         if (_letter is not null)
         {
             SessionCheck(result, "u.drive.session", "the drive is unmapped in the desktop user's session");
         }
+
+        Check(result.Reports.Any(r => r.Key == "u.computer" && r.Outcome == StepOutcome.Done), "Uninstall ran the rename back");
+        Check(run.RenamedTo is not null && string.Equals(run.RenamedTo, _originalName, StringComparison.OrdinalIgnoreCase), "Uninstall asked for the original name",
+            run.RenamedTo ?? "null");
+    }
+
+    // The task, the exe copy it runs and what config.json records; then a run of the registered task under SYSTEM (the
+    // skip list must hold), and an in-process run of the worker without the skip list (every saved Public network that
+    // is not a VPN's is switched and logged first).
+    private static void AutoPrivateChecks(TextWriter o, ConfigDocument config, List<string> leftPublic, string temp)
+    {
+        var copy = AutoPrivateCopy.Path;
+        var hash = File.Exists(copy) ? AutoPrivateCopy.Sha256Of(copy) : null;
+        Check(hash is not null && hash == AutoPrivateCopy.Sha256Of(AutoPrivateCopy.Running), "the exe copy is in ProgramData\\CPFS and is this build", hash ?? "absent");
+        Check(SetupSteps.Locked(), "ProgramData\\CPFS is still locked with the copy in it");
+        var acl = File.Exists(copy) ? new FileInfo(copy).GetAccessControl() : null;
+        var othersWrite = acl is not null && acl.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<System.Security.AccessControl.FileSystemAccessRule>()
+            .Any(r => r.AccessControlType == System.Security.AccessControl.AccessControlType.Allow
+                && (r.FileSystemRights & (System.Security.AccessControl.FileSystemRights.WriteData | System.Security.AccessControl.FileSystemRights.AppendData
+                    | System.Security.AccessControl.FileSystemRights.Delete | System.Security.AccessControl.FileSystemRights.ChangePermissions
+                    | System.Security.AccessControl.FileSystemRights.TakeOwnership)) != 0
+                && r.IdentityReference is SecurityIdentifier sid && !sid.IsWellKnown(WellKnownSidType.LocalSystemSid) && !sid.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid));
+        Check(acl is not null && !othersWrite, "only SYSTEM and Administrators can change the exe copy");
+
+        var task = AutoPrivateTask.Read();
+        Check(task is not null, "the task " + Planner.AutoPrivateTask + " exists");
+        if (task is not null)
+        {
+            Check(task.UserSid == AutoPrivateTaskSpec.SystemSid && task.LogonType == AutoPrivateTaskSpec.LogonServiceAccount && task.RunLevel == AutoPrivateTaskSpec.RunLevelHighest,
+                "the task runs as SYSTEM, highest", (task.UserSid ?? "null") + " " + task.LogonType + " " + task.RunLevel);
+            Check(task.Triggers.Count == 1 && task.Triggers[0].Type == AutoPrivateTaskSpec.TriggerEvent
+                && (task.Triggers[0].Subscription ?? "").Contains(AutoPrivateTaskSpec.Channel) && (task.Triggers[0].Subscription ?? "").Contains("EventID=10000"),
+                "the task has the one event trigger", task.Triggers.Count + " " + (task.Triggers.Count > 0 ? task.Triggers[0].Subscription : ""));
+            Check(task.Actions.Count == 1 && string.Equals(task.Actions[0].Path?.Trim('"'), copy, StringComparison.OrdinalIgnoreCase)
+                && task.Actions[0].Arguments == AutoPrivateTaskSpec.Arguments, "the task runs the copy with " + AutoPrivateTaskSpec.Arguments,
+                task.Actions.Count > 0 ? task.Actions[0].Path + " " + task.Actions[0].Arguments : "no action");
+            Check(task.ExecutionTimeLimit == AutoPrivateTaskSpec.ExecutionTimeLimit, "the task stops after one minute", task.ExecutionTimeLimit ?? "null");
+            var diff = AutoPrivateTaskSpec.Differences(task, copy);
+            Check(diff.Count == 0, "the task reads back as registered", string.Join(", ", diff));
+        }
+
+        Check(config.AutoPrivate == true, "config.json has AutoPrivate true");
+        Check(AutoPrivateRules.SameNames(config.AutoPrivateSkip, leftPublic), "config.json lists the networks left Public in AutoPrivateSkip",
+            string.Join(", ", config.AutoPrivateSkip) + " / " + string.Join(", ", leftPublic));
+        Check(config.TrackedAutoPrivateExe is { } t && t.Sha256 == hash && string.Equals(t.Path, copy, StringComparison.OrdinalIgnoreCase),
+            "config.json records the exe copy and its hash", config.TrackedAutoPrivateExe?.Sha256 ?? "null");
+
+        var log = Path.Combine(StateReader.DataFolder, AutoPrivateLog.FileName);
+        var runLog = Path.Combine(StateReader.DataFolder, AutoPrivateLog.RunLogFileName);
+        var logBefore = File.Exists(log) ? File.ReadAllBytes(log) : null;
+        var publicBefore = PublicNames();
+        if (task is not null)
+        {
+            var before = DateTime.Now;
+            var (code, lastRun) = AutoPrivateTask.RunAndWait(TimeSpan.FromSeconds(60));
+            var line = File.Exists(runLog) ? File.ReadAllLines(runLog).LastOrDefault() : null;
+            o.WriteLine("Task run: result " + code + ", last run " + lastRun.ToString("s", CultureInfo.InvariantCulture) + ", run log: " + (line ?? "none"));
+            Check(code == 0 && lastRun >= before.AddSeconds(-5), "the task ran under SYSTEM and switched nothing", "result " + code + ", " + (line ?? "no run log"));
+            Check(leftPublic.All(n => !publicBefore.Contains(n) || PublicNames().Contains(n)), "the networks in AutoPrivateSkip are still Public");
+            var logAfter = File.Exists(log) ? File.ReadAllBytes(log) : null;
+            Check(logAfter is null ? logBefore is null : logBefore is not null && logAfter.SequenceEqual(logBefore), "auto-private.log is unchanged by the task run");
+        }
+
+        // The worker itself, with the same config minus the skip list.
+        var root = (System.Text.Json.Nodes.JsonObject)config.Root.DeepClone();
+        root.Remove("AutoPrivateSkip");
+        var noSkip = ConfigReader.Parse(ConfigWriter.Serialize(root));
+        var vpn = PlanReader.VpnAdapters().Select(a => a.Name).ToList();
+        var expected = AutoPrivateRules.Decide(PlanReader.Networks(), noSkip, Array.Empty<string>(), vpn, SavedNetworkNames())
+            .Where(d => d.Verdict == AutoPrivateVerdict.Switch).Select(d => d.Name).Distinct().ToList();
+        if (expected.Count == 0)
+        {
+            Skip("the worker switches a new Public network and logs it first", "no saved Public network on this runner");
+            return;
+        }
+
+        var (switched, text) = AutoPrivateVerb.Work(noSkip);
+        o.WriteLine("Worker run: " + switched + " switched; " + text);
+        var nowPublic = PublicNames();
+        Check(expected.All(n => !nowPublic.Contains(n)), "the worker switched every new Public network to Private", string.Join(", ", expected));
+        var bytes = File.Exists(log) ? File.ReadAllBytes(log) : Array.Empty<byte>();
+        Check(bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF, "auto-private.log starts with the UTF-8 BOM");
+        var names = AutoPrivateLog.Names(bytes, new UTF8Encoding(false));
+        Check(names.Count == expected.Count && expected.All(names.Contains), "auto-private.log lists exactly the switched networks", string.Join(", ", names));
+
+        // For the Windows PowerShell 5.1 step: Get-Content of the log must give the same names.
+        File.Copy(log, Path.Combine(temp, "cpfs-auto-private.log"), overwrite: true);
+        File.WriteAllLines(Path.Combine(temp, "cpfs-auto-private-names.txt"), names, new UTF8Encoding(true));
+    }
+
+    private static void RenameChecks(ConfigDocument config)
+    {
+        using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+        using var tcp = hklm.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters");
+        var pending = tcp?.GetValue("NV Hostname") as string;
+        var active = tcp?.GetValue("Hostname") as string;
+        Console.Out.WriteLine("Rename: NV Hostname " + pending + ", Hostname " + active + ", ComputerName\\ComputerName " + ComputerRename.PendingNetBios());
+        Check(string.Equals(pending, _testName, StringComparison.OrdinalIgnoreCase), "the rename set the pending name (NV Hostname)", pending ?? "absent");
+        Check(string.Equals(active, _originalName, StringComparison.OrdinalIgnoreCase), "the active name is unchanged until a restart", active ?? "absent");
+        Check(string.Equals(config.HostName, _testName, StringComparison.OrdinalIgnoreCase), "config.json HostName is the new name", config.HostName ?? "null");
+        Check(config.TrackedComputerNames.Any(n => string.Equals(n, _testName, StringComparison.OrdinalIgnoreCase)), "config.json records the name in Tracked.ComputerNames");
+        Check(string.Equals(config.BackupHostName, _originalName, StringComparison.OrdinalIgnoreCase), "Backup.HostName is the original name", config.BackupHostName ?? "null");
+    }
+
+    private static List<string> PublicNames() => PlanReader.Networks().Where(n => n.Category == 0).Select(n => n.Name).ToList();
+
+    private static List<string> SavedNetworkNames()
+    {
+        var list = new List<string>();
+        using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+        using var profiles = hklm.OpenSubKey(Reg.NetworkProfiles);
+        foreach (var id in profiles?.GetSubKeyNames() ?? Array.Empty<string>())
+        {
+            using var p = profiles!.OpenSubKey(id);
+            if (p?.GetValue("ProfileName") is string name)
+            {
+                list.Add(name);
+            }
+        }
+
+        return list;
+    }
+
+    private static string RandomLetters(int count)
+    {
+        const string letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        var bytes = new byte[count];
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(bytes);
+        }
+
+        return new string(bytes.Select(b => letters[b % letters.Length]).ToArray());
     }
 
     // Every documented value of the navigation-pane entry, read back from the desktop user's hive, and the same class
@@ -381,6 +524,10 @@ internal static class CiApplyTest
         Check(PlanReader.Shares().All(s => s.Name != TestShare), "the share is gone");
         Check(PlanReader.OwnRules().Count == 0, "the CPFS firewall rules are gone");
         Check(!Directory.Exists(StateReader.DataFolder), "ProgramData\\CPFS is gone");
+        Check(!AutoPrivateTask.Exists(Planner.AutoPrivateTask) && !AutoPrivateTask.Exists(Planner.LegacyAutoPrivateTask), "the Auto-Private tasks are gone");
+        Check(!File.Exists(AutoPrivateCopy.Path), "the exe copy is gone");
+        var pendingName = PlanReader.ComputerName();
+        Check(string.Equals(pendingName, _originalName, StringComparison.OrdinalIgnoreCase), "the pending computer name is the original again", pendingName ?? "absent");
         Check(Directory.Exists(folder), "the shared folder is still there");
         if (_letter is { } letter)
         {

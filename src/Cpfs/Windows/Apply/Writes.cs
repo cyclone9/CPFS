@@ -893,6 +893,29 @@ internal static class Networks
         return ids;
     }
 
+    // Only the profile on that adapter: a profile of the same name on another adapter (a VPN's) is left alone.
+    public static void SetCategoryOn(string name, string interfaceAlias, int from, int to)
+    {
+        var profiles = Wmi.All(Wmi.Std, "SELECT * FROM MSFT_NetConnectionProfile");
+        try
+        {
+            foreach (var p in profiles)
+            {
+                if (string.Equals(StateReader.Prop(p, "Name") as string, name, StringComparison.Ordinal)
+                    && string.Equals(StateReader.Prop(p, "InterfaceAlias") as string, interfaceAlias, StringComparison.OrdinalIgnoreCase)
+                    && Convert.ToInt32(StateReader.Prop(p, "NetworkCategory") ?? -1, CultureInfo.InvariantCulture) == from)
+                {
+                    Wmi.Set(p, "NetworkCategory", to);
+                    p.Put(new PutOptions { Type = PutType.UpdateOnly });
+                }
+            }
+        }
+        finally
+        {
+            Wmi.Dispose(profiles);
+        }
+    }
+
     public static List<string?> Ids(string name)
     {
         var ids = new List<string?>();

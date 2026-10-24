@@ -111,15 +111,25 @@ public sealed class PlanSummary
             }
         }
 
-        if (plan.Find("computer.name") is { } rename && Runs(rename) && !ApplyList.IsDeferred(rename) && rename.Target?.Data is { } newName)
+        if (plan.Find("computer.name") is { } rename && Runs(rename) && rename.Target?.Data is { } newName)
         {
             facts.Add(SummaryLine.Of("Summary_Rename", newName));
+        }
+        else if (plan.Find("computer.name") is { Action: PlanAction.Keep, ReasonKey: Planner.R.ComputerPending } pending && pending.Target?.Data is { } pendingName)
+        {
+            facts.Add(SummaryLine.Of("Summary_RenamePending", pendingName));
         }
 
         QuickAccess(plan, answers, config, facts);
 
-        // A network left Public is a safety notice: shown whatever else the summary says.
+        // A network left Public is a safety notice: shown whatever else the summary says. So is the standing permission
+        // Auto-Private gives.
         var notices = new List<SummaryLine>();
+        if (answers.AutoPrivate)
+        {
+            notices.Add(SummaryLine.Of("Summary_AutoPrivateOn"));
+        }
+
         foreach (var item in plan.Items)
         {
             if (item.Section == PlanSection.Networks && item.Action == PlanAction.Ask && !item.Ticked)
@@ -145,6 +155,7 @@ public sealed class PlanSummary
         string? deletes = null;
         string? keeps = null;
         var putsBack = false;
+        string? renames = null;
         foreach (var item in plan.Items)
         {
             if (item.Key == "u.user.delete" && item.Action == PlanAction.Ask && !item.Ticked)
@@ -153,7 +164,7 @@ public sealed class PlanSummary
                 continue;
             }
 
-            if (!Runs(item) || ApplyList.IsDeferred(item))
+            if (!Runs(item))
             {
                 continue;
             }
@@ -165,6 +176,10 @@ public sealed class PlanSummary
             else if (item.Key == "u.user.delete")
             {
                 deletes = item.Current?.Data ?? "?";
+            }
+            else if (item.Key == "u.computer")
+            {
+                renames = item.Target?.Data ?? "?";
             }
             else if (item.Section is PlanSection.Server or PlanSection.Hardening
                 || item.Key.StartsWith("u.builtin:", StringComparison.Ordinal) || item.Key.StartsWith("u.net:", StringComparison.Ordinal))
@@ -198,6 +213,11 @@ public sealed class PlanSummary
         if (putsBack)
         {
             facts.Add(SummaryLine.Of("Summary_U_PutsBack"));
+        }
+
+        if (renames is not null)
+        {
+            facts.Add(SummaryLine.Of("Summary_U_Rename", renames));
         }
 
         // What Uninstall leaves behind is said in the simple view, never only in the details.

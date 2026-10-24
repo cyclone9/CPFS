@@ -23,6 +23,17 @@
       </Border>
     </DataTemplate>
 
+    <!--  A requirement the user must meet, not a step: a warning bar that can't be closed.  -->
+    <DataTemplate DataType="{x:Type pages:WarningItem}">
+      <ui:InfoBar
+        Margin="0,6,0,2"
+        AutomationProperties.Name="{Binding Text}"
+        IsClosable="False"
+        IsOpen="True"
+        Message="{Binding Text}"
+        Severity="Warning" />
+    </DataTemplate>
+
     <!--  The value is data: monospace, left to right inside RTL text. The button copies exactly what is shown.  -->
     <DataTemplate DataType="{x:Type pages:ValueItem}">
       <StackPanel Margin="0,6,0,2">

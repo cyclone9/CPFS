@@ -54,7 +54,8 @@ public static class Planner
         R.RuleCreate, R.RuleChange, R.RuleDuplicate, R.RuleRemove, R.RuleLegacy, R.VpnNone, R.VpnAdapter, R.VpnAdapterPublic,
         R.BuiltInDisable, R.BuiltInPortUnknown, R.BuiltInNone,
         R.NetworkPublic, R.NetworkPrivate,
-        R.AutoCreate, R.AutoRemove, R.AutoOff, R.LegacyTask, R.StaleTask,
+        R.AutoCreate, R.AutoRemove, R.AutoOff, R.LegacyTask, R.StaleTask, R.AutoTaskChange, R.AutoExeCreate, R.AutoExeUpdate, R.AutoExeRemove,
+        R.AutoScript, R.AutoSkip,
         R.DriveCreate, R.DriveGone, R.DriveForeign, R.DriveSession, R.DriveOldSession, R.DriveOldRemove, R.DriveOldForeign, R.DriveOff,
         R.LabelSet, R.LabelForeign, R.LabelRenamed, R.LabelOldRemove, R.LabelRestore,
         R.IconSet, R.IconForeign, R.IconChanged, R.IconOldRemove, R.IconRestore,
@@ -63,6 +64,7 @@ public static class Planner
         R.ExplorerOtherUser, R.ExplorerOtherUserKept, R.ExplorerNotLoaded,
         R.DataCreate, R.DataLock,
         R.ShareAccessGrant, R.ShareAccessOther, R.ShareAccessDeny, R.ComputerSavedDiffers, R.ComputerPending,
+        R.ComputerRename, R.ComputerDomain, R.ComputerNoBackup, R.ComputerEntra,
     };
 
     public static Plan Setup(SystemSnapshot snapshot, SetupAnswers answers, ConfigDocument? config, ProtectedFolders protectedFolders)
@@ -149,6 +151,12 @@ public static class Planner
         public const string AutoOff = "Plan_R_AutoOff";
         public const string LegacyTask = "Plan_R_LegacyTask";
         public const string StaleTask = "Plan_R_StaleTask";
+        public const string AutoTaskChange = "Plan_R_AutoTaskChange";
+        public const string AutoExeCreate = "Plan_R_AutoExeCreate";
+        public const string AutoExeUpdate = "Plan_R_AutoExeUpdate";
+        public const string AutoExeRemove = "Plan_R_AutoExeRemove";
+        public const string AutoScript = "Plan_R_AutoScript";
+        public const string AutoSkip = "Plan_R_AutoSkip";
         public const string DriveCreate = "Plan_R_DriveCreate";
         public const string DriveGone = "Plan_R_DriveGone";
         public const string DriveForeign = "Plan_R_DriveForeign";
@@ -191,6 +199,10 @@ public static class Planner
         public const string ShareAccessDeny = "Plan_R_ShareAccessDeny";
         public const string ComputerSavedDiffers = "Plan_R_ComputerSavedDiffers";
         public const string ComputerPending = "Plan_R_ComputerPending";
+        public const string ComputerRename = "Plan_R_ComputerRename";
+        public const string ComputerDomain = "Plan_R_ComputerDomain";
+        public const string ComputerNoBackup = "Plan_R_ComputerNoBackup";
+        public const string ComputerEntra = "Plan_R_ComputerEntra";
     }
 
     // Word keys for values and subjects.
@@ -250,6 +262,7 @@ public static class Planner
         S.Folder, S.Ace, S.Share, S.AdminShares, S.ServerStart, S.Smb2, S.Reject, S.Smb1, S.Smb1Feature, S.Guest,
         S.LockoutThreshold, S.Audit, S.BuiltIn, S.VpnAdapter, S.Drive, S.OldDrive, S.DriveSession, S.OldDriveSession, S.Label,
         S.OldLabel, S.Icon, S.OldIcon, S.Explorer, S.Shortcut, S.OldShortcut, S.ShortcutIcon, S.DataFolder, S.ShareAccess, S.ComputerName, S.SavedComputerName,
+        S.AutoSkip, S.AutoScript,
     };
 
     // A setting of a share or a firewall rule that differs from Setup's, by the field name the planner reports.
@@ -311,6 +324,8 @@ public static class Planner
         public const string ShareAccess = "Plan_S_ShareAccess";
         public const string ComputerName = "Plan_S_ComputerName";
         public const string SavedComputerName = "Plan_S_SavedComputerName";
+        public const string AutoSkip = "Plan_S_AutoSkip";
+        public const string AutoScript = "Plan_S_AutoScript";
     }
 
     private sealed class Builder
@@ -982,6 +997,9 @@ public static class Planner
             }
         }
 
+        // On: the skip list, the exe copy in ProgramData\CPFS and the SYSTEM task that runs it, in that order, so the task
+        // never runs before what it reads is in place. Off: the task goes first, then the copy CPFS recorded. The data
+        // folder is locked first in every run (data.folder); the steps check the lock again before they write.
         public void AutoPrivate()
         {
             if (!_s.Tasks.IsOk)
@@ -991,16 +1009,22 @@ public static class Planner
             }
 
             var tasks = _s.Tasks.Value!;
-            var exists = tasks.TryGetValue(AutoPrivateTask, out var e) && e;
             if (_a.AutoPrivate)
             {
-                Add("auto.task", PlanSection.AutoPrivate, exists ? PlanAction.Keep : PlanAction.Create, Data(AutoPrivateTask),
-                    Word(exists ? W.Exists : W.Absent), exists ? null : Word(W.Exists), exists ? R.AtTarget : R.AutoCreate);
+                if (!AutoPrivateOn())
+                {
+                    return;
+                }
             }
             else
             {
+                var exists = tasks.TryGetValue(AutoPrivateTask, out var e) && e;
                 Add("auto.task", PlanSection.AutoPrivate, exists ? PlanAction.RemoveIfOurs : PlanAction.Keep, Data(AutoPrivateTask),
                     Word(exists ? W.Exists : W.Absent), exists ? Word(W.Absent) : null, exists ? R.AutoRemove : R.AutoOff);
+                if (_s.AutoPrivateFiles.IsOk && _s.AutoPrivateFiles.Value!.ExeExists && _c?.TrackedAutoPrivateExe is not null)
+                {
+                    Add("auto.exe", PlanSection.AutoPrivate, PlanAction.RemoveIfOurs, Data(_s.AutoPrivateExe), Word(W.Exists), Word(W.Absent), R.AutoExeRemove);
+                }
             }
 
             if (tasks.TryGetValue(LegacyAutoPrivateTask, out var legacy) && legacy)
@@ -1008,7 +1032,68 @@ public static class Planner
                 Add("auto.legacy", PlanSection.AutoPrivate, PlanAction.RemoveIfOurs, Data(LegacyAutoPrivateTask), Word(W.Exists), Word(W.Absent), R.LegacyTask);
             }
 
+            // The 0.2.x task's script: dead code in a folder SYSTEM runs from, once the task no longer points at it.
+            if (_s.AutoPrivateFiles.IsOk && _s.AutoPrivateFiles.Value!.LegacyScript)
+            {
+                Add("auto.script", PlanSection.AutoPrivate, PlanAction.RemoveIfOurs, Word(S.AutoScript), Word(W.Exists), Word(W.Absent), R.AutoScript);
+            }
         }
+
+        private bool AutoPrivateOn()
+        {
+            foreach (var (key, state, error) in new[]
+            {
+                ("auto.task", _s.DataFolder.State, _s.DataFolder.Error),
+                ("auto.exe", _s.AutoPrivateFiles.State, _s.AutoPrivateFiles.Error),
+                ("auto.task", _s.AutoPrivateTask.State, _s.AutoPrivateTask.Error),
+            })
+            {
+                if (state != ReadState.Ok)
+                {
+                    Unread(key, PlanSection.AutoPrivate, key == "auto.exe" ? Data(_s.AutoPrivateExe) : Data(AutoPrivateTask), state, error);
+                    return false;
+                }
+            }
+
+            var previous = _c?.AutoPrivateSkip ?? Array.Empty<string>();
+            var skip = AutoPrivateRules.SkipList(previous, new Plan(Items));
+            if (!AutoPrivateRules.SameNames(skip, previous))
+            {
+                Add("auto.skip", PlanSection.AutoPrivate, PlanAction.Change, Word(S.AutoSkip), Names(previous), Names(skip), R.AutoSkip);
+            }
+
+            var files = _s.AutoPrivateFiles.Value!;
+            if (!files.ExeExists)
+            {
+                Add("auto.exe", PlanSection.AutoPrivate, PlanAction.Create, Data(_s.AutoPrivateExe), Word(W.Absent), Word(W.Exists), R.AutoExeCreate);
+            }
+            else if (!files.ExeIsCurrent)
+            {
+                Add("auto.exe", PlanSection.AutoPrivate, PlanAction.Change, Data(_s.AutoPrivateExe), Word(W.Exists), null, R.AutoExeUpdate);
+            }
+            else
+            {
+                Add("auto.exe", PlanSection.AutoPrivate, PlanAction.Keep, Data(_s.AutoPrivateExe), Word(W.Exists), null, R.AtTarget);
+            }
+
+            var task = _s.AutoPrivateTask.Value;
+            if (task is null)
+            {
+                Add("auto.task", PlanSection.AutoPrivate, PlanAction.Create, Data(AutoPrivateTask), Word(W.Absent), Word(W.Exists), R.AutoCreate);
+            }
+            else if (AutoPrivateTaskSpec.Differences(task, _s.AutoPrivateExe) is { Count: > 0 } diff)
+            {
+                Add("auto.task", PlanSection.AutoPrivate, PlanAction.Change, Data(AutoPrivateTask), Word(W.Exists), null, R.AutoTaskChange, string.Join(", ", diff));
+            }
+            else
+            {
+                Add("auto.task", PlanSection.AutoPrivate, PlanAction.Keep, Data(AutoPrivateTask), Word(W.Exists), null, R.AtTarget);
+            }
+
+            return true;
+        }
+
+        private static PlanValue Names(IReadOnlyList<string> names) => names.Count == 0 ? Word(W.None) : Data(string.Join(", ", names));
 
         // A CPFS-RunAsUser task in the root folder is a leftover (from a run that stopped, or the 0.2.x scripts):
         // CPFS's own exists only inside the drive.session step. It goes with the drive, not with Auto-Private.
@@ -1454,8 +1539,9 @@ public static class Planner
             }
         }
 
-        // As in the scripts, the live name (or the pending one) is kept: the form has no computer name field yet, and a
-        // saved name that differs is shown, never planned as a rename.
+        // The name in the form against the pending name (or the live one when none waits). Windows takes a new name only
+        // after a restart; the plan, the summary and the done message say so. Never on a domain member, never without a
+        // backup block to hold the original, and only when ticked on a PC joined to Entra ID.
         public void Computer()
         {
             if (!_s.ComputerNames.IsOk || (_s.ComputerNames.Value!.Pending ?? _s.ComputerNames.Value.Active) is null)
@@ -1466,7 +1552,12 @@ public static class Planner
 
             var names = _s.ComputerNames.Value!;
             var current = (names.Pending ?? names.Active)!;
-            if (names.Pending is not null)
+            var desired = _a.ComputerName.Trim();
+            if (desired.Length > 0 && !SameText(desired, current))
+            {
+                Rename(current, desired);
+            }
+            else if (names.Pending is not null)
             {
                 Add("computer.name", PlanSection.Computer, PlanAction.Keep, Word(S.ComputerName), Data(names.Active ?? "?"), Data(names.Pending), R.ComputerPending, names.Pending);
             }
@@ -1476,9 +1567,46 @@ public static class Planner
             }
 
             var saved = _c?.HostName?.Trim();
-            if (!string.IsNullOrEmpty(saved) && !SameText(saved, current))
+            if (!string.IsNullOrEmpty(saved) && !SameText(saved, current) && !SameText(saved, desired))
             {
                 Add("computer.saved", PlanSection.Computer, PlanAction.Keep, Word(S.SavedComputerName), Data(saved), null, R.ComputerSavedDiffers, saved!, current);
+            }
+        }
+
+        private void Rename(string current, string desired)
+        {
+            const string key = "computer.name";
+            var subject = Word(S.ComputerName);
+            if (!Validators.ComputerName(desired, _a.SmbUser).IsValid)
+            {
+                Invalid(key, PlanSection.Computer, subject, desired, "ComputerName");
+                return;
+            }
+
+            if (!_s.Join.IsOk)
+            {
+                Unread(key, PlanSection.Computer, subject, _s.Join.State, _s.Join.Error);
+                return;
+            }
+
+            var join = _s.Join.Value!;
+            if (join.PartOfDomain)
+            {
+                Add(key, PlanSection.Computer, PlanAction.Keep, subject, Data(current), null, R.ComputerDomain);
+            }
+            else if (!FreshInstall && _c!.Backup != BackupState.Present)
+            {
+                Add(key, PlanSection.Computer, PlanAction.Keep, subject, Data(current), null, R.ComputerNoBackup);
+            }
+            else if (join.EntraJoined)
+            {
+                AskItem(key, PlanSection.Computer, subject, Data(current), Data(desired), R.ComputerEntra, desired);
+                MarkBackup();
+            }
+            else
+            {
+                Add(key, PlanSection.Computer, PlanAction.Change, subject, Data(current), Data(desired), R.ComputerRename, desired);
+                MarkBackup();
             }
         }
 

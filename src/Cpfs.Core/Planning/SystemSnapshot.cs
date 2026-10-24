@@ -57,6 +57,10 @@ public sealed record ShareAccessEntry(string Account, string? Sid, int ControlTy
 // Tcpip\Parameters: Active is "Hostname", Pending is "NV Hostname" when a rename waits for a restart.
 public sealed record ComputerNameInfo(string? Active, string? Pending);
 
+// Whether a rename is CPFS's to make: never on a domain member; only after asking on a device joined to Entra ID
+// (NetGetAadJoinInformation's device join; a work account the user added doesn't count).
+public sealed record ComputerJoin(bool PartOfDomain, bool EntraJoined);
+
 public sealed record LockoutInfo(uint Threshold, uint DurationSeconds, uint WindowSeconds);
 
 public sealed record AuditSetting(bool Success, bool Failure);
@@ -103,6 +107,8 @@ public sealed record SystemSnapshot
 
     public Reading<ComputerNameInfo> ComputerNames { get; init; } = Reading.Failed<ComputerNameInfo>(null);
 
+    public Reading<ComputerJoin> Join { get; init; } = Reading.Failed<ComputerJoin>(null);
+
     public Reading<IReadOnlyList<ShareInfo>> Shares { get; init; } = Reading.Failed<IReadOnlyList<ShareInfo>>(null);
 
     public Reading<SmbServerInfo> SmbServer { get; init; } = Reading.Failed<SmbServerInfo>(null);
@@ -134,6 +140,14 @@ public sealed record SystemSnapshot
 
     // Task name to "exists".
     public Reading<IReadOnlyDictionary<string, bool>> Tasks { get; init; } = Reading.Failed<IReadOnlyDictionary<string, bool>>(null);
+
+    // The CPFS-AutoPrivate task's definition; a null value means there is no such task.
+    public Reading<ScheduledTaskInfo?> AutoPrivateTask { get; init; } = Reading.Failed<ScheduledTaskInfo?>(null);
+
+    public Reading<AutoPrivateFiles> AutoPrivateFiles { get; init; } = Reading.Failed<AutoPrivateFiles>(null);
+
+    // Where Setup puts the exe copy the task runs.
+    public string AutoPrivateExe { get; init; } = @"C:\ProgramData\CPFS\Cpfs.exe";
 
     public Reading<DataFolderInfo> DataFolder { get; init; } = Reading.Failed<DataFolderInfo>(null);
 

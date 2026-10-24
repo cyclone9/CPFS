@@ -278,6 +278,25 @@ public sealed class ConfigBook
     public void TrackExplorerEntry(string sid, string folder, string name) =>
         TrackCreated("ExplorerEntry", new JsonObject { ["Sid"] = sid, ["Clsid"] = ExplorerEntry.Clsid, ["Folder"] = folder, ["Name"] = name });
 
+    // The exe copy the Auto-Private task runs (Tracked.Created.AutoPrivateExe), recorded before it is copied; null once
+    // it is removed.
+    public void TrackAutoPrivateExe(string? path, string? sha256) =>
+        TrackCreated("AutoPrivateExe", path is null ? null : new JsonObject { ["Path"] = path, ["Sha256"] = sha256 });
+
+    // A computer name CPFS is about to set (Tracked.ComputerNames); the list only grows.
+    public bool TrackComputerName(string name) => AddString("ComputerNames", name);
+
+    public void SetAutoPrivateSkip(IReadOnlyList<string> names)
+    {
+        var array = new JsonArray();
+        foreach (var name in names)
+        {
+            array.Add(name);
+        }
+
+        ConfigWriter.Set(Root, "AutoPrivateSkip", array);
+    }
+
     public void SetField(string name, JsonNode? value) => ConfigWriter.Set(Root, name, value);
 
     // The scripts drop Partial at the end of a run that went through.

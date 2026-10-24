@@ -239,37 +239,19 @@ public partial class UninstallPage : Page
         return (input, bytes, desktop.Documents);
     }
 
-    // The names the scripts' Auto-Private task logged: ANSI before 0.2.3, UTF-8 since. A wrong reading matches no
-    // network, so both are taken.
+    // The names the Auto-Private task logged: ANSI from the 0.2.x scripts, UTF-8 from the app; both readings are taken.
     private static List<string> AutoPrivateNames()
     {
-        var names = new List<string>();
-        var log = Path.Combine(StateReader.DataFolder, "auto-private.log");
-        if (!File.Exists(log))
-        {
-            return names;
-        }
-
+        var log = Path.Combine(StateReader.DataFolder, AutoPrivateLog.FileName);
         try
         {
-            foreach (var encoding in new[] { Encoding.Default, Encoding.UTF8 })
-            {
-                foreach (var line in File.ReadAllLines(log, encoding))
-                {
-                    var name = line.Trim();
-                    if (name.Length > 0 && !names.Contains(name))
-                    {
-                        names.Add(name);
-                    }
-                }
-            }
+            return File.Exists(log) ? new List<string>(AutoPrivateLog.Names(File.ReadAllBytes(log), Encoding.Default)) : new List<string>();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             AppLog.Write("uninstall", "auto-private.log: " + ex.Message);
+            return new List<string>();
         }
-
-        return names;
     }
 
     private void Recompute()
@@ -431,6 +413,7 @@ public partial class UninstallPage : Page
         ApplyResult.IsOpen = false;
         _staleShown = false;
         ResultActions.Visibility = Visibility.Collapsed;
+        RestartButton.Visibility = Visibility.Collapsed;
         _noNewRestorePoint = false;
         _steps.Clear();
         ProgressCard.Visibility = Visibility.Visible;
@@ -480,13 +463,19 @@ public partial class UninstallPage : Page
                     notes.Add(loc["Uninst_RestartDriveMsg"]);
                 }
 
+                if (run.RenamedTo is { } renamed)
+                {
+                    notes.Add(loc.FormatValues("Uninst_RenameMsg", renamed));
+                }
+
                 if (_noNewRestorePoint)
                 {
                     notes.Add(loc["Apply_NoRestorePointNote"]);
                 }
 
                 Show(ApplyResult, severity, loc["Uninst_DoneTitle"], string.Join(Environment.NewLine, notes));
-                ResultActions.Visibility = result.NotDone > 0 ? Visibility.Visible : Visibility.Collapsed;
+                RestartButton.Visibility = run.RenamedTo is not null ? Visibility.Visible : Visibility.Collapsed;
+                ResultActions.Visibility = result.NotDone > 0 || run.RenamedTo is not null ? Visibility.Visible : Visibility.Collapsed;
             }
             else
             {
@@ -500,6 +489,7 @@ public partial class UninstallPage : Page
                 }
 
                 Show(ApplyResult, InfoBarSeverity.Error, loc.FormatValues("Uninst_FailedTitle", SetupPage.ToView(failed).Subject), message);
+                RestartButton.Visibility = run.RenamedTo is not null ? Visibility.Visible : Visibility.Collapsed;
                 ResultActions.Visibility = Visibility.Visible;
             }
         }
@@ -544,6 +534,14 @@ public partial class UninstallPage : Page
     }
 
     private void OnCopyReport(object sender, RoutedEventArgs e) => ApplyUi.CopyReport(sender, out _);
+
+    private async void OnRestart(object sender, RoutedEventArgs e)
+    {
+        if (await ApplyUi.RestartAsync(this) is { } error)
+        {
+            Show(ApplyResult, InfoBarSeverity.Error, Loc.Instance["Restart_FailedTitle"], error);
+        }
+    }
 
     private async void OnContinueAsAdministrator(object sender, RoutedEventArgs e)
     {

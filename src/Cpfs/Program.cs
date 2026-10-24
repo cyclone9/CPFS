@@ -29,6 +29,12 @@ internal static class Program
             return RunUserSession(args);
         }
 
+        // Run by the CPFS-AutoPrivate task as SYSTEM: no window, no log in a profile, only its own run log.
+        if (args.Length > 0 && string.Equals(args[0], "--auto-private", StringComparison.Ordinal))
+        {
+            return RunAutoPrivate();
+        }
+
         AppLog.Start();
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             AppLog.Write("unhandled", "AppDomain, terminating " + e.IsTerminating + ": " + (e.ExceptionObject?.ToString() ?? "null"));
@@ -67,6 +73,9 @@ internal static class Program
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static int RunUserSession(string[] args) => UserSession.Run(args);
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static int RunAutoPrivate() => AutoPrivateVerb.Run();
 
     // Matches by simple name and ignores the requested version, which stands in for binding redirects.
     private static Assembly? OnAssemblyResolve(object? sender, ResolveEventArgs args)

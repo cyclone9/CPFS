@@ -514,14 +514,16 @@
                   </Grid.ColumnDefinitions>
                   <TextBox
                     x:Name="ComputerNameBox"
-                    AutomationProperties.HelpText="{Binding [Setup_Form_ComputerName_Later], Source={x:Static local:Loc.Instance}}"
+                    AutomationProperties.HelpText="{Binding [Setup_Form_ComputerName_Note], Source={x:Static local:Loc.Instance}}"
                     AutomationProperties.LabeledBy="{Binding ElementName=ComputerNameLabel}"
                     FlowDirection="LeftToRight"
                     FontFamily="{x:Static local:Theming.MonoFamily}"
-                    IsEnabled="False" />
+                    MaxLength="15"
+                    TextChanged="OnFormChanged" />
                   <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}" />
                 </Grid>
-                <TextBlock Margin="0,4,0,0" Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_ComputerName_Later], Source={x:Static local:Loc.Instance}}" />
+                <TextBlock x:Name="ComputerNameNote" Margin="0,4,0,0" Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_ComputerName_Note], Source={x:Static local:Loc.Instance}}" />
+                <TextBlock x:Name="ComputerNameError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
               </StackPanel>
             </local:FieldCardPanel>
           </ui:Card>
@@ -595,6 +597,14 @@
         Click="OnCopyReport"
         Content="{Binding [About_Log_Copy], Source={x:Static local:Loc.Instance}}"
         Icon="{ui:SymbolIcon Copy24}"
+        Visibility="Collapsed" />
+      <ui:Button
+        x:Name="RestartButton"
+        Margin="0,0,8,4"
+        AutomationProperties.Name="{Binding [Restart_Button], Source={x:Static local:Loc.Instance}}"
+        Click="OnRestart"
+        Content="{Binding [Restart_Button], Source={x:Static local:Loc.Instance}}"
+        Icon="{ui:SymbolIcon ArrowClockwise24}"
         Visibility="Collapsed" />
     </WrapPanel>
 

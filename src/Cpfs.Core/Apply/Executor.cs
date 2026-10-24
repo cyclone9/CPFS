@@ -13,7 +13,7 @@ public enum StepOutcome
     // Already as planned when read again: nothing written.
     Kept,
 
-    // Belongs to a later version (Auto-Private, computer name); not run.
+    // Belongs to a later version; not run. No item is deferred in this version.
     Deferred,
 
     // Windows refused the call as not supported on this system: not done, and the run goes on.
@@ -72,7 +72,7 @@ public sealed class StepPartialException : Exception
     }
 }
 
-public sealed record ApplyEntry(PlanItem Item, bool Deferred);
+public sealed record ApplyEntry(PlanItem Item, bool Deferred = false);
 
 // Which plan items Apply runs, and in what order.
 public static class ApplyList
@@ -87,17 +87,13 @@ public static class ApplyList
         _ => false,
     };
 
-    // Auto-Private and the computer name come in a later version.
-    public static bool IsDeferred(PlanItem item) =>
-        item.Section is PlanSection.AutoPrivate or PlanSection.Computer;
-
-    // Items that stop Apply: anything that could not be planned, except in the sections that are not applied yet.
+    // Items that stop Apply: anything that could not be planned.
     public static IReadOnlyList<PlanItem> Blocking(Plan plan)
     {
         var list = new List<PlanItem>();
         foreach (var item in plan.Items)
         {
-            if (item.Action == PlanAction.CannotPlan && !IsDeferred(item))
+            if (item.Action == PlanAction.CannotPlan)
             {
                 list.Add(item);
             }
@@ -119,7 +115,7 @@ public static class ApplyList
                 continue;
             }
 
-            var entry = new ApplyEntry(item, IsDeferred(item));
+            var entry = new ApplyEntry(item);
             if (item.Key == "data.folder")
             {
                 first.Insert(0, entry);
@@ -146,7 +142,7 @@ public static class ApplyList
         {
             if (IsRunnable(item) && !UninstallPlanner.IsChoiceOnly(item.Key))
             {
-                list.Add(new ApplyEntry(item, IsDeferred(item)));
+                list.Add(new ApplyEntry(item));
             }
         }
 

@@ -57,6 +57,11 @@ internal sealed class SetupRun
 
     public bool RestartNeeded { get; set; }
 
+    // The name Windows takes at the next restart, once the rename step ran.
+    public string? RenamedTo { get; set; }
+
+    public string ComputerName => Answers.ComputerName.Trim();
+
     // A drive letter mapping was removed: Windows keeps the one it made at start until the next restart.
     public bool DriveRestartNeeded { get; set; }
 
@@ -91,6 +96,7 @@ internal sealed class SetupRun
                 b.SetField("ShareName", ShareName);
                 b.SetField("Strict", Answers.Strict);
                 b.SetField("Access", (Answers.Drive ? 1 : 0) | (Answers.Shortcut ? 2 : 0));
+                b.SetField("AutoPrivate", Answers.AutoPrivate);
 
                 // Turned off: whatever is still recorded is no longer CPFS's (its own was removed above).
                 if (!Answers.Drive)
@@ -164,6 +170,14 @@ internal static class SetupSteps
             "fw.extra" => RemoveRules(arg),
             "fw.builtin" => BuiltIn(run, arg),
             "net" => Network(run, arg),
+            "auto.skip" => AutoSkip(run),
+            "auto.exe" when item.Action == PlanAction.RemoveIfOurs => RemoveCopy(),
+            "auto.exe" => Copy(),
+            "auto.task" when item.Action == PlanAction.RemoveIfOurs => RemoveTask(Planner.AutoPrivateTask),
+            "auto.task" => RegisterTask(),
+            "auto.legacy" => RemoveTask(Planner.LegacyAutoPrivateTask),
+            "auto.script" => RemoveScript(),
+            "computer.name" => Rename(run),
             "task.runasuser" => QuickAccessSteps.StaleTask(),
             "drive.oldlabel" => QuickAccessSteps.OldLabel(run, item),
             "drive.oldicon" => QuickAccessSteps.OldIcon(run),
@@ -189,7 +203,7 @@ internal static class SetupSteps
         Check = Locked,
     };
 
-    private static bool Locked()
+    internal static bool Locked()
     {
         var d = PlanReader.DataFolder();
         return d.Exists && d.OwnerIsAdministrators && d.Protected && !d.OthersCanWrite;
@@ -828,4 +842,155 @@ internal static class SetupSteps
         Do = () => Networks.SetCategory(name, 0, 1),
         Check = () => NonePublic(name),
     };
+
+    // Nothing SYSTEM runs may sit in a folder anyone else can write to: checked again right before each write.
+    private static void RequireLocked()
+    {
+        if (!Locked())
+        {
+            throw new InvalidOperationException("ProgramData\\CPFS is not locked to SYSTEM and Administrators, so the Auto-Private task is not set up.");
+        }
+    }
+
+    // The networks left Public, recorded before the task that reads them is created.
+    private static LambdaStep AutoSkip(SetupRun run)
+    {
+        var skip = AutoPrivateRules.SkipList(run.Original?.AutoPrivateSkip ?? Array.Empty<string>(), run.Plan);
+        return new LambdaStep
+        {
+            RecordWith = b =>
+            {
+                b!.SetAutoPrivateSkip(skip);
+                return BackupWrite.Recorded;
+            },
+        };
+    }
+
+    private static LambdaStep Copy()
+    {
+        string? hash = null;
+        return new LambdaStep
+        {
+            Read = AutoPrivateCopy.IsCurrent,
+            RecordWith = b =>
+            {
+                RequireLocked();
+                hash = AutoPrivateCopy.Sha256Of(AutoPrivateCopy.Running);
+                b!.TrackAutoPrivateExe(AutoPrivateCopy.Path, hash);
+                return BackupWrite.Recorded;
+            },
+            Do = () =>
+            {
+                RequireLocked();
+                AutoPrivateCopy.Write();
+            },
+            Check = AutoPrivateCopy.IsCurrent,
+        };
+    }
+
+    private static LambdaStep RemoveCopy() => new LambdaStep
+    {
+        Read = () => !File.Exists(AutoPrivateCopy.Path),
+        Do = AutoPrivateCopy.Remove,
+        TrackWith = b => b!.TrackAutoPrivateExe(null, null),
+        Check = () => !File.Exists(AutoPrivateCopy.Path),
+    };
+
+    private static bool TaskAtTarget() =>
+        AutoPrivateTask.Read() is { } task && AutoPrivateTaskSpec.Differences(task, AutoPrivateCopy.Path).Count == 0;
+
+    // Registered only for the copy in the locked folder, and only once that copy is the running build.
+    private static LambdaStep RegisterTask() => new LambdaStep
+    {
+        Read = TaskAtTarget,
+        RecordWith = b =>
+        {
+            RequireLocked();
+            if (!AutoPrivateCopy.IsCurrent())
+            {
+                throw new InvalidOperationException("The copy of CPFS in ProgramData\\CPFS is missing or differs from this program, so the Auto-Private task is not set up.");
+            }
+
+            if (AutoPrivateTask.Exists(Planner.AutoPrivateTask))
+            {
+                AppLog.Write("apply", Planner.AutoPrivateTask + " is replaced; it ran " + AutoPrivateTask.ActionText());
+            }
+
+            return BackupWrite.NotNeeded;
+        },
+        Do = () => AutoPrivateTask.Register(AutoPrivateCopy.Path),
+        TrackWith = b => b!.SetField("AutoPrivate", true),
+        Check = TaskAtTarget,
+    };
+
+    // config.json says Auto-Private is off before the task goes, so a task that can't be deleted does nothing.
+    private static LambdaStep RemoveTask(string name) => new LambdaStep
+    {
+        Read = () => !AutoPrivateTask.Exists(name),
+        RecordWith = b =>
+        {
+            if (!string.Equals(name, Planner.AutoPrivateTask, StringComparison.Ordinal))
+            {
+                return BackupWrite.NotNeeded;
+            }
+
+            b!.SetField("AutoPrivate", false);
+            return BackupWrite.Recorded;
+        },
+        Do = () => AutoPrivateTask.Delete(name),
+        Check = () => !AutoPrivateTask.Exists(name),
+    };
+
+    private static LambdaStep RemoveScript() => new LambdaStep
+    {
+        Read = () => !File.Exists(AutoPrivateCopy.LegacyScript),
+        Do = () => File.Delete(AutoPrivateCopy.LegacyScript),
+        Check = () => !File.Exists(AutoPrivateCopy.LegacyScript),
+    };
+
+    private static bool PendingIs(string name) => string.Equals(PlanReader.ComputerName(), name, StringComparison.OrdinalIgnoreCase);
+
+    // The original name is in Backup.HostName from the first Setup; the new one is recorded in Tracked.ComputerNames
+    // before Windows is asked for it. Windows takes it after a restart.
+    private static LambdaStep Rename(SetupRun run)
+    {
+        var name = run.ComputerName;
+        return new LambdaStep
+        {
+            Read = () => PendingIs(name),
+            RecordWith = b =>
+            {
+                if (!Cpfs.Core.Validation.Validators.ComputerName(name, run.User).IsValid)
+                {
+                    throw new InvalidOperationException("The computer name " + name + " is not valid.");
+                }
+
+                if (ComputerRename.ReadJoin().PartOfDomain)
+                {
+                    throw new InvalidOperationException("This PC is joined to a domain; rename it through the domain.");
+                }
+
+                using var hklm = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry64);
+                using var tcp = hklm.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters");
+                if (b!.Backup("HostName", tcp?.GetValue("Hostname") as string) == BackupWrite.NoBackup)
+                {
+                    return BackupWrite.NoBackup;
+                }
+
+                b.TrackComputerName(name);
+                return BackupWrite.Recorded;
+            },
+            Do = () =>
+            {
+                ComputerRename.Set(name);
+                run.RenamedTo = name;
+            },
+            TrackWith = b => b!.SetField("HostName", name),
+            Check = () =>
+            {
+                AppLog.Write("apply", "Rename: NV Hostname now " + (PlanReader.ComputerName() ?? "absent") + ", ComputerName\\ComputerName " + (ComputerRename.PendingNetBios() ?? "absent"));
+                return PendingIs(name);
+            },
+        };
+    }
 }

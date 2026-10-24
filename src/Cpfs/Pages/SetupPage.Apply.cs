@@ -207,6 +207,11 @@ public partial class SetupPage
                     notes.Add(loc["Apply_RestartMsg"]);
                 }
 
+                if (run.RenamedTo is { } renamed)
+                {
+                    notes.Add(loc.FormatValues("Apply_RenameMsg", renamed));
+                }
+
                 if (run.DriveRestartNeeded)
                 {
                     notes.Add(loc["Apply_RestartDriveMsg"]);
@@ -218,7 +223,7 @@ public partial class SetupPage
                 }
 
                 Show(ApplyResult, severity, title, string.Join(Environment.NewLine, notes));
-                ShowActions(connect: first, report: result.NotDone > 0);
+                ShowActions(connect: first, report: result.NotDone > 0, restart: run.RestartNeeded || run.RenamedTo is not null);
             }
             else
             {
@@ -272,11 +277,20 @@ public partial class SetupPage
     }
 
     // Open Connect after a first Setup; Copy report beside every failure or refused change.
-    private void ShowActions(bool connect, bool report)
+    private void ShowActions(bool connect, bool report, bool restart = false)
     {
         OpenConnectButton.Visibility = connect ? Visibility.Visible : Visibility.Collapsed;
         CopyReportButton.Visibility = report ? Visibility.Visible : Visibility.Collapsed;
-        ResultActions.Visibility = connect || report ? Visibility.Visible : Visibility.Collapsed;
+        RestartButton.Visibility = restart ? Visibility.Visible : Visibility.Collapsed;
+        ResultActions.Visibility = connect || report || restart ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async void OnRestart(object sender, RoutedEventArgs e)
+    {
+        if (await ApplyUi.RestartAsync(this) is { } error)
+        {
+            Show(ApplyResult, InfoBarSeverity.Error, Loc.Instance["Restart_FailedTitle"], error);
+        }
     }
 
     private void OnOpenConnect(object sender, RoutedEventArgs e) => MainWindow.Current?.Open(typeof(ConnectPage));

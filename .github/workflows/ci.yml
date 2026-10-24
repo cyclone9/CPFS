@@ -102,8 +102,21 @@ jobs:
           foreach ($n in 'Networks', 'FirewallRules') {
             if ($c.Tracked.PSObject.Properties.Name -notcontains $n) { $fail += "Tracked.$n" }
           }
+          if (-not ($c.AutoPrivate -is [bool])) { $fail += 'AutoPrivate' }
+          foreach ($n in @($c.AutoPrivateSkip)) { if ($null -ne $n -and -not ($n -is [string])) { $fail += 'AutoPrivateSkip entry' } }
+          foreach ($n in @($c.Tracked.ComputerNames)) { if ($null -ne $n -and -not ($n -is [string])) { $fail += 'Tracked.ComputerNames entry' } }
           if ($fail) { Write-Host ('FAIL: ' + ($fail -join ', ')); exit 1 }
           Write-Host 'PASS: every field the 0.2.0 Uninstall reads is there with its type'
+          # auto-private.log (UTF-8 with a BOM) must give the 0.2.0 Uninstall the same names the app read.
+          $log = Join-Path $env:RUNNER_TEMP 'cpfs-auto-private.log'
+          if (Test-Path -LiteralPath $log) {
+            $read = @(Get-Content -LiteralPath $log | Where-Object { $_.Trim() -ne '' } | ForEach-Object { $_.Trim() })
+            $want = @(Get-Content -LiteralPath (Join-Path $env:RUNNER_TEMP 'cpfs-auto-private-names.txt') -Encoding UTF8)
+            if (Compare-Object $read $want -CaseSensitive) { Write-Host ('FAIL: auto-private.log read as ' + ($read -join ', ') + ', expected ' + ($want -join ', ')); exit 1 }
+            Write-Host ('PASS: auto-private.log gives the same ' + $read.Count + ' names')
+          } else {
+            Write-Host 'SKIP: no network was switched on this runner, so there is no auto-private.log to read'
+          }
 
       - name: Upload the exe
         uses: actions/upload-artifact@v7.0.2

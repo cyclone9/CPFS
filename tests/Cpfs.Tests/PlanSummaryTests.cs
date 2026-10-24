@@ -32,16 +32,14 @@ public class PlanSummaryTests
 
             // An unticked question changes nothing; it is shown under Your decisions instead.
             Item("share.adminshares", PlanSection.Share, PlanAction.Ask),
-
-            // Waits for a later version: not counted as a change.
-            Item("auto.task", PlanSection.AutoPrivate, PlanAction.Create),
+            Item("auto.task", PlanSection.AutoPrivate, PlanAction.Keep),
         });
 
         var summary = PlanSummary.Setup(plan, Same, Installed);
 
         Assert.True(summary.NothingToChange);
         Assert.Equal(new[] { "Summary_Nothing" }, Keys(summary));
-        Assert.Equal(1, summary.Deferred);
+        Assert.Equal(0, summary.Deferred);
     }
 
     [Fact]

@@ -40,6 +40,7 @@ internal static class PlanReader
             WindowsUserNames = WindowsUserNames(desktopSid),
             ComputerName = Part("computer", ComputerName).Value,
             ComputerNames = Part("computer names", ComputerNames),
+            Join = Part("domain and Entra ID join", Apply.ComputerRename.ReadJoin),
             Shares = Part("shares", Shares),
             SmbServer = Part("smb server", SmbServer),
             ServerStart = Part("server start", ServerStart),
@@ -53,6 +54,9 @@ internal static class PlanReader
             Networks = Part("networks", Networks),
             VpnAdapters = VpnAdapters(),
             Tasks = Part("tasks", Tasks),
+            AutoPrivateTask = Part("auto-private task", () => Apply.AutoPrivateTask.Read()),
+            AutoPrivateFiles = Part("auto-private files", Apply.AutoPrivateCopy.ReadFiles),
+            AutoPrivateExe = Apply.AutoPrivateCopy.Path,
             DataFolder = Part("data folder", DataFolder),
             DosDevices = Part("dos devices", DosDevices),
             DriveLabels = Part<IReadOnlyDictionary<char, string>>("drive labels", () => DriveIconValues("DefaultLabel")),
@@ -611,7 +615,7 @@ internal static class PlanReader
         return list;
     }
 
-    private static List<VpnAdapterInfo> VpnAdapters()
+    internal static List<VpnAdapterInfo> VpnAdapters()
     {
         var list = new List<VpnAdapterInfo>();
         try

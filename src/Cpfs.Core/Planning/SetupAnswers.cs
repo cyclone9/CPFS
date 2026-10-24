@@ -41,6 +41,9 @@ public sealed record SetupAnswers
 
     public string ShortcutName { get; init; } = "";
 
+    // The name devices find this PC by; empty keeps the current (or pending) name.
+    public string ComputerName { get; init; } = "";
+
     public PasswordEntry Password { get; init; }
 
     // The user's answers to "Ask" items, by item key. An item without an answer takes its default.

@@ -19,7 +19,7 @@ public class UninstallPlannerTests
 
     // The machine the 0.2.3 fixture describes after Setup: CPFS's share and account, its two LAN rules, hardening at
     // CPFS's values, no shortcut on the desktop.
-    private static SystemSnapshot Installed() => new()
+    internal static SystemSnapshot Installed() => new()
     {
         Elevated = true,
         WindowsUserNames = new[] { "Owner" },

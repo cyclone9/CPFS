@@ -275,7 +275,6 @@
   <data name="Connect_Win_Step2" xml:space="preserve"><value>Sign in with the username {0}, not with the Windows account of that PC.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Win_Step3" xml:space="preserve"><value>To keep it as a drive, use Map network drive, paste the address and tick Connect using different credentials.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Win_Step4" xml:space="preserve"><value>Or run this command in a Command Prompt. The * makes it ask for the SMB password.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Win_NoQr" xml:space="preserve"><value>Windows gets no QR code: copy the address instead.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Win_Strict" xml:space="preserve"><value>Strict mode: Windows 8 and later support SMB 3 encryption.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Mac_Title" xml:space="preserve"><value>macOS</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Mac_Step1" xml:space="preserve"><value>In Finder, choose Go, then Connect to Server. Type the address below and click Connect.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -425,8 +424,8 @@
   <data name="Setup_Form_PasswordShort" xml:space="preserve"><value>The SMB password needs at least {0} characters.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Strict" xml:space="preserve"><value>Strict mode</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Strict_Desc" xml:space="preserve"><value>Require SMB3 encryption. Some older devices can no longer connect.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Form_AutoPrivate" xml:space="preserve"><value>Make new networks Private</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Form_AutoPrivate_Desc" xml:space="preserve"><value>Convenient at home, but it also trusts cafe and hotel Wi-Fi.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_AutoPrivate" xml:space="preserve"><value>Trust new networks automatically</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_AutoPrivate_Desc" xml:space="preserve"><value>When this PC joins a network it has never seen, CPFS marks it Private so your devices can connect without running Setup again. That includes cafe, hotel and airport Wi-Fi, where strangers share the network and can try your SMB password. Off is safer. Networks you leave Public here are never changed, and a network CPFS has switched once is never switched again.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Drive" xml:space="preserve"><value>Drive letter</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_Drive_Desc" xml:space="preserve"><value>Show the shared folder as a drive in File Explorer. Only free letters are offered.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_DriveLetter" xml:space="preserve"><value>Drive letter</value><comment>UNTRANSLATED: English text</comment></data>
@@ -591,7 +590,7 @@
   <data name="Plan_R_BuiltInNone" xml:space="preserve"><value>No built-in rule opens port 445 on Public networks.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_NetworkPublic" xml:space="preserve"><value>Public network on {0}: the CPFS rules do not apply to it. Tick to make it Private, only for a network you trust.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_NetworkPrivate" xml:space="preserve"><value>A trusted network: the CPFS rules apply.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Plan_R_AutoCreate" xml:space="preserve"><value>Creates the task that makes each new network Private.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_AutoCreate" xml:space="preserve"><value>Creates the task that marks a network this PC has never seen Private, once.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_AutoRemove" xml:space="preserve"><value>Auto-Private is off in your answers, so the CPFS task is removed.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_AutoOff" xml:space="preserve"><value>Auto-Private is off.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Plan_R_LegacyTask" xml:space="preserve"><value>A task from CyShare, the earlier name of CPFS.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -728,8 +727,6 @@
   <data name="Uninst_R_NetworkSaved" xml:space="preserve"><value>CPFS made this network Private. It is not connected now; tick to make it Public in the saved network list.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_R_SaveCopy" xml:space="preserve"><value>Before anything changes, a copy of config.json with the backup of your original settings goes to your Documents folder. It holds no password.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_R_DataRemove" xml:space="preserve"><value>The CPFS data folder with config.json. Removed last.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Uninst_R_DataKept" xml:space="preserve"><value>Kept, because it records a drive, shortcut or task that Uninstall can't remove yet.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Uninst_R_Later" xml:space="preserve"><value>Uninstall can't remove this yet.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_S_Owner" xml:space="preserve"><value>Owner of uploaded files</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_S_Ace" xml:space="preserve"><value>Folder permission</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_S_Delete" xml:space="preserve"><value>Delete the account</value><comment>UNTRANSLATED: English text</comment></data>
@@ -764,7 +761,6 @@
   <data name="Setup_Form_Password_DescKeep" xml:space="preserve"><value>Leave it empty to keep the current password.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_ComputerName" xml:space="preserve"><value>Computer name</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Form_ComputerName_Desc" xml:space="preserve"><value>Devices find this PC by this name followed by .local.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Form_ComputerName_Later" xml:space="preserve"><value>Renaming the computer isn't available yet</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_More_Title" xml:space="preserve"><value>More options</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_More_Desc" xml:space="preserve"><value>Strict mode, new networks, drive letter, desktop shortcut and computer name. The defaults suit most people.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Setup_Decisions_Title" xml:space="preserve"><value>Your decisions</value><comment>UNTRANSLATED: English text</comment></data>
@@ -793,7 +789,7 @@
   <data name="Summary_ShareMoved" xml:space="preserve"><value>The share {0} now shows the folder {1}.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_NewAccount" xml:space="preserve"><value>Devices sign in with the new account {0}.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_Password" xml:space="preserve"><value>A new password for {0}. Devices must use it from now on.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_Rename" xml:space="preserve"><value>The computer name changes to {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Rename" xml:space="preserve"><value>The computer name changes to {0} after you restart Windows.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_StaysPublic" xml:space="preserve"><value>{0} stays a Public network, so devices on it can't connect.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_Nothing" xml:space="preserve"><value>Nothing to change. This PC already matches your settings.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_Blocked" xml:space="preserve"><value>Some items can't be planned yet, so the button stays off until they can.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -930,4 +926,32 @@
   <data name="Monitor_Activity_ClearTip" xml:space="preserve"><value>Empties this list. A saved log file keeps its lines.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Activity_SaveLog" xml:space="preserve"><value>Save to a log file</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Activity_SaveLogHelp" xml:space="preserve"><value>Each change also goes to {0}. The file is never part of Copy report, and turning this off keeps it.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_ComputerName_Note" xml:space="preserve"><value>Letters, digits and hyphens, up to 15, not only digits. Windows uses a new name after a restart.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_Error_SameAsSmbUser" xml:space="preserve"><value>The computer name can't be the same as the SMB username.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_AutoTaskChange" xml:space="preserve"><value>A task of this name exists but differs from CPFS's ({0}), so it is set up again.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_AutoExeCreate" xml:space="preserve"><value>Copies CPFS into ProgramData\CPFS, which only administrators can change. The task runs this copy, never the file you started.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_AutoExeUpdate" xml:space="preserve"><value>The copy is from another CPFS build, so it is replaced with this one.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_AutoExeRemove" xml:space="preserve"><value>Auto-Private is off, so the copy of CPFS the task ran is removed.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_AutoScript" xml:space="preserve"><value>The script of the earlier Auto-Private task. Nothing uses it any more.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_AutoSkip" xml:space="preserve"><value>The networks you leave Public are recorded, so the task never changes them.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_S_AutoSkip" xml:space="preserve"><value>Networks left Public</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_S_AutoScript" xml:space="preserve"><value>Earlier Auto-Private script</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_ComputerRename" xml:space="preserve"><value>Windows takes the new name after a restart. Devices then find this PC as {0}.local.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_ComputerDomain" xml:space="preserve"><value>This PC is joined to a domain. Rename it through the domain.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_ComputerNoBackup" xml:space="preserve"><value>This install can't record the original name, so the name stays.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_ComputerEntra" xml:space="preserve"><value>An organisation manages this PC (Entra ID), and renaming can affect its registration. Tick only if you're sure. Windows takes the name {0} after a restart.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_RenamePending" xml:space="preserve"><value>Windows takes the name {0} after the next restart.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_AutoPrivateOn" xml:space="preserve"><value>New networks will be marked Private automatically.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_Rename" xml:space="preserve"><value>The computer name goes back to {0} after you restart Windows.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_R_TaskRemove" xml:space="preserve"><value>The task CPFS created. It goes before ProgramData\CPFS.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_R_ComputerRestore" xml:space="preserve"><value>Puts back {0}, the name this PC had before CPFS, after a restart.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_R_ComputerRenamedSince" xml:space="preserve"><value>This PC was renamed since, not by CPFS. Tick to put back {0}, its name before CPFS, after a restart.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_R_ComputerBackupInvalid" xml:space="preserve"><value>The name in the backup, {0}, isn't one CPFS can set, so the name stays.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_RenameMsg" xml:space="preserve"><value>Restart Windows to use the new name {0}. Until then, devices find this PC by its old name.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_RenameMsg" xml:space="preserve"><value>Restart Windows to put back the name {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Restart_Button" xml:space="preserve"><value>Restart now</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Restart_ConfirmTitle" xml:space="preserve"><value>Restart Windows now?</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Restart_ConfirmMsg" xml:space="preserve"><value>Save your work in other programs first. Windows closes them and restarts.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Restart_FailedTitle" xml:space="preserve"><value>Windows didn't restart</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Restart_Failed" xml:space="preserve"><value>Restart from the Start menu instead. Windows said: {0}</value><comment>UNTRANSLATED: English text</comment></data>
 </root>

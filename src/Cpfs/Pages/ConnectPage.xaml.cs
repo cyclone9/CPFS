@@ -26,6 +26,11 @@ public sealed class NoteItem : GuideItem
     public string Text { get; init; } = "";
 }
 
+public sealed class WarningItem : GuideItem
+{
+    public string Text { get; init; } = "";
+}
+
 public sealed class ValueItem : GuideItem
 {
     public string Label { get; init; } = "";
@@ -379,7 +384,6 @@ public partial class ConnectPage : Page
         card.Items.Add(Step("Connect_Win_Step3"));
         card.Items.Add(Step("Connect_Win_Step4"));
         card.Items.Add(Value("Connect_Label_NetUse", v.NetUse));
-        card.Items.Add(new StepItem { Text = Loc.Instance["Connect_Win_NoQr"] });
         if (v.Strict)
         {
             card.Items.Add(Note("Connect_Win_Strict"));
@@ -455,7 +459,7 @@ public partial class ConnectPage : Page
         card.Items.Add(Step("Connect_Ios_Step2"));
         card.Items.Add(Value("Connect_Label_IosUrl", v.IosUrl));
         card.Items.Add(Step("Connect_Ios_Step3", v.User));
-        card.Items.Add(new StepItem { Text = Loc.Instance["Connect_Ios_Version"] });
+        card.Items.Add(new WarningItem { Text = Loc.Instance["Connect_Ios_Version"] });
         if (v.Strict)
         {
             card.Items.Add(Note("Connect_Ios_Strict"));

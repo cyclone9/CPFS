@@ -305,6 +305,32 @@ internal static class ApplyUi
         return DialogCloses.Confirms(answer);
     }
 
+    // "Restart now" after a rename: asks first, with no default button, and restarts only on the dialog's own button.
+    // Null when Windows took the request (or the user cancelled), otherwise the error to show.
+    public static async Task<string?> RestartAsync(FrameworkElement page)
+    {
+        var loc = Loc.Instance;
+        var box = NewChoice(page, loc["Restart_ConfirmTitle"], Text(loc["Restart_ConfirmMsg"]));
+        box.AddButton(loc["Restart_Button"], Wpf.Ui.Controls.MessageBoxButton.Primary, ControlAppearance.Primary);
+        box.AddButton(loc["Common_Cancel"], Wpf.Ui.Controls.MessageBoxButton.Close, ControlAppearance.Secondary, isCancel: true);
+        if (!DialogCloses.Confirms(await box.ShowLoggedAsync("apply", "Restart_ConfirmTitle")))
+        {
+            return null;
+        }
+
+        try
+        {
+            Restart.Now();
+            AppLog.Write("apply", "Restart requested");
+            return null;
+        }
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
+        {
+            AppLog.Write("apply", "Restart: " + ex.GetType().Name + ": " + ex.Message);
+            return loc.FormatValues("Restart_Failed", ex.Message);
+        }
+    }
+
     // After a run that finished: how many changes were made as the title; then, by name and with Windows' words, each
     // change Windows refused or did only in part. Those are not done, and never counted as made.
     public static (string Title, string Message, InfoBarSeverity Severity) DoneMessage(ExecutionResult result, IReadOnlyList<ApplyEntry> entries)

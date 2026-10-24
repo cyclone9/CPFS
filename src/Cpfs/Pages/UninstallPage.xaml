@@ -277,6 +277,14 @@
           Click="OnCopyReport"
           Content="{Binding [About_Log_Copy], Source={x:Static local:Loc.Instance}}"
           Icon="{ui:SymbolIcon Copy24}" />
+        <ui:Button
+          x:Name="RestartButton"
+          Margin="0,0,8,4"
+          AutomationProperties.Name="{Binding [Restart_Button], Source={x:Static local:Loc.Instance}}"
+          Click="OnRestart"
+          Content="{Binding [Restart_Button], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon ArrowClockwise24}"
+          Visibility="Collapsed" />
       </WrapPanel>
 
       <!--  The full plan and Uninstall's progress, collapsed unless "Always show details" is on.  -->

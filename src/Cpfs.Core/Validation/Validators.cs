@@ -14,6 +14,7 @@ public enum ValidationError
     AllDigits,
     SameAsWindowsUser,
     SameAsComputerName,
+    SameAsSmbUser,
     NotFullPath,
     DriveRoot,
     ProtectedFolder,
@@ -65,11 +66,19 @@ public static class Validators
         "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
     };
 
+    // Microsoft's reserved words for computer names (KB 909264, naming conventions); the multi-word ones can't occur.
+    private static readonly string[] ReservedComputerNames =
+    {
+        "ANONYMOUS", "BATCH", "BUILTIN", "DIALUP", "DOMAIN", "ENTERPRISE", "INTERACTIVE", "INTERNET", "LOCAL", "NETWORK", "NULL",
+        "PROXY", "RESTRICTED", "SELF", "SERVER", "SERVICE", "SYSTEM", "USERS", "WORLD",
+    };
+
     private static readonly char[] InvalidPathChars = { '/', '*', '?', '"', '<', '>', '|' };
 
     private static readonly char[] InvalidFileNameChars = { '\\', '/', ':', '*', '?', '"', '<', '>', '|' };
 
-    public static ValidationResult ComputerName(string? input)
+    // smbUser: the SMB account's name, which the computer name must not equal (the user-name check is the other way).
+    public static ValidationResult ComputerName(string? input, string? smbUser = null)
     {
         var name = (input ?? "").Trim();
         if (name.Length == 0)
@@ -87,7 +96,25 @@ public static class Validators
             return new(ValidationError.InvalidCharacters);
         }
 
-        return DigitsOnly.IsMatch(name) ? new(ValidationError.AllDigits) : ValidationResult.Ok(name);
+        if (DigitsOnly.IsMatch(name))
+        {
+            return new(ValidationError.AllDigits);
+        }
+
+        foreach (var reserved in ReservedComputerNames)
+        {
+            if (string.Equals(reserved, name, StringComparison.OrdinalIgnoreCase))
+            {
+                return new(ValidationError.ReservedName);
+            }
+        }
+
+        if (smbUser is not null && string.Equals(smbUser.Trim(), name, StringComparison.OrdinalIgnoreCase))
+        {
+            return new(ValidationError.SameAsSmbUser);
+        }
+
+        return ValidationResult.Ok(name);
     }
 
     // windowsUsers: the signed-in user's name and the desktop user's name (without domain). A clash suggests

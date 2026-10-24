@@ -50,7 +50,7 @@ public static class UninstallPlanner
         R.NoConfig, R.RefuseUser, R.RefusePath, R.ShareRemove, R.ShareForeign, R.UserDeleteUntracked, R.RestoreUnknown, R.ShareReplaced, R.Owner, R.AceRemove, R.UserDelete, R.UserDeleteExisted,
         R.UserDeleteAdmin, R.Profile, R.UserBefore, R.UserAdmin, R.UserHidden, R.UserGone, R.RuleRemove, R.BuiltInEnable,
         R.BuiltInMissing, R.Restore, R.RestoreValue, R.SettingsKept, R.Revert, R.AlwaysKept, R.NetworkPublic, R.NetworkSaved,
-        R.SaveCopy, R.DataRemove, R.DataKept, R.Later, R.LabelRemove, R.IconRemove, R.DriveSession, R.DriveRemove, R.DriveForeign, R.ShortcutRemove,
+        R.SaveCopy, R.DataRemove, R.TaskRemove, R.ComputerRestore, R.ComputerRenamedSince, R.ComputerBackupInvalid, R.LabelRemove, R.IconRemove, R.DriveSession, R.DriveRemove, R.DriveForeign, R.ShortcutRemove,
         R.ExplorerRemove, R.ExplorerForeign, R.ExplorerNotLoaded,
     };
 
@@ -134,8 +134,10 @@ public static class UninstallPlanner
         public const string NetworkSaved = "Uninst_R_NetworkSaved";
         public const string SaveCopy = "Uninst_R_SaveCopy";
         public const string DataRemove = "Uninst_R_DataRemove";
-        public const string DataKept = "Uninst_R_DataKept";
-        public const string Later = "Uninst_R_Later";
+        public const string TaskRemove = "Uninst_R_TaskRemove";
+        public const string ComputerRestore = "Uninst_R_ComputerRestore";
+        public const string ComputerRenamedSince = "Uninst_R_ComputerRenamedSince";
+        public const string ComputerBackupInvalid = "Uninst_R_ComputerBackupInvalid";
         public const string LabelRemove = "Uninst_R_LabelRemove";
         public const string IconRemove = "Uninst_R_IconRemove";
         public const string DriveSession = "Uninst_R_DriveSession";
@@ -166,7 +168,6 @@ public static class UninstallPlanner
         private readonly UninstallInput _in;
         private readonly SystemSnapshot _s;
         private readonly ConfigDocument? _c;
-        private bool _deferredLeft;
 
         public Builder(UninstallInput input)
         {
@@ -226,7 +227,7 @@ public static class UninstallPlanner
             Shares();
             StaleTask();
             QuickAccess();
-            Later();
+            Tasks();
             Folder(user, info);
             User(user, info);
             Firewall();
@@ -407,17 +408,22 @@ public static class UninstallPlanner
             }
         }
 
-        // Auto-Private is removed from a later version on; until then its tasks are shown and left.
-        private void Later()
+        // The Auto-Private tasks, by their names, before anything else in ProgramData\CPFS goes: a SYSTEM task left pointing
+        // into a deleted folder would run whatever someone puts there next. Unread, nothing is removed.
+        private void Tasks()
         {
-            if (_s.Tasks.IsOk)
+            if (!_s.Tasks.IsOk)
             {
-                foreach (var task in new[] { Planner.AutoPrivateTask, Planner.LegacyAutoPrivateTask })
+                Unread("u.task", PlanSection.AutoPrivate, PlanValue.Of(Planner.AutoPrivateTask), _s.Tasks);
+                return;
+            }
+
+            foreach (var task in new[] { Planner.AutoPrivateTask, Planner.LegacyAutoPrivateTask })
+            {
+                if (_s.Tasks.Value!.TryGetValue(task, out var exists) && exists)
                 {
-                    if (_s.Tasks.Value!.TryGetValue(task, out var exists) && exists)
-                    {
-                        Deferred("u.task:" + task, PlanSection.AutoPrivate, PlanValue.Of(task), Word(Planner.W.Exists));
-                    }
+                    Add("u.task:" + task, PlanSection.AutoPrivate, PlanAction.RemoveIfOurs, PlanValue.Of(task), Word(Planner.W.Exists), Word(Planner.W.Absent),
+                        R.TaskRemove);
                 }
             }
         }
@@ -699,15 +705,36 @@ public static class UninstallPlanner
             }
         }
 
+        // The name the first Setup recorded, offered back as a decision, never silently: ticked when the PC still carries a
+        // name CPFS set, unticked when it was renamed since by someone else. Windows takes it after a restart.
         private void Computer()
         {
             var original = _c!.BackupHostName?.Trim();
             var names = _s.ComputerNames.IsOk ? _s.ComputerNames.Value : null;
             var current = names?.Pending ?? names?.Active;
-            if (Restoring && original is { Length: > 0 } && current is not null && !SameText(original, current))
+            if (original is not { Length: > 0 } || current is null || SameText(original, current))
             {
-                Deferred("u.computer", PlanSection.Computer, Word(Planner.S.ComputerName), PlanValue.Of(current), PlanValue.Of(original));
+                return;
             }
+
+            var subject = Word(Planner.S.ComputerName);
+            if (!Validators.ComputerName(original).IsValid)
+            {
+                Add("u.computer", PlanSection.Computer, PlanAction.Keep, subject, PlanValue.Of(current), null, R.ComputerBackupInvalid, original);
+                return;
+            }
+
+            if (_s.Join.IsOk && _s.Join.Value!.PartOfDomain)
+            {
+                Add("u.computer", PlanSection.Computer, PlanAction.Keep, subject, PlanValue.Of(current), null, Planner.R.ComputerDomain);
+                return;
+            }
+
+            var setByCpfs = _c.HasTrackedComputerNames
+                ? Contains(_c.TrackedComputerNames, current)
+                : SameText(_c.HostName?.Trim(), current);
+            AskItem("u.computer", PlanSection.Computer, subject, PlanValue.Of(current), PlanValue.Of(original), Restoring && setByCpfs,
+                setByCpfs ? R.ComputerRestore : R.ComputerRenamedSince, original);
         }
 
         private void Data()
@@ -717,21 +744,8 @@ public static class UninstallPlanner
                 return;
             }
 
-            if (_deferredLeft)
-            {
-                Add("u.data", PlanSection.DataFolder, PlanAction.Keep, Word(Planner.S.DataFolder), Word(Planner.W.Exists), null, R.DataKept);
-            }
-            else
-            {
-                Add("u.data", PlanSection.DataFolder, PlanAction.RemoveIfOurs, Word(Planner.S.DataFolder), Word(Planner.W.Exists), Word(Planner.W.Absent),
-                    R.DataRemove);
-            }
-        }
-
-        private void Deferred(string key, PlanSection section, PlanValue subject, PlanValue current, PlanValue? target = null)
-        {
-            _deferredLeft = true;
-            Add(key, section, target is null ? PlanAction.RemoveIfOurs : PlanAction.Change, subject, current, target ?? Word(Planner.W.Absent), R.Later);
+            Add("u.data", PlanSection.DataFolder, PlanAction.RemoveIfOurs, Word(Planner.S.DataFolder), Word(Planner.W.Exists), Word(Planner.W.Absent),
+                R.DataRemove);
         }
 
         private bool AskItem(string key, PlanSection section, PlanValue subject, PlanValue? current, PlanValue? target, bool defaultTicked, string reason,

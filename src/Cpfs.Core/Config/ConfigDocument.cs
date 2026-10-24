@@ -61,6 +61,21 @@ public sealed class ConfigDocument
 
     public bool? AutoPrivate => ConfigJson.GetBool(Root, "AutoPrivate");
 
+    // Networks the user left Public at Setup while Auto-Private was on; the task never switches them (added by the app).
+    public IReadOnlyList<string> AutoPrivateSkip => Strings(Root, "AutoPrivateSkip");
+
+    // The exe copy the Auto-Private task runs (Tracked.Created.AutoPrivateExe, added by the app); null when none.
+    public TrackedFile? TrackedAutoPrivateExe =>
+        ConfigJson.GetObject(ConfigJson.GetObject(ConfigJson.GetObject(Root, "Tracked"), "Created"), "AutoPrivateExe") is { } e
+            ? new TrackedFile(ConfigJson.GetString(e, "Path"), ConfigJson.GetString(e, "Sha256"))
+            : null;
+
+    // Every computer name CPFS set (Tracked.ComputerNames, added by the app). A file without the field was written
+    // before the app could rename: the 0.2.x scripts wrote the chosen name as HostName instead.
+    public IReadOnlyList<string> TrackedComputerNames => Strings(ConfigJson.GetObject(Root, "Tracked"), "ComputerNames");
+
+    public bool HasTrackedComputerNames => ConfigJson.Has(ConfigJson.GetObject(Root, "Tracked"), "ComputerNames");
+
     // Bit 1 drive, bit 2 shortcut.
     public long? Access => ConfigJson.GetInt(Root, "Access");
 
@@ -267,6 +282,8 @@ public sealed class ConfigDocument
 public sealed record TrackedUser(string? Name, bool? Existed, bool? WasAdmin);
 
 public sealed record TrackedShare(string Name, string? Path);
+
+public sealed record TrackedFile(string? Path, string? Sha256);
 
 public sealed record TrackedExplorerEntry(string? Sid, string? Clsid, string? Folder, string? Name);
 
