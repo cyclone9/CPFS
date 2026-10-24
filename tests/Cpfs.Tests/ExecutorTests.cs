@@ -112,6 +112,25 @@ public class ExecutorTests
     }
 
     [Fact]
+    public void AFailureShowsWindowsWordsAndTheLogKeepsTheTypeAndTheCall()
+    {
+        var run = new Run();
+        var entries = new[] { new ApplyEntry(Item("user.password", PlanAction.Change, PlanSection.User), false) };
+        var windows = new System.ComponentModel.Win32Exception(2221).Message;
+        var result = run.Execute(entries, null, _ => new LambdaStep
+        {
+            Do = () => throw new System.ComponentModel.Win32Exception(2221, "NetUserSetInfo 1003: " + windows),
+        });
+
+        Assert.Equal(windows, result.Error);
+        Assert.DoesNotContain("Win32Exception", result.Error, StringComparison.Ordinal);
+        Assert.DoesNotContain("NetUserSetInfo", result.Error, StringComparison.Ordinal);
+        Assert.Contains("Win32Exception: NetUserSetInfo 1003", result.Detail, StringComparison.Ordinal);
+        Assert.Contains("2221", result.Detail, StringComparison.Ordinal);
+        Assert.Equal(result.Detail, result.Reports.Single().LogText);
+    }
+
+    [Fact]
     public void AChangeThatDoesNotTakeEffectIsAFailure()
     {
         var run = new Run();

@@ -100,3 +100,6 @@ This project uses [semantic versioning](https://semver.org/).
 - About shows a globe icon beside the homepage link.
 - After Apply, Setup no longer shows the changes it just made for a moment while it reads the PC again.
 - Setup adds the shared folder to File Explorer's navigation pane, under the drive name you chose and with the CPFS icon, so the name shows even when the folder's disk has a label of its own. It has its own switch (on by default) and works without a drive letter; Uninstall removes it only while it still opens the recorded folder.
+- Setup and Uninstall read the PC again when you come back to them after the other one changed Windows, and again when you press Set up, Apply or Uninstall. If the summary would change, CPFS shows the new one with a warning instead of the confirmation, so a change is never made from an out-of-date reading (an Uninstall followed by Set up failed at the account's password).
+- When the button is off because an answer is missing or wrong, the summary says what to do, such as entering the SMB password, and no longer says that items can't be checked yet; the hint under the button no longer repeats it.
+- A step that fails shows Windows' message on a line of its own, without the error's type or the name of the Windows function; the log keeps both.

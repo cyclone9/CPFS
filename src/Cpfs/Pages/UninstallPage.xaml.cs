@@ -35,6 +35,13 @@ public partial class UninstallPage : Page
     private bool _reading;
     private bool _applying;
 
+    // Reading Windows again between the button and the confirmation.
+    private bool _checking;
+    private bool _staleShown;
+
+    // WindowsChanges.Count when the last reading began.
+    private int _readAt = -1;
+
     public UninstallPage()
     {
         InitializeComponent();
@@ -54,6 +61,12 @@ public partial class UninstallPage : Page
     {
         if (_loaded)
         {
+            // Back on the page after Windows was changed elsewhere in CPFS (a Setup): the reading is stale.
+            if (Startup.IsElevated && _readAt != WindowsChanges.Count)
+            {
+                await ReadAsync();
+            }
+
             return;
         }
 
@@ -70,14 +83,17 @@ public partial class UninstallPage : Page
 
     private async void OnRefresh(object sender, RoutedEventArgs e) => await ReadAsync();
 
-    private async Task ReadAsync()
+    // False when the reading failed, so the plan on screen is not from it.
+    private async Task<bool> ReadAsync()
     {
         if (_reading)
         {
-            return;
+            return false;
         }
 
         _reading = true;
+        _readAt = WindowsChanges.Count;
+        var ok = false;
         RefreshButton.IsEnabled = false;
         var first = _plan is null;
         PlanLoading.Visibility = first ? Visibility.Visible : Visibility.Collapsed;
@@ -89,6 +105,7 @@ public partial class UninstallPage : Page
             _configBytes = bytes;
             _documents = documents;
             Recompute();
+            ok = true;
         }
         catch (Exception ex) when (State.IsExpected(ex) || ex is ConfigFormatException)
         {
@@ -103,6 +120,8 @@ public partial class UninstallPage : Page
             SummaryBody.Visibility = Visibility.Visible;
             UpdateApplyState();
         }
+
+        return ok;
     }
 
     private static (UninstallInput Input, byte[]? Bytes, string? Documents) ReadInput()
@@ -263,9 +282,14 @@ public partial class UninstallPage : Page
         {
             hint = "";
         }
+        else if (_checking)
+        {
+            hint = loc["Apply_Checking"];
+        }
         else if (ApplyList.Blocking(_plan).Count > 0)
         {
-            hint = loc["Apply_Blocked"];
+            // The summary says what keeps the button off.
+            hint = "";
         }
         else if (!ApplyList.Uninstall(_plan).Any(e => !e.Deferred))
         {
@@ -279,8 +303,8 @@ public partial class UninstallPage : Page
         }
 
         ApplyButton.IsEnabled = enabled && !_reading;
-        RestorePointBox.IsEnabled = !_applying && _plan is not null;
-        ApplyBusy.Visibility = _applying ? Visibility.Visible : Visibility.Collapsed;
+        RestorePointBox.IsEnabled = !_applying && !_checking && _plan is not null;
+        ApplyBusy.Visibility = _applying || _checking ? Visibility.Visible : Visibility.Collapsed;
         ApplyHint.Text = hint;
         ApplyHint.Visibility = hint.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         System.Windows.Automation.AutomationProperties.SetHelpText(ApplyButton, hint);
@@ -288,7 +312,7 @@ public partial class UninstallPage : Page
 
     private void OnPlanTickChanged(object sender, RoutedEventArgs e)
     {
-        if (sender is CheckBox { Tag: string key } box && box.IsChecked is { } ticked && !_applying)
+        if (sender is CheckBox { Tag: string key } box && box.IsChecked is { } ticked && !_applying && !_checking)
         {
             _choices[key] = ticked;
             Recompute();
@@ -297,13 +321,50 @@ public partial class UninstallPage : Page
 
     private async void OnApply(object sender, RoutedEventArgs e)
     {
-        if (_applying || _plan is null || _input is null)
+        if (_applying || _reading || _plan is null || _input is null)
         {
             return;
         }
 
         var loc = Loc.Instance;
+        if (_staleShown)
+        {
+            ApplyResult.IsOpen = false;
+            _staleShown = false;
+        }
+
+        // Windows may have changed since the page read it (a Setup from this app, a change outside CPFS), so
+        // everything is read and planned again before anything is confirmed.
+        var shown = _plan;
+        bool fresh;
+        _checking = true;
+        UpdateApplyState();
+        try
+        {
+            fresh = await ReadAsync();
+        }
+        finally
+        {
+            _checking = false;
+            UpdateApplyState();
+        }
+
         var plan = _plan;
+        if (!fresh || plan is null || _input is null || ApplyList.Blocking(plan).Count > 0 || !ApplyList.Uninstall(plan).Any(x => !x.Deferred))
+        {
+            AppLog.Write("uninstall", "Not confirmed, " + (fresh ? "the new plan has nothing to undo or is blocked" : "the state could not be read again"));
+            return;
+        }
+
+        if (!shown.SameItemsAs(plan))
+        {
+            AppLog.Write("uninstall", "The plan changed when Windows was read again; the summary is shown again instead of the confirmation: "
+                + string.Join(", ", shown.DifferencesFrom(plan)));
+            Show(ApplyResult, InfoBarSeverity.Warning, loc["Apply_StaleTitle"], loc["Uninst_StaleMsg"]);
+            _staleShown = true;
+            return;
+        }
+
         var entries = ApplyList.Uninstall(plan);
         var restorePoint = RestorePointBox.IsChecked == true;
         if (!await ApplyUi.ConfirmAsync(this, "Uninst_ConfirmTitle", "Uninst_ConfirmMsg", "Uninst_ConfirmUndo", "Uninst_Apply", entries, restorePoint))
@@ -316,6 +377,7 @@ public partial class UninstallPage : Page
         UpdateApplyState();
         RefreshButton.IsEnabled = false;
         ApplyResult.IsOpen = false;
+        _staleShown = false;
         ResultActions.Visibility = Visibility.Collapsed;
         _noNewRestorePoint = false;
         _steps.Clear();
@@ -377,10 +439,12 @@ public partial class UninstallPage : Page
             else
             {
                 var failed = entries.First(x => x.Item.Key == result.FailedKey).Item;
+
+                // Windows' words come last, on a line of their own.
                 var message = loc.FormatValues("Uninst_FailedMsg", result.Error);
                 if (run.SavedCopy is not null)
                 {
-                    message += " " + loc.FormatValues("Uninst_CopySaved", run.SavedCopy);
+                    message = loc.FormatValues("Uninst_CopySaved", run.SavedCopy) + Environment.NewLine + message;
                 }
 
                 Show(ApplyResult, InfoBarSeverity.Error, loc.FormatValues("Uninst_FailedTitle", SetupPage.ToView(failed).Subject), message);
@@ -390,13 +454,14 @@ public partial class UninstallPage : Page
         catch (Exception ex)
         {
             AppLog.Exception("uninstall", ex);
-            Show(ApplyResult, InfoBarSeverity.Error, loc["Apply_ErrorTitle"], ex.GetType().Name + ": " + ex.Message);
+            Show(ApplyResult, InfoBarSeverity.Error, loc["Apply_ErrorTitle"], StepErrors.ForUser(ex));
             ResultActions.Visibility = Visibility.Visible;
         }
         finally
         {
             _applying = false;
             _choices.Clear();
+            WindowsChanges.Bump("Uninstall");
             await ReadAsync();
         }
     }

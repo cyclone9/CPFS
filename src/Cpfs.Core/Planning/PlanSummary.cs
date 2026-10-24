@@ -54,7 +54,6 @@ public sealed class PlanSummary
     public static PlanSummary Setup(Plan plan, SetupAnswers answers, ConfigDocument? config)
     {
         var (changes, deferred) = Count(ApplyList.Setup(plan));
-        var blocking = ApplyList.Blocking(plan).Count;
         var phone = new List<SummaryLine>();
         var shareName = answers.ShareName.Trim();
         var user = answers.SmbUser.Trim();
@@ -162,13 +161,12 @@ public sealed class PlanSummary
             other.Add(SummaryLine.Of("Summary_DataFolder"));
         }
 
-        return Build(phone, other, changes, deferred, blocking, NeedsAdmin(plan), "Summary_Nothing", null);
+        return Build(phone, other, changes, deferred, plan, "Summary_Nothing", null, "Summary_Blocked_Answers");
     }
 
     public static PlanSummary Uninstall(Plan plan)
     {
         var (changes, deferred) = Count(ApplyList.Uninstall(plan));
-        var blocking = ApplyList.Blocking(plan).Count;
         var phone = new List<SummaryLine>();
         var other = new List<SummaryLine>();
         var publicAgain = 0;
@@ -219,14 +217,16 @@ public sealed class PlanSummary
             other.Add(SummaryLine.Of("Summary_U_Data"));
         }
 
-        return Build(phone, other, changes, deferred, blocking, NeedsAdmin(plan), "Summary_U_Nothing", "Summary_U_FilesStay");
+        return Build(phone, other, changes, deferred, plan, "Summary_U_Nothing", "Summary_U_FilesStay", "Summary_U_Blocked");
     }
 
-    private static PlanSummary Build(List<SummaryLine> phone, List<SummaryLine> other, int changes, int deferred, int blocking, bool needsAdmin,
-        string nothingKey, string? afterCount)
+    private static PlanSummary Build(List<SummaryLine> phone, List<SummaryLine> other, int changes, int deferred, Plan plan,
+        string nothingKey, string? afterCount, string answersKey)
     {
+        var blockers = ApplyList.Blocking(plan);
+        var blocking = blockers.Count;
         var lines = new List<SummaryLine>();
-        if (needsAdmin)
+        if (NeedsAdmin(blockers))
         {
             // The page's top card explains it and has the button; one short sentence here is enough.
             lines.Add(SummaryLine.Of("Summary_NeedsAdmin"));
@@ -235,7 +235,7 @@ public sealed class PlanSummary
 
         if (blocking > 0)
         {
-            lines.Add(SummaryLine.Of("Summary_Blocked"));
+            lines.AddRange(BlockedLines(blockers, answersKey));
         }
         else if (changes == 0)
         {
@@ -281,9 +281,49 @@ public sealed class PlanSummary
 
     private static bool Runs(PlanItem item) => ApplyList.IsRunnable(item);
 
-    private static bool NeedsAdmin(Plan plan)
+    // What keeps the button off, said as what to do: enter the password, correct the answers, or wait for what could
+    // not be read. "Can't be checked yet" is only for the last.
+    private static List<SummaryLine> BlockedLines(IReadOnlyList<PlanItem> blockers, string answersKey)
     {
-        foreach (var item in ApplyList.Blocking(plan))
+        bool password = false, answers = false, unread = false;
+        foreach (var item in blockers)
+        {
+            if (item.Cause != PlanCause.InvalidAnswer)
+            {
+                unread = true;
+            }
+            else if (item.ReasonKey == Planner.R.PasswordNeeded)
+            {
+                password = true;
+            }
+            else
+            {
+                answers = true;
+            }
+        }
+
+        var lines = new List<SummaryLine>();
+        if (password)
+        {
+            lines.Add(SummaryLine.Of("Summary_Blocked_Password"));
+        }
+
+        if (answers)
+        {
+            lines.Add(SummaryLine.Of(answersKey));
+        }
+
+        if (unread)
+        {
+            lines.Add(SummaryLine.Of("Summary_Blocked"));
+        }
+
+        return lines;
+    }
+
+    private static bool NeedsAdmin(IReadOnlyList<PlanItem> blockers)
+    {
+        foreach (var item in blockers)
         {
             if (item.Cause == PlanCause.NeedsAdmin)
             {

@@ -17,6 +17,9 @@ public partial class SetupPage : Page
     private bool _loaded;
     private bool _reading;
 
+    // WindowsChanges.Count when the last reading began.
+    private int _readAt = -1;
+
     public SetupPage()
     {
         InitializeComponent();
@@ -40,6 +43,12 @@ public partial class SetupPage : Page
     {
         if (_loaded)
         {
+            // Back on the page after Windows was changed elsewhere in CPFS (an Uninstall): the reading is stale.
+            if (_readAt != WindowsChanges.Count)
+            {
+                await ReadAsync();
+            }
+
             return;
         }
 
@@ -51,15 +60,18 @@ public partial class SetupPage : Page
 
     private async void OnRefresh(object sender, RoutedEventArgs e) => await ReadAsync();
 
-    // config.json, the drive letters and the plan's state are read off the UI thread.
-    private async Task ReadAsync()
+    // config.json, the drive letters and the plan's state are read off the UI thread. False when the reading failed,
+    // so the plan on screen is not from it.
+    private async Task<bool> ReadAsync()
     {
         if (_reading)
         {
-            return;
+            return false;
         }
 
         _reading = true;
+        _readAt = WindowsChanges.Count;
+        var ok = false;
         RefreshButton.IsEnabled = false;
         Busy.Visibility = Visibility.Visible;
         BusyText.Visibility = Visibility.Visible;
@@ -74,7 +86,7 @@ public partial class SetupPage : Page
             }
 
             RenderAdminCard();
-            await PreparePlanAsync(reader.Config, letters);
+            ok = await PreparePlanAsync(reader.Config, letters);
         }
         catch (Exception ex) when (State.IsExpected(ex))
         {
@@ -89,6 +101,8 @@ public partial class SetupPage : Page
             BusyText.Visibility = Visibility.Collapsed;
             SetLoading(false);
         }
+
+        return ok;
     }
 
     // Until the first plan is ready: the ring in the summary card, the form off, and no summary sentence yet.
@@ -96,7 +110,7 @@ public partial class SetupPage : Page
     {
         PlanLoading.Visibility = loading ? Visibility.Visible : Visibility.Collapsed;
         SummaryBody.Visibility = loading ? Visibility.Collapsed : Visibility.Visible;
-        FormArea.IsEnabled = !loading;
+        FormArea.IsEnabled = !loading && !_checking;
     }
 
     // The admin card shows only until the page runs elevated; a forged hand-over is always reported here.

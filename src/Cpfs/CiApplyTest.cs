@@ -194,10 +194,10 @@ internal static class CiApplyTest
         {
             if (r.Outcome != StepOutcome.Running)
             {
-                o.WriteLine("  setup " + r.Outcome + " " + r.Key + (r.Error is null ? "" : ": " + r.Error));
+                o.WriteLine("  setup " + r.Outcome + " " + r.Key + (r.LogText is null ? "" : ": " + r.LogText));
             }
         });
-        Check(result.Completed, "Setup ran to the end", result.Error ?? "");
+        Check(result.Completed, "Setup ran to the end", result.Detail ?? result.Error ?? "");
         SessionCheck(result, "drive.session", "the drive is mapped in the desktop user's session");
 
         var bytes = File.Exists(StateReader.ConfigPath) ? File.ReadAllBytes(StateReader.ConfigPath) : null;
@@ -305,11 +305,11 @@ internal static class CiApplyTest
         {
             if (r.Outcome != StepOutcome.Running)
             {
-                o.WriteLine("  uninstall " + r.Outcome + " " + r.Key + (r.Error is null ? "" : ": " + r.Error));
+                o.WriteLine("  uninstall " + r.Outcome + " " + r.Key + (r.LogText is null ? "" : ": " + r.LogText));
             }
         });
         Check(ApplyList.Blocking(plan).Count == 0, "Uninstall plan has nothing that cannot be planned");
-        Check(result.Completed, "Uninstall ran to the end", result.Error ?? "");
+        Check(result.Completed, "Uninstall ran to the end", result.Detail ?? result.Error ?? "");
         if (_letter is not null)
         {
             SessionCheck(result, "u.drive.session", "the drive is unmapped in the desktop user's session");

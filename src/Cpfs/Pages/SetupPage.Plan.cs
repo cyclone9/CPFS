@@ -135,8 +135,8 @@ public partial class SetupPage
     }
 
     // Called after each read of the state: the form takes the saved install's values only the first time, so a
-    // Refresh keeps what the user typed.
-    private async Task PreparePlanAsync(ConfigDocument? config, LetterScan letters)
+    // Refresh keeps what the user typed. True when the plan on screen was made from this reading.
+    private async Task<bool> PreparePlanAsync(ConfigDocument? config, LetterScan letters)
     {
         // The old reading no longer matches the new config; a form event raised before the new one arrives must not
         // plan from it (seen after an Apply: the summary briefly offered the changes just made).
@@ -163,7 +163,7 @@ public partial class SetupPage
         ComputerNameBox.Text = snapshot.ComputerName ?? "";
         RenderMode();
         AppLog.Write("plan", "Plan state ready in " + StateReader.Ms(watch) + (Startup.IsElevated ? " (elevated)" : " (not elevated)"));
-        await RecomputeAsync();
+        return await RecomputeAsync();
     }
 
     private void FillForm(SetupAnswers a)
@@ -253,7 +253,8 @@ public partial class SetupPage
 
     private void OnPlanTickChanged(object sender, RoutedEventArgs e)
     {
-        if (sender is CheckBox { Tag: string key } box && box.IsChecked is { } ticked)
+        // Not while Apply reads Windows again: the tick would race the plan it compares.
+        if (sender is CheckBox { Tag: string key } box && box.IsChecked is { } ticked && !_checking)
         {
             _choices[key] = ticked;
             SchedulePlan();
@@ -322,12 +323,13 @@ public partial class SetupPage
     }
 
     // The account and folder parts of the state depend on what is typed; they are re-read off the UI thread when
-    // those two fields change, everything else is planned from the reading already made.
-    private async Task RecomputeAsync()
+    // those two fields change, everything else is planned from the reading already made. False when no plan was made
+    // (nothing read yet, or a newer recompute took over).
+    private async Task<bool> RecomputeAsync()
     {
         if (_snapshot is null || !_formReady)
         {
-            return;
+            return false;
         }
 
         var version = ++_planVersion;
@@ -339,7 +341,7 @@ public partial class SetupPage
             snapshot = await Task.Run(() => PlanReader.ReadAnswerParts(snapshot, answers.SmbUser, answers.SharePath, answers.ShareName));
             if (version != _planVersion)
             {
-                return;
+                return false;
             }
 
             _snapshot = snapshot;
@@ -358,6 +360,8 @@ public partial class SetupPage
             _lastSummaryLogged = summaryLog;
             AppLog.Write("plan", "Summary: " + summaryLog);
         }
+
+        return true;
     }
 
     // A first install (no config.json) is set up; an existing one is applied. An unreadable config.json is not a

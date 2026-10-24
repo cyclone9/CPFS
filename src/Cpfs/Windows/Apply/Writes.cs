@@ -667,7 +667,7 @@ internal static class SmbServer
         }
         catch (ManagementException ex) when (Wmi.IsUnsupported(ex))
         {
-            throw new StepUnsupportedException("MSFT_SmbServerConfiguration.SetConfiguration: " + ex.Message, ex);
+            throw new StepUnsupportedException(ex.Message, ex);
         }
     }
 }

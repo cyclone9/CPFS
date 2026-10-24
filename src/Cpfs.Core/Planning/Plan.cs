@@ -129,6 +129,49 @@ public sealed class Plan
         return lines;
     }
 
+    // True when both plans hold the same items with the same action and tick, so what the page showed is still what
+    // Apply would run. Values and reasons may differ: the executor reads each item again before it writes.
+    public bool SameItemsAs(Plan other) => DifferencesFrom(other).Count == 0;
+
+    // For the log: "-" for an item only this plan has, "+" for one only the other has, as key, action and tick.
+    public IReadOnlyList<string> DifferencesFrom(Plan other)
+    {
+        if (other is null)
+        {
+            throw new ArgumentNullException(nameof(other));
+        }
+
+        var mine = Signature(this);
+        var theirs = Signature(other);
+        var list = new List<string>();
+        foreach (var line in mine)
+        {
+            if (!theirs.Remove(line))
+            {
+                list.Add("-" + line);
+            }
+        }
+
+        foreach (var line in theirs)
+        {
+            list.Add("+" + line);
+        }
+
+        return list;
+    }
+
+    private static List<string> Signature(Plan plan)
+    {
+        var list = new List<string>();
+        foreach (var item in plan.Items)
+        {
+            list.Add(item.Key + " " + item.Action + (item.Ticked ? " (ticked)" : ""));
+        }
+
+        list.Sort(StringComparer.Ordinal);
+        return list;
+    }
+
     public PlanItem? Find(string key)
     {
         foreach (var item in Items)

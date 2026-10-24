@@ -19,6 +19,10 @@ public partial class SetupPage
 {
     private readonly ObservableCollection<StepView> _steps = new();
     private bool _applying;
+
+    // Reading Windows again between the button and the confirmation.
+    private bool _checking;
+    private bool _staleShown;
     private bool _noNewRestorePoint;
 
     private void InitApply() => ProgressList.ItemsSource = _steps;
@@ -42,6 +46,10 @@ public partial class SetupPage
         {
             hint = loc["Apply_Running"];
         }
+        else if (_checking)
+        {
+            hint = loc["Apply_Checking"];
+        }
         else if (_plan is null)
         {
             // The summary card shows the reading ring.
@@ -53,7 +61,8 @@ public partial class SetupPage
         }
         else if (ApplyList.Blocking(_plan).Count > 0)
         {
-            hint = loc["Apply_Blocked"];
+            // The summary says what keeps the button off.
+            hint = "";
         }
         else if (!HasWork(_plan))
         {
@@ -70,8 +79,8 @@ public partial class SetupPage
         ApplyButton.Icon = Startup.IsElevated ? null : new SymbolIcon { Symbol = SymbolRegular.Shield24 };
         ApplyButton.ToolTip = Startup.IsElevated ? null : loc["Apply_ShieldTip"];
         System.Windows.Controls.ToolTipService.SetShowOnDisabled(ApplyButton, true);
-        RestorePointBox.IsEnabled = Startup.IsElevated && !_applying;
-        ApplyBusy.Visibility = _applying ? Visibility.Visible : Visibility.Collapsed;
+        RestorePointBox.IsEnabled = Startup.IsElevated && !_applying && !_checking;
+        ApplyBusy.Visibility = _applying || _checking ? Visibility.Visible : Visibility.Collapsed;
         ApplyHint.Text = hint;
         ApplyHint.Visibility = hint.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         System.Windows.Automation.AutomationProperties.SetHelpText(ApplyButton, Startup.IsElevated ? hint : loc["Apply_ShieldTip"]);
@@ -86,11 +95,51 @@ public partial class SetupPage
 
         var loc = Loc.Instance;
         HidePasswords();
-        _planTimer.Stop();
-        await RecomputeAsync();
-        var plan = _plan;
-        if (plan is null || ConfigUnreadable || ApplyList.Blocking(plan).Count > 0 || !HasWork(plan))
+        if (_staleShown)
         {
+            ApplyResult.IsOpen = false;
+            _staleShown = false;
+        }
+
+        // A form change still waiting for its plan is planned first: that plan is what the press asks for.
+        var pending = _planTimer.IsEnabled;
+        _planTimer.Stop();
+        if (pending)
+        {
+            await RecomputeAsync();
+        }
+
+        // Windows may have changed since the page read it (an Uninstall from this app, a change outside CPFS), so
+        // everything is read and planned again before anything is confirmed.
+        var shown = _plan;
+        bool fresh;
+        _checking = true;
+        FormArea.IsEnabled = false;
+        UpdateApplyState();
+        try
+        {
+            fresh = await ReadAsync();
+        }
+        finally
+        {
+            _checking = false;
+            FormArea.IsEnabled = true;
+        }
+
+        var plan = _plan;
+        if (!fresh || plan is null || ConfigUnreadable || ApplyList.Blocking(plan).Count > 0 || !HasWork(plan))
+        {
+            AppLog.Write("apply", "Setup: not confirmed, " + (fresh ? "the new plan has nothing to apply or is blocked" : "the state could not be read again"));
+            UpdateApplyState();
+            return;
+        }
+
+        if (shown is null || !shown.SameItemsAs(plan))
+        {
+            AppLog.Write("apply", "Setup: the plan changed when Windows was read again; the summary is shown again instead of the confirmation: "
+                + (shown is null ? "no plan was on screen" : string.Join(", ", shown.DifferencesFrom(plan))));
+            Show(ApplyResult, InfoBarSeverity.Warning, loc["Apply_StaleTitle"], loc[IsFirstInstall ? "Apply_StaleMsg_SetUp" : "Apply_StaleMsg_Apply"]);
+            _staleShown = true;
             UpdateApplyState();
             return;
         }
@@ -110,6 +159,7 @@ public partial class SetupPage
         UpdateApplyState();
         RefreshButton.IsEnabled = false;
         ApplyResult.IsOpen = false;
+        _staleShown = false;
         ShowActions(connect: false, report: false);
         _noNewRestorePoint = false;
         _steps.Clear();
@@ -181,7 +231,7 @@ public partial class SetupPage
         catch (Exception ex)
         {
             AppLog.Exception("apply", ex);
-            Show(ApplyResult, InfoBarSeverity.Error, loc["Apply_ErrorTitle"], ex.GetType().Name + ": " + ex.Message);
+            Show(ApplyResult, InfoBarSeverity.Error, loc["Apply_ErrorTitle"], StepErrors.ForUser(ex));
             ShowActions(connect: false, report: true);
         }
         finally
@@ -189,6 +239,7 @@ public partial class SetupPage
             password?.Dispose();
             PasswordInput.Clear();
             _applying = false;
+            WindowsChanges.Bump("Setup");
             await ReadAsync();
             UpdateApplyState();
         }

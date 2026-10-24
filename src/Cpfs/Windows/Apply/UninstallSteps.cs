@@ -59,7 +59,7 @@ internal sealed class UninstallRun
         {
             if (r.Outcome != StepOutcome.Running)
             {
-                AppLog.Write("uninstall", r.Outcome + " " + r.Key + (r.Error is null ? "" : ": " + r.Error));
+                AppLog.Write("uninstall", r.Outcome + " " + r.Key + (r.LogText is null ? "" : ": " + r.LogText));
             }
 
             progress(r);

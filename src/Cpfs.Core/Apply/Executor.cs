@@ -27,7 +27,12 @@ public enum StepOutcome
     NotRun,
 }
 
-public sealed record StepReport(int Index, string Key, StepOutcome Outcome, string? Error = null);
+// Error is what the page shows (Windows' words, or CPFS's own sentence); Detail adds the exception's type and the
+// failed call, for the log only.
+public sealed record StepReport(int Index, string Key, StepOutcome Outcome, string? Error = null, string? Detail = null)
+{
+    public string? LogText => Detail ?? Error;
+}
 
 // One change on Windows. The executor calls, in order: ReadIsAtTarget, Record, Apply, Track, Verify.
 public interface IChangeStep
@@ -164,11 +169,12 @@ public static class ApplyList
 
 public sealed class ExecutionResult
 {
-    public ExecutionResult(IReadOnlyList<StepReport> reports, string? failedKey, string? error)
+    public ExecutionResult(IReadOnlyList<StepReport> reports, string? failedKey, string? error, string? detail = null)
     {
         Reports = reports;
         FailedKey = failedKey;
         Error = error;
+        Detail = detail;
     }
 
     public IReadOnlyList<StepReport> Reports { get; }
@@ -178,6 +184,9 @@ public sealed class ExecutionResult
     public string? FailedKey { get; }
 
     public string? Error { get; }
+
+    // The failure with its exception type and call, for the log.
+    public string? Detail { get; }
 
     // Items Windows refused or did only in part: the run finished, but not everything planned is in place.
     public int NotDone => Count(StepOutcome.Unsupported) + Count(StepOutcome.Partial);
@@ -289,7 +298,7 @@ public static class Executor
                     TrySave(Save);
                 }
 
-                Report(new StepReport(i, key, StepOutcome.Unsupported, ex.Message));
+                Report(new StepReport(i, key, StepOutcome.Unsupported, ex.Message, StepErrors.ForLog(ex)));
             }
             catch (StepPartialException ex)
             {
@@ -298,7 +307,7 @@ public static class Executor
                     TrySave(Save);
                 }
 
-                Report(new StepReport(i, key, StepOutcome.Partial, ex.Message));
+                Report(new StepReport(i, key, StepOutcome.Partial, ex.Message, StepErrors.ForLog(ex)));
             }
             catch (Exception ex)
             {
@@ -307,14 +316,15 @@ public static class Executor
                     TrySave(Save);
                 }
 
-                var error = Describe(ex);
-                Report(new StepReport(i, key, StepOutcome.Failed, error));
+                var error = StepErrors.ForUser(ex);
+                var detail = StepErrors.ForLog(ex);
+                Report(new StepReport(i, key, StepOutcome.Failed, error, detail));
                 for (var j = i + 1; j < entries.Count; j++)
                 {
                     reports.Add(new StepReport(j, entries[j].Item.Key, StepOutcome.NotRun));
                 }
 
-                return new ExecutionResult(reports, key, error);
+                return new ExecutionResult(reports, key, error, detail);
             }
         }
 
@@ -338,12 +348,6 @@ public static class Executor
         {
             // The step's own error is the one to show; a second failure to save would hide it.
         }
-    }
-
-    private static string Describe(Exception ex)
-    {
-        var inner = ex is System.Reflection.TargetInvocationException { InnerException: { } i } ? i : ex;
-        return inner.GetType().Name + ": " + inner.Message;
     }
 }
 

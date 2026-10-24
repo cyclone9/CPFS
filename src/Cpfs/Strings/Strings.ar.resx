@@ -655,7 +655,6 @@
   <data name="Apply_RestorePoint" xml:space="preserve"><value>Create a restore point first</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RestorePointStep" xml:space="preserve"><value>Restore point</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_Running" xml:space="preserve"><value>Applying the changes...</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Apply_Blocked" xml:space="preserve"><value>Some items cannot be planned. Correct the answers marked in red, or read the items marked as not planned.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_Ready" xml:space="preserve"><value>You see a summary to confirm before anything changes.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_ConfirmTitle" xml:space="preserve"><value>Apply these changes?</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_ConfirmMsg" xml:space="preserve"><value>{0} changes will be made to Windows.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -677,7 +676,7 @@
   <data name="Apply_State_Skipped" xml:space="preserve"><value>Skipped</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RpTitle" xml:space="preserve"><value>No new restore point</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RpSkippedMsg" xml:space="preserve"><value>Windows did not create a new restore point, most likely because one was made in the last 24 hours. The newest one is from {0}. Continue without a new one?</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Apply_RpUnavailableMsg" xml:space="preserve"><value>No restore point could be created. Windows said:&#xD;&#xA;{0}&#xD;&#xA;System Protection may be off for the system drive. Continue without a restore point?</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_RpUnavailableMsg" xml:space="preserve"><value>No restore point could be created. System Protection may be off for the system drive. Continue without a restore point?&#xD;&#xA;Windows said:&#xD;&#xA;{0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RpNoneMsg" xml:space="preserve"><value>Windows reported no error, but no restore point exists. System Protection may be off for the system drive. Continue without a restore point?</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RpContinue" xml:space="preserve"><value>Continue without it</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RpOpenSettings" xml:space="preserve"><value>Open System Protection</value><comment>UNTRANSLATED: English text</comment></data>
@@ -700,7 +699,7 @@
   <data name="Uninst_DoneTitle" xml:space="preserve"><value>CPFS was uninstalled</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_CopySaved" xml:space="preserve"><value>A copy of the backup is in {0}.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_FailedTitle" xml:space="preserve"><value>Uninstall stopped at: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Uninst_FailedMsg" xml:space="preserve"><value>{0}. config.json is still there, so you can run Uninstall again.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_FailedMsg" xml:space="preserve"><value>config.json is still there, so you can run Uninstall again. Windows said:&#xD;&#xA;{0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_R_NoConfig" xml:space="preserve"><value>There is no config.json, so CPFS knows of nothing it set up here except its own firewall rules.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_R_RefuseUser" xml:space="preserve"><value>{0} signs in to Windows on this PC. Uninstall stops to protect that account.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_R_RefusePath" xml:space="preserve"><value>config.json names {0} as the shared folder, a folder Setup would refuse (a drive root or a Windows folder). Uninstall stops and changes nothing.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -911,4 +910,12 @@
   <data name="Uninst_R_ExplorerNotLoaded" xml:space="preserve"><value>CPFS's File Explorer entry belongs to a Windows user who isn't signed in now, so it stays.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_Explorer" xml:space="preserve"><value>Adds ‘{0}’ to the navigation pane of File Explorer.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_U_ExplorerLeft" xml:space="preserve"><value>The File Explorer entry ‘{0}’ stays: the Windows user it belongs to isn't signed in.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_Checking" xml:space="preserve"><value>Reading this PC again before the summary.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_StaleTitle" xml:space="preserve"><value>Windows changed since this page was read</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_StaleMsg_SetUp" xml:space="preserve"><value>The summary now shows what Setup would do. Check it and press Set up again.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_StaleMsg_Apply" xml:space="preserve"><value>The summary now shows what Setup would do. Check it and press Apply again.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_StaleMsg" xml:space="preserve"><value>The summary now shows what Uninstall would do. Check it and press Uninstall again.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Blocked_Password" xml:space="preserve"><value>Enter a password for the SMB account to continue.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_Blocked_Answers" xml:space="preserve"><value>Some answers need changing before Setup can continue. The fields marked in red, or Show details, say which.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_Blocked" xml:space="preserve"><value>Uninstall can't continue as things are now. Show details says why.</value><comment>UNTRANSLATED: English text</comment></data>
 </root>

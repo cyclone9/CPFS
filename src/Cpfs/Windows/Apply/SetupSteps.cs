@@ -79,7 +79,7 @@ internal sealed class SetupRun
             {
                 if (r.Outcome != StepOutcome.Running)
                 {
-                    AppLog.Write("apply", r.Outcome + " " + r.Key + (r.Error is null ? "" : ": " + r.Error));
+                    AppLog.Write("apply", r.Outcome + " " + r.Key + (r.LogText is null ? "" : ": " + r.LogText));
                 }
 
                 progress(r);

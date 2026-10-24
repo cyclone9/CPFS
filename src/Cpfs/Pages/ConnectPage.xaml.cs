@@ -104,6 +104,9 @@ public partial class ConnectPage : Page
     private bool _loaded;
     private bool _syncing;
 
+    // WindowsChanges.Count when the last reading began.
+    private int _readAt = -1;
+
     // Device-independent pixels: about 6 cm on a 100 % display, easy for a phone camera to read from the screen.
     private const double QrDialogSize = 280;
 
@@ -126,6 +129,12 @@ public partial class ConnectPage : Page
     {
         if (_loaded)
         {
+            // A Setup or Uninstall since the last reading may have changed the share or the account.
+            if (_readAt != WindowsChanges.Count)
+            {
+                await ReadAsync();
+            }
+
             return;
         }
 
@@ -137,6 +146,7 @@ public partial class ConnectPage : Page
 
     private async Task ReadAsync()
     {
+        _readAt = WindowsChanges.Count;
         RefreshButton.IsEnabled = false;
         try
         {

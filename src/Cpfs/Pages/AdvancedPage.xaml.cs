@@ -108,6 +108,9 @@ public partial class AdvancedPage : Page
     private bool _loaded;
     private bool _reading;
 
+    // WindowsChanges.Count when the last reading began.
+    private int _readAt = -1;
+
     public AdvancedPage()
     {
         InitializeComponent();
@@ -129,6 +132,11 @@ public partial class AdvancedPage : Page
         RenderDiagnostics();
         if (_loaded)
         {
+            if (_readAt != WindowsChanges.Count)
+            {
+                await ReadAsync();
+            }
+
             return;
         }
 
@@ -148,6 +156,7 @@ public partial class AdvancedPage : Page
         }
 
         _reading = true;
+        _readAt = WindowsChanges.Count;
         RefreshButton.IsEnabled = false;
         Busy.Visibility = Visibility.Visible;
         BusyText.Visibility = Visibility.Visible;

@@ -96,6 +96,33 @@ public class PlannerTests
 
     private static SetupAnswers NoEntry(SetupAnswers a) => a with { ExplorerEntry = false };
 
+    // The laptop case of dev8: Setup planned a password change, then an Uninstall removed the account and the share.
+    // A plan made again from the new reading must not count as the one the page showed.
+    [Fact]
+    public void APlanMadeAfterAnUninstallIsNotTheSameAsTheOneBefore()
+    {
+        var before = PlanFor(Installed(), Fixture(), a => a with { Password = PasswordEntry.Valid });
+        var again = PlanFor(Installed(), Fixture(), a => a with { Password = PasswordEntry.Valid });
+        Assert.True(before.SameItemsAs(again));
+
+        var gone = Installed() with
+        {
+            User = Reading.Ok<UserInfo?>(null),
+            Shares = Reading.Ok<IReadOnlyList<ShareInfo>>(new[] { new ShareInfo("IPC$", null, "Remote IPC", false, 1, 0, true) }),
+            ShareAccess = Reading.Ok<IReadOnlyList<ShareAccessEntry>?>(null),
+        };
+        var answers = Answers(Fixture(), Installed()) with { Password = PasswordEntry.Valid };
+        var after = Planner.Setup(gone, answers, null, Protected);
+        Assert.Equal(PlanAction.Change, Item(before, "user.password").Action);
+        Assert.False(before.SameItemsAs(after));
+        Assert.Contains("-user.password Change", before.DifferencesFrom(after));
+        Assert.Contains("+user.account Create", before.DifferencesFrom(after));
+
+        // A different tick is a different plan too.
+        var ticked = new Plan(before.Items.Select(i => i.Action == PlanAction.Ask ? i with { Ticked = !i.Ticked } : i).ToList());
+        Assert.Equal(before.Items.Any(i => i.Action == PlanAction.Ask), !before.SameItemsAs(ticked));
+    }
+
     // The File Explorer entry: created when absent, kept when it is CPFS's and at target, changed for a new name,
     // folder or icon, or when a documented value is missing.
     [Fact]

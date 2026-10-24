@@ -122,6 +122,34 @@ public class PlanSummaryTests
     }
 
     [Fact]
+    public void AMissingPasswordSaysWhatToDoAndNotThatItemsCannotBeChecked()
+    {
+        var answers = new SetupAnswers { SharePath = @"E:\Photos", ShareName = "Photos", SmbUser = "phone" };
+        var missing = new PlanItem
+        {
+            Key = "user.password", Section = PlanSection.User, Action = PlanAction.CannotPlan, Cause = PlanCause.InvalidAnswer, ReasonKey = "Plan_R_PasswordNeeded",
+        };
+        var badName = new PlanItem
+        {
+            Key = "share.name", Section = PlanSection.Share, Action = PlanAction.CannotPlan, Cause = PlanCause.InvalidAnswer, ReasonKey = "Plan_R_Invalid",
+        };
+        var unread = new PlanItem { Key = "server.config", Section = PlanSection.Server, Action = PlanAction.CannotPlan, Cause = PlanCause.ReadFailed };
+
+        var onlyPassword = PlanSummary.Setup(new Plan(new[] { missing, Item("share.main", PlanSection.Share, PlanAction.Create) }), answers, null);
+        Assert.Equal("Summary_Blocked_Password", onlyPassword.Lines[0].Key);
+        Assert.DoesNotContain("Summary_Blocked", Keys(onlyPassword));
+
+        var answersToo = PlanSummary.Setup(new Plan(new[] { missing, badName }), answers, null);
+        Assert.Equal(new[] { "Summary_Blocked_Password", "Summary_Blocked_Answers" }, Keys(answersToo).Take(2));
+
+        var mixed = PlanSummary.Setup(new Plan(new[] { badName, unread }), answers, null);
+        Assert.Equal(new[] { "Summary_Blocked_Answers", "Summary_Blocked" }, Keys(mixed).Take(2));
+
+        var guard = new PlanItem { Key = "u.guard", Section = PlanSection.User, Action = PlanAction.CannotPlan, Cause = PlanCause.InvalidAnswer, ReasonKey = "Uninst_R_RefuseUser" };
+        Assert.Equal("Summary_U_Blocked", PlanSummary.Uninstall(new Plan(new[] { guard })).Lines[0].Key);
+    }
+
+    [Fact]
     public void WithoutAdministratorRightsTheSummaryIsOneShortSentence()
     {
         var plan = new Plan(new[]
