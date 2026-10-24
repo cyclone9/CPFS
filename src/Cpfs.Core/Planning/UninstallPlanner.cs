@@ -50,7 +50,7 @@ public static class UninstallPlanner
         R.NoConfig, R.RefuseUser, R.RefusePath, R.ShareRemove, R.ShareForeign, R.UserDeleteUntracked, R.RestoreUnknown, R.ShareReplaced, R.Owner, R.AceRemove, R.UserDelete, R.UserDeleteExisted,
         R.UserDeleteAdmin, R.Profile, R.UserBefore, R.UserAdmin, R.UserHidden, R.UserGone, R.RuleRemove, R.BuiltInEnable,
         R.BuiltInMissing, R.Restore, R.RestoreValue, R.SettingsKept, R.Revert, R.AlwaysKept, R.NetworkPublic, R.NetworkSaved,
-        R.SaveCopy, R.DataRemove, R.DataKept, R.Later, R.LabelRemove, R.DriveSession, R.DriveRemove, R.DriveForeign, R.ShortcutRemove,
+        R.SaveCopy, R.DataRemove, R.DataKept, R.Later, R.LabelRemove, R.IconRemove, R.DriveSession, R.DriveRemove, R.DriveForeign, R.ShortcutRemove,
     };
 
     public static readonly IReadOnlyList<string> WordKeys = new[]
@@ -111,6 +111,7 @@ public static class UninstallPlanner
         public const string DataKept = "Uninst_R_DataKept";
         public const string Later = "Uninst_R_Later";
         public const string LabelRemove = "Uninst_R_LabelRemove";
+        public const string IconRemove = "Uninst_R_IconRemove";
         public const string DriveSession = "Uninst_R_DriveSession";
         public const string DriveRemove = "Uninst_R_DriveRemove";
         public const string DriveForeign = "Uninst_R_DriveForeign";
@@ -267,6 +268,27 @@ public static class UninstallPlanner
                 else if (original is null && current is not null && SameText(current, _c.OwnDriveLabel))
                 {
                     Add("u.drive.label", PlanSection.Drive, PlanAction.RemoveIfOurs, Word(Planner.S.Label), PlanValue.Of(current), Word(Planner.W.Absent), R.LabelRemove);
+                }
+
+                // The CPFS icon goes, or the icon the letter had before is put back; anyone else's icon stays.
+                if (!_s.DriveIcons.IsOk)
+                {
+                    Unread("u.drive.icon", PlanSection.Drive, Word(Planner.S.Icon), _s.DriveIcons);
+                }
+                else
+                {
+                    var icon = _s.DriveIcons.Value!.TryGetValue(d, out var ci) ? ci : null;
+                    var own = Planner.IsOwnIcon(icon, _s.CpfsIcon);
+                    var originalIcon = _c.BackupDriveIcon(d);
+                    if (originalIcon is not null && (icon is null || own) && !string.Equals(icon, originalIcon, StringComparison.OrdinalIgnoreCase))
+                    {
+                        Add("u.drive.icon", PlanSection.Drive, PlanAction.Change, Word(Planner.S.Icon), icon is null ? Word(Planner.W.Absent) : PlanValue.Of(icon),
+                            PlanValue.Of(originalIcon), Planner.R.IconRestore);
+                    }
+                    else if (originalIcon is null && own)
+                    {
+                        Add("u.drive.icon", PlanSection.Drive, PlanAction.RemoveIfOurs, Word(Planner.S.Icon), PlanValue.Of(icon!), Word(Planner.W.Absent), R.IconRemove);
+                    }
                 }
 
                 var path = _c.OwnDrivePath;

@@ -44,13 +44,10 @@ public partial class MainWindow : FluentWindow
         ApplyFlowDirection();
 
         ContentRendered += OnFirstRender;
-        RootNavigation.PaneOpened += (_, _) => UpdateMotto();
-        RootNavigation.PaneClosed += (_, _) => UpdateMotto();
         Loaded += (_, _) =>
         {
             Theming.Init(this);
             Theming.ApplyFont();
-            UpdateMotto();
             RootNavigation.Navigate(StartPage());
             CheckForUpdateAtStart();
         };
@@ -91,10 +88,6 @@ public partial class MainWindow : FluentWindow
             Pages.AboutPage.OpenInBrowser(sender, url);
         }
     }
-
-    // Shown only in the open pane: a compact or minimal pane has no room for it.
-    private void UpdateMotto() =>
-        PaneMotto.Visibility = RootNavigation.IsPaneOpen ? Visibility.Visible : Visibility.Collapsed;
 
     // "CPFS 0.5.0-dev3", without the commit (About shows that).
     private void UpdateTitle()

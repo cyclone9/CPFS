@@ -90,3 +90,10 @@ This project uses [semantic versioning](https://semver.org/).
 - The update check no longer follows redirects: any redirect counts as "Couldn't check for updates", so the request can only ever reach api.github.com.
 - Setup no longer replaces a drive name you gave CPFS's drive after the first Setup without asking: it asks first, unticked, because Uninstall would put back the older original.
 - When no signed-in desktop user is found, the drive step reads "Couldn't add the drive to your current session; it appears after a restart" instead of "Refused by Windows", and Uninstall notes that a removed drive letter may stay in File Explorer until Windows restarts.
+- The drive gets the CPFS icon in File Explorer and the desktop shortcut gets the CPFS icon, both from a copy of the icon in `ProgramData\CPFS`, so they keep it when the exe moves. An icon someone else gave the drive letter is replaced only when you tick it, and Uninstall puts it back.
+- Setup says under the drive name that File Explorer may show the name of the folder's disk instead: Windows uses the disk's own label for a drive mapped to a folder on it.
+- Setup, Uninstall and Monitor show "Reading this PC…" with a progress ring until the first reading is ready, and Setup's fields stay off until then.
+- Monitor keeps a file in the open files list for about 10 seconds after it closes, dimmed and marked "Closed", so quick transfers can be seen.
+- About shows the version, homepage and source code as aligned rows like Windows Settings, with plain links.
+- The motto is no longer shown at the top of the navigation pane.
+- The QR code dialog leaves more room above the Close button.

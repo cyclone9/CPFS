@@ -79,7 +79,9 @@ public partial class UninstallPage : Page
 
         _reading = true;
         RefreshButton.IsEnabled = false;
-        SummaryBody.Text = Loc.Instance["Setup_Reading"];
+        var first = _plan is null;
+        PlanLoading.Visibility = first ? Visibility.Visible : Visibility.Collapsed;
+        SummaryBody.Visibility = first ? Visibility.Collapsed : Visibility.Visible;
         try
         {
             var (input, bytes, documents) = await Task.Run(ReadInput);
@@ -97,6 +99,8 @@ public partial class UninstallPage : Page
         {
             _reading = false;
             RefreshButton.IsEnabled = true;
+            PlanLoading.Visibility = Visibility.Collapsed;
+            SummaryBody.Visibility = Visibility.Visible;
             UpdateApplyState();
         }
     }
@@ -269,7 +273,7 @@ public partial class UninstallPage : Page
         }
 
         ApplyButton.IsEnabled = enabled && !_reading;
-        RestorePointBox.IsEnabled = !_applying;
+        RestorePointBox.IsEnabled = !_applying && _plan is not null;
         ApplyBusy.Visibility = _applying ? Visibility.Visible : Visibility.Collapsed;
         ApplyHint.Text = hint;
         ApplyHint.Visibility = hint.Length == 0 ? Visibility.Collapsed : Visibility.Visible;

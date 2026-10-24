@@ -126,13 +126,14 @@ public sealed class PlanSummary
         var addsDrive = plan.Find("drive.map") is { Action: PlanAction.Create or PlanAction.Ask } map && Runs(map) && answers.DriveLetter is not null;
         var addsShortcut = plan.Find("shortcut.file") is { Action: PlanAction.Create or PlanAction.Ask } lnk && Runs(lnk);
         var driveName = answers.DriveName.Trim();
+        var withIcon = plan.Find("drive.icon") is { } icon && (icon.Action == PlanAction.Keep || Runs(icon));
         if (addsDrive && addsShortcut)
         {
-            phone.Add(SummaryLine.Of("Summary_DriveAndShortcut", answers.DriveLetter + ":", driveName));
+            phone.Add(SummaryLine.Of(withIcon ? "Summary_DriveIconAndShortcut" : "Summary_DriveAndShortcut", answers.DriveLetter + ":", driveName));
         }
         else if (addsDrive)
         {
-            phone.Add(SummaryLine.Of("Summary_Drive", answers.DriveLetter + ":", driveName));
+            phone.Add(SummaryLine.Of(withIcon ? "Summary_DriveIcon" : "Summary_Drive", answers.DriveLetter + ":", driveName));
         }
         else if (addsShortcut)
         {

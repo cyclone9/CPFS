@@ -75,6 +75,9 @@ public sealed class ConfigDocument
     // have none: their drive points to SharePath.
     public string? TrackedDrivePath => ConfigJson.GetString(ConfigJson.GetObject(ConfigJson.GetObject(Root, "Tracked"), "Created"), "DrivePath");
 
+    // The CPFS icon file in the data folder, used by the drive and the shortcut (Tracked.Created.IconFile, added by the app).
+    public string? TrackedIconFile => ConfigJson.GetString(ConfigJson.GetObject(ConfigJson.GetObject(Root, "Tracked"), "Created"), "IconFile");
+
     // The path the recorded drive letter maps to: what CPFS created, never anything else.
     public string? OwnDrivePath => (TrackedDrivePath ?? SharePath)?.Trim().TrimEnd('\\');
 
@@ -82,14 +85,19 @@ public sealed class ConfigDocument
     public string? OwnDriveLabel => DriveLabel is { Length: > 0 } label ? label : ShareName is { Length: > 0 } share ? "CPFS - " + share : null;
 
     // A drive name that was there before CPFS set its own (Backup.DriveLabels, added by the app), by letter.
-    public string? BackupDriveLabel(char letter)
+    public string? BackupDriveLabel(char letter) => BackupByLetter("DriveLabels", "Label", letter);
+
+    // A drive icon that was there before CPFS set its own (Backup.DriveIcons, added by the app), by letter.
+    public string? BackupDriveIcon(char letter) => BackupByLetter("DriveIcons", "Icon", letter);
+
+    private string? BackupByLetter(string list, string field, char letter)
     {
-        foreach (var node in ConfigJson.GetArray(ConfigJson.GetObject(Root, "Backup"), "DriveLabels"))
+        foreach (var node in ConfigJson.GetArray(ConfigJson.GetObject(Root, "Backup"), list))
         {
             if (node is JsonObject entry && ConfigJson.GetString(entry, "Letter") is { Length: 1 } l
                 && char.ToUpperInvariant(l[0]) == char.ToUpperInvariant(letter))
             {
-                return ConfigJson.GetString(entry, "Label");
+                return ConfigJson.GetString(entry, field);
             }
         }
 

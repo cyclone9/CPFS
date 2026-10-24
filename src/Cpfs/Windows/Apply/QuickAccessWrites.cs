@@ -47,29 +47,31 @@ internal static class DosDrives
     private static string Name(char letter) => char.ToUpperInvariant(letter) + ":";
 }
 
-// HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\DriveIcons\<L>\DefaultLabel, (Default) = the name
-// [Learn: "How to assign a custom icon and label to a drive letter"].
-internal static class DriveNames
+// HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\DriveIcons\<L>\DefaultLabel and \DefaultIcon, each with
+// its (Default) value [Learn: "Assign a Custom Icon and Label to a Drive Letter"]. For a drive mapped to a folder, the
+// label of the folder's volume wins over DefaultLabel when that volume has one (not documented by Microsoft; reported
+// for subst drives), so the drive name may not show.
+internal static class DriveIconKeys
 {
     private const string Icons = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\DriveIcons";
 
-    public static string? Read(char letter)
+    public static string? Read(char letter, string subkey)
     {
         using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
-        using var key = hklm.OpenSubKey(Icons + "\\" + Letter(letter) + @"\DefaultLabel");
-        return key?.GetValue("") as string;
+        using var key = hklm.OpenSubKey(Icons + "\\" + Letter(letter) + "\\" + subkey);
+        return key?.GetValue("", null, RegistryValueOptions.DoNotExpandEnvironmentNames) as string;
     }
 
-    public static void Set(char letter, string label)
+    public static void Set(char letter, string subkey, string value)
     {
         using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
-        using var key = hklm.CreateSubKey(Icons + "\\" + Letter(letter) + @"\DefaultLabel", writable: true)
+        using var key = hklm.CreateSubKey(Icons + "\\" + Letter(letter) + "\\" + subkey, writable: true)
             ?? throw new IOException("Could not open the DriveIcons key");
-        key.SetValue("", label, RegistryValueKind.String);
+        key.SetValue("", value, RegistryValueKind.String);
     }
 
-    // Removes DefaultLabel, and the letter's key only when nothing else is in it (an icon the user set stays).
-    public static void Delete(char letter)
+    // Removes the subkey, and the letter's key only when nothing else is in it (an icon or name set by others stays).
+    public static void Delete(char letter, string subkey)
     {
         using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
         using var icons = hklm.OpenSubKey(Icons, writable: true);
@@ -85,7 +87,7 @@ internal static class DriveNames
                 return;
             }
 
-            key.DeleteSubKey("DefaultLabel", throwOnMissingSubKey: false);
+            key.DeleteSubKey(subkey, throwOnMissingSubKey: false);
             if (key.SubKeyCount > 0 || key.ValueCount > 0)
             {
                 return;
@@ -98,11 +100,116 @@ internal static class DriveNames
     private static string Letter(char letter) => char.ToUpperInvariant(letter).ToString();
 }
 
+internal static class DriveNames
+{
+    public static string? Read(char letter) => DriveIconKeys.Read(letter, "DefaultLabel");
+
+    public static void Set(char letter, string label) => DriveIconKeys.Set(letter, "DefaultLabel", label);
+
+    public static void Delete(char letter) => DriveIconKeys.Delete(letter, "DefaultLabel");
+
+    // The label of the volume that holds the folder, which File Explorer shows instead of DefaultLabel; null when none.
+    public static string? VolumeLabelOf(string folder)
+    {
+        try
+        {
+            var root = Path.GetPathRoot(folder);
+            if (string.IsNullOrEmpty(root))
+            {
+                return null;
+            }
+
+            var label = new DriveInfo(root).VolumeLabel;
+            return string.IsNullOrEmpty(label) ? null : label;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or System.Security.SecurityException)
+        {
+            return null;
+        }
+    }
+}
+
+internal static class DriveIcons
+{
+    public static string? Read(char letter) => DriveIconKeys.Read(letter, "DefaultIcon");
+
+    public static void Set(char letter, string icon)
+    {
+        DriveIconKeys.Set(letter, "DefaultIcon", icon);
+        ShellIcons.Refresh();
+    }
+
+    public static void Delete(char letter)
+    {
+        DriveIconKeys.Delete(letter, "DefaultIcon");
+        ShellIcons.Refresh();
+    }
+}
+
+// The CPFS icon as a file of its own, ProgramData\CPFS\cpfs.ico (SYSTEM and Administrators write, Users read), so the
+// drive and the shortcut keep it when the exe moves. It goes with the data folder on Uninstall.
+internal static class CpfsIconFile
+{
+    public static string Path => System.IO.Path.Combine(StateReader.DataFolder, "cpfs.ico");
+
+    public static void Write()
+    {
+        var bytes = Bytes();
+        if (File.Exists(Path) && SameBytes(File.ReadAllBytes(Path), bytes))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(StateReader.DataFolder);
+        File.WriteAllBytes(Path, bytes);
+    }
+
+    private static byte[] Bytes()
+    {
+        using var stream = typeof(CpfsIconFile).Assembly.GetManifestResourceStream("Cpfs.Assets.cpfs.ico")
+            ?? throw new IOException("The CPFS icon is missing from the program file.");
+        using var copy = new MemoryStream();
+        stream.CopyTo(copy);
+        return copy.ToArray();
+    }
+
+    private static bool SameBytes(byte[] a, byte[] b)
+    {
+        if (a.Length != b.Length)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < a.Length; i++)
+        {
+            if (a[i] != b[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+// Tells the shell to drop its icon cache, as Microsoft asks after a drive icon changes [Learn: SHChangeNotify,
+// SHCNE_ASSOCCHANGED]. Explorer may still show the old icon until it restarts.
+internal static class ShellIcons
+{
+    private const int ShcneAssocChanged = 0x08000000;
+    private const uint ShcnfIdList = 0x0000;
+
+    public static void Refresh() => SHChangeNotify(ShcneAssocChanged, ShcnfIdList, IntPtr.Zero, IntPtr.Zero);
+
+    [DllImport("shell32.dll")]
+    private static extern void SHChangeNotify(int eventId, uint flags, IntPtr item1, IntPtr item2);
+}
+
 // A .lnk on the Public Desktop through the shell's own ShellLink object (IShellLinkW and IPersistFile).
 internal static class Shortcuts
 {
     // Creates a new file; refuses when one is already there, so nothing is ever overwritten.
-    public static void Create(string file, string target, string description) => OnSta(() =>
+    public static void Create(string file, string target, string description, string icon) => OnSta(() =>
     {
         if (File.Exists(file))
         {
@@ -114,6 +221,7 @@ internal static class Shortcuts
         {
             link.SetPath(target);
             link.SetDescription(description);
+            link.SetIconLocation(icon, 0);
             ((IPersistFile)link).Save(file, true);
         }
         finally
@@ -142,6 +250,67 @@ internal static class Shortcuts
 
         return true;
     });
+
+    // Gives a shortcut CPFS made the CPFS icon, in place.
+    public static void SetIcon(string file, string icon) => OnSta(() =>
+    {
+        var link = (IShellLinkW)new ShellLink();
+        try
+        {
+            ((IPersistFile)link).Load(file, StgmReadWrite);
+            link.SetIconLocation(icon, 0);
+            ((IPersistFile)link).Save(file, true);
+        }
+        finally
+        {
+            Marshal.ReleaseComObject(link);
+        }
+
+        return true;
+    });
+
+    // The icon file a shortcut names ("" for none); null when the file is not a shortcut the shell can read.
+    public static string? IconOf(string file) => OnSta(() => File.Exists(file) ? ReadIcon(file) : null);
+
+    // The icon file of every shortcut in a folder, by file name, on one thread; unreadable ones are left out.
+    public static System.Collections.Generic.Dictionary<string, string> IconsOf(string folder) => OnSta(() =>
+    {
+        var icons = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
+        {
+            return icons;
+        }
+
+        foreach (var file in Directory.GetFiles(folder, "*.lnk"))
+        {
+            if (ReadIcon(file) is { } icon)
+            {
+                icons[Path.GetFileName(file)] = icon;
+            }
+        }
+
+        return icons;
+    });
+
+    private static string? ReadIcon(string file)
+    {
+        var link = (IShellLinkW)new ShellLink();
+        try
+        {
+            ((IPersistFile)link).Load(file, StgmRead);
+            var path = new StringBuilder(1024);
+            link.GetIconLocation(path, path.Capacity, out _);
+            return path.ToString();
+        }
+        catch (Exception ex) when (ex is COMException or UnauthorizedAccessException or IOException)
+        {
+            return null;
+        }
+        finally
+        {
+            Marshal.ReleaseComObject(link);
+        }
+    }
 
     // The folder a shortcut points to; null when the file is not a shortcut the shell can read.
     public static string? TargetOf(string file) => OnSta(() =>

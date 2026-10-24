@@ -142,12 +142,21 @@ public sealed record SystemSnapshot
 
     public Reading<IReadOnlyDictionary<char, string>> DriveLabels { get; init; } = Reading.Failed<IReadOnlyDictionary<char, string>>(null);
 
+    // Explorer drive icons (DriveIcons\<L>\DefaultIcon), by letter.
+    public Reading<IReadOnlyDictionary<char, string>> DriveIcons { get; init; } = Reading.Failed<IReadOnlyDictionary<char, string>>(null);
+
+    // The CPFS icon copied into the data folder, used by the drive and the shortcut; a value naming it is CPFS's.
+    public string CpfsIcon { get; init; } = @"C:\ProgramData\CPFS\cpfs.ico";
+
     public LetterScan Letters { get; init; } = new();
 
     public string CommonDesktop { get; init; } = @"C:\Users\Public\Desktop";
 
     // File names on the Public Desktop.
     public Reading<IReadOnlyList<string>> PublicDesktopFiles { get; init; } = Reading.Failed<IReadOnlyList<string>>(null);
+
+    // The icon file each shortcut (.lnk) on the Public Desktop names, by file name; empty when it names none.
+    public Reading<IReadOnlyDictionary<string, string>> ShortcutIcons { get; init; } = Reading.Failed<IReadOnlyDictionary<string, string>>(null);
 
     // The account named in the answers; a null value means it does not exist.
     public Reading<UserInfo?> User { get; init; } = Reading.Failed<UserInfo?>(null);

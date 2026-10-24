@@ -36,6 +36,15 @@
         BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
         BorderThickness="1"
         CornerRadius="4">
+        <Border.Style>
+          <Style TargetType="Border">
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding Dimmed}" Value="True">
+                <Setter Property="Opacity" Value="0.6" />
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </Border.Style>
         <!--
           The device's data on the start side, its buttons in one column of equal widths on the end side; in a narrow
           window the buttons go below the data. The two naming buttons never show together.
@@ -137,7 +146,23 @@
 
     <StackPanel x:Name="MonitorPanel" Visibility="Collapsed">
       <ui:InfoBar x:Name="ActionResult" Margin="0,0,0,4" IsClosable="True" IsOpen="False" />
-      <ItemsControl x:Name="Sections" Focusable="False" ItemTemplate="{StaticResource SectionTemplate}" />
+      <!--  Until the first reading arrives (MonitorPage.RefreshAsync).  -->
+      <ui:Card x:Name="MonitorLoading" Margin="0,0,0,4">
+        <StackPanel Orientation="Horizontal">
+          <ui:ProgressRing Width="20" Height="20" IsIndeterminate="True" />
+          <TextBlock
+            Margin="12,0,0,0"
+            VerticalAlignment="Center"
+            AutomationProperties.LiveSetting="Polite"
+            Style="{StaticResource CardValue}"
+            Text="{Binding [Common_ReadingPc], Source={x:Static local:Loc.Instance}}" />
+        </StackPanel>
+      </ui:Card>
+      <ItemsControl
+        x:Name="Sections"
+        Focusable="False"
+        ItemTemplate="{StaticResource SectionTemplate}"
+        Visibility="Collapsed" />
     </StackPanel>
   </StackPanel>
 </Page>

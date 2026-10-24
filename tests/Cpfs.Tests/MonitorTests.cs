@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Cpfs.Core.Monitor;
 using Xunit;
 
@@ -109,4 +110,44 @@ public class MonitorTests
         Assert.Equal((1L, 5, 7), MonitorMath.SplitDuration(3907));
         Assert.Equal("cpfsuser", MonitorMath.UserName(@"HOST-01\cpfsuser"));
     }
+
+    // A file that closes stays about 10 seconds, marked closed, then goes; open files come first; at most Max rows.
+    [Fact]
+    public void ClosedFilesStayForTheKeepTimeThenGoAndRowsAreCapped()
+    {
+        var recent = new RecentFiles<string>(TimeSpan.FromSeconds(10), 3);
+        static System.Collections.Generic.KeyValuePair<string, string> F(string key) => new(key, key + ".jpg");
+
+        var rows = recent.Update(new[] { F("1"), F("2") }, TimeSpan.FromSeconds(0));
+        Assert.Equal(new[] { "1", "2" }, Keys(rows));
+        Assert.All(rows, r => Assert.False(r.Closed));
+
+        rows = recent.Update(new[] { F("2") }, TimeSpan.FromSeconds(2));
+        Assert.Equal(new[] { "2", "1" }, Keys(rows));
+        Assert.True(rows[1].Closed);
+        Assert.Equal("1.jpg", rows[1].Item);
+
+        rows = recent.Update(new[] { F("2") }, TimeSpan.FromSeconds(11.9));
+        Assert.True(Assert.Single(rows, r => r.Key == "1").Closed);
+
+        rows = recent.Update(new[] { F("2") }, TimeSpan.FromSeconds(12));
+        Assert.Equal(new[] { "2" }, Keys(rows));
+
+        // Reopened within the keep time: open again, not a second row.
+        recent.Update(System.Array.Empty<System.Collections.Generic.KeyValuePair<string, string>>(), TimeSpan.FromSeconds(13));
+        rows = recent.Update(new[] { F("2") }, TimeSpan.FromSeconds(14));
+        Assert.Equal(new[] { "2" }, Keys(rows));
+        Assert.False(rows[0].Closed);
+
+        // Over the cap the oldest closed rows go first.
+        recent.Update(new[] { F("2"), F("3"), F("4") }, TimeSpan.FromSeconds(15));
+        recent.Update(new[] { F("2") }, TimeSpan.FromSeconds(16));
+        rows = recent.Update(new[] { F("2"), F("5") }, TimeSpan.FromSeconds(17));
+        Assert.Equal(3, rows.Count);
+        Assert.Equal(new[] { "2", "5" }, Keys(rows).GetRange(0, 2));
+        Assert.True(rows[2].Closed);
+    }
+
+    private static System.Collections.Generic.List<string> Keys(System.Collections.Generic.IReadOnlyList<RecentFile<string>> rows) =>
+        rows.Select(r => r.Key).ToList();
 }

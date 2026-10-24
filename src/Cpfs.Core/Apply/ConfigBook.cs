@@ -162,7 +162,12 @@ public sealed class ConfigBook
     }
 
     // The drive name a letter had before CPFS named it (Backup.DriveLabels[]), recorded once per letter.
-    public BackupWrite BackupDriveLabel(char letter, string label)
+    public BackupWrite BackupDriveLabel(char letter, string label) => BackupByLetter("DriveLabels", "Label", letter, label);
+
+    // The drive icon a letter had before CPFS set its own (Backup.DriveIcons[]), recorded once per letter.
+    public BackupWrite BackupDriveIcon(char letter, string icon) => BackupByLetter("DriveIcons", "Icon", letter, icon);
+
+    private BackupWrite BackupByLetter(string name, string field, char letter, string value)
     {
         if (ConfigJson.GetObject(Root, "Backup") is not { } block)
         {
@@ -171,7 +176,7 @@ public sealed class ConfigBook
 
         var key = char.ToUpperInvariant(letter).ToString();
         var list = new JsonArray();
-        foreach (var node in ConfigJson.GetArray(block, "DriveLabels"))
+        foreach (var node in ConfigJson.GetArray(block, name))
         {
             if (node is JsonObject o && string.Equals(ConfigJson.GetString(o, "Letter"), key, StringComparison.OrdinalIgnoreCase))
             {
@@ -181,8 +186,8 @@ public sealed class ConfigBook
             list.Add(node?.DeepClone());
         }
 
-        list.Add(new JsonObject { ["Letter"] = key, ["Label"] = label });
-        ConfigWriter.Set(block, "DriveLabels", list);
+        list.Add(new JsonObject { ["Letter"] = key, [field] = value });
+        ConfigWriter.Set(block, name, list);
         return BackupWrite.Recorded;
     }
 

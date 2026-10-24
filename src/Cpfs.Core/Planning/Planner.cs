@@ -57,7 +57,8 @@ public static class Planner
         R.AutoCreate, R.AutoRemove, R.AutoOff, R.LegacyTask, R.StaleTask,
         R.DriveCreate, R.DriveGone, R.DriveForeign, R.DriveSession, R.DriveOldSession, R.DriveOldRemove, R.DriveOldForeign, R.DriveOff,
         R.LabelSet, R.LabelForeign, R.LabelRenamed, R.LabelOldRemove, R.LabelRestore,
-        R.ShortcutCreate, R.ShortcutGone, R.ShortcutRetarget, R.ShortcutForeign, R.ShortcutOldRemove, R.ShortcutOff,
+        R.IconSet, R.IconForeign, R.IconChanged, R.IconOldRemove, R.IconRestore,
+        R.ShortcutCreate, R.ShortcutGone, R.ShortcutRetarget, R.ShortcutForeign, R.ShortcutOldRemove, R.ShortcutOff, R.ShortcutIcon,
         R.DataCreate, R.DataLock,
         R.ShareAccessGrant, R.ShareAccessOther, R.ShareAccessDeny, R.ComputerSavedDiffers, R.ComputerPending,
     };
@@ -158,12 +159,18 @@ public static class Planner
         public const string LabelRenamed = "Plan_R_LabelRenamed";
         public const string LabelOldRemove = "Plan_R_LabelOldRemove";
         public const string LabelRestore = "Plan_R_LabelRestore";
+        public const string IconSet = "Plan_R_IconSet";
+        public const string IconForeign = "Plan_R_IconForeign";
+        public const string IconChanged = "Plan_R_IconChanged";
+        public const string IconOldRemove = "Plan_R_IconOldRemove";
+        public const string IconRestore = "Plan_R_IconRestore";
         public const string ShortcutCreate = "Plan_R_ShortcutCreate";
         public const string ShortcutGone = "Plan_R_ShortcutGone";
         public const string ShortcutRetarget = "Plan_R_ShortcutRetarget";
         public const string ShortcutForeign = "Plan_R_ShortcutForeign";
         public const string ShortcutOldRemove = "Plan_R_ShortcutOldRemove";
         public const string ShortcutOff = "Plan_R_ShortcutOff";
+        public const string ShortcutIcon = "Plan_R_ShortcutIcon";
         public const string DataCreate = "Plan_R_DataCreate";
         public const string DataLock = "Plan_R_DataLock";
         public const string ShareAccessGrant = "Plan_R_ShareAccessGrant";
@@ -229,7 +236,7 @@ public static class Planner
         S.Backup, S.Account, S.TakeOver, S.AccountEnabled, S.NeverExpires, S.Lockout, S.Users, S.Admins, S.Hidden, S.Password,
         S.Folder, S.Ace, S.Share, S.AdminShares, S.ServerStart, S.Smb2, S.Reject, S.Smb1, S.Smb1Feature, S.Guest,
         S.LockoutThreshold, S.Audit, S.BuiltIn, S.VpnAdapter, S.Drive, S.OldDrive, S.DriveSession, S.OldDriveSession, S.Label,
-        S.OldLabel, S.Shortcut, S.OldShortcut, S.DataFolder, S.ShareAccess, S.ComputerName, S.SavedComputerName,
+        S.OldLabel, S.Icon, S.OldIcon, S.Shortcut, S.OldShortcut, S.ShortcutIcon, S.DataFolder, S.ShareAccess, S.ComputerName, S.SavedComputerName,
     };
 
     // A setting of a share or a firewall rule that differs from Setup's, by the field name the planner reports.
@@ -281,8 +288,11 @@ public static class Planner
         public const string OldDriveSession = "Plan_S_OldDriveSession";
         public const string Label = "Plan_S_Label";
         public const string OldLabel = "Plan_S_OldLabel";
+        public const string Icon = "Plan_S_Icon";
+        public const string OldIcon = "Plan_S_OldIcon";
         public const string Shortcut = "Plan_S_Shortcut";
         public const string OldShortcut = "Plan_S_OldShortcut";
+        public const string ShortcutIcon = "Plan_S_ShortcutIcon";
         public const string DataFolder = "Plan_S_DataFolder";
         public const string ShareAccess = "Plan_S_ShareAccess";
         public const string ComputerName = "Plan_S_ComputerName";
@@ -1061,6 +1071,19 @@ public static class Planner
                 }
             }
 
+            if (!invalid && !foreign && oldLetter is { } oi && letter != oi && _s.DriveIcons.IsOk
+                && _s.DriveIcons.Value!.TryGetValue(oi, out var oldIcon) && IsOwnIcon(oldIcon, _s.CpfsIcon))
+            {
+                if (_c!.BackupDriveIcon(oi) is { } originalIcon)
+                {
+                    Add("drive.oldicon", PlanSection.Drive, PlanAction.Change, Word(S.OldIcon), Data(oldIcon), Data(originalIcon), R.IconRestore);
+                }
+                else
+                {
+                    Add("drive.oldicon", PlanSection.Drive, PlanAction.RemoveIfOurs, Word(S.OldIcon), Data(oldIcon), Word(W.Absent), R.IconOldRemove);
+                }
+            }
+
             if (removeOld)
             {
                 var shown = oldLetter + ": " + oldValue;
@@ -1159,6 +1182,37 @@ public static class Planner
                     }
                 }
             }
+
+            DriveIcon(d);
+        }
+
+        // The CPFS icon for the drive. An icon CPFS did not set is replaced only when ticked, and saved first so
+        // Uninstall can put it back (once per letter: one set since that backup would be lost, which the reason says).
+        private void DriveIcon(char d)
+        {
+            if (!_s.DriveIcons.IsOk)
+            {
+                Unread("drive.icon", PlanSection.Drive, Word(S.Icon), _s.DriveIcons.State, _s.DriveIcons.Error);
+                return;
+            }
+
+            var current = _s.DriveIcons.Value!.TryGetValue(d, out var ci) ? ci : null;
+            if (IsOwnIcon(current, _s.CpfsIcon))
+            {
+                Add("drive.icon", PlanSection.Drive, PlanAction.Keep, Word(S.Icon), Data(current), null, R.AtTarget);
+            }
+            else if (current is null)
+            {
+                Add("drive.icon", PlanSection.Drive, PlanAction.Create, Word(S.Icon), Word(W.Absent), Data(_s.CpfsIcon), R.IconSet);
+            }
+            else
+            {
+                var original = _c?.BackupDriveIcon(d);
+                var changed = original is not null && !string.Equals(current, original, StringComparison.OrdinalIgnoreCase);
+                AskItem("drive.icon", PlanSection.Drive, Word(S.Icon), Data(current), Data(_s.CpfsIcon), changed ? R.IconChanged : R.IconForeign, d + ":", current);
+                var ticked = Items[Items.Count - 1].Ticked;
+                Items[Items.Count - 1] = Items[Items.Count - 1] with { BackupNeeded = ticked && original is null };
+            }
         }
 
         // The desktop shortcut on the Public Desktop. A recorded shortcut under another name goes first; a file CPFS did
@@ -1216,10 +1270,12 @@ public static class Planner
             else if (exists && path is not null && !SamePath(path, _c?.SharePath))
             {
                 Add("shortcut.file", PlanSection.Shortcut, PlanAction.Change, Data(target), Data(_c?.SharePath ?? "?"), Data(path), R.ShortcutRetarget);
+                ShortcutIcon(fileName!);
             }
             else if (exists)
             {
                 Add("shortcut.file", PlanSection.Shortcut, PlanAction.Keep, Data(target), Word(W.Exists), null, R.AtTarget);
+                ShortcutIcon(fileName!);
             }
             else if (ours)
             {
@@ -1230,6 +1286,33 @@ public static class Planner
             {
                 Add("shortcut.file", PlanSection.Shortcut, PlanAction.Create, Data(target), Word(W.Absent), Data(path ?? _a.SharePath), R.ShortcutCreate);
             }
+        }
+
+        // CPFS's own shortcut made before it carried an icon gets the CPFS icon; one with an icon someone chose keeps it.
+        // Unread icons plan nothing: the icon never blocks Apply.
+        private void ShortcutIcon(string fileName)
+        {
+            if (!_s.ShortcutIcons.IsOk || !TryGet(_s.ShortcutIcons.Value!, fileName, out var icon) || icon.Length > 0)
+            {
+                return;
+            }
+
+            Add("shortcut.icon", PlanSection.Shortcut, PlanAction.Change, Word(S.ShortcutIcon), Word(W.None), Data(_s.CpfsIcon), R.ShortcutIcon);
+        }
+
+        private static bool TryGet(IReadOnlyDictionary<string, string> icons, string fileName, out string icon)
+        {
+            foreach (var pair in icons)
+            {
+                if (string.Equals(pair.Key, fileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    icon = pair.Value;
+                    return true;
+                }
+            }
+
+            icon = "";
+            return false;
         }
 
         public void DataFolder()
@@ -1411,6 +1494,23 @@ public static class Planner
     private static bool IsAdminShare(string name) =>
         string.Equals(name, "ADMIN$", StringComparison.OrdinalIgnoreCase)
         || (name.Length == 2 && name[1] == '$' && char.IsLetter(name[0]) && name[0] < 128);
+
+    // DefaultIcon names a file, optionally followed by ",index"; CPFS writes only the path of its own icon.
+    public static bool IsOwnIcon(string? value, string cpfsIcon)
+    {
+        if (value is null)
+        {
+            return false;
+        }
+
+        var v = value.Trim().Trim('"');
+        if (v.EndsWith(",0", StringComparison.Ordinal))
+        {
+            v = v.Substring(0, v.Length - 2);
+        }
+
+        return string.Equals(v, cpfsIcon, StringComparison.OrdinalIgnoreCase);
+    }
 
     private static bool SameText(string? a, string? b) => a is not null && b is not null && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
 

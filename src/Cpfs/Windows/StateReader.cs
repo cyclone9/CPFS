@@ -608,6 +608,11 @@ internal sealed class StateReader
                 {
                     s.Rows.Add(StateRow.Data("Setup_Drive_ExplorerLabel", icon?.GetValue("") as string));
                 }
+
+                using (var icon = hklm.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\DriveIcons\" + letter + @"\DefaultIcon"))
+                {
+                    s.Rows.Add(StateRow.Data("Setup_Drive_ExplorerIcon", icon?.GetValue("", null, RegistryValueOptions.DoNotExpandEnvironmentNames) as string));
+                }
             }
             catch (Exception ex) when (State.IsExpected(ex))
             {

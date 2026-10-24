@@ -236,13 +236,19 @@ internal static class CiApplyTest
             Check(DriveNames.Read(letter) == SetupDefaults.DriveNameFor(TestShare), "the drive name is set", DriveNames.Read(letter) ?? "absent");
             Check(config.DriveLetter == letter.ToString() && config.DriveLabel == SetupDefaults.DriveNameFor(TestShare)
                 && string.Equals(config.TrackedDrivePath, folder, StringComparison.OrdinalIgnoreCase), "config.json records the drive letter, its name and folder");
+            Check(Planner.IsOwnIcon(DriveIcons.Read(letter), CpfsIconFile.Path), "the drive has the CPFS icon", DriveIcons.Read(letter) ?? "absent");
         }
+
+        Check(File.Exists(CpfsIconFile.Path), "the CPFS icon file is in ProgramData\\CPFS", CpfsIconFile.Path);
+        Check(string.Equals(config.TrackedIconFile, CpfsIconFile.Path, StringComparison.OrdinalIgnoreCase), "config.json records the icon file", config.TrackedIconFile ?? "null");
 
         _shortcut = config.Shortcut;
         var lnkTarget = _shortcut is null ? null : Shortcuts.TargetOf(_shortcut);
         Check(_shortcut is not null && string.Equals(Path.GetFileName(_shortcut), SetupDefaults.ShortcutNameFor(TestShare) + ".lnk", StringComparison.OrdinalIgnoreCase),
             "config.json records the shortcut", _shortcut ?? "null");
         Check(string.Equals(lnkTarget?.TrimEnd('\\'), folder, StringComparison.OrdinalIgnoreCase), "the shortcut points to the shared folder", lnkTarget ?? "absent");
+        var lnkIcon = _shortcut is null ? null : Shortcuts.IconOf(_shortcut);
+        Check(string.Equals(lnkIcon, CpfsIconFile.Path, StringComparison.OrdinalIgnoreCase), "the shortcut has the CPFS icon", lnkIcon ?? "absent");
         Check(config.Access == 3, "config.json records drive and shortcut in Access", config.Access?.ToString(CultureInfo.InvariantCulture) ?? "null");
 
         // Re-running with the same answers changes nothing.
@@ -329,6 +335,7 @@ internal static class CiApplyTest
         {
             Check(DosDrives.Read(letter) is null, "the DOS Devices mapping " + letter + ": is gone", DosDrives.Read(letter) ?? "");
             Check(DriveNames.Read(letter) is null, "the drive name is gone", DriveNames.Read(letter) ?? "");
+            Check(DriveIcons.Read(letter) is null, "the drive icon is gone", DriveIcons.Read(letter) ?? "");
         }
 
         if (_shortcut is not null)

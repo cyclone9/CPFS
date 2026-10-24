@@ -142,9 +142,125 @@ internal static class QuickAccessSteps
                 b!.SetField("DriveLabel", name);
                 return BackupWrite.Recorded;
             },
-            Do = () => DriveNames.Set(letter, name),
+            Do = () =>
+            {
+                DriveNames.Set(letter, name);
+                AppLog.Write("apply", DriveNames.VolumeLabelOf(run.SharePath) is { } volume
+                    ? "Drive name " + letter + ": set to '" + name + "'; the folder's disk is named '" + volume + "', and File Explorer may show that name instead"
+                    : "Drive name " + letter + ": set to '" + name + "'");
+            },
             Check = () => string.Equals(DriveNames.Read(letter), name, StringComparison.Ordinal),
         };
+    }
+
+    // Setup: the previous letter's CPFS icon, removed, or put back to the icon it had before CPFS.
+    public static LambdaStep OldIcon(SetupRun run)
+    {
+        var letter = run.OldLetter ?? throw new InvalidOperationException("No previous drive letter is recorded.");
+        var original = run.Original!.BackupDriveIcon(letter);
+        bool AtTarget() => original is null ? DriveIcons.Read(letter) is null : string.Equals(DriveIcons.Read(letter), original, StringComparison.OrdinalIgnoreCase);
+        return new LambdaStep
+        {
+            Read = AtTarget,
+            Do = () =>
+            {
+                if (!Planner.IsOwnIcon(DriveIcons.Read(letter), CpfsIconFile.Path))
+                {
+                    throw new InvalidOperationException("The icon of drive " + letter + ": changed after the plan was made. Read the plan again.");
+                }
+
+                if (original is null)
+                {
+                    DriveIcons.Delete(letter);
+                }
+                else
+                {
+                    DriveIcons.Set(letter, original);
+                }
+            },
+            TrackWith = b => b!.TrackCreated("DriveIcon", null),
+            Check = AtTarget,
+        };
+    }
+
+    // Setup: the CPFS icon for the drive, from the icon file in the data folder. One CPFS did not set is replaced
+    // only when the user ticked it, and saved in Backup.DriveIcons first.
+    public static LambdaStep Icon(SetupRun run, PlanItem item)
+    {
+        var letter = run.Letter;
+        var icon = CpfsIconFile.Path;
+        bool AtTarget() => Planner.IsOwnIcon(DriveIcons.Read(letter), icon) && File.Exists(icon);
+        return new LambdaStep
+        {
+            Read = AtTarget,
+            RecordWith = b =>
+            {
+                var before = DriveIcons.Read(letter);
+                if (before is not null && !Planner.IsOwnIcon(before, icon))
+                {
+                    if (item.Action != PlanAction.Ask)
+                    {
+                        throw new InvalidOperationException("Drive " + letter + ": got an icon after the plan was made. Read the plan again.");
+                    }
+
+                    if (item.BackupNeeded && b!.BackupDriveIcon(letter, before) == BackupWrite.NoBackup)
+                    {
+                        return BackupWrite.NoBackup;
+                    }
+                }
+
+                b!.TrackCreated("IconFile", icon);
+                b.TrackCreated("DriveIcon", icon);
+                return BackupWrite.Recorded;
+            },
+            Do = () =>
+            {
+                CpfsIconFile.Write();
+                DriveIcons.Set(letter, icon);
+            },
+            Check = AtTarget,
+        };
+    }
+
+    // Setup: CPFS's own shortcut, made before it carried an icon, gets the CPFS icon.
+    public static LambdaStep ShortcutIcon(SetupRun run)
+    {
+        var file = FindShortcutFile(run) ?? throw new InvalidOperationException("The shortcut has no path.");
+        var icon = CpfsIconFile.Path;
+        bool AtTarget() => string.Equals(Shortcuts.IconOf(file), icon, StringComparison.OrdinalIgnoreCase) && File.Exists(icon);
+        return new LambdaStep
+        {
+            Read = AtTarget,
+            RecordWith = b =>
+            {
+                b!.TrackCreated("IconFile", icon);
+                return BackupWrite.Recorded;
+            },
+            Do = () =>
+            {
+                if (Shortcuts.IconOf(file) is not { Length: 0 })
+                {
+                    throw new StepUnsupportedException("The shortcut " + Path.GetFileName(file) + " has an icon of its own now, so it is left as it is.");
+                }
+
+                CpfsIconFile.Write();
+                Shortcuts.SetIcon(file, icon);
+            },
+            Check = AtTarget,
+        };
+    }
+
+    private static string? FindShortcutFile(SetupRun run)
+    {
+        foreach (var other in run.Plan.Items)
+        {
+            if (other.Key == "shortcut.file" && other.Subject.Data is { Length: > 0 } path)
+            {
+                return path;
+            }
+        }
+
+        return null;
     }
 
     // Setup: the shortcut recorded under another name. It goes only while it still points at the folder it was made for.
@@ -212,10 +328,15 @@ internal static class QuickAccessSteps
             RecordWith = b =>
             {
                 b!.SetField("Shortcut", file);
+                b.TrackCreated("IconFile", CpfsIconFile.Path);
                 return BackupWrite.Recorded;
             },
-            Do = () => Shortcuts.Create(file, run.SharePath, run.ShortcutDescription),
-            Check = AtTarget,
+            Do = () =>
+            {
+                CpfsIconFile.Write();
+                Shortcuts.Create(file, run.SharePath, run.ShortcutDescription, CpfsIconFile.Path);
+            },
+            Check = () => AtTarget() && string.Equals(Shortcuts.IconOf(file), CpfsIconFile.Path, StringComparison.OrdinalIgnoreCase),
         };
     }
 
@@ -243,6 +364,36 @@ internal static class QuickAccessSteps
                 }
 
                 DriveNames.Delete(letter);
+            },
+            Check = AtTarget,
+        };
+    }
+
+    // Uninstall: the CPFS icon removed, or the icon from before CPFS put back; anyone else's icon is left alone.
+    public static LambdaStep UninstallIcon(UninstallRun run)
+    {
+        var letter = RecordedLetter(run.Config);
+        var original = run.Config!.BackupDriveIcon(letter);
+        bool AtTarget() => original is null ? DriveIcons.Read(letter) is null : string.Equals(DriveIcons.Read(letter), original, StringComparison.OrdinalIgnoreCase);
+        return new LambdaStep
+        {
+            Read = AtTarget,
+            Do = () =>
+            {
+                var current = DriveIcons.Read(letter);
+                if (current is not null && !Planner.IsOwnIcon(current, CpfsIconFile.Path))
+                {
+                    throw new InvalidOperationException("The icon of drive " + letter + ": changed after the plan was made. Read the plan again.");
+                }
+
+                if (original is null)
+                {
+                    DriveIcons.Delete(letter);
+                }
+                else
+                {
+                    DriveIcons.Set(letter, original);
+                }
             },
             Check = AtTarget,
         };

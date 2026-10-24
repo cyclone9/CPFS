@@ -66,8 +66,10 @@ public class PlannerTests
             DataFolder = Reading.Ok(new DataFolderInfo(true, true, true, false)),
             DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
             DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+            DriveIcons = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
             Letters = letters,
             PublicDesktopFiles = Reading.Ok<IReadOnlyList<string>>(new[] { "Shared (CPFS).lnk", "desktop.ini" }),
+            ShortcutIcons = Reading.Ok<IReadOnlyDictionary<string, string>>(new Dictionary<string, string> { ["Shared (CPFS).lnk"] = CpfsIcon }),
             User = Reading.Ok<UserInfo?>(new UserInfo(UserSid, true, true, false, false, true, 0)),
             Folder = Reading.Ok(new FolderInfo(true, true)),
             ShareAccess = Reading.Ok<IReadOnlyList<ShareAccessEntry>?>(new[] { new ShareAccessEntry(@"HOST-01\ShareUser", UserSid, 0, 0) }),
@@ -75,6 +77,8 @@ public class PlannerTests
     }
 
     private const string UserSid = "S-1-5-21-1-2-3-1005";
+
+    private const string CpfsIcon = @"C:\ProgramData\CPFS\cpfs.ico";
 
     private static FirewallRuleInfo Rule(string name, int protocol, string ports, int profiles, string remote, params string[] interfaces) =>
         new(name, true, FirewallRules.Inbound, FirewallRules.Allow, protocol, ports, profiles, remote, interfaces);
@@ -516,7 +520,7 @@ public class PlannerTests
 
         // The old letter's name and mapping go before the new letter is mapped.
         var keys = moved.Items.Select(i => i.Key).Where(k => k.StartsWith("drive.", StringComparison.Ordinal)).ToList();
-        Assert.Equal(new[] { "drive.oldlabel", "drive.oldsession", "drive.oldmap", "drive.map", "drive.session", "drive.label" }, keys);
+        Assert.Equal(new[] { "drive.oldlabel", "drive.oldsession", "drive.oldmap", "drive.map", "drive.session", "drive.label", "drive.icon" }, keys);
     }
 
     [Fact]
@@ -644,6 +648,66 @@ public class PlannerTests
         var original = Item(PlanFor(Labelled("Music"), config, Photos), "drive.label");
         Assert.Equal(PlanAction.Change, original.Action);
         Assert.Equal(Planner.R.LabelForeign, original.ReasonKey);
+    }
+
+    // The CPFS icon: set on a letter without one, kept when it is CPFS's, and an icon someone else set is replaced
+    // only when ticked, backed up first; when the letter moves, the old letter's CPFS icon goes or the original comes back.
+    [Fact]
+    public void TheDriveIconIsCpfsOwnAndAForeignIconIsAnUntickedQuestion()
+    {
+        SystemSnapshot WithIcons(Dictionary<char, string> icons) => Installed() with
+        {
+            DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+            DriveIcons = Reading.Ok<IReadOnlyDictionary<char, string>>(icons),
+        };
+        SetupAnswers OnM(SetupAnswers a) => a with { Drive = true, DriveLetter = 'M' };
+        var fresh = ConfigReader.Parse(TestFiles.ConfigBytes("v0.2.3-anonymised.json"));
+
+        var created = PlanFor(WithIcons(new()), fresh, OnM);
+        Assert.Equal(PlanAction.Create, Item(created, "drive.icon").Action);
+        Assert.Equal(CpfsIcon, Item(created, "drive.icon").Target!.Data);
+        Assert.Contains(PlanSummary.Setup(created, OnM(Answers(fresh, WithIcons(new()))), fresh).Lines, l => l.Key == "Summary_DriveIcon");
+
+        Assert.Equal(PlanAction.Keep, Item(PlanFor(WithIcons(new() { ['M'] = CpfsIcon + ",0" }), fresh, OnM), "drive.icon").Action);
+
+        var foreign = Item(PlanFor(WithIcons(new() { ['M'] = @"C:\Icons\music.ico" }), fresh, OnM), "drive.icon");
+        Assert.Equal(PlanAction.Ask, foreign.Action);
+        Assert.False(foreign.Ticked);
+        Assert.False(foreign.BackupNeeded);
+        Assert.Equal(Planner.R.IconForeign, foreign.ReasonKey);
+        var ticked = Item(PlanFor(WithIcons(new() { ['M'] = @"C:\Icons\music.ico" }), fresh, a => Tick(OnM(a), "drive.icon")), "drive.icon");
+        Assert.True(ticked.BackupNeeded);
+
+        var book = Cpfs.Core.Apply.ConfigBook.ForSetup(WithDrive('M'));
+        Assert.Equal(Cpfs.Core.Apply.BackupWrite.Recorded, book.BackupDriveIcon('M', @"C:\Icons\music.ico"));
+        Assert.Equal(Cpfs.Core.Apply.BackupWrite.AlreadyRecorded, book.BackupDriveIcon('m', CpfsIcon));
+        var backedUp = ConfigReader.Parse(ConfigWriter.Serialize(book.Root));
+        Assert.Equal(@"C:\Icons\music.ico", backedUp.BackupDriveIcon('M'));
+
+        var restored = Item(PlanFor(WithIcons(new() { ['M'] = CpfsIcon }), backedUp, a => a with { Drive = true, DriveLetter = 'S' }), "drive.oldicon");
+        Assert.Equal(PlanAction.Change, restored.Action);
+        Assert.Equal(@"C:\Icons\music.ico", restored.Target!.Data);
+        var removed = Item(PlanFor(WithIcons(new() { ['M'] = CpfsIcon }), WithDrive('M'), a => a with { Drive = true, DriveLetter = 'S' }), "drive.oldicon");
+        Assert.Equal(PlanAction.RemoveIfOurs, removed.Action);
+    }
+
+    // CPFS's existing shortcut without an icon gets the CPFS icon; one with an icon of its own keeps it.
+    [Fact]
+    public void CpfsOwnShortcutWithoutAnIconGetsTheCpfsIcon()
+    {
+        SystemSnapshot WithIcon(string icon) => Installed() with
+        {
+            ShortcutIcons = Reading.Ok<IReadOnlyDictionary<string, string>>(new Dictionary<string, string> { ["Shared (CPFS).lnk"] = icon }),
+        };
+        var config = ConfigReader.Parse(TestFiles.ConfigBytes("v0.2.3-anonymised.json"));
+
+        var none = PlanFor(WithIcon(""), config, a => a with { Shortcut = true });
+        Assert.Equal(PlanAction.Keep, Item(none, "shortcut.file").Action);
+        Assert.Equal(PlanAction.Change, Item(none, "shortcut.icon").Action);
+        Assert.Equal(CpfsIcon, Item(none, "shortcut.icon").Target!.Data);
+
+        Assert.Null(PlanFor(WithIcon(CpfsIcon), config, a => a with { Shortcut = true }).Find("shortcut.icon"));
+        Assert.Null(PlanFor(WithIcon(@"C:\Icons\mine.ico"), config, a => a with { Shortcut = true }).Find("shortcut.icon"));
     }
 
     // A CPFS-RunAsUser task found now is a leftover: it goes with the drive (not deferred with Auto-Private), before

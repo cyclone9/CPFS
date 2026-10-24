@@ -55,6 +55,7 @@ public class UninstallPlannerTests
         DataFolder = Reading.Ok(new DataFolderInfo(true, true, true, false)),
         DosDevices = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
         DriveLabels = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
+        DriveIcons = Reading.Ok<IReadOnlyDictionary<char, string>>(new Dictionary<char, string>()),
         Letters = new LetterScan(),
         PublicDesktopFiles = Reading.Ok<IReadOnlyList<string>>(new[] { "desktop.ini" }),
         User = Reading.Ok<UserInfo?>(new UserInfo(UserSid, true, true, false, false, true, 0)),
@@ -277,6 +278,29 @@ public class UninstallPlannerTests
         var item = Item(PlanFor(s, config), "u.drive.label");
         Assert.Equal(PlanAction.Change, item.Action);
         Assert.Equal("Music", item.Target!.Data);
+    }
+
+    // The CPFS icon goes, the icon from before CPFS comes back, and an icon someone else set since stays.
+    [Fact]
+    public void TheDriveIconIsRemovedOrPutBackAndAForeignOneStays()
+    {
+        var book = ConfigBook.ForSetup(Fixture());
+        book.SetField("DriveLetter", "X");
+        var plain = ConfigReader.Parse(book.Serialize("0.6.0-test", new DateTime(2026, 10, 24, 12, 0, 0)));
+        Assert.Equal(BackupWrite.Recorded, book.BackupDriveIcon('X', @"C:\Icons\music.ico"));
+        var backedUp = ConfigReader.Parse(book.Serialize("0.6.0-test", new DateTime(2026, 10, 24, 12, 0, 0)));
+        SystemSnapshot WithIcon(string? icon) => Installed() with
+        {
+            DriveIcons = Reading.Ok<IReadOnlyDictionary<char, string>>(icon is null ? new Dictionary<char, string>() : new Dictionary<char, string> { ['X'] = icon }),
+        };
+        const string Own = @"C:\ProgramData\CPFS\cpfs.ico";
+
+        Assert.Equal(PlanAction.RemoveIfOurs, Item(PlanFor(WithIcon(Own), plain), "u.drive.icon").Action);
+        var put = Item(PlanFor(WithIcon(Own), backedUp), "u.drive.icon");
+        Assert.Equal(PlanAction.Change, put.Action);
+        Assert.Equal(@"C:\Icons\music.ico", put.Target!.Data);
+        Assert.Null(PlanFor(WithIcon(@"C:\Icons\other.ico"), plain).Find("u.drive.icon"));
+        Assert.Null(PlanFor(WithIcon(null), plain).Find("u.drive.icon"));
     }
 
     [Theory]

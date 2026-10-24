@@ -188,6 +188,16 @@
       <ui:Card Margin="0,0,0,4">
         <StackPanel>
           <TextBlock Style="{StaticResource CardTitle}" FontSize="16" Text="{Binding [Uninst_Summary_Title], Source={x:Static local:Loc.Instance}}" />
+          <!--  Until the first plan is ready (UninstallPage.ReadAsync).  -->
+          <StackPanel x:Name="PlanLoading" Margin="0,8,0,0" Orientation="Horizontal" Visibility="Collapsed">
+            <ui:ProgressRing Width="20" Height="20" IsIndeterminate="True" />
+            <TextBlock
+              Margin="12,0,0,0"
+              VerticalAlignment="Center"
+              AutomationProperties.LiveSetting="Polite"
+              Style="{StaticResource Body}"
+              Text="{Binding [Common_ReadingPc], Source={x:Static local:Loc.Instance}}" />
+          </StackPanel>
           <TextBlock x:Name="SummaryBody" Margin="0,8,0,0" Style="{StaticResource Body}" />
         </StackPanel>
       </ui:Card>

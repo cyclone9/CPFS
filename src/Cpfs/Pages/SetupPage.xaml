@@ -207,308 +207,314 @@
 
     <!--  Field cards: the title, then the field in a column shared by every card (FieldCardPanel); each input has the
           same width because the button slot beside it is one shared size group (FieldSlot), empty or not.  -->
-    <ui:Card Margin="0,0,0,4">
-      <local:FieldCardPanel>
-        <StackPanel>
-          <TextBlock x:Name="SharePathLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_SharePath], Source={x:Static local:Loc.Instance}}" />
-          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_SharePath_Desc], Source={x:Static local:Loc.Instance}}" />
-        </StackPanel>
-        <StackPanel>
-          <Grid>
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
-            </Grid.ColumnDefinitions>
-            <TextBox
-              x:Name="SharePathBox"
-              AutomationProperties.LabeledBy="{Binding ElementName=SharePathLabel}"
-              FlowDirection="LeftToRight"
-              FontFamily="{x:Static local:Theming.MonoFamily}"
-              TextChanged="OnFormChanged" />
-            <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}">
-              <ui:Button
-                x:Name="BrowseButton"
-                VerticalAlignment="Stretch"
-                AutomationProperties.HelpText="{Binding [Setup_Form_Browse_Help], Source={x:Static local:Loc.Instance}}"
-                AutomationProperties.Name="{Binding [Setup_Form_Browse], Source={x:Static local:Loc.Instance}}"
-                Click="OnBrowse"
-                Content="{Binding [Setup_Form_Browse], Source={x:Static local:Loc.Instance}}"
-                Icon="{ui:SymbolIcon FolderOpen24}" />
-            </StackPanel>
-          </Grid>
-          <TextBlock x:Name="SharePathError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
-          <TextBlock
-            x:Name="BrowseError"
-            Margin="0,4,0,0"
-            AutomationProperties.LiveSetting="Assertive"
-            Style="{StaticResource ErrorText}"
-            Visibility="Collapsed" />
-        </StackPanel>
-      </local:FieldCardPanel>
-    </ui:Card>
-
-    <ui:Card Margin="0,0,0,4">
-      <local:FieldCardPanel>
-        <StackPanel>
-          <TextBlock x:Name="ShareNameLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_ShareName], Source={x:Static local:Loc.Instance}}" />
-          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_ShareName_Desc], Source={x:Static local:Loc.Instance}}" />
-        </StackPanel>
-        <StackPanel>
-          <Grid>
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
-            </Grid.ColumnDefinitions>
-            <TextBox
-              x:Name="ShareNameBox"
-              AutomationProperties.LabeledBy="{Binding ElementName=ShareNameLabel}"
-              FlowDirection="LeftToRight"
-              FontFamily="{x:Static local:Theming.MonoFamily}"
-              TextChanged="OnFormChanged" />
-            <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}">
-              <ui:Button
-                VerticalAlignment="Stretch"
-                Appearance="Transparent"
-                Icon="{ui:SymbolIcon Dismiss24}"
-                AutomationProperties.Name="{Binding [Setup_Form_ClearShareName], Source={x:Static local:Loc.Instance}}"
-                Click="OnClearShareName"
-                ToolTip="{Binding [Setup_Form_ClearShareName], Source={x:Static local:Loc.Instance}}" />
-            </StackPanel>
-          </Grid>
-          <TextBlock x:Name="ShareNameError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
-        </StackPanel>
-      </local:FieldCardPanel>
-    </ui:Card>
-
-    <ui:Card Margin="0,0,0,4">
-      <local:FieldCardPanel>
-        <StackPanel>
-          <TextBlock x:Name="SmbUserLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_SmbUser], Source={x:Static local:Loc.Instance}}" />
-          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_SmbUser_Desc], Source={x:Static local:Loc.Instance}}" />
-        </StackPanel>
-        <StackPanel>
-          <Grid>
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
-            </Grid.ColumnDefinitions>
-            <TextBox
-              x:Name="SmbUserBox"
-              AutomationProperties.LabeledBy="{Binding ElementName=SmbUserLabel}"
-              FlowDirection="LeftToRight"
-              FontFamily="{x:Static local:Theming.MonoFamily}"
-              TextChanged="OnFormChanged" />
-            <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}">
-              <ui:Button
-                VerticalAlignment="Stretch"
-                Appearance="Transparent"
-                Icon="{ui:SymbolIcon Dismiss24}"
-                AutomationProperties.Name="{Binding [Setup_Form_ClearSmbUser], Source={x:Static local:Loc.Instance}}"
-                Click="OnClearSmbUser"
-                ToolTip="{Binding [Setup_Form_ClearSmbUser], Source={x:Static local:Loc.Instance}}" />
-            </StackPanel>
-          </Grid>
-          <TextBlock x:Name="SmbUserError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
-        </StackPanel>
-      </local:FieldCardPanel>
-    </ui:Card>
-
-    <ui:Card Margin="0,0,0,4">
-      <local:FieldCardPanel>
-        <StackPanel>
-          <TextBlock x:Name="PasswordLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_Password], Source={x:Static local:Loc.Instance}}" />
-          <TextBlock x:Name="PasswordDesc" Style="{StaticResource CardDescription}" />
-        </StackPanel>
-        <StackPanel>
-          <Grid>
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
-            </Grid.ColumnDefinitions>
-            <PasswordBox
-              x:Name="PasswordInput"
-              AutomationProperties.Name="{Binding [Setup_Form_Password], Source={x:Static local:Loc.Instance}}"
-              PasswordChanged="OnPasswordChanged" />
-            <TextBox
-              x:Name="PasswordPlain"
-              AutomationProperties.Name="{Binding [Setup_Form_Password], Source={x:Static local:Loc.Instance}}"
+    <!--  Off until the first plan is ready (SetupPage.SetLoading).  -->
+    <StackPanel x:Name="FormArea" IsEnabled="False">
+      <ui:Card Margin="0,0,0,4">
+        <local:FieldCardPanel>
+          <StackPanel>
+            <TextBlock x:Name="SharePathLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_SharePath], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_SharePath_Desc], Source={x:Static local:Loc.Instance}}" />
+          </StackPanel>
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
+              </Grid.ColumnDefinitions>
+              <TextBox
+                x:Name="SharePathBox"
+                AutomationProperties.LabeledBy="{Binding ElementName=SharePathLabel}"
+                FlowDirection="LeftToRight"
+                FontFamily="{x:Static local:Theming.MonoFamily}"
+                TextChanged="OnFormChanged" />
+              <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}">
+                <ui:Button
+                  x:Name="BrowseButton"
+                  VerticalAlignment="Stretch"
+                  AutomationProperties.HelpText="{Binding [Setup_Form_Browse_Help], Source={x:Static local:Loc.Instance}}"
+                  AutomationProperties.Name="{Binding [Setup_Form_Browse], Source={x:Static local:Loc.Instance}}"
+                  Click="OnBrowse"
+                  Content="{Binding [Setup_Form_Browse], Source={x:Static local:Loc.Instance}}"
+                  Icon="{ui:SymbolIcon FolderOpen24}" />
+              </StackPanel>
+            </Grid>
+            <TextBlock x:Name="SharePathError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
+            <TextBlock
+              x:Name="BrowseError"
+              Margin="0,4,0,0"
+              AutomationProperties.LiveSetting="Assertive"
+              Style="{StaticResource ErrorText}"
               Visibility="Collapsed" />
-            <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}">
-              <ui:Button
-                x:Name="PasswordClear"
-                VerticalAlignment="Stretch"
-                Appearance="Transparent"
-                Icon="{ui:SymbolIcon Dismiss24}"
-                AutomationProperties.Name="{Binding [Setup_Form_ClearPassword], Source={x:Static local:Loc.Instance}}"
-                ToolTip="{Binding [Setup_Form_ClearPassword], Source={x:Static local:Loc.Instance}}" />
-              <ui:Button
-                x:Name="PasswordEye"
-                Margin="4,0,0,0"
-                VerticalAlignment="Stretch"
-                Appearance="Transparent" />
-            </StackPanel>
-          </Grid>
-          <TextBlock x:Name="PasswordError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
-        </StackPanel>
-      </local:FieldCardPanel>
-    </ui:Card>
+          </StackPanel>
+        </local:FieldCardPanel>
+      </ui:Card>
 
-    <ui:Card Margin="0,0,0,4">
-      <local:FieldCardPanel>
-        <StackPanel>
-          <TextBlock x:Name="DriveLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_Drive], Source={x:Static local:Loc.Instance}}" />
-          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_Drive_Desc], Source={x:Static local:Loc.Instance}}" />
-        </StackPanel>
-        <StackPanel>
-          <ui:ToggleSwitch
-            x:Name="DriveSwitch"
-            AutomationProperties.LabeledBy="{Binding ElementName=DriveLabel}"
-            Checked="OnFormChanged"
-            Unchecked="OnFormChanged" />
-          <Grid Margin="0,8,0,0">
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
-            </Grid.ColumnDefinitions>
-            <ComboBox
-              x:Name="DriveLetterBox"
+      <ui:Card Margin="0,0,0,4">
+        <local:FieldCardPanel>
+          <StackPanel>
+            <TextBlock x:Name="ShareNameLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_ShareName], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_ShareName_Desc], Source={x:Static local:Loc.Instance}}" />
+          </StackPanel>
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
+              </Grid.ColumnDefinitions>
+              <TextBox
+                x:Name="ShareNameBox"
+                AutomationProperties.LabeledBy="{Binding ElementName=ShareNameLabel}"
+                FlowDirection="LeftToRight"
+                FontFamily="{x:Static local:Theming.MonoFamily}"
+                TextChanged="OnFormChanged" />
+              <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}">
+                <ui:Button
+                  VerticalAlignment="Stretch"
+                  Appearance="Transparent"
+                  Icon="{ui:SymbolIcon Dismiss24}"
+                  AutomationProperties.Name="{Binding [Setup_Form_ClearShareName], Source={x:Static local:Loc.Instance}}"
+                  Click="OnClearShareName"
+                  ToolTip="{Binding [Setup_Form_ClearShareName], Source={x:Static local:Loc.Instance}}" />
+              </StackPanel>
+            </Grid>
+            <TextBlock x:Name="ShareNameError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
+          </StackPanel>
+        </local:FieldCardPanel>
+      </ui:Card>
+
+      <ui:Card Margin="0,0,0,4">
+        <local:FieldCardPanel>
+          <StackPanel>
+            <TextBlock x:Name="SmbUserLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_SmbUser], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_SmbUser_Desc], Source={x:Static local:Loc.Instance}}" />
+          </StackPanel>
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
+              </Grid.ColumnDefinitions>
+              <TextBox
+                x:Name="SmbUserBox"
+                AutomationProperties.LabeledBy="{Binding ElementName=SmbUserLabel}"
+                FlowDirection="LeftToRight"
+                FontFamily="{x:Static local:Theming.MonoFamily}"
+                TextChanged="OnFormChanged" />
+              <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}">
+                <ui:Button
+                  VerticalAlignment="Stretch"
+                  Appearance="Transparent"
+                  Icon="{ui:SymbolIcon Dismiss24}"
+                  AutomationProperties.Name="{Binding [Setup_Form_ClearSmbUser], Source={x:Static local:Loc.Instance}}"
+                  Click="OnClearSmbUser"
+                  ToolTip="{Binding [Setup_Form_ClearSmbUser], Source={x:Static local:Loc.Instance}}" />
+              </StackPanel>
+            </Grid>
+            <TextBlock x:Name="SmbUserError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
+          </StackPanel>
+        </local:FieldCardPanel>
+      </ui:Card>
+
+      <ui:Card Margin="0,0,0,4">
+        <local:FieldCardPanel>
+          <StackPanel>
+            <TextBlock x:Name="PasswordLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_Password], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock x:Name="PasswordDesc" Style="{StaticResource CardDescription}" />
+          </StackPanel>
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
+              </Grid.ColumnDefinitions>
+              <PasswordBox
+                x:Name="PasswordInput"
+                AutomationProperties.Name="{Binding [Setup_Form_Password], Source={x:Static local:Loc.Instance}}"
+                PasswordChanged="OnPasswordChanged" />
+              <TextBox
+                x:Name="PasswordPlain"
+                AutomationProperties.Name="{Binding [Setup_Form_Password], Source={x:Static local:Loc.Instance}}"
+                Visibility="Collapsed" />
+              <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}">
+                <ui:Button
+                  x:Name="PasswordClear"
+                  VerticalAlignment="Stretch"
+                  Appearance="Transparent"
+                  Icon="{ui:SymbolIcon Dismiss24}"
+                  AutomationProperties.Name="{Binding [Setup_Form_ClearPassword], Source={x:Static local:Loc.Instance}}"
+                  ToolTip="{Binding [Setup_Form_ClearPassword], Source={x:Static local:Loc.Instance}}" />
+                <ui:Button
+                  x:Name="PasswordEye"
+                  Margin="4,0,0,0"
+                  VerticalAlignment="Stretch"
+                  Appearance="Transparent" />
+              </StackPanel>
+            </Grid>
+            <TextBlock x:Name="PasswordError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
+          </StackPanel>
+        </local:FieldCardPanel>
+      </ui:Card>
+
+      <ui:Card Margin="0,0,0,4">
+        <local:FieldCardPanel>
+          <StackPanel>
+            <TextBlock x:Name="DriveLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_Drive], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_Drive_Desc], Source={x:Static local:Loc.Instance}}" />
+          </StackPanel>
+          <StackPanel>
+            <ui:ToggleSwitch
+              x:Name="DriveSwitch"
               AutomationProperties.LabeledBy="{Binding ElementName=DriveLabel}"
-              FlowDirection="LeftToRight"
-              IsEnabled="{Binding IsChecked, ElementName=DriveSwitch}"
-              SelectionChanged="OnFormChanged" />
-            <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}" />
-          </Grid>
-          <TextBlock x:Name="DriveError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
-        </StackPanel>
-      </local:FieldCardPanel>
-    </ui:Card>
-
-    <ui:Card Margin="0,0,0,4">
-      <local:FieldCardPanel>
-        <TextBlock x:Name="DriveNameLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_DriveName], Source={x:Static local:Loc.Instance}}" />
-        <StackPanel>
-          <Grid>
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
-            </Grid.ColumnDefinitions>
-            <TextBox
-              x:Name="DriveNameBox"
-              AutomationProperties.LabeledBy="{Binding ElementName=DriveNameLabel}"
-              IsEnabled="{Binding IsChecked, ElementName=DriveSwitch}"
-              TextChanged="OnFormChanged" />
-            <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}" />
-          </Grid>
-          <TextBlock x:Name="DriveNameError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
-        </StackPanel>
-      </local:FieldCardPanel>
-    </ui:Card>
-
-    <ui:Card Margin="0,0,0,4">
-      <local:FieldCardPanel>
-        <TextBlock x:Name="ShortcutLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_Shortcut], Source={x:Static local:Loc.Instance}}" />
-        <StackPanel>
-          <ui:ToggleSwitch
-            x:Name="ShortcutSwitch"
-            AutomationProperties.LabeledBy="{Binding ElementName=ShortcutLabel}"
-            Checked="OnFormChanged"
-            Unchecked="OnFormChanged" />
-          <TextBlock x:Name="ShortcutError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
-        </StackPanel>
-      </local:FieldCardPanel>
-    </ui:Card>
-
-    <ui:Card Margin="0,0,0,4">
-      <local:FieldCardPanel>
-        <TextBlock x:Name="ShortcutNameLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_ShortcutName], Source={x:Static local:Loc.Instance}}" />
-        <StackPanel>
-          <Grid>
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
-            </Grid.ColumnDefinitions>
-            <TextBox
-              x:Name="ShortcutNameBox"
-              AutomationProperties.LabeledBy="{Binding ElementName=ShortcutNameLabel}"
-              IsEnabled="{Binding IsChecked, ElementName=ShortcutSwitch}"
-              TextChanged="OnFormChanged" />
-            <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}" />
-          </Grid>
-          <TextBlock x:Name="ShortcutNameError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
-        </StackPanel>
-      </local:FieldCardPanel>
-    </ui:Card>
-
-    <!--  Everything with a good default. It opens on its own when one of its fields needs attention.  -->
-    <ui:CardExpander
-      x:Name="MoreOptions"
-      Margin="0,0,0,4"
-      AutomationProperties.HelpText="{Binding [Setup_More_Desc], Source={x:Static local:Loc.Instance}}"
-      AutomationProperties.Name="{Binding [Setup_More_Title], Source={x:Static local:Loc.Instance}}"
-      Focusable="False"
-      Icon="{ui:SymbolIcon Options24}">
-      <ui:CardExpander.Header>
-        <StackPanel>
-          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Setup_More_Title], Source={x:Static local:Loc.Instance}}" />
-          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_More_Desc], Source={x:Static local:Loc.Instance}}" />
-        </StackPanel>
-      </ui:CardExpander.Header>
-      <StackPanel>
-        <ui:Card Margin="0,0,0,4">
-          <local:FieldCardPanel>
-            <StackPanel>
-              <TextBlock x:Name="StrictLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_Strict], Source={x:Static local:Loc.Instance}}" />
-              <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_Strict_Desc], Source={x:Static local:Loc.Instance}}" />
-            </StackPanel>
-            <ui:ToggleSwitch
-              x:Name="StrictSwitch"
-              AutomationProperties.LabeledBy="{Binding ElementName=StrictLabel}"
               Checked="OnFormChanged"
               Unchecked="OnFormChanged" />
-          </local:FieldCardPanel>
-        </ui:Card>
+            <Grid Margin="0,8,0,0">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
+              </Grid.ColumnDefinitions>
+              <ComboBox
+                x:Name="DriveLetterBox"
+                AutomationProperties.LabeledBy="{Binding ElementName=DriveLabel}"
+                FlowDirection="LeftToRight"
+                IsEnabled="{Binding IsChecked, ElementName=DriveSwitch}"
+                SelectionChanged="OnFormChanged" />
+              <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}" />
+            </Grid>
+            <TextBlock x:Name="DriveError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
+          </StackPanel>
+        </local:FieldCardPanel>
+      </ui:Card>
 
-        <ui:Card Margin="0,0,0,4">
-          <local:FieldCardPanel>
-            <StackPanel>
-              <TextBlock x:Name="AutoPrivateLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_AutoPrivate], Source={x:Static local:Loc.Instance}}" />
-              <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_AutoPrivate_Desc], Source={x:Static local:Loc.Instance}}" />
-            </StackPanel>
+      <ui:Card Margin="0,0,0,4">
+        <local:FieldCardPanel>
+          <TextBlock x:Name="DriveNameLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_DriveName], Source={x:Static local:Loc.Instance}}" />
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
+              </Grid.ColumnDefinitions>
+              <TextBox
+                x:Name="DriveNameBox"
+                AutomationProperties.HelpText="{Binding [Setup_Form_DriveName_Note], Source={x:Static local:Loc.Instance}}"
+                AutomationProperties.LabeledBy="{Binding ElementName=DriveNameLabel}"
+                IsEnabled="{Binding IsChecked, ElementName=DriveSwitch}"
+                TextChanged="OnFormChanged" />
+              <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}" />
+            </Grid>
+            <!--  Explorer shows the label of the folder's disk instead of this name when that disk has one.  -->
+            <TextBlock Margin="0,4,0,0" Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_DriveName_Note], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock x:Name="DriveNameError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
+          </StackPanel>
+        </local:FieldCardPanel>
+      </ui:Card>
+
+      <ui:Card Margin="0,0,0,4">
+        <local:FieldCardPanel>
+          <TextBlock x:Name="ShortcutLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_Shortcut], Source={x:Static local:Loc.Instance}}" />
+          <StackPanel>
             <ui:ToggleSwitch
-              x:Name="AutoPrivateSwitch"
-              AutomationProperties.LabeledBy="{Binding ElementName=AutoPrivateLabel}"
+              x:Name="ShortcutSwitch"
+              AutomationProperties.LabeledBy="{Binding ElementName=ShortcutLabel}"
               Checked="OnFormChanged"
               Unchecked="OnFormChanged" />
-          </local:FieldCardPanel>
-        </ui:Card>
+            <TextBlock x:Name="ShortcutError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
+          </StackPanel>
+        </local:FieldCardPanel>
+      </ui:Card>
 
-        <ui:Card Margin="0">
-          <local:FieldCardPanel>
-            <StackPanel>
-              <TextBlock x:Name="ComputerNameLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_ComputerName], Source={x:Static local:Loc.Instance}}" />
-              <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_ComputerName_Desc], Source={x:Static local:Loc.Instance}}" />
-            </StackPanel>
-            <StackPanel>
-              <Grid>
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="*" />
-                  <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
-                </Grid.ColumnDefinitions>
-                <TextBox
-                  x:Name="ComputerNameBox"
-                  AutomationProperties.HelpText="{Binding [Setup_Form_ComputerName_Later], Source={x:Static local:Loc.Instance}}"
-                  AutomationProperties.LabeledBy="{Binding ElementName=ComputerNameLabel}"
-                  FlowDirection="LeftToRight"
-                  FontFamily="{x:Static local:Theming.MonoFamily}"
-                  IsEnabled="False" />
-                <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}" />
-              </Grid>
-              <TextBlock Margin="0,4,0,0" Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_ComputerName_Later], Source={x:Static local:Loc.Instance}}" />
-            </StackPanel>
-          </local:FieldCardPanel>
-        </ui:Card>
-      </StackPanel>
-    </ui:CardExpander>
+      <ui:Card Margin="0,0,0,4">
+        <local:FieldCardPanel>
+          <TextBlock x:Name="ShortcutNameLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_ShortcutName], Source={x:Static local:Loc.Instance}}" />
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
+              </Grid.ColumnDefinitions>
+              <TextBox
+                x:Name="ShortcutNameBox"
+                AutomationProperties.LabeledBy="{Binding ElementName=ShortcutNameLabel}"
+                IsEnabled="{Binding IsChecked, ElementName=ShortcutSwitch}"
+                TextChanged="OnFormChanged" />
+              <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}" />
+            </Grid>
+            <TextBlock x:Name="ShortcutNameError" Margin="0,4,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
+          </StackPanel>
+        </local:FieldCardPanel>
+      </ui:Card>
+
+      <!--  Everything with a good default. It opens on its own when one of its fields needs attention.  -->
+      <ui:CardExpander
+        x:Name="MoreOptions"
+        Margin="0,0,0,4"
+        AutomationProperties.HelpText="{Binding [Setup_More_Desc], Source={x:Static local:Loc.Instance}}"
+        AutomationProperties.Name="{Binding [Setup_More_Title], Source={x:Static local:Loc.Instance}}"
+        Focusable="False"
+        Icon="{ui:SymbolIcon Options24}">
+        <ui:CardExpander.Header>
+          <StackPanel>
+            <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Setup_More_Title], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_More_Desc], Source={x:Static local:Loc.Instance}}" />
+          </StackPanel>
+        </ui:CardExpander.Header>
+        <StackPanel>
+          <ui:Card Margin="0,0,0,4">
+            <local:FieldCardPanel>
+              <StackPanel>
+                <TextBlock x:Name="StrictLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_Strict], Source={x:Static local:Loc.Instance}}" />
+                <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_Strict_Desc], Source={x:Static local:Loc.Instance}}" />
+              </StackPanel>
+              <ui:ToggleSwitch
+                x:Name="StrictSwitch"
+                AutomationProperties.LabeledBy="{Binding ElementName=StrictLabel}"
+                Checked="OnFormChanged"
+                Unchecked="OnFormChanged" />
+            </local:FieldCardPanel>
+          </ui:Card>
+
+          <ui:Card Margin="0,0,0,4">
+            <local:FieldCardPanel>
+              <StackPanel>
+                <TextBlock x:Name="AutoPrivateLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_AutoPrivate], Source={x:Static local:Loc.Instance}}" />
+                <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_AutoPrivate_Desc], Source={x:Static local:Loc.Instance}}" />
+              </StackPanel>
+              <ui:ToggleSwitch
+                x:Name="AutoPrivateSwitch"
+                AutomationProperties.LabeledBy="{Binding ElementName=AutoPrivateLabel}"
+                Checked="OnFormChanged"
+                Unchecked="OnFormChanged" />
+            </local:FieldCardPanel>
+          </ui:Card>
+
+          <ui:Card Margin="0">
+            <local:FieldCardPanel>
+              <StackPanel>
+                <TextBlock x:Name="ComputerNameLabel" Style="{StaticResource CardTitle}" Text="{Binding [Setup_Form_ComputerName], Source={x:Static local:Loc.Instance}}" />
+                <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_ComputerName_Desc], Source={x:Static local:Loc.Instance}}" />
+              </StackPanel>
+              <StackPanel>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="FieldSlot" />
+                  </Grid.ColumnDefinitions>
+                  <TextBox
+                    x:Name="ComputerNameBox"
+                    AutomationProperties.HelpText="{Binding [Setup_Form_ComputerName_Later], Source={x:Static local:Loc.Instance}}"
+                    AutomationProperties.LabeledBy="{Binding ElementName=ComputerNameLabel}"
+                    FlowDirection="LeftToRight"
+                    FontFamily="{x:Static local:Theming.MonoFamily}"
+                    IsEnabled="False" />
+                  <StackPanel Grid.Column="1" Style="{StaticResource FieldSlot}" />
+                </Grid>
+                <TextBlock Margin="0,4,0,0" Style="{StaticResource CardDescription}" Text="{Binding [Setup_Form_ComputerName_Later], Source={x:Static local:Loc.Instance}}" />
+              </StackPanel>
+            </local:FieldCardPanel>
+          </ui:Card>
+        </StackPanel>
+      </ui:CardExpander>
+    </StackPanel>
 
     <!--  Every Ask item of the plan, never collapsed, above the main button.  -->
     <ui:Card x:Name="DecisionsCard" Margin="0,8,0,4" AutomationProperties.Name="{Binding [Setup_Decisions_Title], Source={x:Static local:Loc.Instance}}" Visibility="Collapsed">
@@ -526,7 +532,16 @@
     <ui:Card Margin="0,8,0,4">
       <StackPanel>
         <TextBlock x:Name="SummaryTitle" Style="{StaticResource CardTitle}" FontSize="16" />
-        <TextBlock x:Name="SummaryBody" Margin="0,8,0,0" Style="{StaticResource Body}" />
+        <StackPanel x:Name="PlanLoading" Margin="0,8,0,0" Orientation="Horizontal">
+          <ui:ProgressRing Width="20" Height="20" IsIndeterminate="True" />
+          <TextBlock
+            Margin="12,0,0,0"
+            VerticalAlignment="Center"
+            AutomationProperties.LiveSetting="Polite"
+            Style="{StaticResource Body}"
+            Text="{Binding [Common_ReadingPc], Source={x:Static local:Loc.Instance}}" />
+        </StackPanel>
+        <TextBlock x:Name="SummaryBody" Margin="0,8,0,0" Style="{StaticResource Body}" Visibility="Collapsed" />
         <TextBlock x:Name="ApplyHint" Style="{StaticResource CardDescription}" />
         <ProgressBar
           x:Name="ApplyBusy"

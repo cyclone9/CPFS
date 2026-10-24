@@ -44,7 +44,8 @@ public partial class SetupPage
         }
         else if (_plan is null)
         {
-            hint = loc["Setup_Reading"];
+            // The summary card shows the reading ring.
+            hint = "";
         }
         else if (ConfigUnreadable)
         {

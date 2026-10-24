@@ -330,7 +330,7 @@
   <data name="Monitor_Session_Disconnect" xml:space="preserve"><value>Disconnect</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Session_DisconnectName" xml:space="preserve"><value>Disconnect {0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Files_Title" xml:space="preserve"><value>Open files ({0})</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Files_Desc" xml:space="preserve"><value>Files that devices have open on this PC, up to {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Files_Desc" xml:space="preserve"><value>Files that devices have open on this PC, up to {0}. A file stays here for a few seconds after it closes.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Files_None" xml:space="preserve"><value>No file is open.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_File_Path" xml:space="preserve"><value>File</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_File_User" xml:space="preserve"><value>Username</value><comment>UNTRANSLATED: English text</comment></data>
@@ -839,7 +839,6 @@
   <data name="Monitor_Session_Active" xml:space="preserve"><value>Active now</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Session_IdleFor" xml:space="preserve"><value>Idle for {0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Server_DescOne" xml:space="preserve"><value>Since the SMB server started, for all devices together. Right now all traffic is from {0}.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Nav_Motto" xml:space="preserve"><value>فقط همان پوشه‌ای که خودتان انتخاب کرده‌اید.</value></data>
   <data name="Common_NeedsAdmin" xml:space="preserve"><value>Needs administrator rights</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_ShieldTip" xml:space="preserve"><value>Use Continue as administrator at the top first</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_RestartDriveMsg" xml:space="preserve"><value>The previous drive letter may stay in File Explorer until Windows restarts.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -877,4 +876,21 @@
   <data name="Apply_NoSessionMap" xml:space="preserve"><value>Couldn't add the drive to your current session; it appears after a restart.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Apply_NoSessionUnmap" xml:space="preserve"><value>Couldn't remove the drive from your current session; it goes after a restart.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Uninst_RestartDriveMsg" xml:space="preserve"><value>The removed drive letter may stay in File Explorer until Windows restarts.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Common_ReadingPc" xml:space="preserve"><value>Reading this PC…</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_SourceCode" xml:space="preserve"><value>Source code</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_File_Closed" xml:space="preserve"><value>Closed</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Form_DriveName_Note" xml:space="preserve"><value>If the disk that holds the folder has a name of its own, File Explorer may show that name for this drive instead.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Drive_ExplorerIcon" xml:space="preserve"><value>Icon shown in File Explorer</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_S_Icon" xml:space="preserve"><value>Drive icon</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_S_OldIcon" xml:space="preserve"><value>Previous drive icon</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_S_ShortcutIcon" xml:space="preserve"><value>Shortcut icon</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_IconSet" xml:space="preserve"><value>The CPFS icon for the drive in File Explorer.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_IconForeign" xml:space="preserve"><value>Drive {0} already has an icon CPFS did not set ({1}). Replace it with the CPFS icon? It is saved first so Uninstall can put it back.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_IconChanged" xml:space="preserve"><value>Drive {0} got the icon {1} after CPFS saved the one it had before. Replace it with the CPFS icon? Uninstall would put back the older one.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_IconOldRemove" xml:space="preserve"><value>The CPFS icon of the previous letter.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_IconRestore" xml:space="preserve"><value>Puts back the icon the letter had before CPFS.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_ShortcutIcon" xml:space="preserve"><value>Gives the desktop shortcut CPFS made the CPFS icon.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_R_IconRemove" xml:space="preserve"><value>The CPFS icon of the drive.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_DriveIcon" xml:space="preserve"><value>Adds drive {0} called ‘{1}’ with the CPFS icon.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_DriveIconAndShortcut" xml:space="preserve"><value>Adds drive {0} called ‘{1}’ with the CPFS icon, and a desktop shortcut.</value><comment>UNTRANSLATED: English text</comment></data>
 </root>

@@ -7,12 +7,24 @@
   Foreground="{DynamicResource TextFillColorPrimaryBrush}">
   <Page.Resources>
     <Style x:Key="InfoName" BasedOn="{StaticResource CardTitle}" TargetType="TextBlock">
-      <Setter Property="Margin" Value="0,0,16,8" />
+      <Setter Property="Margin" Value="0,0,24,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style x:Key="InfoData" BasedOn="{StaticResource DataValue}" TargetType="TextBlock">
-      <Setter Property="Margin" Value="0,0,0,8" />
+      <Setter Property="Margin" Value="0" />
       <Setter Property="Grid.Column" Value="1" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextWrapping" Value="Wrap" />
       <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+    </Style>
+    <!--  A plain link in the value column: its text starts where the version's does (the padding is taken back).  -->
+    <Style x:Key="InfoLink" TargetType="ui:HyperlinkButton" BasedOn="{StaticResource DefaultUiHyperlinkButtonStyle}">
+      <Setter Property="Grid.Column" Value="1" />
+      <Setter Property="Grid.ColumnSpan" Value="2" />
+      <Setter Property="Padding" Value="4,4" />
+      <Setter Property="Margin" Value="-4,0,0,0" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <!--  Licence texts: read-only, left to right, scrolled inside a fixed height (the window routes the wheel).  -->
     <Style x:Key="LicenceText" TargetType="TextBox">
@@ -61,72 +73,65 @@
       </Grid>
     </ui:Card>
 
+    <!--
+      Settings-style rows: the names in one column, the values in the next, the copy button at the end of its row.
+      Rows are 32 px high (the copy button's height) with 12 px between them, so text, links and button line up.
+    -->
     <ui:Card Margin="0,0,0,4">
       <Grid>
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="Auto" />
           <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" MinHeight="32" />
+          <RowDefinition Height="12" />
+          <RowDefinition Height="Auto" MinHeight="32" />
+          <RowDefinition Height="12" />
+          <RowDefinition Height="Auto" MinHeight="32" />
         </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Style="{StaticResource InfoName}" Text="{Binding [About_Version], Source={x:Static local:Loc.Instance}}" />
         <TextBlock
+          x:Name="VersionValue"
           Grid.Row="0"
-          Margin="0,0,16,12"
-          Style="{StaticResource InfoName}"
-          Text="{Binding [About_Version], Source={x:Static local:Loc.Instance}}" />
-        <StackPanel
-          Grid.Row="0"
-          Grid.Column="1"
-          Margin="0,0,0,12"
-          Orientation="Horizontal">
-          <TextBlock
-            x:Name="VersionValue"
-            Margin="0"
-            VerticalAlignment="Center"
-            Style="{StaticResource InfoData}" />
-          <!--  Negative margins keep the row as tall as the others.  -->
-          <ui:Button
-            Margin="8,-6,0,-6"
-            Padding="6"
-            VerticalAlignment="Center"
-            AutomationProperties.Name="{Binding [About_CopyVersion], Source={x:Static local:Loc.Instance}}"
-            Appearance="Transparent"
-            Click="OnCopyVersion"
-            Icon="{ui:SymbolIcon Copy24}"
-            ToolTip="{Binding [About_CopyVersion], Source={x:Static local:Loc.Instance}}" />
-        </StackPanel>
-        <TextBlock Grid.Row="1" Style="{StaticResource InfoName}" Text="{Binding [About_Homepage], Source={x:Static local:Loc.Instance}}" />
-        <!--  Opens the page in the browser; the app itself never goes online.  -->
+          Style="{StaticResource InfoData}" />
         <ui:Button
-          x:Name="HomepageButton"
-          Grid.Row="1"
-          Grid.Column="1"
-          Margin="-8,-6,0,2"
-          Padding="8,4"
-          HorizontalAlignment="Left"
+          Grid.Row="0"
+          Grid.Column="2"
+          Margin="8,0,0,0"
+          Padding="6"
+          VerticalAlignment="Center"
+          AutomationProperties.Name="{Binding [About_CopyVersion], Source={x:Static local:Loc.Instance}}"
+          Appearance="Transparent"
+          Click="OnCopyVersion"
+          Icon="{ui:SymbolIcon Copy24}"
+          ToolTip="{Binding [About_CopyVersion], Source={x:Static local:Loc.Instance}}" />
+
+        <!--  Links open the page in the browser; the app itself never goes online for them.  -->
+        <TextBlock Grid.Row="2" Style="{StaticResource InfoName}" Text="{Binding [About_Homepage], Source={x:Static local:Loc.Instance}}" />
+        <ui:HyperlinkButton
+          Grid.Row="2"
+          Style="{StaticResource InfoLink}"
           AutomationProperties.HelpText="{Binding [About_Homepage_Help], Source={x:Static local:Loc.Instance}}"
           AutomationProperties.Name="{Binding [About_Homepage], Source={x:Static local:Loc.Instance}}"
-          Appearance="Transparent"
           Click="OnOpenHomepage"
-          FlowDirection="LeftToRight"
-          Icon="{ui:SymbolIcon Open24}"
-          ToolTip="{Binding [About_Homepage_Help], Source={x:Static local:Loc.Instance}}" />
-        <ui:Button
-          Grid.Row="2"
-          Grid.Column="1"
-          Margin="-8,4,0,2"
-          Padding="8,4"
-          HorizontalAlignment="Left"
+          ToolTip="{Binding [About_Homepage_Help], Source={x:Static local:Loc.Instance}}">
+          <TextBlock x:Name="HomepageText" FlowDirection="LeftToRight" />
+        </ui:HyperlinkButton>
+
+        <TextBlock Grid.Row="4" Style="{StaticResource InfoName}" Text="{Binding [About_SourceCode], Source={x:Static local:Loc.Instance}}" />
+        <ui:HyperlinkButton
+          Grid.Row="4"
+          Style="{StaticResource InfoLink}"
           AutomationProperties.HelpText="{Binding [About_GitHub_Help], Source={x:Static local:Loc.Instance}}"
           AutomationProperties.Name="{Binding [About_GitHub], Source={x:Static local:Loc.Instance}}"
-          Appearance="Transparent"
           Click="OnOpenGitHub"
-          Content="{Binding [About_GitHub], Source={x:Static local:Loc.Instance}}"
           Icon="{ui:SymbolIcon Code24}"
-          ToolTip="{Binding [About_GitHub_Help], Source={x:Static local:Loc.Instance}}" />
+          ToolTip="{Binding [About_GitHub_Help], Source={x:Static local:Loc.Instance}}">
+          <TextBlock x:Name="GitHubText" FlowDirection="LeftToRight" />
+        </ui:HyperlinkButton>
       </Grid>
     </ui:Card>
 

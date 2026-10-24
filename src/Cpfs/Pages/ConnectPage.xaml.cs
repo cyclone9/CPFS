@@ -223,7 +223,8 @@ public partial class ConnectPage : Page
 
         var loc = Loc.Instance;
         AppLog.Write("connect", "QR code shown: " + card.Title);
-        var panel = new StackPanel { MaxWidth = QrDialogSize + 80 };
+        // With the button row's own 8 px, 20 px between the copy row and Close.
+        var panel = new StackPanel { MaxWidth = QrDialogSize + 80, Margin = new Thickness(0, 0, 0, 12) };
 
         // Never mirrored in right-to-left layouts: a mirrored QR code may not scan.
         var image = new System.Windows.Controls.Image

@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -86,6 +87,7 @@ public sealed class MonitorRow : Observable
     private string _nameActionName = "";
     private string _forgetActionName = "";
     private SessionInfo? _session;
+    private bool _dimmed;
 
     internal MonitorRow(string key)
     {
@@ -143,6 +145,9 @@ public sealed class MonitorRow : Observable
     }
 
     public bool HasBadge => Badge.Length > 0;
+
+    // A file that closed a moment ago, shown dimmed until it goes.
+    public bool Dimmed { get => _dimmed; set => Set(ref _dimmed, value); }
 
     public bool CanDisconnect => Session is not null;
 
@@ -218,6 +223,11 @@ public partial class MonitorPage : Page
     // The last MAC seen per address this session, so a neighbor entry that is briefly missing doesn't drop the name.
     private readonly Dictionary<string, string> _knownMacs = new(StringComparer.OrdinalIgnoreCase);
 
+    // Files stay listed about 10 seconds after they close, so a quick transfer can still be seen.
+    private readonly RecentFiles<OpenFileInfo> _recentFiles = new(TimeSpan.FromSeconds(10), MaxFiles);
+    private readonly Stopwatch _clock = Stopwatch.StartNew();
+    private IReadOnlyList<RecentFile<OpenFileInfo>> _fileRows = Array.Empty<RecentFile<OpenFileInfo>>();
+
     private MonitorSnapshot? _previous;
     private MonitorSnapshot? _current;
     private Part<List<FailedLogon>>? _failed;
@@ -283,12 +293,18 @@ public partial class MonitorPage : Page
             var (snapshot, failed) = await Task.Run(() => (SmbMonitor.Read(), readFails ? SmbMonitor.ReadFailedLogons(MaxFailedLogons) : null));
             _previous = _current;
             _current = snapshot;
+            if (snapshot.Files.Value is { } files)
+            {
+                _fileRows = _recentFiles.Update(files.Select(f => new KeyValuePair<string, OpenFileInfo>(f.Id.ToString(CultureInfo.InvariantCulture), f)), _clock.Elapsed);
+            }
             if (failed is not null)
             {
                 _failed = failed;
             }
 
             Render();
+            MonitorLoading.Visibility = Visibility.Collapsed;
+            Sections.Visibility = Visibility.Visible;
         }
         finally
         {
@@ -404,14 +420,19 @@ public partial class MonitorPage : Page
         Status(_files, cur.Files);
         var all = cur.Files.Value ?? new List<OpenFileInfo>();
         _files.Title = loc.Format("Monitor_Files_Title", all.Count);
-        _files.Empty = cur.Files.Status == ReadStatus.Ok && all.Count == 0 ? loc["Monitor_Files_None"] : "";
-        var shown = all.Count > MaxFiles ? all.GetRange(0, MaxFiles) : all;
-        SyncRows(_files.Rows, shown, f => f.Id.ToString(CultureInfo.InvariantCulture), (row, f) => SetFields(row.Fields, new List<(string, string, bool)>
+        var shown = cur.Files.Status == ReadStatus.Ok ? _fileRows : Array.Empty<RecentFile<OpenFileInfo>>();
+        _files.Empty = cur.Files.Status == ReadStatus.Ok && shown.Count == 0 ? loc["Monitor_Files_None"] : "";
+        SyncRows(_files.Rows, shown.ToList(), r => r.Key, (row, r) =>
         {
-            ("Monitor_File_Path", f.Path, true),
-            ("Monitor_File_User", f.User, true),
-            ("Monitor_File_Client", f.Client, true),
-        }));
+            row.Badge = r.Closed ? loc["Monitor_File_Closed"] : "";
+            row.Dimmed = r.Closed;
+            SetFields(row.Fields, new List<(string, string, bool)>
+            {
+                ("Monitor_File_Path", r.Item.Path, true),
+                ("Monitor_File_User", r.Item.User, true),
+                ("Monitor_File_Client", r.Item.Client, true),
+            });
+        });
     }
 
     private void RenderFails()

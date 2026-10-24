@@ -55,10 +55,13 @@ internal static class PlanReader
             Tasks = Part("tasks", Tasks),
             DataFolder = Part("data folder", DataFolder),
             DosDevices = Part("dos devices", DosDevices),
-            DriveLabels = Part("drive labels", DriveLabels),
+            DriveLabels = Part<IReadOnlyDictionary<char, string>>("drive labels", () => DriveIconValues("DefaultLabel")),
+            DriveIcons = Part<IReadOnlyDictionary<char, string>>("drive icons", () => DriveIconValues("DefaultIcon")),
+            CpfsIcon = Apply.CpfsIconFile.Path,
             Letters = letters,
             CommonDesktop = string.IsNullOrEmpty(commonDesktop) ? @"C:\Users\Public\Desktop" : commonDesktop,
             PublicDesktopFiles = Part<IReadOnlyList<string>>("public desktop", () => DesktopFiles(commonDesktop)),
+            ShortcutIcons = Part<IReadOnlyDictionary<string, string>>("shortcut icons", () => Apply.Shortcuts.IconsOf(commonDesktop)),
         };
         AppLog.Write("plan", "Read the state for the plan in " + StateReader.Ms(watch));
         return snapshot;
@@ -708,7 +711,8 @@ internal static class PlanReader
         return result;
     }
 
-    private static IReadOnlyDictionary<char, string> DriveLabels()
+    // DriveIcons\<L>\DefaultLabel or \DefaultIcon, (Default) value, by letter.
+    private static Dictionary<char, string> DriveIconValues(string subkey)
     {
         var result = new Dictionary<char, string>();
         using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
@@ -720,8 +724,8 @@ internal static class PlanReader
                 continue;
             }
 
-            using var label = icons!.OpenSubKey(name + @"\DefaultLabel");
-            if (label?.GetValue("") is string text)
+            using var value = icons!.OpenSubKey(name + "\\" + subkey);
+            if (value?.GetValue("", null, RegistryValueOptions.DoNotExpandEnvironmentNames) is string text)
             {
                 result[char.ToUpperInvariant(name[0])] = text;
             }

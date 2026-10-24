@@ -37,15 +37,6 @@
       Grid.Row="1"
       IsBackButtonVisible="Collapsed"
       OpenPaneLength="240">
-      <!--  The motto, only while the pane is open (MainWindow.UpdateMotto); plain text, never a tab stop.  -->
-      <ui:NavigationView.PaneHeader>
-        <TextBlock
-          x:Name="PaneMotto"
-          Margin="16,0,12,8"
-          Focusable="False"
-          Style="{StaticResource CardDescription}"
-          Text="{Binding [Nav_Motto], Source={x:Static local:Loc.Instance}}" />
-      </ui:NavigationView.PaneHeader>
       <ui:NavigationView.MenuItems>
         <ui:NavigationViewItem
           AutomationProperties.Name="{Binding [Nav_Setup], Source={x:Static local:Loc.Instance}}"

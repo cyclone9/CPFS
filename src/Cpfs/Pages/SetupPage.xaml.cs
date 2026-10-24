@@ -63,11 +63,7 @@ public partial class SetupPage : Page
         RefreshButton.IsEnabled = false;
         Busy.Visibility = Visibility.Visible;
         BusyText.Visibility = Visibility.Visible;
-        if (_plan is null)
-        {
-            SummaryBody.Text = Loc.Instance["Setup_Reading"];
-        }
-
+        SetLoading(_plan is null);
         try
         {
             var reader = new StateReader();
@@ -91,7 +87,16 @@ public partial class SetupPage : Page
             RefreshButton.IsEnabled = true;
             Busy.Visibility = Visibility.Collapsed;
             BusyText.Visibility = Visibility.Collapsed;
+            SetLoading(false);
         }
+    }
+
+    // Until the first plan is ready: the ring in the summary card, the form off, and no summary sentence yet.
+    private void SetLoading(bool loading)
+    {
+        PlanLoading.Visibility = loading ? Visibility.Visible : Visibility.Collapsed;
+        SummaryBody.Visibility = loading ? Visibility.Collapsed : Visibility.Visible;
+        FormArea.IsEnabled = !loading;
     }
 
     // The admin card shows only until the page runs elevated; a forged hand-over is always reported here.

@@ -80,6 +80,7 @@ internal static class UninstallSteps
             "u.share" => Share(run, arg),
             "u.task.runasuser" => QuickAccessSteps.StaleTask(),
             "u.drive.label" => QuickAccessSteps.UninstallLabel(run),
+            "u.drive.icon" => QuickAccessSteps.UninstallIcon(run),
             "u.drive.session" => QuickAccessSteps.UninstallSession(run),
             "u.drive" => QuickAccessSteps.UninstallMap(run),
             "u.shortcut" => QuickAccessSteps.UninstallShortcut(run),

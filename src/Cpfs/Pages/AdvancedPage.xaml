@@ -152,7 +152,7 @@
         Margin="8,0,0,0"
         VerticalAlignment="Center"
         Style="{StaticResource CardValue}"
-        Text="{Binding [Setup_Reading], Source={x:Static local:Loc.Instance}}"
+        Text="{Binding [Common_ReadingPc], Source={x:Static local:Loc.Instance}}"
         Visibility="Collapsed" />
     </WrapPanel>
 

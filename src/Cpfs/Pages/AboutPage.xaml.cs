@@ -19,6 +19,8 @@ public partial class AboutPage : Page
     public AboutPage()
     {
         InitializeComponent();
+        HomepageText.Text = "cyclone9.ir/cpfs";
+        GitHubText.Text = "github.com/cyclone9/CPFS";
         LicenceMit.Text = Embedded("Cpfs.Licenses.LICENSE.txt");
         LicenceNotices.Text = Embedded("Cpfs.Licenses.THIRD-PARTY-NOTICES.md");
         LicenceOfl.Text = Embedded("Cpfs.Licenses.Vazirmatn-OFL.txt");
@@ -57,7 +59,6 @@ public partial class AboutPage : Page
     {
         BrandSymbol.Source = (ImageSource)FindResource(Theming.IsDarkSurface() ? "CpfsSymbolOnDark" : "CpfsSymbolOnLight");
         VersionValue.Text = Version;
-        HomepageButton.Content = new System.Windows.Controls.TextBlock { Text = "cyclone9.ir/cpfs", Style = (Style)FindResource("DataValue") };
     }
 
     // "0.5.0-dev3 (3d20e71)": the version with its commit, for a bug report.

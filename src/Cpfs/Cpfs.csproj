@@ -44,6 +44,8 @@
   <ItemGroup>
     <!-- Brand and fonts come from assets/, the one folder the licence exclusion and the OFL apply to. -->
     <Resource Include="..\..\assets\brand\cpfs.ico" Link="Assets\cpfs.ico" />
+    <!--  The same icon as a stream, copied to ProgramData\CPFS\cpfs.ico for the drive and the shortcut.  -->
+    <EmbeddedResource Include="..\..\assets\brand\cpfs.ico" LogicalName="Cpfs.Assets.cpfs.ico" WithCulture="false" />
     <Resource Include="..\..\assets\fonts\*.ttf" Link="Assets\Fonts\%(Filename)%(Extension)" />
     <!-- The licences ship inside the exe and are shown on the About page. -->
     <EmbeddedResource Include="..\..\LICENSE" LogicalName="Cpfs.Licenses.LICENSE.txt" WithCulture="false" />
