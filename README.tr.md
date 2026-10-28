@@ -10,7 +10,7 @@
 |---|---|
 | Platform | Windows 10 ve 11 (Ev veya Pro sürümü) |
 | Gereksinimler | .NET Framework 4.8 (Windows 10 1903 ve sonrası ile Windows 11'de yerleşik gelir), Yönetici hakları |
-| Ana sayfa | https://cyclone9.ir/cpfs |
+| Ana sayfa | https://cyclone9.dev/cpfs |
 | Lisans | MIT (yalnızca kod; bkz. [Lisans](#lisans)) |
 
 <p align="center"><a href="assets/cpfs-video-en.mp4"><img src="assets/cpfs-video-en.jpg" alt="CPFS videosu" width="720"></a></p>
@@ -194,4 +194,4 @@ MIT lisansı CPFS'nin kodunu ve belgelerini kapsar. CPFS adını ve logosunu, uy
 
 `src/Cpfs/Assets/Fonts/` içindeki Vazirmatn yazı tipi SIL Open Font License 1.1 altındadır (`OFL.txt` orada). Üçüncü taraf kütüphaneler `THIRD-PARTY-NOTICES.md` dosyasında listelenmiştir.
 
-© CyClone · https://cyclone9.ir/
+© CyClone · https://cyclone9.dev/

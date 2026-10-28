@@ -19,7 +19,7 @@ public partial class AboutPage : Page
     public AboutPage()
     {
         InitializeComponent();
-        HomepageText.Text = "cyclone9.ir/cpfs";
+        HomepageText.Text = "cyclone9.dev/cpfs";
         GitHubText.Text = "github.com/cyclone9/CPFS";
         LicenceMit.Text = Embedded("Cpfs.Licenses.LICENSE.txt");
         LicenceNotices.Text = Embedded("Cpfs.Licenses.THIRD-PARTY-NOTICES.md");
@@ -49,7 +49,7 @@ public partial class AboutPage : Page
         return reader.ReadToEnd();
     }
 
-    public const string HomepageUrl = "https://cyclone9.ir/cpfs";
+    public const string HomepageUrl = "https://cyclone9.dev/cpfs";
 
     public const string GitHubUrl = "https://github.com/cyclone9/CPFS";
 

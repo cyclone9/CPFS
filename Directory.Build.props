@@ -4,7 +4,7 @@
     <VersionPrefix>0.8.0</VersionPrefix>
     <Company>CyClone</Company>
     <Product>CPFS - CyClone Power File Share</Product>
-    <Copyright>Copyright (c) 2026 CyClone (https://cyclone9.ir)</Copyright>
+    <Copyright>Copyright (c) 2026 CyClone (https://cyclone9.dev)</Copyright>
     <NeutralLanguage>en</NeutralLanguage>
     <LangVersion>14</LangVersion>
     <Nullable>enable</Nullable>

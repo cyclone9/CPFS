@@ -12,7 +12,7 @@
 |---|---|
 | پلتفرم | ‏Windows 10 و 11 (خانگی یا حرفه‌ای) |
 | نیازها | ‏.NET Framework 4.8 (در Windows 10 نسخهٔ 1903 به بعد و در Windows 11 به‌صورت پیش‌فرض وجود دارد)، دسترسی مدیر |
-| صفحهٔ اصلی | https://cyclone9.ir/cpfs |
+| صفحهٔ اصلی | https://cyclone9.dev/cpfs |
 | مجوز | ‏MIT (فقط کد؛ بخش [مجوز](#مجوز) را ببینید) |
 
 <p align="center"><a href="assets/cpfs-video-fa.mp4"><img src="assets/cpfs-video-fa.jpg" alt="ویدیوی CPFS" width="720"></a></p>
@@ -196,6 +196,6 @@ Get-FileHash .\Cpfs-0.8.0.exe -Algorithm SHA256
 
 قلم Vazirmatn در پوشهٔ `src/Cpfs/Assets/Fonts/` تحت مجوز SIL Open Font License 1.1 است (فایل `OFL.txt` همان‌جاست). کتابخانه‌های شخص ثالث در `THIRD-PARTY-NOTICES.md` فهرست شده‌اند.
 
-‏© CyClone · https://cyclone9.ir/
+‏© CyClone · https://cyclone9.dev/
 
 </div>

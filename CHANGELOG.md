@@ -4,6 +4,8 @@ This project uses [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+- The CyClone homepage moved to cyclone9.dev. The README, the licence and the About page now link there.
+
 ## 0.8.0 - 2026-10-24
 
 First public release. CPFS shares one folder on a Windows PC with your phones and other devices, through its own SMB account.

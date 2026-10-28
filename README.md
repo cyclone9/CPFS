@@ -10,7 +10,7 @@
 |---|---|
 | Platform | Windows 10 and 11 (Home or Pro) |
 | Requires | .NET Framework 4.8 (built into Windows 10 1903 and later and Windows 11), Administrator rights |
-| Homepage | https://cyclone9.ir/cpfs |
+| Homepage | https://cyclone9.dev/cpfs |
 | Licence | MIT (code only; see [Licence](#licence)) |
 
 <p align="center"><a href="assets/cpfs-video-en.mp4"><img src="assets/cpfs-video-en.jpg" alt="CPFS video" width="720"></a></p>
@@ -194,4 +194,4 @@ The MIT licence covers CPFS's code and documentation. It does not cover the CPFS
 
 The Vazirmatn font in `src/Cpfs/Assets/Fonts/` is under the SIL Open Font License 1.1 (see `OFL.txt` there). The third-party libraries are listed in `THIRD-PARTY-NOTICES.md`.
 
-© CyClone · https://cyclone9.ir/
+© CyClone · https://cyclone9.dev/

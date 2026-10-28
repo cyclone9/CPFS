@@ -12,7 +12,7 @@
 |---|---|
 | المنصة | ‏Windows 10 و 11 (الإصدار المنزلي أو الاحترافي) |
 | المتطلبات | ‏.NET Framework 4.8 (مضمّن في Windows 10 الإصدار 1903 وما بعده وفي Windows 11)، صلاحيات المسؤول |
-| الصفحة الرئيسية | https://cyclone9.ir/cpfs |
+| الصفحة الرئيسية | https://cyclone9.dev/cpfs |
 | الترخيص | ‏MIT (للشيفرة فقط؛ انظر [الترخيص](#الترخيص)) |
 
 <p align="center"><a href="assets/cpfs-video-en.mp4"><img src="assets/cpfs-video-en.jpg" alt="فيديو CPFS" width="720"></a></p>
@@ -196,6 +196,6 @@ Get-FileHash .\Cpfs-0.8.0.exe -Algorithm SHA256
 
 خط Vazirmatn في `src/Cpfs/Assets/Fonts/` مرخّص بموجب SIL Open Font License 1.1 (الملف `OFL.txt` موجود هناك). أما المكتبات الخارجية فمذكورة في `THIRD-PARTY-NOTICES.md`.
 
-‏© CyClone · https://cyclone9.ir/
+‏© CyClone · https://cyclone9.dev/
 
 </div>
