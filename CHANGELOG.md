@@ -4,6 +4,7 @@ This project uses [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+- The READMEs show a new 30-second video of 1.0.1, in English and Persian, as an animated preview that opens the video.
 - The READMEs link the VirusTotal report for the 1.0.1 exe.
 
 ## 1.0.1 - 2026-11-18

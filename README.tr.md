@@ -13,7 +13,7 @@
 | Ana sayfa | https://cyclone9.dev/cpfs |
 | Lisans | MIT (yalnızca kod; bkz. [Lisans](#lisans)) |
 
-<p align="center"><a href="assets/cpfs-video-en.mp4"><img src="assets/cpfs-video-en.jpg" alt="CPFS videosu" width="720"></a></p>
+<p align="center"><a href="assets/cpfs-video-en.mp4"><img src="assets/cpfs-video-en.gif" alt="CPFS videosu" width="720"></a></p>
 
 <p align="center">CPFS'ye 30 saniyelik bir bakış. Videoyu açmak için görsele tıklayın.</p>
 

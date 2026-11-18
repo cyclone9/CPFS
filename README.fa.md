@@ -15,7 +15,7 @@
 | صفحهٔ اصلی | https://cyclone9.dev/cpfs |
 | مجوز | ‏MIT (فقط کد؛ بخش [مجوز](#مجوز) را ببینید) |
 
-<p align="center"><a href="assets/cpfs-video-fa.mp4"><img src="assets/cpfs-video-fa.jpg" alt="ویدیوی CPFS" width="720"></a></p>
+<p align="center"><a href="assets/cpfs-video-fa.mp4"><img src="assets/cpfs-video-fa.gif" alt="ویدیوی CPFS" width="720"></a></p>
 
 <p align="center" dir="rtl">نگاهی ۳۰ ثانیه‌ای به CPFS. برای باز کردن ویدیو روی تصویر کلیک کنید.</p>
 

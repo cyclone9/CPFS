@@ -15,7 +15,7 @@
 | الصفحة الرئيسية | https://cyclone9.dev/cpfs |
 | الترخيص | ‏MIT (للشيفرة فقط؛ انظر [الترخيص](#الترخيص)) |
 
-<p align="center"><a href="assets/cpfs-video-en.mp4"><img src="assets/cpfs-video-en.jpg" alt="فيديو CPFS" width="720"></a></p>
+<p align="center"><a href="assets/cpfs-video-en.mp4"><img src="assets/cpfs-video-en.gif" alt="فيديو CPFS" width="720"></a></p>
 
 <p align="center" dir="rtl">نظرة سريعة مدتها 30 ثانية على CPFS. انقر على الصورة لفتح الفيديو.</p>
 
