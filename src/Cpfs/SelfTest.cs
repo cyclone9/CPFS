@@ -134,8 +134,8 @@ internal static class SelfTest
         }
     }
 
-    // The Connections page's three reads must succeed (any count; the runner's elevated session may have none). The
-    // probes only report. A failed read throws, so the self-test exits 1.
+    // The Connections page's three reads must succeed (any count; the runner's elevated session may have none). A
+    // failed read throws, so the self-test exits 1.
     private static void ClientReads(TextWriter output)
     {
         var uses = SmbClient.ReadUses();
@@ -143,22 +143,6 @@ internal static class SelfTest
         var remembered = SmbClient.ReadRemembered();
         output.WriteLine("Client: saved mappings " + remembered.Count.ToString(CultureInfo.InvariantCulture));
         output.WriteLine("Client: SMB provider name " + SmbClient.LanmanProviderName());
-        foreach (var (name, probe) in new (string, Func<string>)[]
-        {
-            ("CIM MSFT_SmbConnection", SmbClient.ProbeSmbConnectionCim),
-            ("NetSessionEnum level 10", SmbClient.ProbeSessionEnum),
-            ("StartupApproved", () => SmbClient.ProbeStartupApproved().Split(':')[0]),
-        })
-        {
-            try
-            {
-                output.WriteLine("  probe " + name + ": " + probe());
-            }
-            catch (Exception ex) when (State.IsExpected(ex))
-            {
-                output.WriteLine("  probe " + name + " failed: " + ex.GetType().Name + ": " + ex.Message);
-            }
-        }
     }
 
     // A GUI-subsystem exe gets no console. With stdout redirected (CI) the handle is already there; started from a

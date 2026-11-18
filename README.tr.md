@@ -23,7 +23,7 @@ CPFS, bir Windows 10 veya 11 bilgisayarındaki tek bir klasörü Windows, macOS,
 
 ## İndirme ve ilk çalıştırma
 
-CPFS tek bir dosyadır: GitHub'daki [sürümler sayfasında](https://github.com/cyclone9/CPFS/releases) `Cpfs-0.8.0.exe`. Yükleyici yoktur; dosyayı istediğiniz yere kaydedip çalıştırın. CPFS yönetici haklarını yalnızca Kurulum, İzleme ya da Kaldırma gerektirdiğinde ister. Bağlan, Bu bilgisayarın bağlantıları, Tercihler ve Hakkında bunlar olmadan çalışır.
+CPFS tek bir dosyadır: GitHub'daki [sürümler sayfasında](https://github.com/cyclone9/CPFS/releases) `Cpfs-0.8.0.exe`. Yükleyici yoktur; dosyayı istediğiniz yere kaydedip çalıştırın. CPFS yönetici haklarını yalnızca Kurulum, İzleme ya da Kaldırma gerektirdiğinde ister. Bağlan, Diğer bilgisayarlardaki paylaşımlar, Tercihler ve Hakkında bunlar olmadan çalışır.
 
 Dosya imzalı değildir; bu yüzden ilk çalıştırmada Windows SmartScreen "Windows bilgisayarınızı korudu" (Windows protected your PC) iletisini gösterir. Ek bilgi'yi (More info), ardından Yine de çalıştır'ı (Run anyway) seçin.
 

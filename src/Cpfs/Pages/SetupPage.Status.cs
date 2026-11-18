@@ -77,13 +77,9 @@ public partial class SetupPage
         StatusActions.Visibility = _address is null && folder is null ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    // The folder from the config CPFS trusts (ConfigTrust already set an untrusted one aside), and only when it is a
-    // folder: Explorer given a file would run it.
-    private string? SharedFolder()
-    {
-        var path = _config?.SharePath;
-        return _status is { State: not SharingState.NotSetUp } && !string.IsNullOrWhiteSpace(path) && Directory.Exists(path) ? path : null;
-    }
+    // The tray's rule (B4): only from a config.json whose folder was read and trusted, and only an existing folder.
+    private string? SharedFolder() =>
+        _status is { State: not SharingState.NotSetUp } && _snapshot is { } snapshot ? Windows.TrayReader.FolderOf(_config, snapshot.DataFolder) : null;
 
     private void OnCopyAddress(object sender, RoutedEventArgs e)
     {

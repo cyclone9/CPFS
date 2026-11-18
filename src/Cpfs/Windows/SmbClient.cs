@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Globalization;
-using System.Management;
 using System.Runtime.InteropServices;
 using Cpfs.Core.Connections;
-using Microsoft.Win32;
 
 namespace Cpfs.Windows;
 
@@ -85,8 +82,8 @@ internal static class SmbClient
     public static List<RememberedMapping> ReadRemembered() =>
         Enumerate(ResourceRemembered, ResourceTypeDisk).ConvertAll(r => new RememberedMapping(r.Local, r.Remote, r.Provider));
 
-    // WNetOpenEnum(RESOURCE_CONNECTED, RESOURCETYPE_ANY), for the log only (design record 2026-11-19, B7): every
-    // provider's connections, the SSHFS drive included. Never shown and never cancelled.
+    // WNetOpenEnum(RESOURCE_CONNECTED, RESOURCETYPE_ANY), for the CI apply test's output only: every provider's
+    // connections. Never shown, logged or cancelled by the app.
     public static List<ConnectedResource> ReadConnected() => Enumerate(ResourceConnected, ResourceTypeAny);
 
     private static List<ConnectedResource> Enumerate(uint scope, uint type)
@@ -237,69 +234,6 @@ internal static class SmbClient
         }
     }
 
-    // ---- dev1 probes: written to the log only, each failure a logged line. ----
-
-    // NetSessionEnum level 10 (the server side): whether an unelevated process may read it. Code and count only.
-    // https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netsessionenum
-    // https://learn.microsoft.com/en-us/windows/win32/api/lmshare/ns-lmshare-session_info_10
-    public static string ProbeSessionEnum()
-    {
-        var resume = 0u;
-        var status = NetSessionEnum(null, null, null, 10, out var buffer, MaxPreferredLength, out var read, out var total, ref resume);
-        if (buffer != IntPtr.Zero)
-        {
-            _ = NetApiBufferFree(buffer);
-        }
-
-        return "status " + status.ToString(CultureInfo.InvariantCulture) + ", read " + read.ToString(CultureInfo.InvariantCulture)
-            + ", total " + total.ToString(CultureInfo.InvariantCulture);
-    }
-
-    // MSFT_SmbConnection: https://learn.microsoft.com/en-us/previous-versions/windows/desktop/smb/msft-smbconnection
-    // Credential is "the credential (domain + user name) that was used", an account name, not a secret (Learn). Which
-    // logon sessions the class returns is undocumented: the elevated window logs it (B7) and never shows or acts on it.
-    public static string ProbeSmbConnectionCim()
-    {
-        var rows = new List<string>();
-        using var searcher = new ManagementObjectSearcher(new ManagementScope(@"root\Microsoft\Windows\SMB"),
-            new ObjectQuery("SELECT ServerName, ShareName, UserName, Credential, Dialect, NumOpens FROM MSFT_SmbConnection"));
-        using var results = searcher.Get();
-        foreach (ManagementBaseObject o in results)
-        {
-            using (o)
-            {
-                rows.Add(@"\\" + Text(o, "ServerName") + @"\" + Text(o, "ShareName") + ", user " + Text(o, "UserName") + ", credential "
-                    + Text(o, "Credential") + ", dialect " + Text(o, "Dialect") + ", opens " + Text(o, "NumOpens"));
-            }
-        }
-
-        return rows.Count.ToString(CultureInfo.InvariantCulture) + " rows" + (rows.Count == 0 ? "" : ": " + string.Join("; ", rows));
-    }
-
-    private static string Text(ManagementBaseObject o, string name) => Convert.ToString(o[name], CultureInfo.InvariantCulture) ?? "";
-
-    // Undocumented key (lookup C): value names and the first bytes as found, for the dev4 design.
-    public static string ProbeStartupApproved()
-    {
-        using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run", false);
-        if (key is null)
-        {
-            return "key absent";
-        }
-
-        var parts = new List<string>();
-        foreach (var name in key.GetValueNames())
-        {
-            var value = key.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
-            var text = value is byte[] bytes
-                ? BitConverter.ToString(bytes, 0, Math.Min(4, bytes.Length)) + " (" + bytes.Length.ToString(CultureInfo.InvariantCulture) + " bytes)"
-                : key.GetValueKind(name).ToString();
-            parts.Add((name.Length == 0 ? "(default)" : name) + " = " + text);
-        }
-
-        return parts.Count.ToString(CultureInfo.InvariantCulture) + " values" + (parts.Count == 0 ? "" : ": " + string.Join("; ", parts));
-    }
-
     // USE_INFO_2: https://learn.microsoft.com/en-us/windows/win32/api/lmuse/ns-lmuse-use_info_2
     // Password stays an IntPtr that is never read: Windows may or may not fill it, and CPFS never looks.
     [StructLayout(LayoutKind.Sequential)]
@@ -336,10 +270,6 @@ internal static class SmbClient
 
     [DllImport("netapi32.dll", CharSet = CharSet.Unicode)]
     private static extern int NetUseDel(string? uncServerName, string useName, uint forceLevelFlags);
-
-    [DllImport("netapi32.dll", CharSet = CharSet.Unicode)]
-    private static extern int NetSessionEnum(string? serverName, string? uncClientName, string? userName, int level, out IntPtr buffer,
-        uint preferredMaximumLength, out int entriesRead, out int totalEntries, ref uint resumeHandle);
 
     // https://learn.microsoft.com/en-us/windows/win32/api/lmapibuf/nf-lmapibuf-netapibufferfree
     [DllImport("netapi32.dll")]

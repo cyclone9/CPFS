@@ -138,6 +138,26 @@ internal static class UpdateUi
         {
             AppLog.Write("update", "Update to " + offer.Version + " stopped: " + ex.Error
                 + (ex.Error == UpdateError.RollbackFailed ? "; the previous version is NOT back in place" : "; nothing was replaced"));
+            if (ex.Error == UpdateError.RollbackFailed)
+            {
+                // S2: the exe path now holds a file that failed its read-back, or nothing, and "Continue as
+                // administrator" or the tray would start it. Say which file to rename, then exit, as Restart does.
+                var owner = Window.GetWindow(page);
+                var message = Failure(ex, offer);
+                if (owner is null)
+                {
+                    System.Windows.MessageBox.Show(message, loc["Update_Err_Title"], System.Windows.MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show(owner, message, loc["Update_Err_Title"], System.Windows.MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+
+                AppLog.Write("update", "This process exits after the failed put-back");
+                Application.Current.Shutdown(0);
+                return null;
+            }
+
             return new UpdateUiResult(ex.Error == UpdateError.Cancelled ? InfoBarSeverity.Informational : InfoBarSeverity.Error, Failure(ex, offer));
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)

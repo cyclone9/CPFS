@@ -675,10 +675,14 @@ internal static class UpdateEngine
         }
 
         var hash = UpdateRules.Sha256Hex(bytes);
+        var created = false;
         try
         {
-            using (var output = new FileStream(target, FileMode.Create, FileAccess.Write, FileShare.None))
+            // S8: CreateNew when nothing is there, so a failed write removes only a file this call made.
+            var mode = File.Exists(target) ? FileMode.Create : FileMode.CreateNew;
+            using (var output = new FileStream(target, mode, FileAccess.Write, FileShare.None))
             {
+                created = mode == FileMode.CreateNew;
                 output.Write(bytes, 0, bytes.Length);
                 output.Flush(true);
             }
@@ -694,6 +698,11 @@ internal static class UpdateEngine
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
             AppLog.Write("update", "Save as " + target + " failed: " + ex.GetType().Name);
+            if (created)
+            {
+                TryDelete(target);
+            }
+
             throw new UpdateException(UpdateError.SaveFailed, ex.Message);
         }
     }

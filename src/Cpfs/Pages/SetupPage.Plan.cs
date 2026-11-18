@@ -83,6 +83,10 @@ public partial class SetupPage
     private PlanSummary? _summary;
     private string? _lastSummaryLogged;
     private bool _formReady;
+
+    // S7: a form filled while config.json could not be read holds first-install values; it is filled again once the
+    // file reads, or the plan would offer to undo the recorded drive and shortcut.
+    private bool _formFromUnreadable;
     private bool _suppressForm;
     private int _planVersion;
     private string _lastShareName = "";
@@ -162,10 +166,11 @@ public partial class SetupPage
             AppLog.Write("plan", "config.json was not written by CPFS (owner or link check); it is ignored");
         }
 
-        if (!_formReady)
+        if (!_formReady || (_formFromUnreadable && !ConfigUnreadable))
         {
             FillForm(SetupDefaults.From(_config, letters));
             _formReady = true;
+            _formFromUnreadable = ConfigUnreadable;
         }
         else
         {

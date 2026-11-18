@@ -23,7 +23,7 @@ CPFS shares one folder on a Windows 10 or 11 PC with Windows, macOS, Linux, Andr
 
 ## Download and first run
 
-CPFS is one file, `Cpfs-0.8.0.exe`, on the [releases page](https://github.com/cyclone9/CPFS/releases) on GitHub. There is no installer: save the file anywhere and run it. CPFS asks for administrator rights only when Setup, Monitor or Uninstall need them. Connect, This PC's connections, Preferences and About work without.
+CPFS is one file, `Cpfs-0.8.0.exe`, on the [releases page](https://github.com/cyclone9/CPFS/releases) on GitHub. There is no installer: save the file anywhere and run it. CPFS asks for administrator rights only when Setup, Monitor or Uninstall need them. Connect, Shared folders on other PCs, Preferences and About work without.
 
 The file is not signed, so the first time you run it Windows SmartScreen shows "Windows protected your PC". Select More info, then Run anyway.
 

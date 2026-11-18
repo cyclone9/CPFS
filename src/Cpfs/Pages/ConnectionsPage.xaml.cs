@@ -64,8 +64,6 @@ public sealed class ConnectionGroupItem
 // CPFS's own share: the page calls only SMB client functions.
 public partial class ConnectionsPage : Page
 {
-    private static bool _probed;
-
     private IReadOnlyList<ClientConnectionGroup> _groups = Array.Empty<ClientConnectionGroup>();
     private string? _savedError;
     private bool _busy;
@@ -95,24 +93,11 @@ public partial class ConnectionsPage : Page
             ListArea.Visibility = Visibility.Collapsed;
             Bar.Visibility = Visibility.Collapsed;
             AppLog.Write("connections", "Elevated window: the list is not read");
-
-            // B7: one read-only probe to the log; its rows never reach the page or a cancel.
-            if (!_probed)
-            {
-                _probed = true;
-                _ = Task.Run(() => Probes.Probe("MSFT_SmbConnection (elevated)", SmbClient.ProbeSmbConnectionCim));
-            }
-
             return;
         }
 
         ClearArea.Visibility = ServerClear.Shown ? Visibility.Visible : Visibility.Collapsed;
         await ReadAsync();
-        if (!_probed)
-        {
-            _probed = true;
-            _ = Task.Run(Probes.Run);
-        }
     }
 
     private async void OnRefresh(object sender, RoutedEventArgs e)
@@ -132,7 +117,8 @@ public partial class ConnectionsPage : Page
     // False when the list could not be read; the page then shows why.
     private async Task<bool> ReadAsync()
     {
-        if (_busy)
+        // S6: an elevated window would read the administrator session's connections (B1, B7).
+        if (_busy || Startup.IsElevated)
         {
             return false;
         }
@@ -187,8 +173,6 @@ public partial class ConnectionsPage : Page
                 + ", account " + (u.Domain ?? "") + "\\" + (u.User ?? ""));
         }
 
-        ProbeConnected(uses);
-
         string? provider = null;
         try
         {
@@ -231,31 +215,6 @@ public partial class ConnectionsPage : Page
 
         var thisPc = new ThisPcNames(host, Environment.MachineName, domain, NetworkAddresses.Read());
         return (ClientConnections.Build(uses, remembered, provider, thisPc.Matches), savedError);
-    }
-
-    // B7: WNetOpenEnum(RESOURCE_CONNECTED) next to NetUseEnum, to the log only. A row only WNetOpenEnum has would be
-    // the evidence for showing it some day; until then it is never shown and never cancelled.
-    private static void ProbeConnected(List<SmbUse> uses)
-    {
-        try
-        {
-            var connected = SmbClient.ReadConnected();
-            AppLog.Write("probe", "WNetOpenEnum(RESOURCE_CONNECTED): " + connected.Count.ToString(CultureInfo.InvariantCulture) + " rows");
-            foreach (var r in connected)
-            {
-                AppLog.Write("probe", "  connected " + (r.Local ?? "-") + " " + r.Remote + ", provider " + (r.Provider ?? "-")
-                    + ", type " + r.Type.ToString(CultureInfo.InvariantCulture));
-            }
-
-            static string Key(string? local, string remote) => (local ?? "").ToUpperInvariant() + "|" + remote.TrimEnd('\\').ToUpperInvariant();
-            var a = new HashSet<string>(uses.Select(u => Key(u.Local, u.Remote)), StringComparer.Ordinal);
-            var b = new HashSet<string>(connected.Select(r => Key(r.Local, r.Remote)), StringComparer.Ordinal);
-            AppLog.Write("probe", "Only in NetUseEnum: " + string.Join(", ", a.Except(b)) + "; only in WNetOpenEnum: " + string.Join(", ", b.Except(a)));
-        }
-        catch (Win32Exception ex)
-        {
-            AppLog.Write("probe", "WNetOpenEnum(RESOURCE_CONNECTED) failed: " + ex.NativeErrorCode.ToString(CultureInfo.InvariantCulture) + " " + ex.Message);
-        }
     }
 
     // ---- Reopen without administrator rights (elevated window only) ----
@@ -350,7 +309,7 @@ public partial class ConnectionsPage : Page
 
     private async void OnDisconnect(object sender, RoutedEventArgs e)
     {
-        if (_busy || (sender as FrameworkElement)?.Tag is not ConnectionRowItem item)
+        if (_busy || Startup.IsElevated || (sender as FrameworkElement)?.Tag is not ConnectionRowItem item)
         {
             return;
         }
@@ -395,7 +354,7 @@ public partial class ConnectionsPage : Page
 
     private async void OnDisconnectAll(object sender, RoutedEventArgs e)
     {
-        if (_busy || (sender as FrameworkElement)?.Tag is not ConnectionGroupItem item)
+        if (_busy || Startup.IsElevated || (sender as FrameworkElement)?.Tag is not ConnectionGroupItem item)
         {
             return;
         }
@@ -459,7 +418,7 @@ public partial class ConnectionsPage : Page
 
     private async void OnClearServer(object sender, RoutedEventArgs e)
     {
-        if (_busy || !ServerClear.Shown)
+        if (_busy || Startup.IsElevated || !ServerClear.Shown)
         {
             return;
         }
@@ -688,32 +647,6 @@ public partial class ConnectionsPage : Page
         {
             AppLog.Write("connections", "Credential Manager: " + ex.GetType().Name + ": " + ex.Message);
             ShowResult(InfoBarSeverity.Error, Loc.Instance.FormatValues("Connections_CredManFailed", ex.Message));
-        }
-    }
-
-    // dev1 probes for the 0.9.0 design: written to the log only, once per run, from the unelevated window.
-    internal static class Probes
-    {
-        public static void Run()
-        {
-            Probe("MSFT_SmbConnection (unelevated)", SmbClient.ProbeSmbConnectionCim);
-            Probe("NetSessionEnum level 10 (unelevated)", SmbClient.ProbeSessionEnum);
-            Probe(@"HKCU StartupApproved\Run", SmbClient.ProbeStartupApproved);
-        }
-
-        // A probe must never take the app down, whatever Windows throws.
-        public static void Probe(string name, Func<string> read)
-        {
-            try
-            {
-                AppLog.Write("probe", name + ": " + read());
-            }
-#pragma warning disable CA1031
-            catch (Exception ex)
-#pragma warning restore CA1031
-            {
-                AppLog.Write("probe", name + " failed: " + ex.GetType().Name + " (0x" + ex.HResult.ToString("X8", CultureInfo.InvariantCulture) + "): " + ex.Message);
-            }
         }
     }
 }

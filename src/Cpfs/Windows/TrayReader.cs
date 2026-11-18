@@ -88,8 +88,8 @@ internal static class TrayReader
     }
 
     // Only from a config.json that passes ConfigTrust's owner and link checks, and only a folder that exists:
-    // Explorer given a file would run it, and an untrusted config.json could name any file.
-    private static string? FolderOf(ConfigDocument? config, Reading<DataFolderInfo> folder)
+    // Explorer given a file would run it, and an untrusted config.json could name any file. Setup's Open folder too.
+    internal static string? FolderOf(ConfigDocument? config, Reading<DataFolderInfo> folder)
     {
         var path = config?.SharePath;
         return ConfigTrust.Trusted(folder) && !string.IsNullOrWhiteSpace(path) && Path.IsPathRooted(path) && Directory.Exists(path) ? path : null;
