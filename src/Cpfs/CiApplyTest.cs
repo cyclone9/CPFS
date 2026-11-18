@@ -561,7 +561,7 @@ internal static class CiApplyTest
     }
 
     // The SMB client side of Connections from this PC, against the runner's own share, while it exists: the list, error
-    // 1219, a remembered drive, the open-files refusal and both kinds of cancel. The password goes to Windows through
+    // 1219, a remembered drive, the open-files refusal, and the app's own two kinds of cancel. The password goes to Windows through
     // WNetAddConnection2W only. Every test connection is removed again before Uninstall, whatever happened.
     private static readonly string[] ClientChecks =
     {
@@ -570,8 +570,8 @@ internal static class CiApplyTest
         "a second user name for the same server gives error 1219",
         "a remembered drive mapping appears under HKCU\\Network and in the saved list",
         "a non-forced disconnect with a file open is refused (2401 or 2404)",
-        "a disconnect without the profile flag leaves the saved mapping",
-        "a disconnect with the profile flag removes the saved mapping",
+        "the drive is mapped again, remembered, for the app's own Disconnect",
+        "the app's Disconnect of a remembered drive (its letter, with the profile flag) succeeds and forgets it",
         "a deviceless connection is cancelled by its remote name",
     };
 
@@ -596,7 +596,7 @@ internal static class CiApplyTest
         try
         {
             var uses = LogUses(o, "after connecting");
-            var use = uses.FirstOrDefault(u => u.Local is null && SameRemote(u.Remote, unc));
+            var use = uses.FirstOrDefault(u => string.IsNullOrEmpty(u.Local) && SameRemote(u.Remote, unc));
             Check(use is not null && string.Equals(use.User, TestUser, StringComparison.OrdinalIgnoreCase), ClientChecks[0],
                 use is null ? "not listed" : (use.Domain ?? "") + "\\" + (use.User ?? "") + ", status " + use.Status.ToString(CultureInfo.InvariantCulture));
             var groups = Groups(uses);
@@ -628,9 +628,22 @@ internal static class CiApplyTest
                 DriveChecks(o, l, unc, user, password);
             }
 
-            var cancel = SmbClient.Cancel(new DisconnectTarget(unc, false), force: false);
-            var still = SmbClient.ReadUses().Any(u => u.Local is null && SameRemote(u.Remote, unc));
-            Check(cancel == 0 && !still, ClientChecks[7], Code(cancel) + (still ? ", still listed" : ""));
+            // Not vacuous: the row must be listed before the cancel, and the cancel goes through the app's own target.
+            var deviceless = Groups(SmbClient.ReadUses()).SelectMany(g => g.Connections)
+                .FirstOrDefault(c => c.DriveLetter is null && string.Equals(c.Server, "localhost", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(c.Share, TestShare, StringComparison.OrdinalIgnoreCase));
+            if (deviceless is null)
+            {
+                Check(false, ClientChecks[7], "the deviceless connection was not listed before the cancel");
+            }
+            else
+            {
+                var target = ClientDisconnect.TargetFor(deviceless);
+                var cancel = SmbClient.Cancel(target, force: false);
+                var still = SmbClient.ReadUses().Any(u => string.IsNullOrEmpty(u.Local) && SameRemote(u.Remote, unc));
+                Check(target is { UpdateProfile: false } && SameRemote(target.Name, unc) && cancel == 0 && !still, ClientChecks[7],
+                    target.Name + ": " + Code(cancel) + (still ? ", still listed" : ""));
+            }
 
             // An implicit UNC access (no WNetAddConnection): what NetUseEnum shows and what a non-forced cancel says.
             try
@@ -642,7 +655,7 @@ internal static class CiApplyTest
                 o.WriteLine("Client: implicit access to " + unc + " failed: " + ex.GetType().Name + ": " + ex.Message);
             }
 
-            foreach (var u in LogUses(o, "after the implicit access").Where(u => u.Local is null && IsLoopback(u.Remote)))
+            foreach (var u in LogUses(o, "after the implicit access").Where(u => string.IsNullOrEmpty(u.Local) && IsLoopback(u.Remote)))
             {
                 o.WriteLine("Client: non-forced cancel of " + u.Remote + ": " + Code(SmbClient.Cancel(new DisconnectTarget(u.Remote, false), force: false)));
             }
@@ -658,7 +671,7 @@ internal static class CiApplyTest
         var device = letter + ":";
         var map = SmbClient.Add(device, unc, user, password, remember: true);
         o.WriteLine("Client: map " + device + " to " + unc + ", remembered: " + Code(map));
-        var saved = NetworkKeyExists(letter) && SmbClient.ReadRemembered().Any(m => string.Equals(m.Local, device, StringComparison.OrdinalIgnoreCase));
+        var saved = Saved(letter);
         Check(map == 0 && saved, ClientChecks[3], Code(map) + (saved ? "" : ", not saved"));
         if (map != 0)
         {
@@ -670,7 +683,8 @@ internal static class CiApplyTest
             return;
         }
 
-        var row = Groups(SmbClient.ReadUses()).SelectMany(g => g.Connections).FirstOrDefault(c => string.Equals(c.DriveLetter, device, StringComparison.OrdinalIgnoreCase));
+        // The open-files refusal, through the app's own target for the drive's row.
+        var row = DriveRow(device);
         o.WriteLine("Client: the drive's row: " + (row is null ? "missing" : "reconnects at sign-in " + row.ReconnectsAtSignIn));
         var target = row is null ? new DisconnectTarget(device, true) : ClientDisconnect.TargetFor(row);
         int refused;
@@ -680,18 +694,48 @@ internal static class CiApplyTest
         }
 
         var listed = SmbClient.ReadUses().Any(u => string.Equals(u.Local, device, StringComparison.OrdinalIgnoreCase));
-        Check(ClientDisconnect.IsOpenFiles(refused) && listed, ClientChecks[4], Code(refused) + (listed ? "" : ", no longer listed"));
+        Check(row is not null && ClientDisconnect.IsOpenFiles(refused) && listed, ClientChecks[4],
+            (row is null ? "the drive was not listed, " : "") + Code(refused) + (listed ? "" : ", no longer listed"));
 
+        // Logged only: Learn says a cancel without the profile flag keeps a persistent connection, but on Windows Server
+        // 2025 it removed HKCU\Network too (CI run 44390561077). The app never cancels a drive without the flag.
         var keep = SmbClient.Cancel(new DisconnectTarget(device, false), force: false);
-        var kept = NetworkKeyExists(letter);
-        Check(keep == 0 && kept, ClientChecks[5], Code(keep) + (kept ? "" : ", the saved mapping is gone"));
+        o.WriteLine("Client: cancel " + device + " without the profile flag: " + Code(keep) + "; without the flag Windows "
+            + (NetworkKeyExists(letter) ? "kept" : "removed") + " HKCU\\Network\\" + letter + " and "
+            + (Remembered(device) ? "kept" : "removed") + " the saved list entry");
+        if (NetworkKeyExists(letter) || Remembered(device) || SmbClient.ReadUses().Any(u => string.Equals(u.Local, device, StringComparison.OrdinalIgnoreCase)))
+        {
+            o.WriteLine("Client: clear " + device + " before mapping it again: " + Code(SmbClient.Cancel(new DisconnectTarget(device, true), force: false)));
+        }
 
-        // The drive is now saved but not connected; Learn names ERROR_NOT_CONNECTED among the answers, so the registry
-        // and the saved list decide.
-        var forget = SmbClient.Cancel(new DisconnectTarget(device, true), force: false);
-        var gone = !NetworkKeyExists(letter) && !SmbClient.ReadRemembered().Any(m => string.Equals(m.Local, device, StringComparison.OrdinalIgnoreCase));
-        Check(gone, ClientChecks[6], Code(forget) + (gone ? "" : ", still saved"));
+        // The app's real path: the drive mapped and remembered again, then Disconnect as the page does it.
+        var again = SmbClient.Add(device, unc, user, password, remember: true);
+        row = DriveRow(device);
+        Check(again == 0 && Saved(letter) && row is { ReconnectsAtSignIn: true }, ClientChecks[5],
+            Code(again) + (Saved(letter) ? "" : ", not saved") + (row is null ? ", not listed" : row.ReconnectsAtSignIn ? "" : ", not marked to reconnect"));
+        if (again != 0 || row is null)
+        {
+            Skip(ClientChecks[6], "the drive could not be mapped again: " + Code(again) + (row is null ? ", not listed" : ""));
+            return;
+        }
+
+        target = ClientDisconnect.TargetFor(row);
+        var cancel = SmbClient.Cancel(target, force: false);
+        var listedAfter = SmbClient.ReadUses().Any(u => string.Equals(u.Local, device, StringComparison.OrdinalIgnoreCase));
+        var gone = !NetworkKeyExists(letter) && !Remembered(device) && !listedAfter;
+        Check(target.UpdateProfile && string.Equals(target.Name, device, StringComparison.OrdinalIgnoreCase) && cancel == 0 && gone, ClientChecks[6],
+            target.Name + (target.UpdateProfile ? " with the flag" : " without the flag") + ": " + Code(cancel)
+            + (NetworkKeyExists(letter) ? ", still under HKCU\\Network" : "") + (Remembered(device) ? ", still in the saved list" : "") + (listedAfter ? ", still connected" : ""));
     }
+
+    private static ClientConnection? DriveRow(string device) =>
+        Groups(SmbClient.ReadUses()).SelectMany(g => g.Connections).FirstOrDefault(c => string.Equals(c.DriveLetter, device, StringComparison.OrdinalIgnoreCase));
+
+    // Saved for the next sign-in: under HKCU\Network and in WNetOpenEnum(RESOURCE_REMEMBERED), both.
+    private static bool Saved(char letter) => NetworkKeyExists(letter) && Remembered(letter + ":");
+
+    private static bool Remembered(string device) =>
+        SmbClient.ReadRemembered().Any(m => string.Equals(m.Local, device, StringComparison.OrdinalIgnoreCase));
 
     // Test cleanup only (the app never forces in bulk): every connection to this runner by localhost or 127.0.0.1, and
     // the test drive's saved mapping, non-forced first, then forced.

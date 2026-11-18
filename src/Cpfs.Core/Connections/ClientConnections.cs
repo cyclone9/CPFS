@@ -142,9 +142,12 @@ public static class ClientConnections
         && string.Equals(Letter(use.Local), Letter(mapping.Local), StringComparison.OrdinalIgnoreCase)
         && string.Equals(use.Remote.TrimEnd('\\'), mapping.Remote.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase);
 
+    // A local device name as Windows gave it: NetUseEnum returns an empty string, not NULL, for a deviceless
+    // connection (seen on Windows Server 2025, CI run 44390561077). Empty or blank becomes null.
+    public static string? LocalName(string? local) => string.IsNullOrWhiteSpace(local) ? null : local!.Trim();
+
     // "x:" as "X:"; null for a deviceless connection.
-    private static string? Letter(string? local) =>
-        string.IsNullOrWhiteSpace(local) ? null : local!.Trim().ToUpperInvariant();
+    private static string? Letter(string? local) => LocalName(local)?.ToUpperInvariant();
 
     private static string? Account(string? domain, string? user)
     {

@@ -137,4 +137,21 @@ public class ClientConnectionsTests
             System.Globalization.CultureInfo.CurrentCulture = previous;
         }
     }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("", null)]
+    [InlineData("  ", null)]
+    [InlineData(" z: ", "z:")]
+    public void AnEmptyLocalNameIsNoDevice(string? local, string? expected) => Assert.Equal(expected, ClientConnections.LocalName(local));
+
+    [Fact]
+    public void AnEmptyLocalNameFromNetUseEnumIsADevicelessRow()
+    {
+        var uses = new[] { new SmbUse("", @"\\localhost\CPFS-CI", SmbUse.StatusOk, 0, 0, "CpfsCiUser", "PC") };
+        var row = ClientConnections.Build(uses, System.Array.Empty<RememberedMapping>(), LanMan, _ => true).Single().Connections.Single();
+        Assert.Null(row.DriveLetter);
+        Assert.Equal(@"\\localhost\CPFS-CI", ClientDisconnect.TargetFor(row).Name);
+        Assert.False(ClientDisconnect.TargetFor(row).UpdateProfile);
+    }
 }

@@ -53,7 +53,7 @@ internal static class SmbClient
                         continue;
                     }
 
-                    result.Add(new SmbUse(Marshal.PtrToStringUni(info.Local), remote, info.Status, info.AssignmentType, info.RefCount,
+                    result.Add(new SmbUse(ClientConnections.LocalName(Marshal.PtrToStringUni(info.Local)), remote, info.Status, info.AssignmentType, info.RefCount,
                         Marshal.PtrToStringUni(info.UserName), Marshal.PtrToStringUni(info.DomainName)));
                 }
             }
@@ -121,7 +121,7 @@ internal static class SmbClient
                     var remote = Marshal.PtrToStringUni(r.RemoteName);
                     if (remote is not null)
                     {
-                        result.Add(new RememberedMapping(Marshal.PtrToStringUni(r.LocalName), remote, Marshal.PtrToStringUni(r.Provider)));
+                        result.Add(new RememberedMapping(ClientConnections.LocalName(Marshal.PtrToStringUni(r.LocalName)), remote, Marshal.PtrToStringUni(r.Provider)));
                     }
                 }
             }
