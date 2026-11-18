@@ -67,6 +67,7 @@ internal static class PlanReader
             DriveLabels = Part<IReadOnlyDictionary<char, string>>("drive labels", () => DriveIconValues("DefaultLabel")),
             DriveIcons = Part<IReadOnlyDictionary<char, string>>("drive icons", () => DriveIconValues("DefaultIcon")),
             ExplorerEntry = ExplorerEntryFor(desktopSid),
+            StartWithWindows = StartWithWindowsFor(desktopSid),
             CpfsIcon = Apply.CpfsIconFile.Path,
             Letters = letters,
             CommonDesktop = string.IsNullOrEmpty(commonDesktop) ? @"C:\Users\Public\Desktop" : commonDesktop,
@@ -95,6 +96,12 @@ internal static class PlanReader
     public static Reading<ExplorerHive> ExplorerEntryFor(string? sid) => Part("explorer entry", () =>
         sid is not null ? Apply.ExplorerEntryKeys.Read(sid)
         : !Startup.IsElevated ? Apply.ExplorerEntryKeys.ReadCurrentUser()
+        : throw new CpfsException(Apply.SessionDrive.NoDesktopUserKey));
+
+    // The Run value named CPFS in the same hive: the desktop user's, or not elevated, the user's own HKCU.
+    public static Reading<Core.Preferences.RunValue?> StartWithWindowsFor(string? sid) => Part("start with windows", () =>
+        sid is not null ? StartWithWindowsKeys.Read(sid)
+        : !Startup.IsElevated ? StartWithWindowsKeys.ReadCurrentUser()
         : throw new CpfsException(Apply.SessionDrive.NoDesktopUserKey));
 
     public static ProtectedFolders ProtectedFolders()

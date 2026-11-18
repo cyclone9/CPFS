@@ -110,7 +110,6 @@
             <TextBlock
               x:Name="TrayElevatedNote"
               Style="{StaticResource CardDescription}"
-              Text="{Binding [Pref_Tray_Elevated], Source={x:Static local:Loc.Instance}}"
               Visibility="Collapsed" />
           </StackPanel>
         </ui:CardControl.Header>
@@ -128,6 +127,58 @@
         IsClosable="True"
         IsOpen="False"
         Severity="Error" />
+
+      <!--  The Run value is the only state; the page reads it each time it opens (PreferencesPage.StartWithWindows.cs).  -->
+      <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon Power24}">
+        <ui:CardControl.Header>
+          <StackPanel>
+            <TextBlock x:Name="StartLabel" Style="{StaticResource CardTitle}" Text="{Binding [Pref_Start_Title], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Pref_Start_Desc], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock
+              x:Name="StartNote"
+              Margin="0,4,0,0"
+              Style="{StaticResource CardDescription}"
+              Visibility="Collapsed" />
+          </StackPanel>
+        </ui:CardControl.Header>
+        <ui:ToggleSwitch
+          x:Name="StartSwitch"
+          AutomationProperties.HelpText="{Binding [Pref_Start_Desc], Source={x:Static local:Loc.Instance}}"
+          AutomationProperties.LabeledBy="{Binding ElementName=StartLabel}"
+          Checked="OnStartSwitch"
+          IsEnabled="False"
+          Unchecked="OnStartSwitch" />
+      </ui:CardControl>
+
+      <ui:InfoBar
+        x:Name="StartInfo"
+        Margin="0,0,0,4"
+        IsClosable="False"
+        IsOpen="False"
+        Severity="Warning" />
+      <ui:InfoBar
+        x:Name="StartHint"
+        Margin="0,0,0,4"
+        IsClosable="False"
+        IsOpen="False"
+        Severity="Informational" />
+      <WrapPanel x:Name="StartActions" Margin="0,0,0,4" Visibility="Collapsed">
+        <ui:Button
+          x:Name="UseThisCopyButton"
+          Margin="0,0,8,4"
+          AutomationProperties.Name="{Binding [Pref_Start_UseThis], Source={x:Static local:Loc.Instance}}"
+          Click="OnUseThisCopy"
+          Content="{Binding [Pref_Start_UseThis], Source={x:Static local:Loc.Instance}}"
+          Visibility="Collapsed" />
+        <ui:Button
+          x:Name="StartupAppsButton"
+          Margin="0,0,8,4"
+          AutomationProperties.Name="{Binding [Pref_Start_OpenSettings], Source={x:Static local:Loc.Instance}}"
+          Click="OnOpenStartupApps"
+          Content="{Binding [Pref_Start_OpenSettings], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon Open24}"
+          Visibility="Collapsed" />
+      </WrapPanel>
     </StackPanel>
   </StackPanel>
 </Page>

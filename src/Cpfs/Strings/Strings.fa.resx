@@ -304,7 +304,6 @@
   <data name="Monitor_NoValue" xml:space="preserve"><value>-</value><comment>Same in every language.</comment></data>
   <data name="Monitor_ReadFailed" xml:space="preserve"><value>خواندن این بخش ممکن نشد: {0}</value></data>
   <data name="Monitor_Server_Title" xml:space="preserve"><value>مجموع سرور</value></data>
-  <data name="Monitor_Server_Desc" xml:space="preserve"><value>برای همه‌ی دستگاه‌ها با هم، از زمان شروع سرویس اشتراک فایل.</value></data>
   <data name="Monitor_Server_Down" xml:space="preserve"><value>دریافت</value></data>
   <data name="Monitor_Server_Up" xml:space="preserve"><value>ارسال</value></data>
   <data name="Monitor_Server_LogonErrors" xml:space="preserve"><value>ورودهای ناموفق از زمان شروع</value></data>
@@ -818,7 +817,6 @@
   <data name="Monitor_Session_Status" xml:space="preserve"><value>وضعیت</value></data>
   <data name="Monitor_Session_Active" xml:space="preserve"><value>هم‌اکنون فعال</value></data>
   <data name="Monitor_Session_IdleFor" xml:space="preserve"><value>بی‌کار به مدت {0}</value></data>
-  <data name="Monitor_Server_DescOne" xml:space="preserve"><value>برای همه‌ی دستگاه‌ها با هم، از زمان شروع سرویس اشتراک فایل. در حال حاضر همه‌ی ترافیک از {0} است.</value></data>
   <data name="Common_NeedsAdmin" xml:space="preserve"><value>به دسترسی مدیر نیاز دارد</value></data>
   <data name="Apply_ShieldTip" xml:space="preserve"><value>ابتدا در بالا «ادامه با دسترسی مدیر» را انتخاب کنید</value></data>
   <data name="Apply_RestartDriveMsg" xml:space="preserve"><value>ممکن است حرف درایو قبلی تا راه‌اندازی مجدد ویندوز در کاوشگر فایل بماند.</value></data>
@@ -1122,7 +1120,7 @@
   <data name="Connections_AccountUnknown" xml:space="preserve"><value>Not known until it connects</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_Label_State" xml:space="preserve"><value>State</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_State_Connected" xml:space="preserve"><value>Connected</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_State_Reconnecting" xml:space="preserve"><value>Connecting</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_State_Reconnecting" xml:space="preserve"><value>Reconnecting</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_State_Disconnected" xml:space="preserve"><value>Disconnected</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_State_Saved" xml:space="preserve"><value>Saved but not connected</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_Label_Reconnects" xml:space="preserve"><value>Reconnects at sign-in</value><comment>UNTRANSLATED: English text</comment></data>
@@ -1212,7 +1210,6 @@
   <data name="Monitor_Device_MoreName" xml:space="preserve"><value>More actions for {0}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_File_Who" xml:space="preserve"><value>{0}, signed in as {1}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Details_Title" xml:space="preserve"><value>Connection details</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Where_Line" xml:space="preserve"><value>{0} {1}</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Qr_NoPassword" xml:space="preserve"><value>The code doesn't contain a password.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Tabs_Name" xml:space="preserve"><value>Devices</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connect_Win_Step5" xml:space="preserve"><value>If Windows on that PC says multiple connections to a server by the same user, using more than one user name, aren't allowed (error 1219), it's already connected to this PC under another username. Open CPFS on that PC and disconnect it in This PC's connections, or sign out of Windows there and back in.</value><comment>UNTRANSLATED: English text</comment></data>
@@ -1232,4 +1229,29 @@
   <data name="Pref_Tray_Desc" xml:space="preserve"><value>Shows in the notification area whether sharing is on. It runs without administrator rights.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Pref_Tray_Elevated" xml:space="preserve"><value>This window runs as administrator, so the tray icon can't be changed here. Open CPFS without administrator rights to change it.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Pref_Tray_StartFailed" xml:space="preserve"><value>CPFS couldn't start the tray icon</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Start_Title" xml:space="preserve"><value>Start with Windows</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Start_Desc" xml:space="preserve"><value>Shows the tray icon when you sign in to Windows.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Start_NeedsTray" xml:space="preserve"><value>Switch on the tray icon first.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Start_ReadFailed" xml:space="preserve"><value>CPFS couldn't check whether it starts with Windows: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Start_OtherCopy" xml:space="preserve"><value>Windows starts CPFS from {0} when you sign in.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Start_Missing" xml:space="preserve"><value>The copy of CPFS that Windows starts at sign-in is gone ({0}).</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Start_Foreign" xml:space="preserve"><value>Windows has a startup entry named CPFS that isn't CPFS's own: {0}. CPFS leaves it as it is unless you select Use this copy.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Start_UseThis" xml:space="preserve"><value>Use this copy</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Start_Disabled" xml:space="preserve"><value>CPFS is turned off in Startup apps in Windows Settings, so the tray icon won't start when you sign in.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Start_OpenSettings" xml:space="preserve"><value>Open Startup apps</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Start_PathTooLong" xml:space="preserve"><value>The path to this copy of CPFS is too long for Windows to start it at sign-in. Move CPFS to a folder with a shorter path.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Start_PathRefused" xml:space="preserve"><value>This copy of CPFS can't start with Windows, because its path contains a " or a %: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Start_Failed" xml:space="preserve"><value>CPFS couldn't change Start with Windows: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Start_OldTrayRunning" xml:space="preserve"><value>The running tray icon didn't close within 3 seconds. Select Exit in its menu, then select Use this copy again.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Start_TrayNotStarted" xml:space="preserve"><value>CPFS will start with Windows from this copy, but its tray icon couldn't start now: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Pref_Tray_ElevatedOffOnly" xml:space="preserve"><value>This window runs as administrator. You can turn the tray icon off here. To turn it on, open CPFS without administrator rights.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_Section_StartWithWindows" xml:space="preserve"><value>Start with Windows</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_S_RunStop" xml:space="preserve"><value>Stop starting CPFS with Windows</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_R_RunRemove" xml:space="preserve"><value>The tray icon no longer starts when the desktop user signs in to Windows.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_R_RunForeign" xml:space="preserve"><value>A startup entry named CPFS isn't CPFS's own, so it is left as it is: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Uninst_R_RunUnread" xml:space="preserve"><value>CPFS couldn't check whether it starts with Windows for the desktop user, so nothing is changed there: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_U_RunForeignLeft" xml:space="preserve"><value>A startup entry named CPFS that isn't CPFS's own stays as it is.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Err_RunForeign" xml:space="preserve"><value>The startup entry named CPFS changed after the plan was read and is no longer CPFS's own, so it was left as it is.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Err_RunHiveNotLoaded" xml:space="preserve"><value>Windows can't reach the desktop user's settings because that user isn't signed in, so Start with Windows can't be checked or changed.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Stat_Since" xml:space="preserve"><value>since the file sharing service started</value><comment>UNTRANSLATED: English text</comment></data>
 </root>

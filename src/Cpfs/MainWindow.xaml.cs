@@ -43,6 +43,7 @@ public partial class MainWindow : FluentWindow
         Theming.InstallFontResources(this);
         ApplyFlowDirection();
 
+        InitMinimizeToTray();
         ContentRendered += OnFirstRender;
         Loaded += (_, _) =>
         {

@@ -47,7 +47,11 @@ public partial class App : Application
             return;
         }
 
-        if (window.WindowState == WindowState.Minimized)
+        if (window is MainWindow main && main.RestoreFromTray())
+        {
+            // Shown again and set back to its size from before it was minimized.
+        }
+        else if (window.WindowState == WindowState.Minimized)
         {
             window.WindowState = WindowState.Normal;
         }

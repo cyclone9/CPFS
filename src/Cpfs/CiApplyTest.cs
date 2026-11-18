@@ -13,6 +13,7 @@ using Cpfs.Core.Config;
 using Cpfs.Core.Connections;
 using Cpfs.Core.Drives;
 using Cpfs.Core.Planning;
+using Cpfs.Core.Preferences;
 using Cpfs.Windows;
 using Cpfs.Windows.Apply;
 using Microsoft.Win32;
@@ -91,6 +92,8 @@ internal static class CiApplyTest
                 {
                     UninstallPhase(o);
                 }
+
+                ForeignStartPhase(o);
             }
 
             Compare(before, Machine.Read(), folder);
@@ -378,6 +381,7 @@ internal static class CiApplyTest
         AutoPrivateChecks(o, config, leftPublic, temp);
         RenameChecks(config);
         ClientPhase(o, password);
+        StartChecks(o);
 
         // Re-running with the same answers changes nothing: the copy, the task and the pending rename are Keep.
         var again = Planner.Setup(Read(TestUser, folder, TestShare), answers with { Password = PasswordEntry.Empty, Choices = new Dictionary<string, bool>() },
@@ -397,6 +401,8 @@ internal static class CiApplyTest
             self = identity.User!.Value;
         }
 
+        // The Run value lives in the hive of the user the step will use: this process's own account here.
+        snapshot = snapshot with { StartWithWindows = PlanReader.StartWithWindowsFor(self) };
         var logged = PlanReader.AutoPrivateNames();
         var plan = UninstallPlanner.Uninstall(new UninstallInput
         {
@@ -446,6 +452,9 @@ internal static class CiApplyTest
             string.Join(" ", order));
 
         Check(result.Completed, "Uninstall ran to the end", result.Detail ?? result.Error ?? "");
+        Check(plan.Find("u.run") is { Action: PlanAction.RemoveIfOurs }, "Uninstall plans to stop starting CPFS with Windows", plan.Find("u.run")?.Action.ToString() ?? "no item");
+        Check(result.Reports.Any(r => r.Key == "u.run" && r.Outcome == StepOutcome.Done) && StartWithWindowsKeys.Read(self) is null,
+            "Uninstall removed the CPFS-format Run value", StartWithWindowsKeys.Read(self)?.Text ?? "absent");
         if (_letter is not null)
         {
             SessionCheck(result, "u.drive.session", "the drive is unmapped in the desktop user's session");
@@ -454,6 +463,102 @@ internal static class CiApplyTest
         Check(result.Reports.Any(r => r.Key == "u.computer" && r.Outcome == StepOutcome.Done), "Uninstall ran the rename back");
         Check(run.RenamedTo is not null && string.Equals(run.RenamedTo, _originalName, StringComparison.OrdinalIgnoreCase), "Uninstall asked for the original name",
             run.RenamedTo ?? "null");
+    }
+
+    // Start with Windows, as the unelevated Preferences page does it (the runner is elevated, but HKCU is the same
+    // hive): write, read back through HKCU and HKEY_USERS\<SID>, remove; the tray stop signal; then the value again,
+    // for Uninstall to remove.
+    private static void StartChecks(TextWriter o)
+    {
+        var sid = SelfSid();
+        var exe = typeof(CiApplyTest).Assembly.Location;
+        var command = StartWithWindows.Command(exe, out var refusal);
+        Check(command is not null, "the Run value for this exe can be built", refusal + " " + exe);
+        if (command is null)
+        {
+            return;
+        }
+
+        Check(StartWithWindowsKeys.ReadCurrentUser() is null, "no Run value named CPFS before the test", StartWithWindowsKeys.ReadCurrentUser()?.Text ?? "absent");
+        StartWithWindowsKeys.WriteCurrentUser(command);
+        var back = StartWithWindowsKeys.ReadCurrentUser();
+        Check(back?.Text == command, "the Run value reads back as written", back?.Text ?? "absent");
+        Check(StartWithWindowsKeys.Read(sid)?.Text == command, "the Run value reads back through HKEY_USERS\\<SID>");
+        Check(StartWithWindows.Decide(back, exe, File.Exists).State == StartState.On, "the Run value is on for this exe");
+        o.WriteLine("StartupApproved\\Run\\CPFS: " + StartWithWindows.Hex(StartWithWindowsKeys.ApprovedCurrentUser()));
+        StartWithWindowsKeys.DeleteCurrentUser();
+        Check(StartWithWindowsKeys.ReadCurrentUser() is null, "the Run value is removed");
+
+        // The stop signal Uninstall sends, from this elevated process into an event as the tray creates it.
+        TrayControl.Stop("ci-apply, no tray");
+        using (var exit = new System.Threading.EventWaitHandle(false, System.Threading.EventResetMode.AutoReset, TrayControl.ExitEventName))
+        {
+            TrayControl.Stop("ci-apply");
+            Check(exit.WaitOne(0), "the tray stop signal sets the tray's event");
+        }
+
+        StartWithWindowsKeys.WriteCurrentUser(command);
+    }
+
+    // After Uninstall: a value named CPFS that isn't CPFS's is planned as Keep and left by a config-less Uninstall, and
+    // the step itself refuses it even when forced into a plan. The test removes it itself.
+    private static void ForeignStartPhase(TextWriter o)
+    {
+        const string foreign = @"C:\Windows\System32\notepad.exe";
+        var sid = SelfSid();
+        if (StartWithWindowsKeys.ReadCurrentUser() is { } left && StartWithWindows.TargetOf(left.Text) is not null)
+        {
+            StartWithWindowsKeys.DeleteCurrentUser();
+        }
+
+        StartWithWindowsKeys.WriteCurrentUser(foreign);
+        try
+        {
+            var snapshot = PlanReader.ReadStatic(DriveLetters.Scan(null), DesktopUser.Current.Sid) with { StartWithWindows = PlanReader.StartWithWindowsFor(sid) };
+            var plan = UninstallPlanner.Uninstall(new UninstallInput
+            {
+                Snapshot = snapshot,
+                ProtectedSids = new[] { sid },
+                DesktopUser = sid,
+                ProtectedFolders = PlanReader.ProtectedFolders(),
+            });
+            o.WriteLine("Uninstall plan with a foreign Run value:");
+            foreach (var line in plan.LogLines())
+            {
+                o.WriteLine("  " + line);
+            }
+
+            var item = plan.Find("u.run");
+            Check(item is { Action: PlanAction.Keep, ReasonKey: "Uninst_R_RunForeign" }, "Uninstall plans to leave a foreign Run value named CPFS",
+                item is null ? "no item" : item.Action + " " + item.ReasonKey);
+            var result = new UninstallRun(plan, null, null, null, sid, null).Execute(_ => { });
+            Check(result.Completed && StartWithWindowsKeys.ReadCurrentUser()?.Text == foreign, "Uninstall left the foreign Run value as it was",
+                StartWithWindowsKeys.ReadCurrentUser()?.Text ?? "absent");
+
+            var forced = new Plan(new[]
+            {
+                new PlanItem { Key = "u.run", Section = PlanSection.StartWithWindows, Action = PlanAction.RemoveIfOurs, Subject = PlanValue.Of("CPFS") },
+            });
+            var refused = new UninstallRun(forced, null, null, null, sid, null).Execute(_ => { });
+            var report = refused.Reports.FirstOrDefault(r => r.Key == "u.run");
+            Check(report is not null && report.Outcome != StepOutcome.Done && StartWithWindowsKeys.ReadCurrentUser()?.Text == foreign,
+                "the Run step refuses a foreign value even when planned", report?.Outcome.ToString() ?? "no report");
+        }
+        finally
+        {
+            if (StartWithWindowsKeys.ReadCurrentUser()?.Text == foreign)
+            {
+                StartWithWindowsKeys.DeleteCurrentUser();
+            }
+
+            Check(StartWithWindowsKeys.ReadCurrentUser() is null, "the test's foreign Run value is cleaned up");
+        }
+    }
+
+    private static string SelfSid()
+    {
+        using var identity = WindowsIdentity.GetCurrent();
+        return identity.User!.Value;
     }
 
     // The task, the exe copy it runs and what config.json records; then a run of the registered task under SYSTEM (the

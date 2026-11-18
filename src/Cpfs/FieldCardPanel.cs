@@ -22,6 +22,10 @@ public sealed class FieldCardPanel : Panel
     public static readonly DependencyProperty MinHeaderEmsProperty = DependencyProperty.Register(
         nameof(MinHeaderEms), typeof(double), typeof(FieldCardPanel), new FrameworkPropertyMetadata(14.0, FrameworkPropertyMetadataOptions.AffectsMeasure));
 
+    // Side by side, both parts start at the top instead of being centred on each other (a guide beside a tall QR code).
+    public static readonly DependencyProperty AlignTopProperty = DependencyProperty.Register(
+        nameof(AlignTop), typeof(bool), typeof(FieldCardPanel), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsArrange));
+
     public static readonly DependencyProperty FontSizeProperty = TextElement.FontSizeProperty.AddOwner(
         typeof(FieldCardPanel), new FrameworkPropertyMetadata(SystemFonts.MessageFontSize, FrameworkPropertyMetadataOptions.Inherits | FrameworkPropertyMetadataOptions.AffectsMeasure));
 
@@ -30,6 +34,12 @@ public sealed class FieldCardPanel : Panel
 
     private bool _side = true;
     private double _fieldWidth;
+
+    public bool AlignTop
+    {
+        get => (bool)GetValue(AlignTopProperty);
+        set => SetValue(AlignTopProperty, value);
+    }
 
     public bool FieldAutoWidth
     {
@@ -98,8 +108,8 @@ public sealed class FieldCardPanel : Panel
         {
             var fieldWidth = Math.Min(_fieldWidth, finalSize.Width);
             var headerWidth = Math.Max(0, finalSize.Width - fieldWidth - SideGap);
-            header?.Arrange(new Rect(0, (finalSize.Height - HeightOf(header)) / 2, headerWidth, HeightOf(header)));
-            field?.Arrange(new Rect(finalSize.Width - fieldWidth, (finalSize.Height - HeightOf(field)) / 2, fieldWidth, HeightOf(field)));
+            header?.Arrange(new Rect(0, AlignTop ? 0 : (finalSize.Height - HeightOf(header)) / 2, headerWidth, HeightOf(header)));
+            field?.Arrange(new Rect(finalSize.Width - fieldWidth, AlignTop ? 0 : (finalSize.Height - HeightOf(field)) / 2, fieldWidth, HeightOf(field)));
         }
         else
         {

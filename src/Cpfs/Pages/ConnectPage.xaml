@@ -104,7 +104,7 @@
     -->
     <DataTemplate x:Key="GuideTemplate" DataType="{x:Type pages:GuideCard}">
       <Border Margin="0,16,0,0" Padding="20" Style="{StaticResource GroupCard}">
-        <local:FieldCardPanel FieldAutoWidth="True" MinHeaderEms="18">
+        <local:FieldCardPanel AlignTop="True" FieldAutoWidth="True" MinHeaderEms="18">
           <StackPanel>
             <ItemsControl Focusable="False" ItemTemplate="{StaticResource StepTemplate}" ItemsSource="{Binding Steps}" />
             <ItemsControl Focusable="False" ItemsSource="{Binding Notes}" />
@@ -148,27 +148,38 @@
     <ui:InfoBar x:Name="RenameInfo" Margin="0,0,0,8" IsClosable="True" IsOpen="False" Severity="Warning" />
     <ui:InfoBar x:Name="StrictInfo" Margin="0,0,0,8" IsClosable="True" IsOpen="False" Severity="Informational" />
 
-    <!--  Connection details: the share address (the brand signature, its \\ in the accent), where it works, the address
-          chooser and Copy; then the username.  -->
+    <!--  Connection details: the share address on its own row (the brand signature, its leading backslashes in the
+          accent) with Copy, where it works, the address chooser; then the username with Copy.  -->
     <Border AutomationProperties.Name="{Binding [Connect_Details_Title], Source={x:Static local:Loc.Instance}}" Style="{StaticResource GroupCard}">
       <StackPanel>
         <Border Style="{StaticResource SettingsRow}">
-          <local:FieldCardPanel FieldAutoWidth="True" MinHeaderEms="16">
-            <StackPanel VerticalAlignment="Center">
-              <TextBlock
-                x:Name="AddressText"
-                AutomationProperties.Name="{Binding [Connect_Label_Unc], Source={x:Static local:Loc.Instance}}"
-                FontSize="20"
-                Style="{StaticResource Signature}">
-                <Run x:Name="AddressSlashes" Foreground="{DynamicResource CpfsSignatureBrush}" /><Run x:Name="AddressRest" />
-              </TextBlock>
-              <TextBlock x:Name="WhereText" Style="{StaticResource CardDescription}" />
-            </StackPanel>
-            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <!--  One unbreakable piece per path part (ConnectPage.ShowAddress), so a line breaks only after a
+                    backslash, never inside the host name.  -->
+              <WrapPanel
+                x:Name="AddressPanel"
+                VerticalAlignment="Center"
+                AutomationProperties.HelpText="{Binding [Connect_Label_Unc], Source={x:Static local:Loc.Instance}}"
+                FlowDirection="LeftToRight" />
+              <ui:Button
+                x:Name="CopyAddressButton"
+                Grid.Column="1"
+                Margin="12,0,0,0"
+                VerticalAlignment="Center"
+                Click="OnCopyAddress"
+                Content="{Binding [Common_Copy], Source={x:Static local:Loc.Instance}}" />
+            </Grid>
+            <TextBlock x:Name="WhereText" Margin="0,4,0,0" Style="{StaticResource CardDescription}" />
+            <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
               <ComboBox
                 x:Name="AddressBox"
-                MinWidth="160"
-                MaxWidth="280"
+                MinWidth="200"
+                MaxWidth="360"
                 AutomationProperties.HelpText="{Binding [Connect_Address_Desc], Source={x:Static local:Loc.Instance}}"
                 AutomationProperties.Name="{Binding [Connect_Address_Title], Source={x:Static local:Loc.Instance}}"
                 ItemTemplate="{StaticResource AddressTemplate}"
@@ -181,52 +192,106 @@
                 Click="OnRefresh"
                 Icon="{ui:SymbolIcon ArrowClockwise24}"
                 ToolTip="{Binding [Connect_Address_Refresh], Source={x:Static local:Loc.Instance}}" />
-              <ui:Button
-                x:Name="CopyAddressButton"
-                Margin="8,0,0,0"
-                VerticalAlignment="Center"
-                Click="OnCopyAddress"
-                Content="{Binding [Common_Copy], Source={x:Static local:Loc.Instance}}" />
             </StackPanel>
-          </local:FieldCardPanel>
+          </StackPanel>
         </Border>
         <Border Style="{StaticResource Hairline}" />
         <Border Style="{StaticResource SettingsRow}">
-          <local:FieldCardPanel FieldAutoWidth="True" MinHeaderEms="16">
-            <TextBlock VerticalAlignment="Center" Style="{StaticResource CardValue}" Text="{Binding [Connect_Label_User], Source={x:Static local:Loc.Instance}}" />
-            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-              <TextBlock
-                x:Name="UserText"
-                VerticalAlignment="Center"
-                AutomationProperties.Name="{Binding [Connect_Label_User], Source={x:Static local:Loc.Instance}}"
-                Style="{StaticResource DataValue}" />
-              <ui:Button
-                x:Name="CopyUserButton"
-                Margin="12,0,0,0"
-                VerticalAlignment="Center"
-                Click="OnCopyUser"
-                Content="{Binding [Common_Copy], Source={x:Static local:Loc.Instance}}" />
-            </StackPanel>
-          </local:FieldCardPanel>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" MinWidth="120" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock
+              Margin="0,0,16,0"
+              VerticalAlignment="Center"
+              Style="{StaticResource CardDescription}"
+              Text="{Binding [Connect_Label_User], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock
+              x:Name="UserText"
+              Grid.Column="1"
+              VerticalAlignment="Center"
+              AutomationProperties.Name="{Binding [Connect_Label_User], Source={x:Static local:Loc.Instance}}"
+              Style="{StaticResource DataValue}" />
+            <ui:Button
+              x:Name="CopyUserButton"
+              Grid.Column="2"
+              Margin="12,0,0,0"
+              VerticalAlignment="Center"
+              Click="OnCopyUser"
+              Content="{Binding [Common_Copy], Source={x:Static local:Loc.Instance}}" />
+          </Grid>
         </Border>
       </StackPanel>
     </Border>
 
-    <!--  Device tabs, phones first. One guide shows at a time; the last choice is kept in preferences.json.  -->
+    <!--  Device tabs, phones first. One guide shows at a time; the last choice is kept in preferences.json. The selected
+          tab is primary text, semibold, with a 3 px accent underline; a hairline runs under the whole row.  -->
     <TabControl
       x:Name="Tabs"
       Margin="0,24,0,0"
       AutomationProperties.Name="{Binding [Connect_Tabs_Name], Source={x:Static local:Loc.Instance}}"
       ContentTemplate="{StaticResource GuideTemplate}"
       SelectionChanged="OnTabChanged">
+      <TabControl.Template>
+        <ControlTemplate TargetType="TabControl">
+          <Grid KeyboardNavigation.TabNavigation="Local">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Border BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+              <TabPanel IsItemsHost="True" KeyboardNavigation.TabIndex="1" />
+            </Border>
+            <ContentPresenter Grid.Row="1" ContentSource="SelectedContent" KeyboardNavigation.TabIndex="2" />
+          </Grid>
+        </ControlTemplate>
+      </TabControl.Template>
       <TabControl.ItemContainerStyle>
         <Style BasedOn="{StaticResource {x:Type TabItem}}" TargetType="TabItem">
           <Setter Property="AutomationProperties.Name" Value="{Binding Title}" />
+          <Setter Property="Padding" Value="12,8" />
+          <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+          <Setter Property="Template">
+            <Setter.Value>
+              <ControlTemplate TargetType="TabItem">
+                <Grid Background="Transparent">
+                  <ContentPresenter
+                    Margin="{TemplateBinding Padding}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    ContentSource="Header"
+                    RecognizesAccessKey="True" />
+                  <Border
+                    x:Name="Underline"
+                    Height="3"
+                    VerticalAlignment="Bottom"
+                    Background="{DynamicResource CpfsSignatureBrush}"
+                    CornerRadius="1.5"
+                    Visibility="Hidden" />
+                </Grid>
+                <ControlTemplate.Triggers>
+                  <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                  </Trigger>
+                  <Trigger Property="IsSelected" Value="True">
+                    <Setter TargetName="Underline" Property="Visibility" Value="Visible" />
+                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                  </Trigger>
+                </ControlTemplate.Triggers>
+              </ControlTemplate>
+            </Setter.Value>
+          </Setter>
         </Style>
       </TabControl.ItemContainerStyle>
       <TabControl.ItemTemplate>
         <DataTemplate DataType="{x:Type pages:GuideCard}">
-          <TextBlock Text="{Binding Title}" />
+          <TextBlock
+            FontWeight="{Binding FontWeight, RelativeSource={RelativeSource AncestorType=TabItem}}"
+            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=TabItem}}"
+            Text="{Binding Title}" />
         </DataTemplate>
       </TabControl.ItemTemplate>
     </TabControl>

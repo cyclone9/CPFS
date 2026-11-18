@@ -267,6 +267,27 @@ public partial class ConnectPage : Page
 
     private void OnCopyAddress(object sender, RoutedEventArgs e) => Feedback.Copy(sender, Loc.Instance["Connect_Label_Unc"], _unc);
 
+    // Each piece is its own unwrapped text, so the panel breaks lines only after a backslash; the leading \\ is the
+    // brand signature in the accent.
+    private void ShowAddress(string unc)
+    {
+        AddressPanel.Children.Clear();
+        foreach (var piece in UncPieces.Split(unc))
+        {
+            var text = new System.Windows.Controls.TextBlock { Text = piece, FontSize = 18, TextWrapping = TextWrapping.NoWrap, TextTrimming = TextTrimming.CharacterEllipsis };
+            text.SetResourceReference(StyleProperty, "Signature");
+            if (piece == @"\\")
+            {
+                text.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, Theming.SignatureBrushKey);
+            }
+
+            AddressPanel.Children.Add(text);
+        }
+
+        AddressPanel.ToolTip = unc.Length == 0 ? null : unc;
+        System.Windows.Automation.AutomationProperties.SetName(AddressPanel, unc);
+    }
+
     private void OnCopyUser(object sender, RoutedEventArgs e) => Feedback.Copy(sender, Loc.Instance["Connect_Label_User"], _user);
 
     // The tab the user picked is kept for the next time; reading it back tolerates an unknown or missing value.
@@ -338,8 +359,7 @@ public partial class ConnectPage : Page
         if (AddressBox.SelectedItem is not AddressOption option)
         {
             WhereText.Text = "";
-            AddressSlashes.Text = "";
-            AddressRest.Text = "";
+            ShowAddress("");
             UserText.Text = "";
             _unc = "";
             _user = "";
@@ -355,11 +375,11 @@ public partial class ConnectPage : Page
             installed ? user! : loc["Connect_Placeholder_User"],
             Environment.MachineName,
             strict);
-        WhereText.Text = loc.Format("Connect_Where_Line", option.Address.ThroughVpn ? loc["Connect_Where_Vpn"] : loc["Connect_Where_Lan"], option.Description);
+        // The chooser already names the kind of address; here only where it works.
+        WhereText.Text = loc[option.Address.ThroughVpn ? "Connect_Where_Vpn" : "Connect_Where_Lan"];
         _unc = v.Unc;
         _user = v.User;
-        AddressSlashes.Text = _unc.StartsWith(@"\\", StringComparison.Ordinal) ? @"\\" : "";
-        AddressRest.Text = _unc.Substring(AddressSlashes.Text.Length);
+        ShowAddress(_unc);
         UserText.Text = _user;
         CopyAddressButton.IsEnabled = installed;
         CopyUserButton.IsEnabled = installed;

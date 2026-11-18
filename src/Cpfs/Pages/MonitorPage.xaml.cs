@@ -654,13 +654,9 @@ public partial class MonitorPage : Page
         var before = _previous?.Server.Value;
         DownNumber.Text = Size(totals?.Down);
         UpNumber.Text = Size(totals?.Up);
-        DownSub.Text = totals is null ? "" : loc.Format("Monitor_Stat_Now", Rate(MonitorMath.Rate(before?.Down, totals.Down, seconds)));
+        // The totals cover every device since the Server service started; the received side carries the current rate.
+        DownSub.Text = totals is null ? "" : loc["Monitor_Stat_Since"];
         UpSub.Text = totals is null ? "" : loc.Format("Monitor_Stat_Now", Rate(MonitorMath.Rate(before?.Up, totals.Up, seconds)));
-
-        // The totals cover every device; with exactly one connected, its current traffic is all from that one.
-        ServerNote.Text = _sessions.Rows.Count == 1 && _sessions.Rows[0] is { Session: not null } only
-            ? loc.FormatValues("Monitor_Server_DescOne", only.Shown)
-            : loc["Monitor_Server_Desc"];
 
         var error = cur.Server.Status switch
         {

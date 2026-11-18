@@ -71,8 +71,9 @@ internal static class Program
             return 0;
         }
 
-        // So the icon comes back after the user chose Exit in its menu. Never from an elevated window (design B2).
-        if (!Startup.IsElevated && Startup.Preferences.TrayIcon)
+        // So the icon comes back after the user chose Exit in its menu. Never from an elevated window (design B2), and
+        // not after Uninstall: only while CPFS is set up here.
+        if (Windows.TrayControl.AutoStartAllowed())
         {
             Windows.TrayControl.StartIfMissing("window start", TimeSpan.Zero);
         }

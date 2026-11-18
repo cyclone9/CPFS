@@ -42,6 +42,7 @@ public enum PlanSection
     Shortcut,
     DataFolder,
     Computer,
+    StartWithWindows,
 }
 
 // A value in the plan: data shown as found (a path, a number), a word the UI translates (a resource key), a word

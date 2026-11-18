@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Cpfs.Core.Config;
+using Cpfs.Core.Preferences;
 using Cpfs.Core.Validation;
 
 namespace Cpfs.Core.Planning;
@@ -54,11 +55,12 @@ public static class UninstallPlanner
         R.BuiltInMissing, R.Restore, R.RestoreValue, R.RestoreFloor, R.SettingsKept, R.Revert, R.AlwaysKept, R.NetworkPublic, R.NetworkSaved,
         R.SaveCopy, R.SaveIgnored, R.DataRemove, R.TaskRemove, R.ComputerRestore, R.ComputerRenamedSince, R.ComputerBackupInvalid, R.LabelRemove, R.IconRemove, R.DriveSession, R.DriveRemove, R.DriveForeign, R.ShortcutRemove,
         R.ExplorerRemove, R.ExplorerForeign, R.ExplorerNotLoaded, R.AutoExeRemove, R.AutoFolderRemove, R.AutoFolderForeign, R.AutoFolderNotEmpty,
+        R.RunRemove, R.RunForeign, R.RunUnread,
     };
 
     public static readonly IReadOnlyList<string> WordKeys = new[]
     {
-        S.Owner, S.Ace, S.Delete, S.Profile, S.Before, S.Restore, S.Revert, S.SaveCopy, S.SaveIgnored, S.Config, S.Kept,
+        S.Owner, S.Ace, S.Delete, S.Profile, S.Before, S.Restore, S.Revert, S.SaveCopy, S.SaveIgnored, S.Config, S.Kept, S.RunStop,
     };
 
     // A backed-up value recorded as present but without a value: it is left as it is, never written as 0.
@@ -156,6 +158,9 @@ public static class UninstallPlanner
         public const string AutoFolderRemove = "Uninst_R_AutoFolderRemove";
         public const string AutoFolderForeign = "Uninst_R_AutoFolderForeign";
         public const string AutoFolderNotEmpty = "Uninst_R_AutoFolderNotEmpty";
+        public const string RunRemove = "Uninst_R_RunRemove";
+        public const string RunForeign = "Uninst_R_RunForeign";
+        public const string RunUnread = "Uninst_R_RunUnread";
     }
 
     internal static class S
@@ -171,6 +176,7 @@ public static class UninstallPlanner
         public const string SaveIgnored = "Uninst_S_SaveIgnored";
         public const string Config = "Uninst_S_Config";
         public const string Kept = "Uninst_S_Kept";
+        public const string RunStop = "Uninst_S_RunStop";
     }
 
     private sealed class Builder
@@ -205,6 +211,7 @@ public static class UninstallPlanner
                 Add("u.config", PlanSection.Backup, PlanAction.Keep, Word(S.Config), Word(_ignored ? Planner.W.Exists : Planner.W.Absent), null,
                     _ignored ? R.ConfigIgnored : R.NoConfig);
                 Firewall();
+                StartEntry();
                 return;
             }
 
@@ -252,6 +259,7 @@ public static class UninstallPlanner
             Shares();
             StaleTask();
             QuickAccess();
+            StartEntry();
             Tasks();
             AutoPrivateCopy();
             Folder(user, info);
@@ -420,6 +428,34 @@ public static class UninstallPlanner
             else
             {
                 Add(key, PlanSection.Drive, PlanAction.Keep, subject, PlanValue.Of(entry.Name ?? "?"), null, R.ExplorerForeign, entry.TargetFolderPath ?? "?");
+            }
+        }
+
+        // The desktop user's Run value named CPFS, only in CPFS's own format; it carries CPFS's name and command, so it goes
+        // with or without config.json. Any other value of that name stays and is reported. Not a security setting, so a
+        // failed read is reported and never blocks Uninstall.
+        private void StartEntry()
+        {
+            const string key = "u.run";
+            var subject = PlanValue.Of(StartWithWindows.ValueName);
+            if (!_s.StartWithWindows.IsOk)
+            {
+                Add(key, PlanSection.StartWithWindows, PlanAction.Keep, subject, null, null, R.RunUnread, _s.StartWithWindows.Error ?? "?");
+                return;
+            }
+
+            if (_s.StartWithWindows.Value is not { } value)
+            {
+                return;
+            }
+
+            if (StartWithWindows.TargetOf(value.Text) is { } exe)
+            {
+                Add(key, PlanSection.StartWithWindows, PlanAction.RemoveIfOurs, Word(S.RunStop), PlanValue.Of(exe), Word(Planner.W.Absent), R.RunRemove);
+            }
+            else
+            {
+                Add(key, PlanSection.StartWithWindows, PlanAction.Keep, subject, PlanValue.Of(value.Text ?? "?"), null, R.RunForeign, value.Text ?? "?");
             }
         }
 

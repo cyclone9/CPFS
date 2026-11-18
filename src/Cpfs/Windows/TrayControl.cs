@@ -11,7 +11,8 @@ namespace Cpfs.Windows;
 // window (design B2): a child of an elevated window would be elevated, and the tray refuses that anyway.
 internal static class TrayControl
 {
-    public const string Verb = "--tray";
+    // A constant, so Program.Main gets the literal and loads no Cpfs.Core type for it. The Run value is built from it too.
+    public const string Verb = Core.Preferences.StartWithWindows.TrayVerb;
 
     // Named after the product, as the window's own mutex is: a renamed copy is the same tray.
     public const string MutexName = @"Local\CPFS-CyClonePowerFileShare-Tray";
@@ -73,6 +74,45 @@ internal static class TrayControl
             AppLog.Write("tray", "Could not start the tray icon (" + reason + "): " + ex.GetType().Name + ": " + ex.Message);
             return ex.Message;
         }
+    }
+
+    // The window's automatic start (TrayRules.AtWindowStart): only while a trusted config.json exists.
+    public static bool AutoStartAllowed()
+    {
+        Core.Planning.Reading<Core.Planning.DataFolderInfo> folder;
+        try
+        {
+            folder = Core.Planning.Reading.Ok(PlanReader.DataFolder());
+        }
+        catch (Exception ex) when (State.IsExpected(ex))
+        {
+            folder = Core.Planning.Reading.Failed<Core.Planning.DataFolderInfo>(ex.GetType().Name + ": " + ex.Message);
+        }
+
+        var start = Core.Planning.TrayRules.AtWindowStart(Startup.IsElevated, Startup.Preferences.TrayIcon, folder);
+        if (!start && !Startup.IsElevated && Startup.Preferences.TrayIcon)
+        {
+            AppLog.Write("tray", "Not started at window start: CPFS is not set up on this PC (" + (folder.IsOk ? "no trusted config.json" : folder.Error) + ")");
+        }
+
+        return start;
+    }
+
+    // Waits until no tray holds its mutex, up to the limit.
+    public static bool WaitUntilGone(TimeSpan limit)
+    {
+        var until = DateTime.UtcNow + limit;
+        while (IsRunning())
+        {
+            if (DateTime.UtcNow >= until)
+            {
+                return false;
+            }
+
+            Thread.Sleep(100);
+        }
+
+        return true;
     }
 
     public static void Stop(string reason)

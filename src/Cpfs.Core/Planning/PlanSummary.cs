@@ -227,6 +227,11 @@ public sealed class PlanSummary
             notices.Add(SummaryLine.Of("Summary_U_ExplorerLeft", left.Current?.Data ?? "?"));
         }
 
+        if (plan.Find("u.run") is { ReasonKey: UninstallPlanner.R.RunForeign })
+        {
+            notices.Add(SummaryLine.Of("Summary_U_RunForeignLeft"));
+        }
+
         if (plan.Find("u.config") is { ReasonKey: UninstallPlanner.R.ConfigIgnored })
         {
             notices.Add(SummaryLine.Of("Summary_U_ConfigIgnored"));

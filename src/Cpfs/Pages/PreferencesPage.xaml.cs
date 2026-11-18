@@ -52,9 +52,7 @@ public partial class PreferencesPage : Page
         TraySwitch.IsChecked = Startup.Preferences.TrayIcon;
         _syncing = false;
 
-        // Design B2: an elevated window never starts the tray, and its preferences may be another account's.
-        TraySwitch.IsEnabled = !Startup.IsElevated;
-        TrayElevatedNote.Visibility = Startup.IsElevated ? Visibility.Visible : Visibility.Collapsed;
+        InitStartWithWindows();
         Loc.Instance.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(Loc.Culture))
@@ -77,19 +75,38 @@ public partial class PreferencesPage : Page
         AppLog.Write("prefs", "Check for updates at start " + (Startup.Preferences.CheckUpdatesAtStart ? "on" : "off"));
     }
 
+    // Design B2: an elevated window never starts the tray, and its preferences may be another account's, so it may only
+    // turn the tray off.
+    private void ShowTrayAccess()
+    {
+        TraySwitch.IsEnabled = Core.Planning.TrayRules.TraySwitchEnabled(Startup.IsElevated, Startup.Preferences.TrayIcon);
+        TrayElevatedNote.Text = Loc.Instance[Startup.Preferences.TrayIcon ? "Pref_Tray_ElevatedOffOnly" : "Pref_Tray_Elevated"];
+        TrayElevatedNote.Visibility = Startup.IsElevated ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     // Saves first: the tray reads preferences.json at its start and exits when the switch there is off.
     private async void OnTraySwitch(object sender, RoutedEventArgs e)
     {
-        if (_syncing || Startup.IsElevated)
+        if (_syncing)
         {
             return;
         }
 
         var on = TraySwitch.IsChecked == true;
+        if (on && Startup.IsElevated)
+        {
+            _syncing = true;
+            TraySwitch.IsChecked = false;
+            _syncing = false;
+            return;
+        }
+
         Startup.Preferences.TrayIcon = on;
         TrayInfo.IsOpen = false;
-        AppLog.Write("prefs", "Tray icon " + (on ? "on" : "off"));
+        AppLog.Write("prefs", "Tray icon " + (on ? "on" : "off") + (Startup.IsElevated ? " (elevated window)" : ""));
         var error = Startup.SavePreferences();
+        ShowTrayAccess();
+        await OnTraySwitched(on);
         if (!on)
         {
             Windows.TrayControl.Stop("switched off in Preferences");
@@ -125,6 +142,7 @@ public partial class PreferencesPage : Page
         LanguageBox.SelectedItem = options.Find(o => o.Code == Loc.Instance.Culture.TwoLetterISOLanguageName);
         FillFonts();
         ShowTranslationState();
+        ShowTrayAccess();
         _syncing = false;
     }
 

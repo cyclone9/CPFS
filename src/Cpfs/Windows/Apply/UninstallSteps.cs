@@ -7,6 +7,7 @@ using System.Security.Principal;
 using Cpfs.Core.Apply;
 using Cpfs.Core.Config;
 using Cpfs.Core.Planning;
+using Cpfs.Core.Preferences;
 using Cpfs.Core.Text;
 
 namespace Cpfs.Windows.Apply;
@@ -63,15 +64,23 @@ internal sealed class UninstallRun
         }
 
         using var privileges = Privileges.Enable("SeSecurityPrivilege", "SeTakeOwnershipPrivilege", "SeRestorePrivilege");
-        return Executor.Run(ApplyList.Uninstall(Plan), e => UninstallSteps.For(this, e.Item), null, null, r =>
+        try
         {
-            if (r.Outcome != StepOutcome.Running)
+            return Executor.Run(ApplyList.Uninstall(Plan), e => UninstallSteps.For(this, e.Item), null, null, r =>
             {
-                AppLog.Write("uninstall", r.Outcome + " " + r.Key + (r.LogText is null ? "" : ": " + r.LogText));
-            }
+                if (r.Outcome != StepOutcome.Running)
+                {
+                    AppLog.Write("uninstall", r.Outcome + " " + r.Key + (r.LogText is null ? "" : ": " + r.LogText));
+                }
 
-            progress(r);
-        });
+                progress(r);
+            });
+        }
+        finally
+        {
+            // The owner's choice: Uninstall also closes the tray icon, best-effort (it would say "not set up" otherwise).
+            TrayControl.Stop("uninstall");
+        }
     }
 }
 
@@ -96,6 +105,7 @@ internal static class UninstallSteps
             "u.drive" => QuickAccessSteps.UninstallMap(run),
             "u.explorer" => QuickAccessSteps.UninstallExplorer(run),
             "u.shortcut" => QuickAccessSteps.UninstallShortcut(run),
+            "u.run" => StartEntry(run),
             "u.owner" => Owner(run),
             "u.ace" => Ace(run),
             "u.user.profile" => Profile(run),
@@ -117,6 +127,29 @@ internal static class UninstallSteps
             UninstallPlanner.IgnoredCopyKey => SaveIgnored(run),
             "u.data" => Data(run),
             _ => throw new NotSupportedException("No step for plan item " + key),
+        };
+    }
+
+    // The desktop user's Run value named CPFS, only while it is still in CPFS's format.
+    private static LambdaStep StartEntry(UninstallRun run)
+    {
+        var sid = run.DesktopSid?.Value ?? throw new StepUnsupportedException(SessionDrive.NoDesktopUserKey);
+        bool Gone() => StartWithWindows.TargetOf(StartWithWindowsKeys.Read(sid)?.Text) is null;
+        return new LambdaStep
+        {
+            Read = () => StartWithWindowsKeys.Read(sid) is null,
+            Do = () =>
+            {
+                var now = StartWithWindowsKeys.Read(sid);
+                if (now is not null && StartWithWindows.TargetOf(now.Text) is null)
+                {
+                    throw new StepUnsupportedException("Err_RunForeign");
+                }
+
+                AppLog.Write("uninstall", "Start with Windows: removing " + (now?.Text ?? "nothing"));
+                StartWithWindowsKeys.Delete(sid);
+            },
+            Check = Gone,
         };
     }
 

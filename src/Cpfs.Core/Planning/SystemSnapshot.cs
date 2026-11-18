@@ -205,6 +205,9 @@ public sealed record SystemSnapshot
     // CPFS's File Explorer navigation-pane entry in the desktop user's hive.
     public Reading<ExplorerHive> ExplorerEntry { get; init; } = Reading.Failed<ExplorerHive>(null);
 
+    // The desktop user's Run value named CPFS (Start with Windows); a null value means there is none.
+    public Reading<Cpfs.Core.Preferences.RunValue?> StartWithWindows { get; init; } = Reading.Failed<Cpfs.Core.Preferences.RunValue?>(null);
+
     public LetterScan Letters { get; init; } = new();
 
     public string CommonDesktop { get; init; } = @"C:\Users\Public\Desktop";

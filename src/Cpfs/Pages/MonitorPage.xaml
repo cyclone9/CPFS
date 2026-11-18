@@ -24,8 +24,8 @@
     </Style>
 
     <!--  A stat card: a label, a large number in tabular figures, and one line under it.  -->
-    <Style x:Key="StatCard" TargetType="ui:Card">
-      <Setter Property="Padding" Value="20,16" />
+    <Style x:Key="StatCard" BasedOn="{StaticResource GroupCard}" TargetType="Border">
+      <Setter Property="Padding" Value="16,12" />
       <Setter Property="VerticalAlignment" Value="Stretch" />
     </Style>
 
@@ -213,22 +213,23 @@
       </ui:Card>
 
       <StackPanel x:Name="Readings" Visibility="Collapsed">
-        <!--  Four compact numbers from data CPFS already reads: 4 columns, 2 by 2 when narrow, 1 when very narrow.  -->
+        <!--  Four compact numbers from data CPFS already reads: 4 columns from about 150 px each, 2 by 2 when narrow,
+              1 when very narrow.  -->
         <local:ColumnsPanel
           EvenRows="True"
           Gap="8"
-          ItemChrome="40"
+          ItemChrome="34"
           LogName="Monitor stats"
           MaxColumns="4"
-          MinItemEms="11">
-          <ui:Card AutomationProperties.Name="{Binding [Monitor_Stat_Devices], Source={x:Static local:Loc.Instance}}" Style="{StaticResource StatCard}">
+          MinItemEms="8">
+          <Border AutomationProperties.Name="{Binding [Monitor_Stat_Devices], Source={x:Static local:Loc.Instance}}" Style="{StaticResource StatCard}">
             <StackPanel>
               <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding [Monitor_Stat_Devices], Source={x:Static local:Loc.Instance}}" />
               <TextBlock x:Name="DevicesNumber" AutomationProperties.LiveSetting="Polite" Style="{StaticResource StatNumber}" />
               <TextBlock x:Name="DevicesSub" Style="{StaticResource CardDescription}" />
             </StackPanel>
-          </ui:Card>
-          <ui:Card
+          </Border>
+          <Border
             AutomationProperties.HelpText="{Binding [Monitor_DownTip], Source={x:Static local:Loc.Instance}}"
             AutomationProperties.Name="{Binding [Monitor_Stat_Down], Source={x:Static local:Loc.Instance}}"
             Style="{StaticResource StatCard}"
@@ -238,8 +239,8 @@
               <TextBlock x:Name="DownNumber" Style="{StaticResource StatNumber}" />
               <TextBlock x:Name="DownSub" Style="{StaticResource CardDescription}" />
             </StackPanel>
-          </ui:Card>
-          <ui:Card
+          </Border>
+          <Border
             AutomationProperties.HelpText="{Binding [Monitor_UpTip], Source={x:Static local:Loc.Instance}}"
             AutomationProperties.Name="{Binding [Monitor_Stat_Up], Source={x:Static local:Loc.Instance}}"
             Style="{StaticResource StatCard}"
@@ -249,8 +250,8 @@
               <TextBlock x:Name="UpNumber" Style="{StaticResource StatNumber}" />
               <TextBlock x:Name="UpSub" Style="{StaticResource CardDescription}" />
             </StackPanel>
-          </ui:Card>
-          <ui:Card AutomationProperties.Name="{Binding [Monitor_Stat_Fails], Source={x:Static local:Loc.Instance}}" Style="{StaticResource StatCard}">
+          </Border>
+          <Border AutomationProperties.Name="{Binding [Monitor_Stat_Fails], Source={x:Static local:Loc.Instance}}" Style="{StaticResource StatCard}">
             <StackPanel>
               <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding [Monitor_Stat_Fails], Source={x:Static local:Loc.Instance}}" />
               <TextBlock x:Name="FailsNumber" AutomationProperties.LiveSetting="Polite" Style="{StaticResource StatNumber}" />
@@ -259,9 +260,8 @@
                 <TextBlock x:Name="FailsSub" Style="{StaticResource StatusText}" />
               </StackPanel>
             </StackPanel>
-          </ui:Card>
+          </Border>
         </local:ColumnsPanel>
-        <TextBlock x:Name="ServerNote" Margin="0,8,0,0" Style="{StaticResource CardDescription}" />
         <TextBlock x:Name="ServerError" Margin="0,8,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
 
         <!--  Connected devices: the main block, one card, one row per device.  -->
