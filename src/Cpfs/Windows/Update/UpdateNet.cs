@@ -26,6 +26,9 @@ internal enum UpdateError
 
     // The previous exe could not be put back under the exe's name. Detail is the exe path.
     RollbackFailed,
+
+    // Rolled back, but the previous exe could not be started to say so. Detail is the version that did not start.
+    PreviousNotStarted,
     SaveFailed,
 }
 

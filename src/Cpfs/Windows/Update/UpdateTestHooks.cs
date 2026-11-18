@@ -35,6 +35,10 @@ internal static class UpdateTestHooks
     // The new exe answers --after-update / --update-failed without a window: the runner has no one to look at it.
     public static bool Headless => Env("CPFS_UPDATE_TEST_HEADLESS");
 
+    // The only case where a test build updates or takes the restart options while elevated: headless on a GitHub
+    // runner, whose processes are all elevated. A hooks build on a laptop never takes that path (engine review S2).
+    public static bool HeadlessOnRunner => Headless && string.Equals(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"), "true", StringComparison.Ordinal);
+
     // "--update-test-source <folder>" for a laptop test: removed from the arguments, the folder must exist.
     public static string[] TakeSource(string[] args)
     {

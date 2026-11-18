@@ -41,7 +41,7 @@ internal static class Startup
         var refuse = IsElevated;
 #if CPFS_UPDATE_TEST
         // The CI runner runs everything elevated; its headless restart is a test build's only exception.
-        refuse &= !Windows.Update.UpdateTestHooks.Headless;
+        refuse &= !Windows.Update.UpdateTestHooks.HeadlessOnRunner;
 #endif
         if ((afterUpdate ?? updateFailed) is not null && refuse)
         {

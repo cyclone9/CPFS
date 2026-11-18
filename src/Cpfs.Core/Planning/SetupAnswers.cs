@@ -60,8 +60,12 @@ public static class SetupDefaults
     public const string SharePath = @"D:\Server\Shared-Server";
     public const string ShareName = "Shared-Server";
 
-    // Quick access: bit 1 drive, bit 2 shortcut.
+    // Quick access: bit 1 drive, bit 2 shortcut. Access is the scripts' value, for a config.json without the field.
     public const int Access = 3;
+
+    // A first install starts with neither the drive letter nor the shortcut; the File Explorer entry is on (owner,
+    // dev6). Turned on, they still get the default letter and names.
+    public const int FirstInstallAccess = 0;
 
     public static string DriveNameFor(string shareName) => "CPFS - " + shareName;
 
@@ -70,7 +74,7 @@ public static class SetupDefaults
     public static SetupAnswers From(ConfigDocument? config, LetterScan letters)
     {
         var shareName = config?.ShareName ?? ShareName;
-        var access = config is null ? Access : (int)(config.Access ?? Access);
+        var access = config is null ? FirstInstallAccess : (int)(config.Access ?? Access);
         var oldLetter = config?.DriveLetter is { Length: 1 } l ? l[0] : (char?)null;
         return new SetupAnswers
         {

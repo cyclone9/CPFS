@@ -161,9 +161,13 @@ internal static class UpdateUi
                 var loc = Loc.Instance;
                 var folder = System.IO.Path.GetDirectoryName(exe) ?? "";
                 var name = System.IO.Path.GetFileName(exe);
-                var message = t.Exception?.InnerException is UpdateException { Error: UpdateError.RollbackFailed }
-                    ? loc.FormatValues("Update_Err_RollbackFailed", folder, name + UpdateRules.OldSuffix, name)
-                    : loc.FormatValues("Update_Err_Unexpected", t.Exception?.InnerException?.GetType().Name ?? "?");
+                var message = t.Exception?.InnerException switch
+                {
+                    UpdateException { Error: UpdateError.RollbackFailed } => loc.FormatValues("Update_Err_RollbackFailed", folder, name + UpdateRules.OldSuffix, name),
+                    // S6: rolled back, but the previous version could not be started to say so.
+                    UpdateException { Error: UpdateError.PreviousNotStarted } => loc.FormatValues("Update_FailedMessage", newVersion),
+                    var inner => loc.FormatValues("Update_Err_Unexpected", inner?.GetType().Name ?? "?"),
+                };
                 AppLog.Write("update", "Restart failed: " + (t.Exception?.InnerException?.GetType().Name ?? "?"));
                 System.Windows.MessageBox.Show(message, loc["Update_Err_Title"], System.Windows.MessageBoxButton.OK, MessageBoxImage.Error);
             }
@@ -261,6 +265,7 @@ internal static class UpdateUi
             UpdateError.RollbackFailed when ex.Detail is { } exe => loc.FormatValues("Update_Err_PutBackFailed",
                 System.IO.Path.GetDirectoryName(exe) ?? "", System.IO.Path.GetFileName(UpdateRules.OldPath(exe)), System.IO.Path.GetFileName(exe)),
             UpdateError.RollbackFailed => loc.FormatValues("Update_Err_PutBackFailed", "?", "?", "?"),
+            UpdateError.PreviousNotStarted => loc.FormatValues("Update_FailedMessage", ex.Detail ?? offer.Version),
             UpdateError.SaveFailed => loc.FormatValues("Update_Err_SaveFailed", ex.Detail ?? "?"),
             _ => loc["Update_Err_" + ex.Error.ToString()],
         };

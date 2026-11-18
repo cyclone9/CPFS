@@ -849,16 +849,33 @@ internal static class CiApplyTest
                 Skip(ClearChecks[1], "not proven: " + why);
             }
 
-            // Step 4: a file open by UNC; the unforced NetUseDel must not cost it.
-            o.WriteLine("Clear: connect " + ipc + " as " + user + " again: " + Code(SmbClient.Add(null, ipc, user, password, remember: false)));
+            // Step 4: the share connected by its typed name, so NetUseDel's target holds the connection, and a file open
+            // through it. Only 2401 or 2404 with the file still readable passes. 2250 means the target held nothing, so
+            // the refusal was never tried: a SKIP with that reason, never a PASS (run 44405240272 passed on 2250).
+            var held = SmbClient.Add(null, shareTarget.Remote, user, password, remember: false);
+            o.WriteLine("Clear: connect " + shareTarget.Remote + " as " + user + " for the open-file check: " + Code(held));
+            if (held != 0)
+            {
+                Skip(ClearChecks[2], "the runner could not connect " + shareTarget.Remote + " as the test user: " + Code(held));
+                return;
+            }
+
+            var heldListed = LogUses(o, "before the open-file check").Any(u => string.IsNullOrEmpty(u.Local) && SameRemote(u.Remote, shareTarget.Remote));
             try
             {
                 using var file = new FileStream(Path.Combine(unc, MarkerName), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1);
                 var refused = SmbClient.Delete(shareTarget, force: false);
                 var readable = file.ReadByte() >= 0;
                 o.WriteLine("Clear: NetUseDel " + shareTarget.Remote + " with a file open, not forced: " + Code(refused) + "; the file " + (readable ? "stays readable" : "can't be read"));
-                Check(readable && (ClientDisconnect.IsOpenFiles(refused) || refused == ServerClear.NerrUseNotFound), ClearChecks[2],
-                    Code(refused) + (readable ? ", readable" : ", not readable"));
+                if (refused == ServerClear.NerrUseNotFound)
+                {
+                    Skip(ClearChecks[2], "the runner could not make NetUseDel's target hold the connection with the open file: " + Code(refused)
+                        + (heldListed ? ", although NetUseEnum listed it" : ", and NetUseEnum did not list it"));
+                }
+                else
+                {
+                    Check(readable && ClientDisconnect.IsOpenFiles(refused), ClearChecks[2], Code(refused) + (readable ? ", readable" : ", not readable"));
+                }
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {

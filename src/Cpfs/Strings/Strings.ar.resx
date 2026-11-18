@@ -828,7 +828,7 @@
   <data name="About_GitHub" xml:space="preserve"><value>الشيفرة المصدرية على GitHub</value></data>
   <data name="About_GitHub_Help" xml:space="preserve"><value>يفتح github.com/cyclone9/CPFS في المتصفح.</value></data>
   <data name="About_Update_Title" xml:space="preserve"><value>التحديثات</value></data>
-  <data name="About_Update_Desc" xml:space="preserve"><value>يسأل GitHub عما إذا كان هناك إصدار أحدث من CPFS. لا يُنزَّل شيء ولا يُثبَّت.</value></data>
+  <data name="About_Update_Desc" xml:space="preserve"><value>يسأل GitHub إن كان هناك إصدار أحدث من CPFS. لا ينزّل CPFS الإصدار ولا يثبّته إلا عند الضغط على «التحديث الآن».</value></data>
   <data name="About_Update_Check" xml:space="preserve"><value>التحقق من وجود تحديثات</value></data>
   <data name="About_Update_Checking" xml:space="preserve"><value>جارٍ التحقق…</value></data>
   <data name="Update_Latest" xml:space="preserve"><value>لديك أحدث إصدار.</value></data>
@@ -1092,242 +1092,242 @@
   <data name="AutoResult_AlreadyRunning" xml:space="preserve"><value>لم تبدأ، لأنها كانت قيد التشغيل بالفعل.</value></data>
   <data name="AutoResult_ProgramNotFound" xml:space="preserve"><value>تعذّر على Windows تشغيلها: نسخة CPFS في Program Files\CPFS مفقودة. شغّل الإعداد مرة أخرى.</value></data>
   <data name="AutoResult_Other" xml:space="preserve"><value>انتهت بالرمز {0}.</value></data>
-  <data name="Nav_Connections" xml:space="preserve"><value>This PC's connections</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Title" xml:space="preserve"><value>This PC's connections</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Intro" xml:space="preserve"><value>Shared folders on other computers that this PC is connected to, as Windows keeps them for your account. Disconnect here ends only this PC's connection. It doesn't touch the shared folder CPFS sets up, or any files on the server.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Admin_Title" xml:space="preserve"><value>This window is running as administrator</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Admin_Msg" xml:space="preserve"><value>You chose Continue as administrator on another page, so this window has administrator rights. Windows keeps connections made without those rights separate, so they can't be listed here. To see them, close this window and start CPFS again, or reopen it without administrator rights.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_List_Title" xml:space="preserve"><value>Connected shared folders</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_List_Desc" xml:space="preserve"><value>Grouped by server, named the way Windows keeps it. A server reached once by name and once by IP address appears twice, because Windows counts them as two servers.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Refresh" xml:space="preserve"><value>Refresh the list</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Empty" xml:space="preserve"><value>This PC isn't connected to any shared folder right now.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_ReadFailed_Title" xml:space="preserve"><value>Couldn't read this PC's connections</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_SavedFailed_Title" xml:space="preserve"><value>Couldn't read the saved drives</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_SavedFailed_Msg" xml:space="preserve"><value>Drives that reconnect at sign-in may be missing from the list. Windows said: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Label_Server" xml:space="preserve"><value>Server</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_ThisPc" xml:space="preserve"><value>This PC</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_SignIn" xml:space="preserve"><value>This is the sign-in connection. Windows keeps it after you sign in to this server, even when no folder is open.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Label_Drive" xml:space="preserve"><value>Drive letter</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_NoDrive" xml:space="preserve"><value>No drive letter</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Label_Account" xml:space="preserve"><value>Account</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_AccountUnknown" xml:space="preserve"><value>Not known until it connects</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Label_State" xml:space="preserve"><value>State</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_State_Connected" xml:space="preserve"><value>Connected</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_State_Reconnecting" xml:space="preserve"><value>Reconnecting</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_State_Disconnected" xml:space="preserve"><value>Disconnected</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_State_Saved" xml:space="preserve"><value>Saved but not connected</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Label_Reconnects" xml:space="preserve"><value>Reconnects at sign-in</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Empty_Desc" xml:space="preserve"><value>A shared folder on another computer appears here once this PC opens it.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Col_Share" xml:space="preserve"><value>Share</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Col_Drive" xml:space="preserve"><value>Drive</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Disconnect" xml:space="preserve"><value>Disconnect</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_DisconnectAll" xml:space="preserve"><value>Disconnect all</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_DisconnectName" xml:space="preserve"><value>Disconnect {0} on {1}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_DisconnectAllName" xml:space="preserve"><value>Disconnect all connections to {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_SignInShort" xml:space="preserve"><value>Sign-in connection</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_RefreshShort" xml:space="preserve"><value>Refresh</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Count_None" xml:space="preserve"><value>No connections</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Count_One" xml:space="preserve"><value>{0} connection to {1} server</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Count_OneServer" xml:space="preserve"><value>{0} connections to {1} server</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Count_Many" xml:space="preserve"><value>{0} connections to {1} servers</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_1219_Title" xml:space="preserve"><value>Windows refuses a second username</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_1219_Desc" xml:space="preserve"><value>What to do when Windows says a server is already connected under another username (error 1219).</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_1219_WindowsSays" xml:space="preserve"><value>Windows' message:</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_1219_Rule" xml:space="preserve"><value>Windows allows one username per server at a time. To sign in to a server as someone else, first use Disconnect all on that server in the list, then connect again.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_1219_NothingListed" xml:space="preserve"><value>If that server isn't listed and Windows still refuses, Windows is holding a connection it opened itself. Signing out of Windows and back in ends it.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_1219_Ip" xml:space="preserve"><value>Windows goes by the server name you type. Connecting by the server's IP address instead of its name counts as connecting to a different server, so it can use another username. This is Microsoft's own workaround for this error (KB 938120).</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_1219_Saved" xml:space="preserve"><value>Windows can also keep a saved username and password for a server. Credential Manager shows the saved ones. CPFS only opens it. It never reads or changes what's saved there.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_OpenCredMan" xml:space="preserve"><value>Open Credential Manager</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_CredManFailed" xml:space="preserve"><value>Couldn't open Credential Manager: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Disconnect_Title" xml:space="preserve"><value>Disconnect this PC's connection?</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Disconnect_Msg" xml:space="preserve"><value>This PC's connection to {0} on {1} (account {2}) will end. Programs that use files there lose access. Nothing on the server changes.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Disconnect_MsgDrive" xml:space="preserve"><value>This PC's drive {2}, which shows {0} on {1} (account {3}), will be disconnected. Programs that use files on it lose access. Nothing on the server changes.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Disconnect_MsgDriveSaved" xml:space="preserve"><value>This PC's drive {2}, which shows {0} on {1} (account {3}), will be disconnected. It is set to reconnect at sign-in, so Windows will also forget it until you map it again. Programs that use files on it lose access. Nothing on the server changes.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Disconnect_MsgSignIn" xml:space="preserve"><value>This PC's sign-in connection to {0} (account {1}) will end. The next time this PC opens a folder on that server, Windows asks for a username again. Nothing on the server changes.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Disconnect_Confirm" xml:space="preserve"><value>Disconnect</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Force_Title" xml:space="preserve"><value>Files are open on this connection</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Force_Msg" xml:space="preserve"><value>Windows says files or folders on {0} on {1} are open. If you disconnect anyway, they close, and any changes you haven't saved in them can be lost. Save your work and close them first if you can.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Force_Confirm" xml:space="preserve"><value>Disconnect anyway</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_KeptOpen" xml:space="preserve"><value>{0} on {1} stays connected.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Done" xml:space="preserve"><value>{0} on {1} was disconnected.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_StillListed" xml:space="preserve"><value>Windows accepted the request, but {0} on {1} is still listed.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Failed" xml:space="preserve"><value>Couldn't disconnect {0} on {1}: {2}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_StillThere" xml:space="preserve"><value>It is still listed.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_All_Title" xml:space="preserve"><value>Disconnect all connections to this server?</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_All_Msg" xml:space="preserve"><value>This PC's connections to {0}, listed below, will be disconnected one after another. Drives are also forgotten, so they don't reconnect at sign-in. A connection with open files is left as it is and reported. Nothing on the server changes.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_All_Line" xml:space="preserve"><value>Share {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_All_LineDrive" xml:space="preserve"><value>Share {0}, drive {1}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_All_Confirm" xml:space="preserve"><value>Disconnect all</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_All_OpenFiles" xml:space="preserve"><value>Files are open on {0}, so it stays connected. Use that connection's own Disconnect to close it anyway.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_All_Done" xml:space="preserve"><value>{0} of {1} connections disconnected</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Common_Copy" xml:space="preserve"><value>Copy</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Group_Share" xml:space="preserve"><value>What to share</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Group_Who" xml:space="preserve"><value>Who can connect</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Group_Quick" xml:space="preserve"><value>Quick access</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Status_On" xml:space="preserve"><value>Sharing is on</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Status_NotRunning" xml:space="preserve"><value>Set up, but sharing is off</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Status_NotRunning_Desc" xml:space="preserve"><value>The folder isn't shared right now, or the Server service is stopped. Show details lists what Apply would put back.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Status_Unknown" xml:space="preserve"><value>CPFS is set up</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Status_Unknown_Desc" xml:space="preserve"><value>Whether sharing is on can't be read without administrator rights.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Status_Unknown_DescAdmin" xml:space="preserve"><value>CPFS couldn't read whether sharing is on. Show details says what couldn't be read.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Status_AddressName" xml:space="preserve"><value>Share address</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Status_Copy" xml:space="preserve"><value>Copy the share address</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Status_OpenFolder" xml:space="preserve"><value>Open folder</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Setup_Status_OpenFailed" xml:space="preserve"><value>Couldn't open the folder</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Status_Net_Private" xml:space="preserve"><value>Private network</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Status_Net_Public" xml:space="preserve"><value>Public network, so devices can't connect</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Status_Net_None" xml:space="preserve"><value>No network connected</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Status_Encrypt_On" xml:space="preserve"><value>Encryption required</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Status_Encrypt_Off" xml:space="preserve"><value>Encryption not required</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Status_Firewall_Private" xml:space="preserve"><value>Firewall: Private networks only</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Status_Firewall_Changed" xml:space="preserve"><value>Firewall rule missing or changed</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Updated" xml:space="preserve"><value>Updated {0} s ago</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Stat_Devices" xml:space="preserve"><value>Connected devices</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Stat_Down" xml:space="preserve"><value>Sent to devices</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Stat_Up" xml:space="preserve"><value>Received from devices</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Stat_Fails" xml:space="preserve"><value>Failed sign-ins, last 24 hours</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Stat_ViaVpn" xml:space="preserve"><value>{0} through the VPN</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Stat_NoneViaVpn" xml:space="preserve"><value>None through the VPN</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Stat_Now" xml:space="preserve"><value>{0} now</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Stat_AtLeast" xml:space="preserve"><value>{0} or more</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Stat_FailsNone" xml:space="preserve"><value>None</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Stat_FailsSee" xml:space="preserve"><value>Listed below</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Files_TitleShort" xml:space="preserve"><value>Being copied now</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Device_Connection" xml:space="preserve"><value>{0} · connected for {1}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Device_Lan" xml:space="preserve"><value>On the local network</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Device_Smb" xml:space="preserve"><value>SMB {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Device_NoFiles" xml:space="preserve"><value>No open files</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Device_OneFile" xml:space="preserve"><value>{0} open file</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Device_Files" xml:space="preserve"><value>{0} open files</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Device_More" xml:space="preserve"><value>More actions</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Device_MoreName" xml:space="preserve"><value>More actions for {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_File_Who" xml:space="preserve"><value>{0}, signed in as {1}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Details_Title" xml:space="preserve"><value>Connection details</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Qr_NoPassword" xml:space="preserve"><value>The code doesn't contain a password.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Tabs_Name" xml:space="preserve"><value>Devices</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connect_Win_Step5" xml:space="preserve"><value>If Windows on that PC says multiple connections to a server by the same user, using more than one user name, aren't allowed (error 1219), it's already connected to this PC under another username. Open CPFS on that PC and disconnect it in This PC's connections, or sign out of Windows there and back in.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Tray_Status_Reading" xml:space="preserve"><value>Checking sharing…</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Tray_Status_NotSetUp" xml:space="preserve"><value>Not set up on this PC</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Tray_Status_Off" xml:space="preserve"><value>Sharing is off</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Tray_Status_OnPrivate" xml:space="preserve"><value>Sharing is on (Private network)</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Tray_Status_OnPublic" xml:space="preserve"><value>Sharing is on, network is Public</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Tray_Status_PublicHint" xml:space="preserve"><value>Other devices can't connect on a Public network</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Tray_Status_OnNoNetwork" xml:space="preserve"><value>Sharing is on, no network</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Tray_Status_Unknown" xml:space="preserve"><value>Couldn't read sharing state</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Tray_OpenCpfs" xml:space="preserve"><value>Open CPFS</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Tray_OpenFolder" xml:space="preserve"><value>Open the shared folder</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Tray_Exit" xml:space="preserve"><value>Exit</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Tray_OpenFailed" xml:space="preserve"><value>Windows couldn't open it: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Tray_Title" xml:space="preserve"><value>Tray icon</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Tray_Desc" xml:space="preserve"><value>Shows in the notification area whether sharing is on. It runs without administrator rights.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Tray_Elevated" xml:space="preserve"><value>This window runs as administrator, so the tray icon can't be changed here. Open CPFS without administrator rights to change it.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Tray_StartFailed" xml:space="preserve"><value>CPFS couldn't start the tray icon</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Start_Title" xml:space="preserve"><value>Start with Windows</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Start_Desc" xml:space="preserve"><value>Shows the tray icon when you sign in to Windows.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Start_NeedsTray" xml:space="preserve"><value>Switch on the tray icon first.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Start_ReadFailed" xml:space="preserve"><value>CPFS couldn't check whether it starts with Windows: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Start_OtherCopy" xml:space="preserve"><value>Windows starts CPFS from {0} when you sign in.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Start_Missing" xml:space="preserve"><value>The copy of CPFS that Windows starts at sign-in is gone ({0}).</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Start_Foreign" xml:space="preserve"><value>Windows has a startup entry named CPFS that isn't CPFS's own: {0}. CPFS leaves it as it is unless you select Use this copy.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Start_UseThis" xml:space="preserve"><value>Use this copy</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Start_Disabled" xml:space="preserve"><value>CPFS is turned off in Startup apps in Windows Settings, so the tray icon won't start when you sign in.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Start_OpenSettings" xml:space="preserve"><value>Open Startup apps</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Start_PathTooLong" xml:space="preserve"><value>The path to this copy of CPFS is too long for Windows to start it at sign-in. Move CPFS to a folder with a shorter path.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Start_PathRefused" xml:space="preserve"><value>This copy of CPFS can't start with Windows, because its path contains a " or a %: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Start_Failed" xml:space="preserve"><value>CPFS couldn't change Start with Windows: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Start_OldTrayRunning" xml:space="preserve"><value>The running tray icon didn't close within 3 seconds. Select Exit in its menu, then select Use this copy again.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Start_TrayNotStarted" xml:space="preserve"><value>CPFS will start with Windows from this copy, but its tray icon couldn't start now: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Pref_Tray_ElevatedOffOnly" xml:space="preserve"><value>This window runs as administrator. You can turn the tray icon off here. To turn it on, open CPFS without administrator rights.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Plan_Section_StartWithWindows" xml:space="preserve"><value>Start with Windows</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Uninst_S_RunStop" xml:space="preserve"><value>Stop starting CPFS with Windows</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Uninst_R_RunRemove" xml:space="preserve"><value>The tray icon no longer starts when the desktop user signs in to Windows.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Uninst_R_RunForeign" xml:space="preserve"><value>A startup entry named CPFS isn't CPFS's own, so it is left as it is: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Uninst_R_RunUnread" xml:space="preserve"><value>CPFS couldn't check whether it starts with Windows for the desktop user, so nothing is changed there: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_U_RunForeignLeft" xml:space="preserve"><value>A startup entry named CPFS that isn't CPFS's own stays as it is.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Err_RunForeign" xml:space="preserve"><value>The startup entry named CPFS changed after the plan was read and is no longer CPFS's own, so it was left as it is.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Err_RunHiveNotLoaded" xml:space="preserve"><value>Windows can't reach the desktop user's settings because that user isn't signed in, so Start with Windows can't be checked or changed.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Monitor_Stat_Since" xml:space="preserve"><value>since the file sharing service started</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="About_Update_Now" xml:space="preserve"><value>Update now</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="About_Update_AdminOff" xml:space="preserve"><value>CPFS doesn't update itself from a window that runs as administrator. Close this window and start CPFS normally to update.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="About_Update_NotOffered" xml:space="preserve"><value>CPFS can't install this release itself. You can download it from its release page.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="About_Update_WhatsNew" xml:space="preserve"><value>What's new</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_ConfirmTitle" xml:space="preserve"><value>Update CPFS to version {0}?</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_ConfirmDownload" xml:space="preserve"><value>CPFS downloads version {0} ({1}) from its release on GitHub and compares it with the SHA-256 checksum published there.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_ConfirmLimit" xml:space="preserve"><value>The checksum shows that the download isn't damaged. It doesn't show who made the file, because CPFS isn't signed yet.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_ConfirmInPlace" xml:space="preserve"><value>CPFS then replaces {0} and restarts. It keeps the version you have now until the new one has started. The copy in Program Files changes only when you press Apply in Setup.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_ConfirmSaveAs" xml:space="preserve"><value>This copy of CPFS runs from a network drive, so CPFS doesn't replace it and doesn't restart. After the check, you choose where to save the new version. The copy in Program Files changes only when you press Apply in Setup.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_ConfirmFrom" xml:space="preserve"><value>Download: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_ConfirmTo" xml:space="preserve"><value>File: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_ConfirmButton" xml:space="preserve"><value>Update now</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_ConfirmSaveButton" xml:space="preserve"><value>Download</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_ProgressTitle" xml:space="preserve"><value>Updating CPFS</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Step_Download" xml:space="preserve"><value>Downloading version {0}…</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Step_DownloadBytes" xml:space="preserve"><value>Downloading version {0}: {1} of {2}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Step_Check" xml:space="preserve"><value>Checking the download…</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Step_Probe" xml:space="preserve"><value>Starting the new version once to check that it runs…</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Step_Swap" xml:space="preserve"><value>Replacing the file…</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Step_Restart" xml:space="preserve"><value>Restarting CPFS…</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_Title" xml:space="preserve"><value>Update not finished</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_Cancelled" xml:space="preserve"><value>The update was cancelled. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_Network" xml:space="preserve"><value>CPFS couldn't download the update. Check the internet connection and try again. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_RateLimited" xml:space="preserve"><value>GitHub asks to wait before the next download. Try again later. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_WrongHost" xml:space="preserve"><value>The download was redirected to a server CPFS doesn't download from. Nothing was replaced. You can get the release from its page.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_Missing" xml:space="preserve"><value>The release doesn't have the file CPFS needs. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_TooLarge" xml:space="preserve"><value>The download is larger than a CPFS release can be. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_Damaged" xml:space="preserve"><value>The download doesn't match its checksum, so it may be damaged. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_WrongVersion" xml:space="preserve"><value>The downloaded file isn't version {0}. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_ProbeFailed" xml:space="preserve"><value>Windows or your antivirus didn't let the new version start. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_CannotWrite" xml:space="preserve"><value>CPFS can't write to the folder it runs from. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_Leftover" xml:space="preserve"><value>A file from an earlier update is still in use: {0}. Select Exit in the CPFS tray icon's menu and try again. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_SwapFailed" xml:space="preserve"><value>CPFS couldn't put the new version in place, so the version you have stays. Windows said: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_SaveFailed" xml:space="preserve"><value>CPFS couldn't save the file there. Choose another folder. Windows said: {0}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_Unexpected" xml:space="preserve"><value>The update stopped on an unexpected error ({0}). Copy the report below and send it when you ask for help.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_BackgroundCopy" xml:space="preserve"><value>This is the background copy that Auto-Private runs. Setup's Apply is the only way to update it.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_RollbackFailed" xml:space="preserve"><value>The new version didn't start, and CPFS couldn't put the previous one back. In the folder {0}, rename {1} to {2}.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_SwapReadBack" xml:space="preserve"><value>CPFS put the new version in place, but the file didn't read back as the one it downloaded, so CPFS put the version you have back.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Err_PutBackFailed" xml:space="preserve"><value>CPFS couldn't finish the update, and it couldn't put the version you had back. In the folder {0}, rename {1} to {2}. If a file named {2} is already there, rename that file first.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_SaveAs_Title" xml:space="preserve"><value>Save the new version</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_SaveAs_WhyWrite" xml:space="preserve"><value>CPFS can't write to the folder it runs from, and it never asks for administrator rights to replace itself. It has downloaded the new version and checked it against its checksum. Choose a folder to save it in.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_SaveAs_Button" xml:space="preserve"><value>Save as…</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_SaveAs_Filter" xml:space="preserve"><value>Programs (*.exe)|*.exe</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_NotSaved" xml:space="preserve"><value>The new version wasn't saved. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_Saved" xml:space="preserve"><value>Version {0} is saved as {1}. Start CPFS from that file. Your shortcuts and the Start with Windows entry still open the old file. In Preferences, you can point the Start with Windows entry at the new one.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_ShowInFolder" xml:space="preserve"><value>Show in folder</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_DoneTitle" xml:space="preserve"><value>CPFS updated</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_DoneMessage" xml:space="preserve"><value>CPFS is now version {0}.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_DoneAutoPrivate" xml:space="preserve"><value>Auto-Private still uses version {0}. The copy in Program Files changes only when you press Apply in Setup.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_FailedTitle" xml:space="preserve"><value>Update not installed</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Update_FailedMessage" xml:space="preserve"><value>Version {0} didn't start, so CPFS put back the version you had. Nothing else changed.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Plan_R_AutoExeNewer" xml:space="preserve"><value>The background copy is version {0}, newer than this one ({1}). Tick this to replace it with the older version anyway.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Summary_AutoPrivateCopy" xml:space="preserve"><value>Auto-Private still uses version {0}. This Apply updates it to the version you are running.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="App_UpdateTestBuild" xml:space="preserve"><value>{0} (update test build)</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Reopen" xml:space="preserve"><value>Reopen without administrator rights</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Reopen_Failed" xml:space="preserve"><value>CPFS couldn't reopen without administrator rights. Close this window and start CPFS again.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Reopen_NoUser" xml:space="preserve"><value>CPFS couldn't find the user signed in to this PC. Close this window and start CPFS again.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_Title" xml:space="preserve"><value>End connections to a server</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_Desc" xml:space="preserve"><value>Type the server the way you did when you connected, such as MyPC, MyPC.local or 192.168.1.20. You can also add one shared folder: \\MyPC\Share. Drives with a letter aren't changed.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_Label" xml:space="preserve"><value>Server</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_Button" xml:space="preserve"><value>End connections to this server</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_ErrEmpty" xml:space="preserve"><value>Type a server name or IP address.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_ErrDevice" xml:space="preserve"><value>Type a server, not a drive letter.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_ErrWildcard" xml:space="preserve"><value>Wildcards such as * and ? can't be used.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_ErrPath" xml:space="preserve"><value>Type only the server, or the server and one shared folder, such as \\MyPC\Share.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_ErrServer" xml:space="preserve"><value>That isn't a valid server name or IP address.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_ErrNotSmb" xml:space="preserve"><value>That name belongs to another kind of network drive. CPFS ends only shared-folder (SMB) connections.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_ErrShare" xml:space="preserve"><value>That isn't a valid shared folder name.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_Listed" xml:space="preserve"><value>{0} is in the list above. Use its Disconnect all, which shows each connection first.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_ConfirmTitle" xml:space="preserve"><value>End connections to this server?</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_ConfirmMsg" xml:space="preserve"><value>CPFS asks Windows to end your connections to {0}. Files on that server stay as they are, and nothing on this PC is deleted. If files are open, CPFS asks you again first, and unsaved changes in them may be lost.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_Confirm" xml:space="preserve"><value>End connections</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_Ended" xml:space="preserve"><value>{0}: ended.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_NotHeld" xml:space="preserve"><value>{0}: Windows has no connection by this name that CPFS can end.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_OpenFiles" xml:space="preserve"><value>{0}: files are open on it, so it stays connected.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_Failed" xml:space="preserve"><value>{0}: Windows refused: {1}</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_DoneTitle" xml:space="preserve"><value>Connections to this server</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_NothingTitle" xml:space="preserve"><value>Nothing to end</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Clear_TryRemedies" xml:space="preserve"><value>If Windows still refuses another username, try the steps under "If Windows still refuses".</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Remedies_Title" xml:space="preserve"><value>If Windows still refuses</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Remedy_Close" xml:space="preserve"><value>Close every window and app that uses that server, then try again.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Apply_RpSkippedNamedMsg" xml:space="preserve"><value>Windows most likely skipped a new restore point because it already made one in the last 24 hours. The newest is “{1}”, from {0}. Continue without a new one?</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Apply_RpWhere" xml:space="preserve"><value>Find it under Control Panel &gt; Recovery &gt; Open System Restore.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Nav_Connections" xml:space="preserve"><value>مجلدات مشتركة على أجهزة كمبيوتر أخرى</value></data>
+  <data name="Connections_Title" xml:space="preserve"><value>مجلدات مشتركة على أجهزة كمبيوتر أخرى</value></data>
+  <data name="Connections_Intro" xml:space="preserve"><value>المجلدات المشتركة التي فتحها هذا الكمبيوتر على أجهزة كمبيوتر أخرى، كما يحتفظ بها Windows لحسابك. أما الأجهزة المتصلة بالمجلد المشترك على هذا الكمبيوتر نفسه فتجدها في «المراقبة». لا ينهي «قطع الاتصال» هنا إلا اتصال هذا الكمبيوتر. ولا يمس المجلد المشترك الذي يُعدّه CPFS، ولا أي ملفات على الخادم.</value></data>
+  <data name="Connections_Admin_Title" xml:space="preserve"><value>تعمل هذه النافذة بصلاحيات المسؤول</value></data>
+  <data name="Connections_Admin_Msg" xml:space="preserve"><value>اخترتَ «المتابعة كمسؤول» في صفحة أخرى، لذلك تملك هذه النافذة صلاحيات المسؤول. يُبقي Windows الاتصالات التي أُجريت دون هذه الصلاحيات منفصلة، فلا يمكن عرضها هنا. لعرضها أغلق هذه النافذة وشغّل CPFS من جديد، أو أعد فتحها دون صلاحيات المسؤول.</value></data>
+  <data name="Connections_List_Title" xml:space="preserve"><value>المجلدات المشتركة المتصلة</value></data>
+  <data name="Connections_List_Desc" xml:space="preserve"><value>مجمّعة حسب الخادم وبالاسم الذي يحتفظ به Windows. يظهر الخادم الذي جرى الاتصال به مرة بالاسم ومرة بعنوان IP مرتين، لأن Windows يعدّهما خادمين.</value></data>
+  <data name="Connections_Refresh" xml:space="preserve"><value>تحديث القائمة</value></data>
+  <data name="Connections_Empty" xml:space="preserve"><value>هذا الكمبيوتر غير متصل بأي مجلد مشترك الآن.</value></data>
+  <data name="Connections_ReadFailed_Title" xml:space="preserve"><value>تعذّرت قراءة اتصالات هذا الكمبيوتر</value></data>
+  <data name="Connections_SavedFailed_Title" xml:space="preserve"><value>تعذّرت قراءة المحركات المحفوظة</value></data>
+  <data name="Connections_SavedFailed_Msg" xml:space="preserve"><value>قد تغيب عن القائمة المحركات التي يُعاد اتصالها عند تسجيل الدخول. رسالة Windows: {0}</value></data>
+  <data name="Connections_Label_Server" xml:space="preserve"><value>الخادم</value></data>
+  <data name="Connections_ThisPc" xml:space="preserve"><value>هذا الكمبيوتر</value></data>
+  <data name="Connections_SignIn" xml:space="preserve"><value>هذا اتصال تسجيل الدخول. يحتفظ به Windows بعد أن تسجّل الدخول إلى هذا الخادم، حتى عندما لا يكون أي مجلد مفتوحًا.</value></data>
+  <data name="Connections_Label_Drive" xml:space="preserve"><value>حرف محرك الأقراص</value></data>
+  <data name="Connections_NoDrive" xml:space="preserve"><value>بلا حرف محرك أقراص</value></data>
+  <data name="Connections_Label_Account" xml:space="preserve"><value>الحساب</value></data>
+  <data name="Connections_AccountUnknown" xml:space="preserve"><value>لا يُعرف قبل الاتصال</value></data>
+  <data name="Connections_Label_State" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Connections_State_Connected" xml:space="preserve"><value>متصل</value></data>
+  <data name="Connections_State_Reconnecting" xml:space="preserve"><value>جارٍ إعادة الاتصال</value></data>
+  <data name="Connections_State_Disconnected" xml:space="preserve"><value>مقطوع الاتصال</value></data>
+  <data name="Connections_State_Saved" xml:space="preserve"><value>محفوظ لكن غير متصل</value></data>
+  <data name="Connections_Label_Reconnects" xml:space="preserve"><value>يُعاد الاتصال عند تسجيل الدخول</value></data>
+  <data name="Connections_Empty_Desc" xml:space="preserve"><value>يظهر هنا المجلد المشترك على كمبيوتر آخر بمجرد أن يفتحه هذا الكمبيوتر.</value></data>
+  <data name="Connections_Col_Share" xml:space="preserve"><value>المشاركة</value></data>
+  <data name="Connections_Col_Drive" xml:space="preserve"><value>المحرك</value></data>
+  <data name="Connections_Disconnect" xml:space="preserve"><value>قطع الاتصال</value></data>
+  <data name="Connections_DisconnectAll" xml:space="preserve"><value>قطع كل الاتصالات</value></data>
+  <data name="Connections_DisconnectName" xml:space="preserve"><value>قطع الاتصال بـ{0} على {1}</value></data>
+  <data name="Connections_DisconnectAllName" xml:space="preserve"><value>قطع كل الاتصالات بـ{0}</value></data>
+  <data name="Connections_SignInShort" xml:space="preserve"><value>اتصال تسجيل الدخول</value></data>
+  <data name="Connections_RefreshShort" xml:space="preserve"><value>تحديث</value></data>
+  <data name="Connections_Count_None" xml:space="preserve"><value>لا اتصالات</value></data>
+  <data name="Connections_Count_One" xml:space="preserve"><value>{0} اتصال إلى {1} خادم</value></data>
+  <data name="Connections_Count_OneServer" xml:space="preserve"><value>{0} اتصالات إلى {1} خادم</value></data>
+  <data name="Connections_Count_Many" xml:space="preserve"><value>{0} اتصالات إلى {1} خوادم</value></data>
+  <data name="Connections_1219_Title" xml:space="preserve"><value>يرفض Windows اسم مستخدم ثانيًا</value></data>
+  <data name="Connections_1219_Desc" xml:space="preserve"><value>ما يجب فعله عندما يقول Windows إن الخادم متصل بالفعل باسم مستخدم آخر (الخطأ 1219).</value></data>
+  <data name="Connections_1219_WindowsSays" xml:space="preserve"><value>رسالة Windows:</value></data>
+  <data name="Connections_1219_Rule" xml:space="preserve"><value>لا يسمح Windows إلا باسم مستخدم واحد لكل خادم في الوقت نفسه. للدخول إلى خادم باسم مستخدم آخر، استخدم أولًا «قطع كل الاتصالات» لذلك الخادم في القائمة، ثم اتصل من جديد.</value></data>
+  <data name="Connections_1219_NothingListed" xml:space="preserve"><value>إن لم يكن ذلك الخادم في القائمة ورفض Windows مع ذلك، فإن Windows يحتفظ باتصال فتحه بنفسه. ينهيه تسجيل الخروج من Windows ثم تسجيل الدخول من جديد.</value></data>
+  <data name="Connections_1219_Ip" xml:space="preserve"><value>يعتمد Windows على اسم الخادم الذي تكتبه. والاتصال بعنوان IP الخادم بدلًا من اسمه يُعدّ اتصالًا بخادم آخر، فيمكن أن يستخدم اسم مستخدم آخر. وهذا هو الحل الذي تقترحه Microsoft نفسها لهذا الخطأ (KB 938120).</value></data>
+  <data name="Connections_1219_Saved" xml:space="preserve"><value>يستطيع Windows أيضًا حفظ اسم مستخدم وكلمة مرور لخادم. يعرض «إدارة بيانات الاعتماد» (Credential Manager) المحفوظ منها. لا يفعل CPFS سوى فتحه، ولا يقرأ ما حُفظ هناك ولا يغيّره أبدًا.</value></data>
+  <data name="Connections_OpenCredMan" xml:space="preserve"><value>فتح إدارة بيانات الاعتماد</value></data>
+  <data name="Connections_CredManFailed" xml:space="preserve"><value>تعذّر فتح إدارة بيانات الاعتماد: {0}</value></data>
+  <data name="Connections_Disconnect_Title" xml:space="preserve"><value>هل تريد قطع اتصال هذا الكمبيوتر؟</value></data>
+  <data name="Connections_Disconnect_Msg" xml:space="preserve"><value>سينتهي اتصال هذا الكمبيوتر بـ{0} على {1} (الحساب {2}). وستفقد البرامج التي تستخدم الملفات هناك إمكانية الوصول. لا يتغير شيء على الخادم.</value></data>
+  <data name="Connections_Disconnect_MsgDrive" xml:space="preserve"><value>سيُقطع اتصال محرك هذا الكمبيوتر {2} الذي يعرض {0} على {1} (الحساب {3}). وستفقد البرامج التي تستخدم الملفات عليه إمكانية الوصول. لا يتغير شيء على الخادم.</value></data>
+  <data name="Connections_Disconnect_MsgDriveSaved" xml:space="preserve"><value>سيُقطع اتصال محرك هذا الكمبيوتر {2} الذي يعرض {0} على {1} (الحساب {3}). وهو مضبوط على إعادة الاتصال عند تسجيل الدخول، لذلك سينساه Windows أيضًا إلى أن تعيّنه من جديد. وستفقد البرامج التي تستخدم الملفات عليه إمكانية الوصول. لا يتغير شيء على الخادم.</value></data>
+  <data name="Connections_Disconnect_MsgSignIn" xml:space="preserve"><value>سينتهي اتصال تسجيل الدخول لهذا الكمبيوتر بـ{0} (الحساب {1}). وفي المرة التالية التي يفتح فيها هذا الكمبيوتر مجلدًا على ذلك الخادم، يطلب Windows اسم مستخدم مرة أخرى. لا يتغير شيء على الخادم.</value></data>
+  <data name="Connections_Disconnect_Confirm" xml:space="preserve"><value>قطع الاتصال</value></data>
+  <data name="Connections_Force_Title" xml:space="preserve"><value>توجد ملفات مفتوحة على هذا الاتصال</value></data>
+  <data name="Connections_Force_Msg" xml:space="preserve"><value>يفيد Windows بأن ملفات أو مجلدات على {0} في {1} مفتوحة. إن قطعت الاتصال على أي حال فستُغلق، وقد تضيع أي تغييرات لم تحفظها فيها. احفظ عملك وأغلقها أولًا إن أمكن.</value></data>
+  <data name="Connections_Force_Confirm" xml:space="preserve"><value>قطع الاتصال على أي حال</value></data>
+  <data name="Connections_KeptOpen" xml:space="preserve"><value>يبقى {0} على {1} متصلًا.</value></data>
+  <data name="Connections_Done" xml:space="preserve"><value>تم قطع الاتصال بـ{0} على {1}.</value></data>
+  <data name="Connections_StillListed" xml:space="preserve"><value>قبل Windows الطلب، لكن {0} على {1} ما زال في القائمة.</value></data>
+  <data name="Connections_Failed" xml:space="preserve"><value>تعذّر قطع الاتصال بـ{0} على {1}: {2}</value></data>
+  <data name="Connections_StillThere" xml:space="preserve"><value>ما زال في القائمة.</value></data>
+  <data name="Connections_All_Title" xml:space="preserve"><value>هل تريد قطع كل الاتصالات بهذا الخادم؟</value></data>
+  <data name="Connections_All_Msg" xml:space="preserve"><value>ستُقطع اتصالات هذا الكمبيوتر بـ{0}، المسرودة أدناه، واحدًا تلو الآخر. وتُنسى المحركات أيضًا فلا يُعاد اتصالها عند تسجيل الدخول. ويُترك الاتصال الذي فيه ملفات مفتوحة كما هو ويُبلَّغ عنه. لا يتغير شيء على الخادم.</value></data>
+  <data name="Connections_All_Line" xml:space="preserve"><value>المشاركة {0}</value></data>
+  <data name="Connections_All_LineDrive" xml:space="preserve"><value>المشاركة {0}، المحرك {1}</value></data>
+  <data name="Connections_All_Confirm" xml:space="preserve"><value>قطع كل الاتصالات</value></data>
+  <data name="Connections_All_OpenFiles" xml:space="preserve"><value>توجد ملفات مفتوحة على {0}، لذلك يبقى متصلًا. استخدم «قطع الاتصال» الخاص بذلك الاتصال لقطعه على أي حال.</value></data>
+  <data name="Connections_All_Done" xml:space="preserve"><value>تم قطع {0} من {1} اتصالات</value></data>
+  <data name="Common_Copy" xml:space="preserve"><value>نسخ</value></data>
+  <data name="Setup_Group_Share" xml:space="preserve"><value>ما تريد مشاركته</value></data>
+  <data name="Setup_Group_Who" xml:space="preserve"><value>من يستطيع الاتصال</value></data>
+  <data name="Setup_Group_Quick" xml:space="preserve"><value>الوصول السريع</value></data>
+  <data name="Setup_Status_On" xml:space="preserve"><value>المشاركة مفعّلة</value></data>
+  <data name="Setup_Status_NotRunning" xml:space="preserve"><value>تم الإعداد لكن المشاركة متوقفة</value></data>
+  <data name="Setup_Status_NotRunning_Desc" xml:space="preserve"><value>المجلد غير مشترك الآن، أو أن خدمة Server متوقفة. تسرد «إظهار التفاصيل» ما سيعيده «تطبيق».</value></data>
+  <data name="Setup_Status_Unknown" xml:space="preserve"><value>تم إعداد CPFS</value></data>
+  <data name="Setup_Status_Unknown_Desc" xml:space="preserve"><value>لا يمكن قراءة ما إذا كانت المشاركة مفعّلة دون صلاحيات المسؤول.</value></data>
+  <data name="Setup_Status_Unknown_DescAdmin" xml:space="preserve"><value>لم يستطع CPFS قراءة ما إذا كانت المشاركة مفعّلة. تبيّن «إظهار التفاصيل» ما تعذّرت قراءته.</value></data>
+  <data name="Setup_Status_AddressName" xml:space="preserve"><value>عنوان المشاركة</value></data>
+  <data name="Setup_Status_Copy" xml:space="preserve"><value>نسخ عنوان المشاركة</value></data>
+  <data name="Setup_Status_OpenFolder" xml:space="preserve"><value>فتح المجلد</value></data>
+  <data name="Setup_Status_OpenFailed" xml:space="preserve"><value>تعذّر فتح المجلد</value></data>
+  <data name="Status_Net_Private" xml:space="preserve"><value>شبكة خاصة</value></data>
+  <data name="Status_Net_Public" xml:space="preserve"><value>شبكة عامة، لذلك لا تستطيع الأجهزة الاتصال</value></data>
+  <data name="Status_Net_None" xml:space="preserve"><value>لا توجد شبكة متصلة</value></data>
+  <data name="Status_Encrypt_On" xml:space="preserve"><value>التشفير مطلوب</value></data>
+  <data name="Status_Encrypt_Off" xml:space="preserve"><value>التشفير غير مطلوب</value></data>
+  <data name="Status_Firewall_Private" xml:space="preserve"><value>جدار الحماية: الشبكات الخاصة فقط</value></data>
+  <data name="Status_Firewall_Changed" xml:space="preserve"><value>قاعدة جدار الحماية مفقودة أو مُعدَّلة</value></data>
+  <data name="Monitor_Updated" xml:space="preserve"><value>حُدّثت قبل {0} ثانية</value></data>
+  <data name="Monitor_Stat_Devices" xml:space="preserve"><value>الأجهزة المتصلة</value></data>
+  <data name="Monitor_Stat_Down" xml:space="preserve"><value>المُرسَل إلى الأجهزة</value></data>
+  <data name="Monitor_Stat_Up" xml:space="preserve"><value>المُستلَم من الأجهزة</value></data>
+  <data name="Monitor_Stat_Fails" xml:space="preserve"><value>محاولات تسجيل الدخول الفاشلة، آخر 24 ساعة</value></data>
+  <data name="Monitor_Stat_ViaVpn" xml:space="preserve"><value>{0} عبر VPN</value></data>
+  <data name="Monitor_Stat_NoneViaVpn" xml:space="preserve"><value>لا شيء عبر VPN</value></data>
+  <data name="Monitor_Stat_Now" xml:space="preserve"><value>{0} الآن</value></data>
+  <data name="Monitor_Stat_AtLeast" xml:space="preserve"><value>{0} أو أكثر</value></data>
+  <data name="Monitor_Stat_FailsNone" xml:space="preserve"><value>لا شيء</value></data>
+  <data name="Monitor_Stat_FailsSee" xml:space="preserve"><value>مسرودة أدناه</value></data>
+  <data name="Monitor_Files_TitleShort" xml:space="preserve"><value>قيد النسخ الآن</value></data>
+  <data name="Monitor_Device_Connection" xml:space="preserve"><value>{0} · متصل منذ {1}</value></data>
+  <data name="Monitor_Device_Lan" xml:space="preserve"><value>على الشبكة المحلية</value></data>
+  <data name="Monitor_Device_Smb" xml:space="preserve"><value>SMB {0}</value></data>
+  <data name="Monitor_Device_NoFiles" xml:space="preserve"><value>لا ملفات مفتوحة</value></data>
+  <data name="Monitor_Device_OneFile" xml:space="preserve"><value>{0} ملف مفتوح</value></data>
+  <data name="Monitor_Device_Files" xml:space="preserve"><value>{0} ملفات مفتوحة</value></data>
+  <data name="Monitor_Device_More" xml:space="preserve"><value>المزيد من الإجراءات</value></data>
+  <data name="Monitor_Device_MoreName" xml:space="preserve"><value>المزيد من الإجراءات لـ{0}</value></data>
+  <data name="Monitor_File_Who" xml:space="preserve"><value>{0}، سجّل الدخول باسم {1}</value></data>
+  <data name="Connect_Details_Title" xml:space="preserve"><value>تفاصيل الاتصال</value></data>
+  <data name="Connect_Qr_NoPassword" xml:space="preserve"><value>لا يحتوي الرمز على كلمة مرور.</value></data>
+  <data name="Connect_Tabs_Name" xml:space="preserve"><value>الأجهزة</value></data>
+  <data name="Connect_Win_Step5" xml:space="preserve"><value>إذا قال Windows على ذلك الكمبيوتر إن الاتصالات المتعددة بخادم من المستخدم نفسه باستخدام أكثر من اسم مستخدم غير مسموح بها (الخطأ 1219)، فهو متصل بالفعل بهذا الكمبيوتر باسم مستخدم آخر. افتح CPFS على ذلك الكمبيوتر واقطع الاتصال في صفحة «مجلدات مشتركة على أجهزة كمبيوتر أخرى»، أو سجّل الخروج من Windows هناك ثم الدخول من جديد.</value></data>
+  <data name="Tray_Status_Reading" xml:space="preserve"><value>جارٍ فحص المشاركة…</value></data>
+  <data name="Tray_Status_NotSetUp" xml:space="preserve"><value>لم يُعدّ على هذا الكمبيوتر</value></data>
+  <data name="Tray_Status_Off" xml:space="preserve"><value>المشاركة متوقفة</value></data>
+  <data name="Tray_Status_OnPrivate" xml:space="preserve"><value>المشاركة مفعّلة (شبكة خاصة)</value></data>
+  <data name="Tray_Status_OnPublic" xml:space="preserve"><value>المشاركة مفعّلة والشبكة عامة</value></data>
+  <data name="Tray_Status_PublicHint" xml:space="preserve"><value>لا تتصل الأجهزة الأخرى بشبكة عامة</value></data>
+  <data name="Tray_Status_OnNoNetwork" xml:space="preserve"><value>المشاركة مفعّلة ولا شبكة متصلة</value></data>
+  <data name="Tray_Status_Unknown" xml:space="preserve"><value>تعذّرت قراءة حالة المشاركة</value></data>
+  <data name="Tray_OpenCpfs" xml:space="preserve"><value>فتح CPFS</value></data>
+  <data name="Tray_OpenFolder" xml:space="preserve"><value>فتح المجلد المشترك</value></data>
+  <data name="Tray_Exit" xml:space="preserve"><value>إنهاء</value></data>
+  <data name="Tray_OpenFailed" xml:space="preserve"><value>تعذّر على Windows فتحه: {0}</value></data>
+  <data name="Pref_Tray_Title" xml:space="preserve"><value>أيقونة علبة النظام</value></data>
+  <data name="Pref_Tray_Desc" xml:space="preserve"><value>يعرض في منطقة الإشعارات ما إذا كانت المشاركة مفعّلة. ويعمل دون صلاحيات المسؤول.</value></data>
+  <data name="Pref_Tray_Elevated" xml:space="preserve"><value>تعمل هذه النافذة بصلاحيات المسؤول، لذلك لا يمكن تغيير أيقونة علبة النظام هنا. افتح CPFS دون صلاحيات المسؤول لتغييرها.</value></data>
+  <data name="Pref_Tray_StartFailed" xml:space="preserve"><value>تعذّر على CPFS تشغيل أيقونة علبة النظام</value></data>
+  <data name="Pref_Start_Title" xml:space="preserve"><value>البدء مع Windows</value></data>
+  <data name="Pref_Start_Desc" xml:space="preserve"><value>يعرض أيقونة علبة النظام عند تسجيل الدخول إلى Windows.</value></data>
+  <data name="Pref_Start_NeedsTray" xml:space="preserve"><value>فعّل أيقونة علبة النظام أولًا.</value></data>
+  <data name="Pref_Start_ReadFailed" xml:space="preserve"><value>تعذّر على CPFS التحقق مما إذا كان يبدأ مع Windows: {0}</value></data>
+  <data name="Pref_Start_OtherCopy" xml:space="preserve"><value>يشغّل Windows برنامج CPFS من {0} عند تسجيل الدخول.</value></data>
+  <data name="Pref_Start_Missing" xml:space="preserve"><value>نسخة CPFS التي يشغّلها Windows عند تسجيل الدخول لم تعد موجودة ({0}).</value></data>
+  <data name="Pref_Start_Foreign" xml:space="preserve"><value>في Windows عنصر بدء باسم CPFS ليس من CPFS نفسه: {0}. يتركه CPFS كما هو ما لم تختر «استخدام هذه النسخة».</value></data>
+  <data name="Pref_Start_UseThis" xml:space="preserve"><value>استخدام هذه النسخة</value></data>
+  <data name="Pref_Start_Disabled" xml:space="preserve"><value>CPFS معطّل في «تطبيقات بدء التشغيل» ضمن إعدادات Windows، لذلك لن تبدأ أيقونة علبة النظام عند تسجيل الدخول.</value></data>
+  <data name="Pref_Start_OpenSettings" xml:space="preserve"><value>فتح تطبيقات بدء التشغيل</value></data>
+  <data name="Pref_Start_PathTooLong" xml:space="preserve"><value>مسار هذه النسخة من CPFS أطول من أن يشغّلها Windows عند تسجيل الدخول. انقل CPFS إلى مجلد مساره أقصر.</value></data>
+  <data name="Pref_Start_PathRefused" xml:space="preserve"><value>لا يمكن لهذه النسخة من CPFS أن تبدأ مع Windows لأن مسارها يحتوي على " أو %: {0}</value></data>
+  <data name="Pref_Start_Failed" xml:space="preserve"><value>تعذّر على CPFS تغيير «البدء مع Windows»: {0}</value></data>
+  <data name="Pref_Start_OldTrayRunning" xml:space="preserve"><value>لم تُغلق أيقونة علبة النظام العاملة خلال 3 ثوانٍ. اختر «إنهاء» من قائمتها، ثم اختر «استخدام هذه النسخة» مرة أخرى.</value></data>
+  <data name="Pref_Start_TrayNotStarted" xml:space="preserve"><value>سيبدأ CPFS مع Windows من هذه النسخة، لكن تعذّر تشغيل أيقونته الآن: {0}</value></data>
+  <data name="Pref_Tray_ElevatedOffOnly" xml:space="preserve"><value>تعمل هذه النافذة بصلاحيات المسؤول. يمكنك هنا إيقاف أيقونة علبة النظام فقط. لتفعيلها افتح CPFS دون صلاحيات المسؤول.</value></data>
+  <data name="Plan_Section_StartWithWindows" xml:space="preserve"><value>البدء مع Windows</value></data>
+  <data name="Uninst_S_RunStop" xml:space="preserve"><value>إيقاف بدء CPFS مع Windows</value></data>
+  <data name="Uninst_R_RunRemove" xml:space="preserve"><value>لن تبدأ أيقونة علبة النظام بعد الآن عندما يسجّل مستخدم سطح المكتب الدخول إلى Windows.</value></data>
+  <data name="Uninst_R_RunForeign" xml:space="preserve"><value>عنصر بدء باسم CPFS ليس من CPFS نفسه، لذلك يُترك كما هو: {0}</value></data>
+  <data name="Uninst_R_RunUnread" xml:space="preserve"><value>تعذّر على CPFS التحقق مما إذا كان يبدأ مع Windows لمستخدم سطح المكتب، لذلك لا يتغير شيء هناك: {0}</value></data>
+  <data name="Summary_U_RunForeignLeft" xml:space="preserve"><value>يبقى عنصر البدء باسم CPFS الذي ليس من CPFS نفسه كما هو.</value></data>
+  <data name="Err_RunForeign" xml:space="preserve"><value>تغيّر عنصر البدء باسم CPFS بعد قراءة الخطة ولم يعد من CPFS نفسه، لذلك تُرك كما هو.</value></data>
+  <data name="Err_RunHiveNotLoaded" xml:space="preserve"><value>لا يستطيع Windows الوصول إلى إعدادات مستخدم سطح المكتب لأن ذلك المستخدم لم يسجّل الدخول، لذلك لا يمكن التحقق من «البدء مع Windows» ولا تغييره.</value></data>
+  <data name="Monitor_Stat_Since" xml:space="preserve"><value>منذ بدء خدمة مشاركة الملفات</value></data>
+  <data name="About_Update_Now" xml:space="preserve"><value>التحديث الآن</value></data>
+  <data name="About_Update_AdminOff" xml:space="preserve"><value>لا يحدّث CPFS نفسه من نافذة تعمل بصلاحيات المسؤول. أغلق هذه النافذة وشغّل CPFS بالطريقة المعتادة لتحديثه.</value></data>
+  <data name="About_Update_NotOffered" xml:space="preserve"><value>لا يستطيع CPFS تثبيت هذا الإصدار بنفسه. يمكنك تنزيله من صفحة الإصدار.</value></data>
+  <data name="About_Update_WhatsNew" xml:space="preserve"><value>الجديد</value></data>
+  <data name="Update_ConfirmTitle" xml:space="preserve"><value>هل تريد تحديث CPFS إلى الإصدار {0}؟</value></data>
+  <data name="Update_ConfirmDownload" xml:space="preserve"><value>ينزّل CPFS الإصدار {0} ({1}) من إصداره على GitHub، ويقارنه بالمجموع الاختباري SHA-256 المنشور هناك.</value></data>
+  <data name="Update_ConfirmLimit" xml:space="preserve"><value>يبيّن المجموع الاختباري أن التنزيل غير تالف. لكنه لا يبيّن من صنع الملف، لأن CPFS غير موقّع بعد.</value></data>
+  <data name="Update_ConfirmInPlace" xml:space="preserve"><value>ثم يستبدل CPFS الملف {0} ويبدأ من جديد. يُبقي على الإصدار الحالي حتى يبدأ الإصدار الجديد. ولا تتغير النسخة الموجودة في Program Files إلا عند اختيارك «تطبيق» في «الإعداد».</value></data>
+  <data name="Update_ConfirmSaveAs" xml:space="preserve"><value>تعمل هذه النسخة من CPFS من محرك شبكة، لذلك لا يستبدلها CPFS ولا يبدأ من جديد. بعد الفحص تختار أين تحفظ الإصدار الجديد. ولا تتغير النسخة الموجودة في Program Files إلا عند اختيارك «تطبيق» في «الإعداد».</value></data>
+  <data name="Update_ConfirmFrom" xml:space="preserve"><value>التنزيل: {0}</value></data>
+  <data name="Update_ConfirmTo" xml:space="preserve"><value>الملف: {0}</value></data>
+  <data name="Update_ConfirmButton" xml:space="preserve"><value>التحديث الآن</value></data>
+  <data name="Update_ConfirmSaveButton" xml:space="preserve"><value>تنزيل</value></data>
+  <data name="Update_ProgressTitle" xml:space="preserve"><value>تحديث CPFS</value></data>
+  <data name="Update_Step_Download" xml:space="preserve"><value>جارٍ تنزيل الإصدار {0}…</value></data>
+  <data name="Update_Step_DownloadBytes" xml:space="preserve"><value>جارٍ تنزيل الإصدار {0}: {1} من {2}</value></data>
+  <data name="Update_Step_Check" xml:space="preserve"><value>جارٍ فحص التنزيل…</value></data>
+  <data name="Update_Step_Probe" xml:space="preserve"><value>جارٍ تشغيل الإصدار الجديد مرة واحدة للتأكد من أنه يعمل…</value></data>
+  <data name="Update_Step_Swap" xml:space="preserve"><value>جارٍ استبدال الملف…</value></data>
+  <data name="Update_Step_Restart" xml:space="preserve"><value>جارٍ تشغيل CPFS من جديد…</value></data>
+  <data name="Update_Err_Title" xml:space="preserve"><value>لم يكتمل التحديث</value></data>
+  <data name="Update_Err_Cancelled" xml:space="preserve"><value>أُلغي التحديث. لم يُستبدل شيء.</value></data>
+  <data name="Update_Err_Network" xml:space="preserve"><value>تعذّر على CPFS تنزيل التحديث. تحقق من اتصال الإنترنت وحاول مرة أخرى. لم يُستبدل شيء.</value></data>
+  <data name="Update_Err_RateLimited" xml:space="preserve"><value>يطلب GitHub الانتظار قبل التنزيل التالي. حاول مرة أخرى لاحقًا. لم يُستبدل شيء.</value></data>
+  <data name="Update_Err_WrongHost" xml:space="preserve"><value>أُعيد توجيه التنزيل إلى خادم لا ينزّل CPFS منه. لم يُستبدل شيء. يمكنك الحصول على الإصدار من صفحته.</value></data>
+  <data name="Update_Err_Missing" xml:space="preserve"><value>لا يحتوي الإصدار على الملف الذي يحتاجه CPFS. لم يُستبدل شيء.</value></data>
+  <data name="Update_Err_TooLarge" xml:space="preserve"><value>حجم التنزيل أكبر مما يمكن أن يكون عليه إصدار CPFS. لم يُستبدل شيء.</value></data>
+  <data name="Update_Err_Damaged" xml:space="preserve"><value>لا يطابق التنزيل مجموعه الاختباري، لذلك قد يكون تالفًا. لم يُستبدل شيء.</value></data>
+  <data name="Update_Err_WrongVersion" xml:space="preserve"><value>الملف الذي نُزِّل ليس الإصدار {0}. لم يُستبدل شيء.</value></data>
+  <data name="Update_Err_ProbeFailed" xml:space="preserve"><value>لم يسمح Windows أو برنامج مكافحة الفيروسات لديك بتشغيل الإصدار الجديد. لم يُستبدل شيء.</value></data>
+  <data name="Update_Err_CannotWrite" xml:space="preserve"><value>لا يستطيع CPFS الكتابة في المجلد الذي يعمل منه. لم يُستبدل شيء.</value></data>
+  <data name="Update_Err_Leftover" xml:space="preserve"><value>ما زال ملف من تحديث سابق قيد الاستخدام: {0}. اختر «إنهاء» من قائمة أيقونة CPFS في علبة النظام ثم حاول مرة أخرى. لم يُستبدل شيء.</value></data>
+  <data name="Update_Err_SwapFailed" xml:space="preserve"><value>تعذّر على CPFS وضع الإصدار الجديد في مكانه، لذلك يبقى الإصدار الحالي. رسالة Windows: {0}</value></data>
+  <data name="Update_Err_SaveFailed" xml:space="preserve"><value>تعذّر على CPFS حفظ الملف هناك. اختر مجلدًا آخر. رسالة Windows: {0}</value></data>
+  <data name="Update_Err_Unexpected" xml:space="preserve"><value>توقف التحديث بسبب خطأ غير متوقع ({0}). انسخ التقرير أدناه وأرسله عند طلب المساعدة.</value></data>
+  <data name="Update_Err_BackgroundCopy" xml:space="preserve"><value>هذه هي النسخة التي تعمل في الخلفية وتشغّلها «خاصة تلقائيًا» (Auto-Private). الوسيلة الوحيدة لتحديثها هي «تطبيق» في «الإعداد».</value></data>
+  <data name="Update_Err_RollbackFailed" xml:space="preserve"><value>لم يبدأ الإصدار الجديد، ولم يستطع CPFS إعادة الإصدار السابق. في المجلد {0} غيّر اسم {1} إلى {2}.</value></data>
+  <data name="Update_Err_SwapReadBack" xml:space="preserve"><value>وضع CPFS الإصدار الجديد في مكانه، لكن الملف هناك لم يطابق ما نُزّل، فأعاد CPFS الإصدار الذي كان لديك.</value></data>
+  <data name="Update_Err_PutBackFailed" xml:space="preserve"><value>تعذّر على CPFS إكمال التحديث، وتعذّرت عليه إعادة الإصدار الذي كان لديك. في المجلد {0}، غيّر اسم {1} إلى {2}. وإن كان هناك ملف باسم {2} بالفعل، فغيّر اسمه أولًا.</value></data>
+  <data name="Update_SaveAs_Title" xml:space="preserve"><value>حفظ الإصدار الجديد</value></data>
+  <data name="Update_SaveAs_WhyWrite" xml:space="preserve"><value>لا يستطيع CPFS الكتابة في المجلد الذي يعمل منه، ولا يطلب صلاحيات المسؤول أبدًا لاستبدال نفسه. نزّل الإصدار الجديد وقارنه بمجموعه الاختباري. اختر مجلدًا لحفظه فيه.</value></data>
+  <data name="Update_SaveAs_Button" xml:space="preserve"><value>حفظ باسم…</value></data>
+  <data name="Update_SaveAs_Filter" xml:space="preserve"><value>البرامج (*.exe)|*.exe</value></data>
+  <data name="Update_NotSaved" xml:space="preserve"><value>لم يُحفظ الإصدار الجديد. لم يُستبدل شيء.</value></data>
+  <data name="Update_Saved" xml:space="preserve"><value>حُفظ الإصدار {0} باسم {1}. شغّل CPFS من هذا الملف. ما زالت اختصاراتك وعنصر «البدء مع Windows» يفتحان الملف القديم. في «التفضيلات» يمكنك توجيه عنصر «البدء مع Windows» إلى الملف الجديد.</value></data>
+  <data name="Update_ShowInFolder" xml:space="preserve"><value>إظهار في المجلد</value></data>
+  <data name="Update_DoneTitle" xml:space="preserve"><value>تم تحديث CPFS</value></data>
+  <data name="Update_DoneMessage" xml:space="preserve"><value>CPFS الآن بالإصدار {0}.</value></data>
+  <data name="Update_DoneAutoPrivate" xml:space="preserve"><value>ما زالت «خاصة تلقائيًا» (Auto-Private) تستخدم الإصدار {0}. ولا تتغير النسخة الموجودة في Program Files إلا عند اختيارك «تطبيق» في «الإعداد».</value></data>
+  <data name="Update_FailedTitle" xml:space="preserve"><value>لم يُثبَّت التحديث</value></data>
+  <data name="Update_FailedMessage" xml:space="preserve"><value>لم يبدأ الإصدار {0}، فأعاد CPFS الإصدار الذي كان لديك. ولم يتغير شيء آخر.</value></data>
+  <data name="Plan_R_AutoExeNewer" xml:space="preserve"><value>النسخة العاملة في الخلفية هي الإصدار {0}، وهو أحدث من هذه النسخة ({1}). حدّد هذا لاستبدالها بالإصدار الأقدم على أي حال.</value></data>
+  <data name="Summary_AutoPrivateCopy" xml:space="preserve"><value>ما زالت «خاصة تلقائيًا» (Auto-Private) تستخدم الإصدار {0}. وعند اختيار «تطبيق» الآن تُحدَّث إلى الإصدار الذي تشغّله.</value></data>
+  <data name="App_UpdateTestBuild" xml:space="preserve"><value>{0} (بنية اختبار التحديث)</value></data>
+  <data name="Connections_Reopen" xml:space="preserve"><value>إعادة الفتح دون صلاحيات المسؤول</value></data>
+  <data name="Connections_Reopen_Failed" xml:space="preserve"><value>تعذّر على CPFS إعادة الفتح دون صلاحيات المسؤول. أغلق هذه النافذة وشغّل CPFS من جديد.</value></data>
+  <data name="Connections_Reopen_NoUser" xml:space="preserve"><value>تعذّر على CPFS العثور على المستخدم الذي سجّل الدخول إلى هذا الكمبيوتر. أغلق هذه النافذة وشغّل CPFS من جديد.</value></data>
+  <data name="Connections_Clear_Title" xml:space="preserve"><value>إنهاء الاتصالات بخادم</value></data>
+  <data name="Connections_Clear_Desc" xml:space="preserve"><value>اكتب الخادم بالطريقة نفسها التي اتصلت بها، مثل MyPC أو MyPC.local أو 192.168.1.20. ويمكنك إضافة مجلد مشترك واحد أيضًا: ‎\\MyPC\Share. لا تتغير المحركات التي لها حرف.</value></data>
+  <data name="Connections_Clear_Label" xml:space="preserve"><value>الخادم</value></data>
+  <data name="Connections_Clear_Button" xml:space="preserve"><value>إنهاء الاتصالات بهذا الخادم</value></data>
+  <data name="Connections_Clear_ErrEmpty" xml:space="preserve"><value>اكتب اسم الخادم أو عنوان IP.</value></data>
+  <data name="Connections_Clear_ErrDevice" xml:space="preserve"><value>اكتب خادمًا، لا حرف محرك أقراص.</value></data>
+  <data name="Connections_Clear_ErrWildcard" xml:space="preserve"><value>لا يمكن استخدام أحرف البدل مثل * و ?.</value></data>
+  <data name="Connections_Clear_ErrPath" xml:space="preserve"><value>اكتب الخادم فقط، أو الخادم ومجلدًا مشتركًا واحدًا، مثل ‎\\MyPC\Share.</value></data>
+  <data name="Connections_Clear_ErrServer" xml:space="preserve"><value>هذا ليس اسم خادم أو عنوان IP صالحًا.</value></data>
+  <data name="Connections_Clear_ErrNotSmb" xml:space="preserve"><value>هذا الاسم يخص نوعًا آخر من محركات الشبكة. ينهي CPFS اتصالات المجلدات المشتركة (SMB) فقط.</value></data>
+  <data name="Connections_Clear_ErrShare" xml:space="preserve"><value>هذا ليس اسم مجلد مشترك صالحًا.</value></data>
+  <data name="Connections_Clear_Listed" xml:space="preserve"><value>{0} موجود في القائمة أعلاه. استخدم «قطع كل الاتصالات» الخاص به، فهو يعرض كل اتصال أولًا.</value></data>
+  <data name="Connections_Clear_ConfirmTitle" xml:space="preserve"><value>هل تريد إنهاء الاتصالات بهذا الخادم؟</value></data>
+  <data name="Connections_Clear_ConfirmMsg" xml:space="preserve"><value>يطلب CPFS من Windows إنهاء اتصالاتك بـ{0}. تبقى الملفات على ذلك الخادم كما هي، ولا يُحذف شيء على هذا الكمبيوتر. وإذا كانت هناك ملفات مفتوحة، يسألك CPFS مرة أخرى أولًا، وقد تضيع التغييرات غير المحفوظة فيها.</value></data>
+  <data name="Connections_Clear_Confirm" xml:space="preserve"><value>إنهاء الاتصالات</value></data>
+  <data name="Connections_Clear_Ended" xml:space="preserve"><value>{0}: أُنهي الاتصال.</value></data>
+  <data name="Connections_Clear_NotHeld" xml:space="preserve"><value>{0}: ليس لدى Windows اتصال بهذا الاسم يستطيع CPFS إنهاءه.</value></data>
+  <data name="Connections_Clear_OpenFiles" xml:space="preserve"><value>{0}: توجد ملفات مفتوحة عليه، لذلك يبقى الاتصال قائمًا.</value></data>
+  <data name="Connections_Clear_Failed" xml:space="preserve"><value>{0}: رفض Windows: {1}</value></data>
+  <data name="Connections_Clear_DoneTitle" xml:space="preserve"><value>الاتصالات بهذا الخادم</value></data>
+  <data name="Connections_Clear_NothingTitle" xml:space="preserve"><value>لا شيء لإنهائه</value></data>
+  <data name="Connections_Clear_TryRemedies" xml:space="preserve"><value>إذا ظل Windows يرفض اسم مستخدم آخر، فجرّب الخطوات الواردة تحت «إذا ظل Windows يرفض».</value></data>
+  <data name="Connections_Remedies_Title" xml:space="preserve"><value>إذا ظل Windows يرفض</value></data>
+  <data name="Connections_Remedy_Close" xml:space="preserve"><value>أغلق كل نافذة وتطبيق يستخدم ذلك الخادم، ثم حاول مرة أخرى.</value></data>
+  <data name="Apply_RpSkippedNamedMsg" xml:space="preserve"><value>على الأرجح تخطّى Windows إنشاء نقطة استعادة جديدة لأنه أنشأ واحدة خلال آخر 24 ساعة. أحدث نقطة هي «{1}» بتاريخ {0}. هل تريد المتابعة دون نقطة جديدة؟</value></data>
+  <data name="Apply_RpWhere" xml:space="preserve"><value>ستجدها في لوحة التحكم &gt; استرداد &gt; فتح استعادة النظام.</value></data>
 </root>

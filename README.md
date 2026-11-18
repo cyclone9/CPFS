@@ -39,13 +39,13 @@ Once CPFS is running, About can install later versions; see [Updating](#updating
 
 ## Features
 
-- Pages for Setup, Monitor, Connect, This PC's connections and Uninstall.
+- Pages for Setup, Monitor, Connect, Shared folders on other PCs and Uninstall.
 - A Windows 11 look with System, Light and Dark themes.
 - English, Persian, Arabic and Turkish. CPFS follows the Windows display language when it is one of these, and you can choose another in Preferences.
-- Setup can give the shared folder a drive letter, a desktop shortcut and an entry in File Explorer's navigation pane. You choose the letter and the names, and all three carry the CPFS icon. On the drive letter, Explorer may show the disk's own name instead of yours. The navigation pane entry is the "Show in File Explorer" switch, on by default.
+- Setup can give the shared folder a drive letter, a desktop shortcut and an entry in File Explorer's navigation pane. You choose the letter and the names, and all three carry the CPFS icon. On the drive letter, Explorer may show the disk's own name instead of yours. The navigation pane entry is the "Show in File Explorer" switch. On a first Setup it is on, and the drive letter and the desktop shortcut are off until you switch them on. Later Setups keep your choices.
 - Before Setup or Uninstall changes Windows, CPFS creates a restore point unless you untick it. Windows often skips a new one because it made one in the last 24 hours. CPFS then names the newest restore point, with its date, and says where System Restore lists it (Control Panel > Recovery > Open System Restore). You choose whether to continue without a new one.
-- A connect guide for Windows, macOS, Linux, Android and iOS, with QR codes for phones, over the `.local` name, the Wi-Fi or LAN IP address, or the VPN address. The Windows steps name error 1219 and point to This PC's connections.
-- This PC's connections lists the SMB shares this PC is connected to and disconnects them, for the PC that connects rather than the one that shares.
+- A connect guide for Windows, macOS, Linux, Android and iOS, with QR codes for phones, over the `.local` name, the Wi-Fi or LAN IP address, or the VPN address. The Windows steps name error 1219 and point to Shared folders on other PCs.
+- Shared folders on other PCs lists the SMB shares this PC is connected to and disconnects them, for the PC that connects rather than the one that shares.
 - Monitor shows the connected devices and their traffic, the large transfers being copied now ("Being copied now"), Recent activity and failed sign-ins. Recent activity lists every file added, changed, renamed or deleted in the shared folder, whether from any device or from this PC. CPFS can't tell which device made a change.
 - An optional "Save to a log file" switch for Recent activity, off by default.
 - An optional Auto-Private switch and an optional change of the computer name, both described below.
@@ -87,9 +87,11 @@ A running tray keeps the exe file in use. Exit the tray, from its menu or with t
 
 Uninstall removes the startup value and closes the tray.
 
-## This PC's connections
+## Shared folders on other PCs
 
-This page is for a PC that connects to other servers. Connect shows how other devices reach this PC. This PC's connections shows the SMB shares this PC is connected to, so it is the other direction.
+This page lists the shared folders on other computers that this PC has opened. Devices connected to this PC's own shared folder are on Monitor.
+
+Connect shows how other devices reach this PC. This page is the other direction, for a PC that connects to other servers: it shows the SMB shares this PC is connected to.
 
 It lists each connection with the server as Windows holds it, the share, the drive letter if there is one, the account and the state. It marks drives that reconnect at sign-in and also lists saved drives that aren't connected now. Drives that don't use SMB, such as one from SSHFS-Win, aren't listed. CPFS's own drive letter isn't a connection, so it isn't listed either. The page never asks for a user name or a password.
 
@@ -97,11 +99,13 @@ Disconnect asks first and ends only that connection. When the connection is a ma
 
 The page works only in a window without administrator rights. Windows keeps connections and drive mappings per sign-in session, and a window with administrator rights belongs to another session of the same user. It would list and remove the wrong connections, so there the page shows a note and no list. The note explains that the window has administrator rights because you chose Continue as administrator on another page. Its **Reopen without administrator rights** button opens CPFS normally on this page.
 
+To see the page work without a second PC, connect this PC to its own share at `\\localhost\<Share>`. The connection shows up in the list. If you then connect to the same address with a second username, Windows refuses with error 1219, described below.
+
 ### One user name per server
 
 Windows allows only one user name per server at a time. If you connect to a server with one account and then to the same server with another, Windows refuses with error 1219. Windows goes by the name you typed, and connecting by the IP address instead of the name counts as another server. That is Microsoft's own workaround for this error (support article KB 938120).
 
-If you meet error 1219 while connecting to a CPFS share from another Windows PC, open CPFS on that PC and go to This PC's connections. Disconnect the existing connection to that server, then connect again with the account you want.
+If you meet error 1219 while connecting to a CPFS share from another Windows PC, open CPFS on that PC and go to Shared folders on other PCs. Disconnect the existing connection to that server, then connect again with the account you want.
 
 If Windows still refuses to end a connection, the page lists what to try, in this order: close every window and app that uses that server; connect by the server's IP address instead of its name (Microsoft's workaround, KB 938120); sign out of Windows and back in.
 

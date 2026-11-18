@@ -290,5 +290,12 @@ public partial class MainWindow : FluentWindow
         {
             Windows.Update.UpdateEngine.SignalStarted();
         }
+
+        // Files a previous update left beside this exe (updater design, step 11), only once this window has rendered, so
+        // the previous exe stays while the new one has not shown itself (engine review S3); never from an elevated window.
+        if (!Startup.IsElevated)
+        {
+            System.Threading.Tasks.Task.Run(() => Windows.Update.UpdateEngine.CleanLeftoversAtStart(Startup.AfterUpdateFrom is not null));
+        }
     }
 }

@@ -421,8 +421,9 @@ public static class UpdateRules
         return sb.ToString().Trim();
     }
 
-    // Section 3. exePath is the running exe; driveIsNetwork is DriveInfo's answer for its drive (false when unknown).
-    public static UpdatePlace Place(string exePath, bool elevated, bool driveIsNetwork, string backgroundCopyPath)
+    // Section 3. exePath is the running exe; driveIsNetwork is DriveInfo's answer for its drive, null when it could not
+    // be read: an unknown drive gets Save as, never the swap (engine review S8).
+    public static UpdatePlace Place(string exePath, bool elevated, bool? driveIsNetwork, string backgroundCopyPath)
     {
         if (elevated)
         {
@@ -434,13 +435,18 @@ public static class UpdateRules
             return UpdatePlace.BackgroundCopy;
         }
 
-        if (exePath.StartsWith(@"\\", StringComparison.Ordinal) || exePath.StartsWith("//", StringComparison.Ordinal) || driveIsNetwork)
+        if (exePath.StartsWith(@"\\", StringComparison.Ordinal) || exePath.StartsWith("//", StringComparison.Ordinal) || driveIsNetwork != false)
         {
             return UpdatePlace.SaveAs;
         }
 
         return UpdatePlace.InPlace;
     }
+
+    // The engine's own lock (engine review S1), whatever its caller checked: only these two places download, and never
+    // in an elevated process. elevatedAllowed is true only for a test-hook build headless on a GitHub runner.
+    public static bool EngineMayRun(UpdatePlace place, bool elevated, bool elevatedAllowed) =>
+        (place is UpdatePlace.InPlace or UpdatePlace.SaveAs) && (!elevated || elevatedAllowed);
 
     // Step 9. exitCode is null while the new process still runs (or when that could not be told).
     public static RestartOutcome AfterStart(bool startFailed, bool startedSignal, int? exitCode)

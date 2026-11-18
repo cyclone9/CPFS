@@ -70,6 +70,11 @@ public class UpdaterTests
     [InlineData("0.9.0", "0.9.0", false)]
     [InlineData("0.9.1", "0.9.0", false)]
     [InlineData("1.0.0", "0.10.0", false)]
+    [InlineData("1.0.0-dev7", "1.0.0", true)]
+    [InlineData("0.9.0-dev6", "1.0.0", true)]
+    [InlineData("0.9.0", "1.0.0", true)]
+    [InlineData("1.0.0", "1.0.0", false)]
+    [InlineData("1.0.0", "0.9.0", false)]
     public void OnlyAStrictlyGreaterReleaseIsOffered(string running, string release, bool offered)
     {
         var offer = UpdateRules.ReadOffer(Release(release, Exe), running, out var refusal);
@@ -282,16 +287,33 @@ public class UpdaterTests
     }
 
     [Theory]
-    [InlineData(@"C:\Users\me\Downloads\Cpfs-0.9.0.exe", false, false, UpdatePlace.InPlace)]
-    [InlineData(@"C:\Users\me\Downloads\Cpfs-0.9.0.exe", true, false, UpdatePlace.Elevated)]
+    [InlineData(@"C:\Users\me\Downloads\Cpfs-1.0.0.exe", false, false, UpdatePlace.InPlace)]
+    [InlineData(@"C:\Users\me\Downloads\Cpfs-1.0.0.exe", true, false, UpdatePlace.Elevated)]
+    [InlineData(@"C:\Users\me\Downloads\Cpfs-1.0.0.exe", false, null, UpdatePlace.SaveAs)]
+    [InlineData(@"C:\Users\me\Downloads\Cpfs-1.0.0.exe", true, null, UpdatePlace.Elevated)]
     [InlineData(@"X:\projects\cpfs\Cpfs.exe", false, true, UpdatePlace.SaveAs)]
     [InlineData(@"\\server\share\Cpfs.exe", false, false, UpdatePlace.SaveAs)]
     [InlineData(@"C:\Program Files\CPFS\Cpfs.exe", false, false, UpdatePlace.BackgroundCopy)]
     [InlineData(@"c:\program files\cpfs\CPFS.EXE", false, false, UpdatePlace.BackgroundCopy)]
     [InlineData(@"C:\Program Files\CPFS\Cpfs.exe", true, false, UpdatePlace.Elevated)]
-    public void WhereTheExeIsDecidesTheWay(string exe, bool elevated, bool network, UpdatePlace expected)
+    public void WhereTheExeIsDecidesTheWay(string exe, bool elevated, bool? network, UpdatePlace expected)
     {
         Assert.Equal(expected, UpdateRules.Place(exe, elevated, network, @"C:\Program Files\CPFS\Cpfs.exe"));
+    }
+
+    [Theory]
+    [InlineData(UpdatePlace.InPlace, false, false, true)]
+    [InlineData(UpdatePlace.SaveAs, false, false, true)]
+    [InlineData(UpdatePlace.InPlace, true, false, false)]
+    [InlineData(UpdatePlace.SaveAs, true, false, false)]
+    [InlineData(UpdatePlace.InPlace, true, true, true)]
+    [InlineData(UpdatePlace.Elevated, false, false, false)]
+    [InlineData(UpdatePlace.Elevated, true, true, false)]
+    [InlineData(UpdatePlace.BackgroundCopy, false, false, false)]
+    [InlineData(UpdatePlace.BackgroundCopy, false, true, false)]
+    public void TheEngineRunsOnlyForItsTwoPlacesAndNeverElevated(UpdatePlace place, bool elevated, bool elevatedAllowed, bool runs)
+    {
+        Assert.Equal(runs, UpdateRules.EngineMayRun(place, elevated, elevatedAllowed));
     }
 
     [Theory]
@@ -310,12 +332,12 @@ public class UpdaterTests
     [Fact]
     public void TheNamesBesideTheExeAreFixed()
     {
-        const string exe = @"C:\Users\me\Downloads\Cpfs-0.9.0.exe";
+        const string exe = @"C:\Users\me\Downloads\Cpfs-1.0.0.exe";
         Assert.Equal(new[]
         {
-            @"C:\Users\me\Downloads\Cpfs-0.9.0.exe.cpfs-old",
-            @"C:\Users\me\Downloads\Cpfs-0.9.0.exe.cpfs-failed",
-            @"C:\Users\me\Downloads\Cpfs-0.9.0.cpfs-update.exe",
+            @"C:\Users\me\Downloads\Cpfs-1.0.0.exe.cpfs-old",
+            @"C:\Users\me\Downloads\Cpfs-1.0.0.exe.cpfs-failed",
+            @"C:\Users\me\Downloads\Cpfs-1.0.0.cpfs-update.exe",
         }, UpdateRules.LeftoverPaths(exe));
         Assert.Equal(@"D:\Tools\CPFS.cpfs-update.exe", UpdateRules.StagedPath(@"D:\Tools\CPFS.exe"));
     }

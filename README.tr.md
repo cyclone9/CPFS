@@ -39,13 +39,13 @@ CPFS çalıştıktan sonra Hakkında sayfası sonraki sürümleri kurabilir; bkz
 
 ## Özellikler
 
-- Kurulum, İzleme, Bağlanma, Bu bilgisayarın bağlantıları ve Kaldırma sayfaları.
+- Kurulum, İzleme, Bağlanma, Diğer bilgisayarlardaki paylaşımlar ve Kaldırma sayfaları.
 - Sistem, Açık ve Koyu temalı Windows 11 görünümü.
 - İngilizce, Farsça, Arapça ve Türkçe. Windows'un görüntü dili bunlardan biriyse CPFS onu kullanır; Tercihler'den başka bir dil seçebilirsiniz.
-- Kurulum, paylaşılan klasöre bir sürücü harfi, bir masaüstü kısayolu ve Dosya Gezgini'nin gezinti bölmesinde bir giriş verebilir. Harfi ve adları siz seçersiniz; üçünde de CPFS simgesi bulunur. Sürücü harfinde Gezgin, sizin adınız yerine diskin kendi adını gösterebilir. Gezinti bölmesi girişi, varsayılan olarak açık olan "Dosya Gezgini'nde göster" anahtarıdır.
+- Kurulum, paylaşılan klasöre bir sürücü harfi, bir masaüstü kısayolu ve Dosya Gezgini'nin gezinti bölmesinde bir giriş verebilir. Harfi ve adları siz seçersiniz; üçünde de CPFS simgesi bulunur. Sürücü harfinde Gezgin, sizin adınız yerine diskin kendi adını gösterebilir. Gezinti bölmesi girişi, "Dosya Gezgini'nde göster" anahtarıdır. İlk Kurulum'da bu giriş açıktır; sürücü harfi ve masaüstü kısayolu siz açana kadar kapalı kalır. Sonraki Kurulumlar seçimlerinizi korur.
 - Kurulum ya da Kaldırma Windows'ta değişiklik yapmadan önce, işaretini kaldırmazsanız CPFS bir geri yükleme noktası oluşturur. Windows son 24 saat içinde bir tane oluşturduğu için yenisini çoğu zaman atlar. Bu durumda CPFS en yeni geri yükleme noktasını tarihiyle birlikte söyler ve Sistem Geri Yükleme'nin onu nerede listelediğini gösterir (Control Panel > Recovery > Open System Restore). Yeni nokta olmadan devam edip etmeyeceğinize siz karar verirsiniz.
-- Windows, macOS, Linux, Android ve iOS için bağlantı kılavuzu, telefonlar için QR kodlarıyla; `.local` adı, Wi-Fi veya LAN IP adresi ya da VPN adresi üzerinden. Windows adımları 1219 hatasını anar ve Bu bilgisayarın bağlantıları sayfasına yönlendirir.
-- Bu bilgisayarın bağlantıları, bu bilgisayarın bağlı olduğu SMB paylaşımlarını listeler ve bağlantıyı keser. Paylaşan bilgisayar için değil, bağlanan bilgisayar içindir.
+- Windows, macOS, Linux, Android ve iOS için bağlantı kılavuzu, telefonlar için QR kodlarıyla; `.local` adı, Wi-Fi veya LAN IP adresi ya da VPN adresi üzerinden. Windows adımları 1219 hatasını anar ve "Diğer bilgisayarlardaki paylaşımlar" sayfasına yönlendirir.
+- Diğer bilgisayarlardaki paylaşımlar sayfası, bu bilgisayarın bağlı olduğu SMB paylaşımlarını listeler ve bağlantıyı keser. Paylaşan bilgisayar için değil, bağlanan bilgisayar içindir.
 - İzleme, bağlı cihazları ve trafiklerini gösterir; o anda kopyalanan büyük aktarımları ("Şu anda kopyalananlar"), Son etkinliği ve başarısız oturum açma denemelerini de listeler. Son etkinlik, paylaşılan klasörde eklenen, değiştirilen, yeniden adlandırılan veya silinen her dosyayı gösterir; değişiklik herhangi bir cihazdan ya da bu bilgisayardan gelmiş olabilir. CPFS değişikliğin hangi cihazdan geldiğini söyleyemez.
 - Son etkinlik için isteğe bağlı "Günlük dosyasına kaydet" anahtarı; varsayılan olarak kapalıdır.
 - İsteğe bağlı bir Otomatik Özel anahtarı ve bilgisayar adını değiştirme seçeneği; ikisi de aşağıda anlatılıyor.
@@ -87,9 +87,11 @@ Windows ile başlat, Tercihler'de yalnızca simge açıkken kullanılabilen bir 
 
 Kaldırma, başlatma değerini siler ve simgeyi kapatır.
 
-## Bu bilgisayarın bağlantıları
+## Diğer bilgisayarlardaki paylaşımlar
 
-Bu sayfa, başka sunuculara bağlanan bir bilgisayar içindir. Bağlan, diğer cihazların bu bilgisayara nasıl ulaştığını gösterir. Bu bilgisayarın bağlantıları ise bu bilgisayarın bağlı olduğu SMB paylaşımlarını gösterir; yani ters yöndür.
+Bu sayfa, bu bilgisayarın açtığı, diğer bilgisayarlardaki paylaşılan klasörleri listeler. Bu bilgisayarın kendi paylaşılan klasörüne bağlanan cihazlar İzleme sayfasındadır.
+
+Bağlan, diğer cihazların bu bilgisayara nasıl ulaştığını gösterir. Bu sayfa ters yöndür: başka sunuculara bağlanan bir bilgisayar içindir ve bu bilgisayarın bağlı olduğu SMB paylaşımlarını gösterir.
 
 Her bağlantıyı, Windows'un tuttuğu sunucu adı, paylaşım, varsa sürücü harfi, hesap ve durumla listeler. Oturum açılınca yeniden bağlanan sürücüleri işaretler, şu an bağlı olmayan kayıtlı sürücüleri de listeler. SMB kullanmayan sürücüler, örneğin SSHFS-Win'den biri, listelenmez. CPFS'nin kendi sürücü harfi bir bağlantı olmadığı için o da listelenmez. Sayfa hiçbir zaman kullanıcı adı ya da parola istemez.
 
@@ -97,11 +99,13 @@ Bağlantıyı kes önce sorar ve yalnızca o bağlantıyı sonlandırır. Bağla
 
 Sayfa yalnızca yönetici hakları olmadan çalışan bir pencerede çalışır. Windows bağlantıları ve sürücü eşlemelerini oturum açma oturumu başına ayrı tutar; yönetici haklarıyla çalışan pencere aynı kullanıcının başka bir oturumundadır. Yanlış bağlantıları listeler ve kaldırırdı, bu yüzden orada sayfa yalnızca bir not gösterir, liste göstermez. Not, başka bir sayfada Yönetici olarak devam et'i seçtiğiniz için pencerenin yönetici haklarıyla çalıştığını açıklar. **Reopen without administrator rights** (Yönetici hakları olmadan yeniden aç) düğmesi CPFS'yi bu sayfada normal biçimde açar.
 
+Sayfanın çalıştığını ikinci bir bilgisayar olmadan görmek için bu bilgisayarı kendi paylaşımına bağlayın: `\\localhost\<Share>`. Bağlantı listede görünür. Aynı adrese ikinci bir kullanıcı adıyla yeniden bağlanırsanız Windows 1219 hatasıyla reddeder; bu hata aşağıda anlatılıyor.
+
 ### Sunucu başına bir kullanıcı adı
 
 Windows aynı anda sunucu başına yalnızca bir kullanıcı adına izin verir. Bir sunucuya bir hesapla, ardından aynı sunucuya başka bir hesapla bağlanırsanız Windows 1219 hatasıyla reddeder. Windows yazdığınız ada bakar; ad yerine IP adresiyle bağlanmak başka bir sunucu sayılır. Bu, Microsoft'un bu hata için kendi önerdiği geçici çözümdür (KB 938120 destek makalesi).
 
-Başka bir Windows bilgisayardan bir CPFS paylaşımına bağlanırken 1219 hatasını alırsanız o bilgisayarda CPFS'yi açıp Bu bilgisayarın bağlantıları sayfasına gidin. O sunucuyla var olan bağlantıyı kesin, sonra istediğiniz hesapla yeniden bağlanın.
+Başka bir Windows bilgisayardan bir CPFS paylaşımına bağlanırken 1219 hatasını alırsanız o bilgisayarda CPFS'yi açıp "Diğer bilgisayarlardaki paylaşımlar" sayfasına gidin. O sunucuyla var olan bağlantıyı kesin, sonra istediğiniz hesapla yeniden bağlanın.
 
 Windows bir bağlantıyı sonlandırmayı yine reddederse sayfa denenebilecekleri şu sırayla listeler: o sunucuyu kullanan her pencereyi ve uygulamayı kapatın; sunucuya adıyla değil IP adresiyle bağlanın (Microsoft'un önerdiği çözüm, KB 938120); Windows'tan çıkıp yeniden oturum açın.
 

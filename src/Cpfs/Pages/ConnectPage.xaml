@@ -9,8 +9,8 @@
   <Page.Resources>
     <BooleanToVisibilityConverter x:Key="Visible" />
 
-    <!--  Guide notices sit at the bottom of the card, full width, each in a box that can't be closed: an informational
-          one for a note, a caution one for a requirement the user must meet.  -->
+    <!--  Guide notices sit at the bottom of the card, full width, each in the same informational box that can't be
+          closed (owner, dev6): a requirement looks like a note, with no caution colour.  -->
     <DataTemplate DataType="{x:Type pages:NoteItem}">
       <ui:InfoBar
         Margin="0,8,0,0"
@@ -28,7 +28,7 @@
         IsClosable="False"
         IsOpen="True"
         Message="{Binding Text}"
-        Severity="Warning" />
+        Severity="Informational" />
     </DataTemplate>
 
     <!--  The value is data: monospace, left to right inside RTL text. The button copies exactly what is shown.  -->

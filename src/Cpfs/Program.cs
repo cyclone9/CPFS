@@ -82,7 +82,7 @@ internal static class Program
 #endif
         Startup.Init(args);
 #if CPFS_UPDATE_TEST
-        if (Windows.Update.UpdateTestHooks.Headless && (Startup.AfterUpdateFrom is not null || Startup.UpdateFailedVersion is not null))
+        if (Windows.Update.UpdateTestHooks.HeadlessOnRunner && (Startup.AfterUpdateFrom is not null || Startup.UpdateFailedVersion is not null))
         {
             return Windows.Update.UpdateTestHooks.HeadlessStart();
         }
@@ -98,12 +98,6 @@ internal static class Program
         }
 
         Instance = instance;
-
-        // Files a previous update left beside this exe (updater design, step 11); never from an elevated window.
-        if (!Startup.IsElevated)
-        {
-            System.Threading.Tasks.Task.Run(() => Windows.Update.UpdateEngine.CleanLeftoversAtStart(Startup.AfterUpdateFrom is not null));
-        }
 
         // So the icon comes back after the user chose Exit in its menu. Never from an elevated window (design B2), and
         // not after Uninstall: only while CPFS is set up here.

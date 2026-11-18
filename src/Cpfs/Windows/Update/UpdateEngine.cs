@@ -40,6 +40,18 @@ internal static class UpdateEngine
     public static UpdateDone DownloadAndSwap(UpdateOffer offer, string exe, UpdatePlace place, Action<UpdateStep, long, long>? progress, Func<bool>? commit,
         CancellationToken cancel)
     {
+        // S1: the engine's own lock, whatever its caller checked.
+        var elevated = AppLog.IsElevated();
+        var elevatedAllowed = false;
+#if CPFS_UPDATE_TEST
+        elevatedAllowed = UpdateTestHooks.HeadlessOnRunner;
+#endif
+        if (!UpdateRules.EngineMayRun(place, elevated, elevatedAllowed))
+        {
+            AppLog.Write("update", "Refused: place " + place + (elevated ? ", elevated process" : ""));
+            throw new InvalidOperationException("The updater does not run for place " + place + (elevated ? " or in an elevated process" : ""));
+        }
+
         AppLog.Write("update", "Update to " + offer.Version + " started, exe " + exe + ", place " + place);
         if (place == UpdatePlace.InPlace)
         {
@@ -53,49 +65,94 @@ internal static class UpdateEngine
             return new UpdateDone(bytes, false);
         }
 
-        Cancelled(null, cancel);
+        Cancelled(cancel);
         progress?.Invoke(UpdateStep.Stage, 0, 0);
         string staged;
+        FileStream hold;
         try
         {
-            staged = Stage(exe, bytes, offer.Version);
+            staged = Stage(exe, bytes, offer.Version, out hold);
         }
         catch (UpdateException ex) when (ex.Error == UpdateError.CannotWrite)
         {
             return new UpdateDone(bytes, false);
         }
 
-        Cancelled(staged, cancel);
-        progress?.Invoke(UpdateStep.Probe, 0, 0);
-        Probe(staged, offer.Version);
-        Cancelled(staged, cancel);
-        if (commit is not null && !commit())
+        // From the staging file to the swap, every way out removes it (S5); Swap takes it over from its first line.
+        var swapping = false;
+        try
         {
-            Cancelled(staged, new CancellationToken(true));
-        }
+            Cancelled(cancel);
+            progress?.Invoke(UpdateStep.Probe, 0, 0);
+            Probe(staged, offer.Version);
+            Cancelled(cancel);
+            if (commit is not null && !commit())
+            {
+                Cancelled(new CancellationToken(true));
+            }
 
-        progress?.Invoke(UpdateStep.Swap, 0, 0);
-        var tray = StopTrayFromSameExe(exe);
-        Swap(exe, staged, UpdateRules.Sha256Hex(bytes));
-        return new UpdateDone(null, tray);
+            progress?.Invoke(UpdateStep.Swap, 0, 0);
+            var tray = StopTrayFromSameExe(exe);
+            swapping = true;
+            try
+            {
+                Swap(exe, staged, UpdateRules.Sha256Hex(bytes), hold);
+            }
+            catch (UpdateException ex) when (tray && ex.Error == UpdateError.SwapFailed)
+            {
+                // S9: the previous exe is back under its name, so its tray icon comes back too.
+                TrayControl.StartIfMissing("update not finished", TimeSpan.Zero);
+                throw;
+            }
+
+            return new UpdateDone(null, tray);
+        }
+        catch when (!swapping)
+        {
+            hold.Dispose();
+            if (File.Exists(staged))
+            {
+                TryDelete(staged);
+            }
+
+            throw;
+        }
     }
 
     // Step 9 after the swap; the caller has released the single-instance mutex. On a rollback the previous version is
     // started again to say so. The old process does nothing else afterwards (U6).
     public static RestartOutcome Restart(string exe, string oldVersion, string newVersion)
     {
-        using var started = CreateStartedEvent();
-        using var process = StartNew(exe, oldVersion);
-        var outcome = WaitStarted(process, started);
+        // S6: the swap is done, so a name held by another object must not stop the start; there is then no signal to
+        // wait for, and a started process counts as "Keep".
+        EventWaitHandle? started = null;
+        try
+        {
+            started = CreateStartedEvent();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or WaitHandleCannotBeOpenedException)
+        {
+            AppLog.Write("update", "Could not create the started event: " + ex.GetType().Name + "; starting the new version without waiting for its window");
+        }
+
+        RestartOutcome outcome;
+        using (started)
+        using (var process = StartNew(exe, oldVersion))
+        {
+            outcome = started is not null ? WaitStarted(process, started)
+                : process is null ? UpdateRules.AfterStart(true, false, null) : RestartOutcome.Keep;
+        }
+
         if (outcome == RestartOutcome.RollBack)
         {
-            if (RollBack(exe))
-            {
-                StartPrevious(exe, newVersion);
-            }
-            else
+            if (!RollBack(exe))
             {
                 throw new UpdateException(UpdateError.RollbackFailed, exe);
+            }
+
+            if (!StartPrevious(exe, newVersion))
+            {
+                throw new UpdateException(UpdateError.PreviousNotStarted, newVersion);
             }
         }
 
@@ -162,16 +219,12 @@ internal static class UpdateEngine
         }
     }
 
-    private static void Cancelled(string? staged, CancellationToken cancel)
+    // The caller removes a staging file it made.
+    private static void Cancelled(CancellationToken cancel)
     {
         if (!cancel.IsCancellationRequested)
         {
             return;
-        }
-
-        if (staged is not null)
-        {
-            TryDelete(staged);
         }
 
         AppLog.Write("update", "Cancelled; nothing was replaced");
@@ -181,16 +234,18 @@ internal static class UpdateEngine
     // Section 3, decided before anything is downloaded.
     public static UpdatePlace PlaceOf(string exe, bool elevated)
     {
-        var network = false;
+        bool? network = false;
         if (!exe.StartsWith(@"\\", StringComparison.Ordinal))
         {
             try
             {
-                network = new DriveInfo(Path.GetPathRoot(exe)!).DriveType == DriveType.Network;
+                var type = new DriveInfo(Path.GetPathRoot(exe)!).DriveType;
+                network = type is DriveType.Unknown or DriveType.NoRootDirectory ? null : type == DriveType.Network;
             }
             catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException)
             {
                 AppLog.Write("update", "Drive type of " + exe + " unknown: " + ex.GetType().Name);
+                network = null;
             }
         }
 
@@ -237,20 +292,25 @@ internal static class UpdateEngine
         }
     }
 
-    // Step 6. Returns the staged path; on any failure after creating it, the file is gone again.
-    public static string Stage(string exe, byte[] bytes, string version)
+    // Step 6. Returns the staged path and a read handle that lets no one write, rename or delete the file (S7): the
+    // probe runs the very bytes that were checked. The caller closes it before the file is renamed or removed. On any
+    // failure after creating the file, it is gone again; a file of that name this call did not create is left (S4).
+    public static string Stage(string exe, byte[] bytes, string version, out FileStream hold)
     {
         var staged = UpdateRules.StagedPath(exe);
+        var created = false;
         try
         {
             using var output = new FileStream(staged, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+            created = true;
             output.Write(bytes, 0, bytes.Length);
             output.Flush(true);
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or System.Security.SecurityException)
         {
-            AppLog.Write("update", "Cannot write " + staged + ": " + ex.GetType().Name + " 0x" + ex.HResult.ToString("X8", CultureInfo.InvariantCulture));
-            if (File.Exists(staged))
+            AppLog.Write("update", "Cannot write " + staged + ": " + ex.GetType().Name + " 0x" + ex.HResult.ToString("X8", CultureInfo.InvariantCulture)
+                + (created ? "" : " (not created)"));
+            if (created)
             {
                 TryDelete(staged);
             }
@@ -258,26 +318,36 @@ internal static class UpdateEngine
             throw new UpdateException(UpdateError.CannotWrite);
         }
 
+        FileStream? held = null;
         try
         {
-            var back = Sha256Of(staged);
+            held = new FileStream(staged, FileMode.Open, FileAccess.Read, FileShare.Read);
+            string back;
+            using (var sha = SHA256.Create())
+            {
+                back = UpdateRules.Hex(sha.ComputeHash(held));
+            }
+
             if (!string.Equals(back, UpdateRules.Sha256Hex(bytes), StringComparison.Ordinal))
             {
                 AppLog.Write("update", "Staged file read back as " + back + ": differs");
                 throw new UpdateException(UpdateError.Damaged);
             }
 
+            // By path, but nothing can change the file while the handle is open.
             var product = FileVersionInfo.GetVersionInfo(staged).ProductVersion;
-            AppLog.Write("update", "Staged " + staged + ", product version " + (product ?? "(none)"));
+            AppLog.Write("update", "Staged " + staged + ", product version " + (product ?? "(none)") + "; held open for reading until the swap");
             if (!UpdateRules.ProductVersionMatches(product, version))
             {
                 throw new UpdateException(UpdateError.WrongVersion, version);
             }
 
+            hold = held;
             return staged;
         }
         catch
         {
+            held?.Dispose();
             TryDelete(staged);
             throw;
         }
@@ -323,7 +393,6 @@ internal static class UpdateEngine
         AppLog.Write("update", "Probe exit code " + code.ToString(CultureInfo.InvariantCulture) + (code == UpdateRules.ProbeOk ? " (ok)" : ""));
         if (code != UpdateRules.ProbeOk)
         {
-            TryDelete(staged);
             throw new UpdateException(UpdateError.ProbeFailed);
         }
     }
@@ -362,8 +431,9 @@ internal static class UpdateEngine
         return true;
     }
 
-    // Step 8: two renames in the same folder. The first is undone if the second fails.
-    public static void Swap(string exe, string staged, string hash)
+    // Step 8: two renames in the same folder. The first is undone if the second fails. hold is Stage's handle on the
+    // staged file, closed here just before that file is renamed or removed.
+    public static void Swap(string exe, string staged, string hash, FileStream? hold)
     {
         var old = UpdateRules.OldPath(exe);
         try
@@ -373,8 +443,15 @@ internal static class UpdateEngine
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             AppLog.Write("update", "Rename " + exe + " -> " + old + " failed: " + ex.GetType().Name + " 0x" + ex.HResult.ToString("X8", CultureInfo.InvariantCulture));
+            hold?.Dispose();
             TryDelete(staged);
             throw new UpdateException(UpdateError.SwapFailed, ex.Message);
+        }
+        catch
+        {
+            hold?.Dispose();
+            TryDelete(staged);
+            throw;
         }
 
         AppLog.Write("update", "Renamed " + exe + " -> " + old);
@@ -390,6 +467,8 @@ internal static class UpdateEngine
                 throw new IOException("test hook: the second rename fails");
             }
 #endif
+            // A rename needs the file free; the read-back below covers the moment between.
+            hold?.Dispose();
             File.Move(staged, exe);
             placed = true;
             AppLog.Write("update", "Renamed " + staged + " -> " + exe);
@@ -415,6 +494,7 @@ internal static class UpdateEngine
             windowsSaid = ex.Message;
         }
 
+        hold?.Dispose();
         var back = placed ? RollBack(exe) : Undo(exe, old, "after the second rename failed");
         if (!placed && File.Exists(staged))
         {
@@ -494,13 +574,15 @@ internal static class UpdateEngine
             return false;
         }
 
+        // Through the U5 check (S4): an earlier .cpfs-failed goes only when it is CPFS's own regular file.
+        if (!DeleteIfOurs(failed, "rollback"))
+        {
+            AppLog.Write("update", "Rollback: " + failed + " is in the way");
+            return false;
+        }
+
         try
         {
-            if (File.Exists(failed))
-            {
-                TryDelete(failed);
-            }
-
             if (File.Exists(exe))
             {
                 File.Move(exe, failed);
@@ -516,8 +598,9 @@ internal static class UpdateEngine
         return Undo(exe, old, "rollback");
     }
 
-    // After a rollback: the previous version starts and says what happened.
-    public static void StartPrevious(string exe, string failedVersion)
+    // After a rollback: the previous version starts and says what happened. False when it could not be started; the
+    // exiting process then says it instead.
+    public static bool StartPrevious(string exe, string failedVersion)
     {
         try
         {
@@ -527,10 +610,12 @@ internal static class UpdateEngine
                 WorkingDirectory = Path.GetDirectoryName(exe) ?? "",
             });
             AppLog.Write("update", "Started the previous version with " + UpdateRules.UpdateFailedOption + " " + failedVersion);
+            return process is not null;
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or FileNotFoundException)
         {
             AppLog.Write("update", "Could not start the previous version: " + ex.GetType().Name);
+            return false;
         }
     }
 
@@ -538,37 +623,45 @@ internal static class UpdateEngine
     // (no link, no folder) whose product name is CPFS's. One in use (an old tray) waits for a later start.
     public static void CleanLeftovers(string exe, string reason)
     {
-        var product = OwnProductName;
         foreach (var path in UpdateRules.LeftoverPaths(exe))
         {
-            try
+            DeleteIfOurs(path, reason);
+        }
+    }
+
+    // True when nothing is at path afterwards. A link, a folder or another product's file is left and gives false.
+    private static bool DeleteIfOurs(string path, string reason)
+    {
+        var product = OwnProductName;
+        try
+        {
+            if (!File.Exists(path))
             {
-                if (!File.Exists(path))
-                {
-                    continue;
-                }
-
-                var attributes = File.GetAttributes(path);
-                if ((attributes & (FileAttributes.ReparsePoint | FileAttributes.Directory)) != 0)
-                {
-                    AppLog.Write("update", "Left " + path + " (" + reason + "): a link, not a file");
-                    continue;
-                }
-
-                var name = FileVersionInfo.GetVersionInfo(path).ProductName;
-                if (product is null || !string.Equals(name, product, StringComparison.Ordinal))
-                {
-                    AppLog.Write("update", "Left " + path + " (" + reason + "): not CPFS's file");
-                    continue;
-                }
-
-                File.Delete(path);
-                AppLog.Write("update", "Removed " + path + " (" + reason + ")");
+                return !Directory.Exists(path);
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+
+            var attributes = File.GetAttributes(path);
+            if ((attributes & (FileAttributes.ReparsePoint | FileAttributes.Directory)) != 0)
             {
-                AppLog.Write("update", "Could not remove " + path + " (" + reason + "), in use or denied: " + ex.GetType().Name);
+                AppLog.Write("update", "Left " + path + " (" + reason + "): a link, not a file");
+                return false;
             }
+
+            var name = FileVersionInfo.GetVersionInfo(path).ProductName;
+            if (product is null || !string.Equals(name, product, StringComparison.Ordinal))
+            {
+                AppLog.Write("update", "Left " + path + " (" + reason + "): not CPFS's file");
+                return false;
+            }
+
+            File.Delete(path);
+            AppLog.Write("update", "Removed " + path + " (" + reason + ")");
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            AppLog.Write("update", "Could not remove " + path + " (" + reason + "), in use or denied: " + ex.GetType().Name);
+            return false;
         }
     }
 

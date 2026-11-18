@@ -42,6 +42,12 @@ Write-Host "A $versionA $hashA"
 Write-Host "B $versionB $hashB"
 Check ($versionB -eq '99.0.0') 'B is version 99.0.0' $versionB
 
+# The release guard's detector, proven the other way round: a hooks build must report itself as one.
+$selftestOut = Join-Path $temp 'selftest-a.txt'
+$p = Start-Process -FilePath $exeA -ArgumentList '--selftest' -NoNewWindow -Wait -PassThru -RedirectStandardOutput $selftestOut
+$hooksLine = @(Get-Content -LiteralPath $selftestOut | Where-Object { $_ -like 'Update test hooks:*' }) -join ' | '
+Check ($hooksLine -eq 'Update test hooks: present') 'the hooks build self-test reports the hooks as present' "$hooksLine, exit $($p.ExitCode)"
+
 $template = (Get-Content -LiteralPath (Join-Path $root 'tests\Cpfs.Tests\Fixtures\update\latest-0.8.0.json') -Raw).Replace('{REPO}', 'cyclone9/CPFS')
 
 # A release folder: the exe as Cpfs-<V>.exe, its .sha256 from the release's own command, and latest.json.

@@ -149,6 +149,9 @@ jobs:
           $out = Join-Path $env:RUNNER_TEMP 'update-real-out.txt'
           $p = Start-Process -FilePath $exe -ArgumentList '--ci-update-real' -NoNewWindow -Wait -PassThru -RedirectStandardOutput $out
           Get-Content -LiteralPath $out
+          # On record: the request and redirect lines name hosts, status and sizes only, never a query (U7).
+          $log = Join-Path $env:LOCALAPPDATA 'CPFS\cpfs-log.txt'
+          if (Test-Path -LiteralPath $log) { Write-Host '--- [update] lines in the log ---'; Select-String -LiteralPath $log -SimpleMatch '[update]' | ForEach-Object Line | Select-Object -Last 40 }
           if ($p.ExitCode -eq 78) { Write-Host "::warning::SKIP, not a pass: $(Get-Content -LiteralPath $out -Raw)"; exit 0 }
           exit $p.ExitCode
 

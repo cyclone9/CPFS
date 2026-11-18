@@ -828,7 +828,7 @@
   <data name="About_GitHub" xml:space="preserve"><value>Source code on GitHub</value></data>
   <data name="About_GitHub_Help" xml:space="preserve"><value>Opens github.com/cyclone9/CPFS in your browser.</value></data>
   <data name="About_Update_Title" xml:space="preserve"><value>Updates</value></data>
-  <data name="About_Update_Desc" xml:space="preserve"><value>Asks GitHub whether a newer version of CPFS is out. Nothing is downloaded or installed.</value></data>
+  <data name="About_Update_Desc" xml:space="preserve"><value>Asks GitHub whether a newer version of CPFS is out. CPFS downloads and installs it only when you press Update now.</value></data>
   <data name="About_Update_Check" xml:space="preserve"><value>Check for updates</value></data>
   <data name="About_Update_Checking" xml:space="preserve"><value>Checking…</value></data>
   <data name="Update_Latest" xml:space="preserve"><value>You have the latest version.</value></data>
@@ -1092,9 +1092,9 @@
   <data name="AutoResult_AlreadyRunning" xml:space="preserve"><value>didn't start, because it was already running.</value></data>
   <data name="AutoResult_ProgramNotFound" xml:space="preserve"><value>Windows couldn't start it: the copy of CPFS in Program Files\CPFS is missing. Run Setup again.</value></data>
   <data name="AutoResult_Other" xml:space="preserve"><value>ended with code {0}.</value></data>
-  <data name="Nav_Connections" xml:space="preserve"><value>This PC's connections</value></data>
-  <data name="Connections_Title" xml:space="preserve"><value>This PC's connections</value></data>
-  <data name="Connections_Intro" xml:space="preserve"><value>Shared folders on other computers that this PC is connected to, as Windows keeps them for your account. Disconnect here ends only this PC's connection. It doesn't touch the shared folder CPFS sets up, or any files on the server.</value></data>
+  <data name="Nav_Connections" xml:space="preserve"><value>Shared folders on other PCs</value></data>
+  <data name="Connections_Title" xml:space="preserve"><value>Shared folders on other PCs</value></data>
+  <data name="Connections_Intro" xml:space="preserve"><value>Shared folders on other computers that this PC has opened, as Windows keeps them for your account. Devices connected to this PC's own shared folder are on Monitor. Disconnect here ends only this PC's connection. It doesn't touch the shared folder CPFS sets up, or any files on the server.</value></data>
   <data name="Connections_Admin_Title" xml:space="preserve"><value>This window is running as administrator</value></data>
   <data name="Connections_Admin_Msg" xml:space="preserve"><value>You chose Continue as administrator on another page, so this window has administrator rights. Windows keeps connections made without those rights separate, so they can't be listed here. To see them, close this window and start CPFS again, or reopen it without administrator rights.</value></data>
   <data name="Connections_List_Title" xml:space="preserve"><value>Connected shared folders</value></data>
@@ -1205,7 +1205,7 @@
   <data name="Connect_Details_Title" xml:space="preserve"><value>Connection details</value></data>
   <data name="Connect_Qr_NoPassword" xml:space="preserve"><value>The code doesn't contain a password.</value></data>
   <data name="Connect_Tabs_Name" xml:space="preserve"><value>Devices</value></data>
-  <data name="Connect_Win_Step5" xml:space="preserve"><value>If Windows on that PC says multiple connections to a server by the same user, using more than one user name, aren't allowed (error 1219), it's already connected to this PC under another username. Open CPFS on that PC and disconnect it in This PC's connections, or sign out of Windows there and back in.</value></data>
+  <data name="Connect_Win_Step5" xml:space="preserve"><value>If Windows on that PC says multiple connections to a server by the same user, using more than one user name, aren't allowed (error 1219), it's already connected to this PC under another username. Open CPFS on that PC and disconnect it on the Shared folders on other PCs page, or sign out of Windows there and back in.</value></data>
   <data name="Tray_Status_Reading" xml:space="preserve"><value>Checking sharing…</value></data>
   <data name="Tray_Status_NotSetUp" xml:space="preserve"><value>Not set up on this PC</value></data>
   <data name="Tray_Status_Off" xml:space="preserve"><value>Sharing is off</value></data>
@@ -1284,8 +1284,8 @@
   <data name="Update_Err_Unexpected" xml:space="preserve"><value>The update stopped on an unexpected error ({0}). Copy the report below and send it when you ask for help.</value></data>
   <data name="Update_Err_BackgroundCopy" xml:space="preserve"><value>This is the background copy that Auto-Private runs. Setup's Apply is the only way to update it.</value></data>
   <data name="Update_Err_RollbackFailed" xml:space="preserve"><value>The new version didn't start, and CPFS couldn't put the previous one back. In the folder {0}, rename {1} to {2}.</value></data>
-  <data name="Update_Err_SwapReadBack" xml:space="preserve"><value>CPFS put the new version in place, but the file didn't read back as the one it downloaded, so CPFS put the version you have back.</value></data>
-  <data name="Update_Err_PutBackFailed" xml:space="preserve"><value>CPFS couldn't finish the update, and it couldn't put the version you had back. In the folder {0}, rename {1} to {2}. If a file named {2} is already there, rename that file first.</value></data>
+  <data name="Update_Err_SwapReadBack" xml:space="preserve"><value>CPFS put the new version in place, but the file there didn't match the download, so CPFS put back the version you had.</value></data>
+  <data name="Update_Err_PutBackFailed" xml:space="preserve"><value>CPFS couldn't finish the update, and it couldn't put back the version you had. In the folder {0}, rename {1} to {2}. If a file named {2} is already there, rename that file first.</value></data>
   <data name="Update_SaveAs_Title" xml:space="preserve"><value>Save the new version</value></data>
   <data name="Update_SaveAs_WhyWrite" xml:space="preserve"><value>CPFS can't write to the folder it runs from, and it never asks for administrator rights to replace itself. It has downloaded the new version and checked it against its checksum. Choose a folder to save it in.</value></data>
   <data name="Update_SaveAs_Button" xml:space="preserve"><value>Save as…</value></data>

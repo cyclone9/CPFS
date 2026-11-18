@@ -491,7 +491,7 @@ public class PlannerTests
         Assert.True(Item(PlanFor(s, Fixture(), a => Tick(a, "shortcut.file")), "shortcut.file").Ticked);
 
         // A first Setup that asks for a shortcut creates it.
-        Assert.Equal(PlanAction.Create, Item(PlanFor(s, null), "shortcut.file").Action);
+        Assert.Equal(PlanAction.Create, Item(PlanFor(s, null, a => a with { Shortcut = true }), "shortcut.file").Action);
     }
 
     [Fact]
