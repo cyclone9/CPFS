@@ -31,6 +31,7 @@ public partial class MainWindow : FluentWindow
         Theming.LoadPreferences();
 
         InitializeComponent();
+        RootNavigation.Navigated += OnNavigated;
         UpdateTitle();
         Loc.Instance.PropertyChanged += (_, e) =>
         {
@@ -136,11 +137,12 @@ public partial class MainWindow : FluentWindow
     // "CPFS 0.5.0-dev3", without the commit (About shows that).
     private void UpdateTitle()
     {
-        var version = AppLog.VersionNumber();
+        var loc = Loc.Instance;
+        var version = Core.Text.Bidi.KeepLeftToRight(AppLog.VersionNumber(), loc.IsRtl);
 #if CPFS_UPDATE_TEST
-        version = Loc.Instance.FormatValues("App_UpdateTestBuild", version);
+        version = loc.Format("App_UpdateTestBuild", version);
 #endif
-        var title = Loc.Instance.FormatValues(Startup.IsElevated ? "App_TitleAdminVersion" : "App_TitleVersion", version);
+        var title = loc.Format(Startup.IsElevated ? "App_TitleAdminVersion" : "App_TitleVersion", version);
         Title = title;
         AppTitleBar.Title = title;
     }
@@ -161,7 +163,28 @@ public partial class MainWindow : FluentWindow
     {
         Language = System.Windows.Markup.XmlLanguage.GetLanguage(Loc.Instance.Culture.IetfLanguageTag);
         FlowDirection = Loc.Instance.IsRtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        if (_page is not null)
+        {
+            _page.FlowDirection = FlowDirection;
+        }
+
         Theming.ApplyFont();
+    }
+
+    // Pages live inside WPF-UI's NavigationViewContentPresenter, a WPF Frame, and a Frame is an inheritance boundary
+    // (InheritanceBehavior.SkipToAppNow). FlowDirection crosses it only when it changes; a page or template built
+    // under it later can read the default LeftToRight. Pages with a fixed bar (CanContentScroll="False") make WPF-UI
+    // swap the presenter's template when they are shown, and came up left to right in Persian (1.0.0 dev7). Each page
+    // therefore gets the window's direction itself, before it is shown.
+    private FrameworkElement? _page;
+
+    private void OnNavigated(NavigationView sender, NavigatedEventArgs args)
+    {
+        if (args.Page is FrameworkElement page)
+        {
+            page.FlowDirection = FlowDirection;
+            _page = page;
+        }
     }
 
     public void SetLanguage(CultureInfo culture)

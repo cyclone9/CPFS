@@ -27,6 +27,7 @@ This project uses [semantic versioning](https://semver.org/).
 - On Connect, the iPhone and iPad guide's iOS version note now uses the same box as every other guide note.
 - A first Setup now starts with the File Explorer entry on and the drive letter and desktop shortcut off. Switched on, they get the usual letter and names. An existing install keeps the choices it saved.
 - The page "This PC's connections" is now "Shared folders on other PCs", and its first sentence and the READMEs say it lists the shared folders this PC has opened, while devices connected to this PC's own share are on Monitor. The README also gives a way to try the page on one PC, and says a first Setup turns on the File Explorer entry and leaves the drive letter and desktop shortcut off.
+- In Persian and Arabic, every page now reads right to left like the menu (Setup, Uninstall and the other redesigned pages had stayed left to right), and the window title keeps "CPFS 1.0.0" in its Latin order.
 
 ## 0.8.0 - 2026-10-24
 

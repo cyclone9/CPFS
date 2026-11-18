@@ -9,6 +9,7 @@ public static class Bidi
     public const char Lre = '‪';
     public const char Rle = '‫';
     public const char Pdf = '‬';
+    public const char Lrm = '‎';
 
     // In right-to-left prose a value whose first strong character is left-to-right (a path, an address, a share name,
     // "Türkçe") is embedded left-to-right; in left-to-right prose a right-to-left value (a Persian network name) is
@@ -32,6 +33,43 @@ public static class Bidi
         }
 
         return value!;
+    }
+
+    // A Latin value whose digits and punctuation must not be reordered in a right-to-left line (the window title,
+    // "CPFS 1.0.0-dev7"). In WPF an LRE ... PDF embedding did not hold such a value together there: the Persian title
+    // bar showed "dev7-1.0.0 CPFS". An LRM on each side of every character that is not a letter puts each of them
+    // between strong left-to-right characters, so the value reads left to right whatever class the digits get.
+    public static string KeepLeftToRight(string? value, bool uiIsRtl)
+    {
+        if (!uiIsRtl || string.IsNullOrEmpty(value))
+        {
+            return value ?? "";
+        }
+
+        var chars = new System.Text.StringBuilder(value!.Length * 3 + 2);
+        chars.Append(Lrm);
+        foreach (var c in value)
+        {
+            if (char.IsLetter(c) && !IsStrongRtl(c))
+            {
+                chars.Append(c);
+                continue;
+            }
+
+            if (chars[chars.Length - 1] != Lrm)
+            {
+                chars.Append(Lrm);
+            }
+
+            chars.Append(c).Append(Lrm);
+        }
+
+        if (chars[chars.Length - 1] != Lrm)
+        {
+            chars.Append(Lrm);
+        }
+
+        return chars.ToString();
     }
 
     // Removes the embedding marks again, for a value that is copied to the clipboard.

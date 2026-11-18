@@ -1,3 +1,4 @@
+using System;
 using Cpfs.Core.Text;
 using Xunit;
 
@@ -23,6 +24,32 @@ public class BidiTests
     {
         Assert.Equal(@"D:\Shared", Bidi.Strip(Bidi.Embed(@"D:\Shared", true)));
         Assert.Equal("a", Bidi.Strip("\u200Ea\u200F"));
+    }
+
+    // Every digit, dot, hyphen and space of "CPFS 1.0.0-dev7" sits between left-to-right marks, so neither the
+    // version nor its place after "CPFS" can be reordered in a right-to-left title bar.
+    [Theory]
+    [InlineData("1.0.0-dev7")]
+    [InlineData("CPFS 0.9.0")]
+    [InlineData("7")]
+    public void KeepLeftToRightFencesEveryNonLetter(string value)
+    {
+        var kept = Bidi.KeepLeftToRight(value, true);
+
+        Assert.Equal(value, Bidi.Strip(kept));
+        Assert.Equal(Bidi.Lrm, kept[0]);
+        Assert.Equal(Bidi.Lrm, kept[kept.Length - 1]);
+        Assert.DoesNotContain(new string(Bidi.Lrm, 2), kept, StringComparison.Ordinal);
+        for (var i = 0; i < kept.Length; i++)
+        {
+            if (kept[i] != Bidi.Lrm && !char.IsLetter(kept[i]))
+            {
+                Assert.True(kept[i - 1] == Bidi.Lrm && kept[i + 1] == Bidi.Lrm, "Not fenced at " + i + ": " + value);
+            }
+        }
+
+        Assert.Equal(value, Bidi.KeepLeftToRight(value, false));
+        Assert.Equal("", Bidi.KeepLeftToRight(null, true));
     }
 
     [Theory]
