@@ -4,6 +4,8 @@ This project uses [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 1.0.0 - 2026-11-18
+
 This release adds a page for the shared folders your PC has opened on other computers, a tray icon, an in-app updater and new layouts for Setup, Monitor and Connect.
 
 - The CyClone homepage moved to cyclone9.dev. The README, the licence and About link there. The READMEs have a new video and cover image, in English and Persian.

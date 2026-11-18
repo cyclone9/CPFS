@@ -6,7 +6,7 @@
 
 <p align="center"><em>Your PC's folder, within reach of any device.</em></p>
 
-| Version | 1.0.0 (in development) |
+| Version | 1.0.0 |
 |---|---|
 | Platform | Windows 10 and 11 (Home or Pro) |
 | Requires | .NET Framework 4.8 (built into Windows 10 1903 and later and Windows 11), Administrator rights |
@@ -23,14 +23,14 @@ CPFS shares one folder on a Windows 10 or 11 PC with Windows, macOS, Linux, Andr
 
 ## Download and first run
 
-CPFS is one file, `Cpfs-0.8.0.exe`, on the [releases page](https://github.com/cyclone9/CPFS/releases) on GitHub. There is no installer: save the file anywhere and run it. CPFS asks for administrator rights only when Setup, Monitor or Uninstall need them. Connect, Shared folders on other PCs, Preferences and About work without.
+CPFS is one file, `Cpfs-1.0.0.exe`, on the [releases page](https://github.com/cyclone9/CPFS/releases) on GitHub. There is no installer: save the file anywhere and run it. CPFS asks for administrator rights only when Setup, Monitor or Uninstall need them. Connect, Shared folders on other PCs, Preferences and About work without.
 
 The file is not signed, so the first time you run it Windows SmartScreen shows "Windows protected your PC". Select More info, then Run anyway.
 
 To check that the file is the one that was published, compute its SHA-256 in PowerShell and compare it with the value on the release page:
 
 ```powershell
-Get-FileHash .\Cpfs-0.8.0.exe -Algorithm SHA256
+Get-FileHash .\Cpfs-1.0.0.exe -Algorithm SHA256
 ```
 
 CPFS needs Windows 10 or 11 and .NET Framework 4.8, which both include. It has been tested on Windows 11. Windows 10 is supported but has not been tested yet.

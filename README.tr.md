@@ -6,7 +6,7 @@
 
 <p align="center"><em>Bilgisayarınızdaki klasör, her cihazın erişiminde.</em></p>
 
-| Sürüm | 1.0.0 (geliştirme aşamasında) |
+| Sürüm | 1.0.0 |
 |---|---|
 | Platform | Windows 10 ve 11 (Ev veya Pro sürümü) |
 | Gereksinimler | .NET Framework 4.8 (Windows 10 1903 ve sonrası ile Windows 11'de yerleşik gelir), Yönetici hakları |
@@ -23,14 +23,14 @@ CPFS, bir Windows 10 veya 11 bilgisayarındaki tek bir klasörü Windows, macOS,
 
 ## İndirme ve ilk çalıştırma
 
-CPFS tek bir dosyadır: GitHub'daki [sürümler sayfasında](https://github.com/cyclone9/CPFS/releases) `Cpfs-0.8.0.exe`. Yükleyici yoktur; dosyayı istediğiniz yere kaydedip çalıştırın. CPFS yönetici haklarını yalnızca Kurulum, İzleme ya da Kaldırma gerektirdiğinde ister. Bağlan, Diğer bilgisayarlardaki paylaşımlar, Tercihler ve Hakkında bunlar olmadan çalışır.
+CPFS tek bir dosyadır: GitHub'daki [sürümler sayfasında](https://github.com/cyclone9/CPFS/releases) `Cpfs-1.0.0.exe`. Yükleyici yoktur; dosyayı istediğiniz yere kaydedip çalıştırın. CPFS yönetici haklarını yalnızca Kurulum, İzleme ya da Kaldırma gerektirdiğinde ister. Bağlan, Diğer bilgisayarlardaki paylaşımlar, Tercihler ve Hakkında bunlar olmadan çalışır.
 
 Dosya imzalı değildir; bu yüzden ilk çalıştırmada Windows SmartScreen "Windows bilgisayarınızı korudu" (Windows protected your PC) iletisini gösterir. Ek bilgi'yi (More info), ardından Yine de çalıştır'ı (Run anyway) seçin.
 
 Dosyanın yayımlanan dosya olduğunu doğrulamak için PowerShell'de SHA-256 değerini hesaplayın ve sürüm sayfasındaki değerle karşılaştırın:
 
 ```powershell
-Get-FileHash .\Cpfs-0.8.0.exe -Algorithm SHA256
+Get-FileHash .\Cpfs-1.0.0.exe -Algorithm SHA256
 ```
 
 CPFS için Windows 10 veya 11 ile .NET Framework 4.8 gerekir; ikisi de bunu içerir. CPFS Windows 11'de denendi. Windows 10 desteklenir ama henüz denenmedi.
