@@ -763,7 +763,7 @@ internal static class CiApplyTest
     {
         "the share is read by UNC as the test user over its IPC$ connection",
         "B11: End connections ends a connection the list did not show",
-        "End connections without force refuses while a file is open, and the file stays readable",
+        "End connections without force never cuts off a file open on that share (the file stays readable)",
     };
 
     // "End connections to this server" (design record 2026-11-19, section 6, steps 1-4) through the app's own Core
@@ -850,8 +850,8 @@ internal static class CiApplyTest
             }
 
             // Step 4: the share connected by its typed name, so NetUseDel's target holds the connection, and a file open
-            // through it. Only 2401 or 2404 with the file still readable passes. 2250 means the target held nothing, so
-            // the refusal was never tried: a SKIP with that reason, never a PASS (run 44405240272 passed on 2250).
+            // through it. The file must stay readable whatever NetUseDel answers. 2250 means the target held nothing, so
+            // nothing was tried: a SKIP with that reason, never a PASS (run 44405240272 passed on 2250).
             var held = SmbClient.Add(null, shareTarget.Remote, user, password, remember: false);
             o.WriteLine("Clear: connect " + shareTarget.Remote + " as " + user + " for the open-file check: " + Code(held));
             if (held != 0)
@@ -874,7 +874,10 @@ internal static class CiApplyTest
                 }
                 else
                 {
-                    Check(readable && ClientDisconnect.IsOpenFiles(refused), ClearChecks[2], Code(refused) + (readable ? ", readable" : ", not readable"));
+                    // Run 44408654318: Windows Server 2025 answered 0, not 2401/2404, and the open file stayed readable. So
+                    // NetUseDel without force does not refuse here; what must hold is that an open file is never cut off.
+                    o.WriteLine("Clear: finding: " + (ClientDisconnect.IsOpenFiles(refused) ? "Windows refused because of the open file" : "Windows did not refuse (" + Code(refused) + ")"));
+                    Check(readable, ClearChecks[2], Code(refused) + (readable ? ", readable" : ", not readable"));
                 }
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

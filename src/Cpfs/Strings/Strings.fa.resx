@@ -1099,8 +1099,8 @@
   <data name="AutoResult_AlreadyRunning" xml:space="preserve"><value>شروع نشد، چون از قبل در حال اجرا بود.</value></data>
   <data name="AutoResult_ProgramNotFound" xml:space="preserve"><value>ویندوز نتوانست آن را شروع کند: نسخه‌ی CPFS در Program Files\CPFS وجود ندارد. راه‌اندازی را دوباره اجرا کنید.</value></data>
   <data name="AutoResult_Other" xml:space="preserve"><value>با کد {0} پایان یافت.</value></data>
-  <data name="Nav_Connections" xml:space="preserve"><value>پوشه‌های اشتراکی رایانه‌های دیگر</value></data>
-  <data name="Connections_Title" xml:space="preserve"><value>پوشه‌های اشتراکی رایانه‌های دیگر</value></data>
+  <data name="Nav_Connections" xml:space="preserve"><value>پوشه‌های اشتراکی سایر سیستم‌ها</value></data>
+  <data name="Connections_Title" xml:space="preserve"><value>پوشه‌های اشتراکی سایر سیستم‌ها</value></data>
   <data name="Connections_Intro" xml:space="preserve"><value>پوشه‌های اشتراکی روی رایانه‌های دیگر که این رایانه باز کرده است، به همان شکل که Windows برای حساب شما نگه می‌دارد. دستگاه‌هایی که به پوشه‌ی اشتراکی خود این رایانه وصل‌اند در «پایش» هستند. «قطع اتصال» در اینجا فقط اتصال همین رایانه را پایان می‌دهد. به پوشه‌ی اشتراکی‌ای که CPFS راه‌اندازی می‌کند و به هیچ فایلی روی سرور دست نمی‌زند.</value></data>
   <data name="Connections_Admin_Title" xml:space="preserve"><value>این پنجره با دسترسی مدیر اجرا می‌شود</value></data>
   <data name="Connections_Admin_Msg" xml:space="preserve"><value>در صفحه‌ای دیگر «ادامه با دسترسی مدیر» را انتخاب کردید، برای همین این پنجره دسترسی مدیر دارد. Windows اتصال‌هایی را که بدون این دسترسی برقرار شده جدا نگه می‌دارد، پس اینجا فهرست نمی‌شوند. برای دیدنشان این پنجره را ببندید و CPFS را دوباره شروع کنید، یا آن را بدون دسترسی مدیر دوباره باز کنید.</value></data>
@@ -1212,7 +1212,7 @@
   <data name="Connect_Details_Title" xml:space="preserve"><value>جزئیات اتصال</value></data>
   <data name="Connect_Qr_NoPassword" xml:space="preserve"><value>این کد گذرواژه‌ای در خود ندارد.</value></data>
   <data name="Connect_Tabs_Name" xml:space="preserve"><value>دستگاه‌ها</value></data>
-  <data name="Connect_Win_Step5" xml:space="preserve"><value>اگر Windows روی آن رایانه می‌گوید چند اتصال به یک سرور از طرف یک کاربر با بیش از یک نام کاربری مجاز نیست (خطای 1219)، یعنی آن رایانه از قبل با نام کاربری دیگری به این رایانه وصل است. CPFS را روی آن رایانه باز کنید و اتصال را در صفحه‌ی «پوشه‌های اشتراکی رایانه‌های دیگر» قطع کنید، یا در Windows همان رایانه خارج شوید و دوباره وارد شوید.</value></data>
+  <data name="Connect_Win_Step5" xml:space="preserve"><value>اگر Windows روی آن رایانه می‌گوید چند اتصال به یک سرور از طرف یک کاربر با بیش از یک نام کاربری مجاز نیست (خطای 1219)، یعنی آن رایانه از قبل با نام کاربری دیگری به این رایانه وصل است. CPFS را روی آن رایانه باز کنید و اتصال را در صفحه‌ی «پوشه‌های اشتراکی سایر سیستم‌ها» قطع کنید، یا در Windows همان رایانه خارج شوید و دوباره وارد شوید.</value></data>
   <data name="Tray_Status_Reading" xml:space="preserve"><value>در حال بررسی اشتراک‌گذاری…</value></data>
   <data name="Tray_Status_NotSetUp" xml:space="preserve"><value>روی این رایانه راه‌اندازی نشده</value></data>
   <data name="Tray_Status_Off" xml:space="preserve"><value>اشتراک‌گذاری خاموش است</value></data>
