@@ -1094,4 +1094,29 @@
   <data name="AutoResult_AlreadyRunning" xml:space="preserve"><value>didn't start, because it was already running.</value></data>
   <data name="AutoResult_ProgramNotFound" xml:space="preserve"><value>Windows couldn't start it: the copy of CPFS in Program Files\CPFS is missing. Run Setup again.</value></data>
   <data name="AutoResult_Other" xml:space="preserve"><value>ended with code {0}.</value></data>
+  <data name="Nav_Connections" xml:space="preserve"><value>Connections from this PC</value></data>
+  <data name="Connections_Title" xml:space="preserve"><value>Connections from this PC</value></data>
+  <data name="Connections_Intro" xml:space="preserve"><value>The shared folders on other computers that this PC is connected to, as Windows keeps them for your account. This page only reads; it doesn't touch CPFS's own shared folder.</value></data>
+  <data name="Connections_Admin_Title" xml:space="preserve"><value>Open CPFS without administrator rights to see this list</value></data>
+  <data name="Connections_Admin_Msg" xml:space="preserve"><value>Windows keeps a separate set of network connections for the administrator side of your account, so this window would show the wrong list. Close CPFS and open it again the normal way, not with Run as administrator.</value></data>
+  <data name="Connections_List_Title" xml:space="preserve"><value>Connected shared folders</value></data>
+  <data name="Connections_List_Desc" xml:space="preserve"><value>Grouped by server, with the server written the way Windows keeps it. A server reached once by its name and once by its IP address shows up twice, because Windows counts them as two servers.</value></data>
+  <data name="Connections_Refresh" xml:space="preserve"><value>Refresh the list</value></data>
+  <data name="Connections_Empty" xml:space="preserve"><value>This PC isn't connected to any shared folder right now.</value></data>
+  <data name="Connections_ReadFailed_Title" xml:space="preserve"><value>Couldn't read this PC's connections</value></data>
+  <data name="Connections_SavedFailed_Title" xml:space="preserve"><value>Couldn't read the saved drives</value></data>
+  <data name="Connections_SavedFailed_Msg" xml:space="preserve"><value>Drives that reconnect at sign-in may be missing from the list. Windows said: {0}</value></data>
+  <data name="Connections_Label_Server" xml:space="preserve"><value>Server</value></data>
+  <data name="Connections_ThisPc" xml:space="preserve"><value>This PC</value></data>
+  <data name="Connections_SignIn" xml:space="preserve"><value>The sign-in connection. Windows keeps it after you sign in to this server, even when no folder is open.</value></data>
+  <data name="Connections_Label_Drive" xml:space="preserve"><value>Drive letter</value></data>
+  <data name="Connections_NoDrive" xml:space="preserve"><value>No drive letter</value></data>
+  <data name="Connections_Label_Account" xml:space="preserve"><value>Account</value></data>
+  <data name="Connections_AccountUnknown" xml:space="preserve"><value>Not known until it connects</value></data>
+  <data name="Connections_Label_State" xml:space="preserve"><value>State</value></data>
+  <data name="Connections_State_Connected" xml:space="preserve"><value>Connected</value></data>
+  <data name="Connections_State_Reconnecting" xml:space="preserve"><value>Connecting</value></data>
+  <data name="Connections_State_Disconnected" xml:space="preserve"><value>Disconnected</value></data>
+  <data name="Connections_State_Saved" xml:space="preserve"><value>Saved but not connected</value></data>
+  <data name="Connections_Label_Reconnects" xml:space="preserve"><value>Reconnects at sign-in</value></data>
 </root>

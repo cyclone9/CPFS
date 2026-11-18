@@ -33,6 +33,7 @@ internal static class SelfTest
             var reader = new StateReader();
             ReadSections(output, reader, letters);
             BuildPlan(output, reader, letters);
+            ClientReads(output);
             output.WriteLine("Result: ran to the end");
             AppLog.Write("selftest", "Ran to the end");
             return 0;
@@ -123,6 +124,33 @@ internal static class SelfTest
 
             output.WriteLine("  " + item.Action + (item.Cause == PlanCause.None ? "" : "/" + item.Cause) + " " + item.Key + ": "
                 + item.ReasonKey + (item.ReasonArgs.Count == 0 ? "" : " [" + string.Join("; ", item.ReasonArgs) + "]"));
+        }
+    }
+
+    // The Connections page's three reads must succeed (any count; the runner's elevated session may have none). The
+    // probes only report. A failed read throws, so the self-test exits 1.
+    private static void ClientReads(TextWriter output)
+    {
+        var uses = SmbClient.ReadUses();
+        output.WriteLine("Client: NetUseEnum " + uses.Count.ToString(CultureInfo.InvariantCulture) + " uses");
+        var remembered = SmbClient.ReadRemembered();
+        output.WriteLine("Client: saved mappings " + remembered.Count.ToString(CultureInfo.InvariantCulture));
+        output.WriteLine("Client: SMB provider name " + SmbClient.LanmanProviderName());
+        foreach (var (name, probe) in new (string, Func<string>)[]
+        {
+            ("CIM MSFT_SmbConnection", SmbClient.ProbeSmbConnectionCim),
+            ("NetSessionEnum level 10", SmbClient.ProbeSessionEnum),
+            ("StartupApproved", () => SmbClient.ProbeStartupApproved().Split(':')[0]),
+        })
+        {
+            try
+            {
+                output.WriteLine("  probe " + name + ": " + probe());
+            }
+            catch (Exception ex) when (State.IsExpected(ex))
+            {
+                output.WriteLine("  probe " + name + " failed: " + ex.GetType().Name + ": " + ex.Message);
+            }
         }
     }
 

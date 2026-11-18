@@ -57,6 +57,12 @@
           NavigationCacheMode="Enabled"
           TargetPageType="{x:Type pages:ConnectPage}" />
         <ui:NavigationViewItem
+          AutomationProperties.Name="{Binding [Nav_Connections], Source={x:Static local:Loc.Instance}}"
+          Content="{Binding [Nav_Connections], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon DesktopArrowRight24}"
+          NavigationCacheMode="Enabled"
+          TargetPageType="{x:Type pages:ConnectionsPage}" />
+        <ui:NavigationViewItem
           AutomationProperties.Name="{Binding [Nav_Uninstall], Source={x:Static local:Loc.Instance}}"
           Content="{Binding [Nav_Uninstall], Source={x:Static local:Loc.Instance}}"
           Icon="{ui:SymbolIcon Delete24}"

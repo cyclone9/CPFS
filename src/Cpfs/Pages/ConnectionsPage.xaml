@@ -1,0 +1,111 @@
+<Page
+  x:Class="Cpfs.Pages.ConnectionsPage"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:local="clr-namespace:Cpfs"
+  xmlns:pages="clr-namespace:Cpfs.Pages"
+  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+  Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+  <Page.Resources>
+    <BooleanToVisibilityConverter x:Key="Visible" />
+
+    <ItemsPanelTemplate x:Key="Wrap">
+      <WrapPanel />
+    </ItemsPanelTemplate>
+
+    <!--  A value that is data (a drive letter, an account): monospace, left to right inside RTL text.  -->
+    <DataTemplate DataType="{x:Type pages:ConnectionDataField}">
+      <StackPanel Margin="0,4,24,4">
+        <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Label}" />
+        <TextBlock AutomationProperties.Name="{Binding Label}" Style="{StaticResource DataValue}" Text="{Binding Value}" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type pages:ConnectionWordField}">
+      <StackPanel Margin="0,4,24,4">
+        <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Label}" />
+        <TextBlock AutomationProperties.Name="{Binding Label}" Style="{StaticResource Body}" Text="{Binding Value}" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="RowTemplate" DataType="{x:Type pages:ConnectionRowItem}">
+      <Border
+        Margin="0,8,0,0"
+        Padding="12,8"
+        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+        CornerRadius="4">
+        <StackPanel>
+          <TextBlock Style="{StaticResource DataValue}" Text="{Binding Share}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Note}" Visibility="{Binding HasNote, Converter={StaticResource Visible}}" />
+          <ItemsControl
+            Margin="0,4,0,0"
+            Focusable="False"
+            ItemsPanel="{StaticResource Wrap}"
+            ItemsSource="{Binding Fields}" />
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+
+    <DataTemplate x:Key="GroupTemplate" DataType="{x:Type pages:ConnectionGroupItem}">
+      <ui:Card Margin="0,0,0,4">
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Connections_Label_Server], Source={x:Static local:Loc.Instance}}" />
+          <WrapPanel>
+            <TextBlock
+              Margin="0,0,12,0"
+              VerticalAlignment="Center"
+              AutomationProperties.Name="{Binding [Connections_Label_Server], Source={x:Static local:Loc.Instance}}"
+              FontSize="16"
+              Style="{StaticResource DataValue}"
+              Text="{Binding Server}" />
+            <Border VerticalAlignment="Center" Style="{StaticResource Badge}" Visibility="{Binding IsThisPc, Converter={StaticResource Visible}}">
+              <TextBlock Style="{StaticResource BadgeText}" Text="{Binding [Connections_ThisPc], Source={x:Static local:Loc.Instance}}" />
+            </Border>
+          </WrapPanel>
+          <ItemsControl Focusable="False" ItemTemplate="{StaticResource RowTemplate}" ItemsSource="{Binding Rows}" />
+        </StackPanel>
+      </ui:Card>
+    </DataTemplate>
+  </Page.Resources>
+
+  <StackPanel Margin="24,16,24,24">
+    <TextBlock Style="{StaticResource PageTitle}" Text="{Binding [Connections_Title], Source={x:Static local:Loc.Instance}}" />
+    <TextBlock Margin="0,0,0,12" Style="{StaticResource Body}" Text="{Binding [Connections_Intro], Source={x:Static local:Loc.Instance}}" />
+
+    <!--  An elevated window would list the administrator session's connections, not the ones File Explorer uses.  -->
+    <ui:InfoBar
+      x:Name="AdminInfo"
+      Title="{Binding [Connections_Admin_Title], Source={x:Static local:Loc.Instance}}"
+      Margin="0,0,0,4"
+      IsClosable="False"
+      IsOpen="False"
+      Message="{Binding [Connections_Admin_Msg], Source={x:Static local:Loc.Instance}}"
+      Severity="Informational" />
+    <ui:InfoBar x:Name="ReadInfo" Margin="0,0,0,4" IsClosable="False" IsOpen="False" />
+
+    <ui:Card x:Name="ListCard" Margin="0,0,0,4">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <StackPanel>
+          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Connections_List_Title], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Connections_List_Desc], Source={x:Static local:Loc.Instance}}" />
+          <TextBlock x:Name="EmptyText" Margin="0,8,0,0" Style="{StaticResource CardValue}" Text="{Binding [Connections_Empty], Source={x:Static local:Loc.Instance}}" Visibility="Collapsed" />
+        </StackPanel>
+        <ui:Button
+          x:Name="RefreshButton"
+          Grid.Column="1"
+          Margin="8,0,0,0"
+          VerticalAlignment="Top"
+          AutomationProperties.Name="{Binding [Connections_Refresh], Source={x:Static local:Loc.Instance}}"
+          Click="OnRefresh"
+          Icon="{ui:SymbolIcon ArrowClockwise24}"
+          ToolTip="{Binding [Connections_Refresh], Source={x:Static local:Loc.Instance}}" />
+      </Grid>
+    </ui:Card>
+
+    <ItemsControl x:Name="Groups" Focusable="False" ItemTemplate="{StaticResource GroupTemplate}" />
+  </StackPanel>
+</Page>

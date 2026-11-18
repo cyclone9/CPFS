@@ -6,7 +6,7 @@
 
 <p align="center"><em>Your PC's folder, within reach of any device.</em></p>
 
-| Version | 0.8.0 |
+| Version | 0.9.0 (in development) |
 |---|---|
 | Platform | Windows 10 and 11 (Home or Pro) |
 | Requires | .NET Framework 4.8 (built into Windows 10 1903 and later and Windows 11), Administrator rights |

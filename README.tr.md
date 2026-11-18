@@ -6,7 +6,7 @@
 
 <p align="center"><em>Bilgisayarınızdaki klasör, her cihazın erişiminde.</em></p>
 
-| Sürüm | 0.8.0 |
+| Sürüm | 0.9.0 (geliştirme aşamasında) |
 |---|---|
 | Platform | Windows 10 ve 11 (Ev veya Pro sürümü) |
 | Gereksinimler | .NET Framework 4.8 (Windows 10 1903 ve sonrası ile Windows 11'de yerleşik gelir), Yönetici hakları |

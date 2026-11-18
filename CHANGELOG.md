@@ -6,6 +6,7 @@ This project uses [semantic versioning](https://semver.org/).
 
 - The CyClone homepage moved to cyclone9.dev. The README, the licence and the About page now link there.
 - New video and cover image in the READMEs, in English and Persian.
+- New page, Connections from this PC: lists the shared folders this PC is connected to on other computers, grouped by server, with the drive letter, account, state and whether the drive reconnects at sign-in. It only reads, and it works only in a window opened without administrator rights.
 
 ## 0.8.0 - 2026-10-24
 
