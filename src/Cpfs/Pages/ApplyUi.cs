@@ -297,7 +297,11 @@ internal static class ApplyUi
         var loc = Loc.Instance;
         var message = result.Outcome switch
         {
-            RestorePointOutcome.Skipped when result.Newest is { } newest => loc.Format("Apply_RpSkippedMsg", Cpfs.Core.Text.Formats.DateTime(newest.LocalDateTime, loc.Culture)),
+            // The owner read "skipped" as "none exists" (dev4): name the newest point and say where Windows lists it.
+            RestorePointOutcome.Skipped when result.Newest is { } newest => (string.IsNullOrWhiteSpace(result.NewestName)
+                    ? loc.Format("Apply_RpSkippedMsg", Cpfs.Core.Text.Formats.DateTime(newest.LocalDateTime, loc.Culture))
+                    : loc.Format("Apply_RpSkippedNamedMsg", Cpfs.Core.Text.Formats.DateTime(newest.LocalDateTime, loc.Culture), Bidi.Embed(result.NewestName!.Trim(), loc.IsRtl)))
+                + Environment.NewLine + loc["Apply_RpWhere"],
             RestorePointOutcome.Unavailable => loc.FormatValues("Apply_RpUnavailableMsg", result.Error ?? "?"),
             _ => loc["Apply_RpNoneMsg"],
         };

@@ -90,7 +90,7 @@ internal static class Program
 
         // --selftest and --ci-apply-test returned above: headless runs never wait for or block on another window. A start
         // by the updater waits for the previous version's window like a hand-over.
-        using var instance = Windows.SingleInstance.Acquire(Startup.IsHandOver || Startup.IsUpdateRestart, out var outcome);
+        using var instance = Windows.SingleInstance.Acquire(Startup.IsHandOver || Startup.IsUpdateRestart, Startup.IsReopen, out var outcome);
         if (outcome != Windows.InstanceOutcome.First)
         {
             App.ShowSecondStartMessage(outcome);

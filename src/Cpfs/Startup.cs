@@ -17,6 +17,10 @@ internal static class Startup
     // True when this instance was started by "Continue as administrator" (and really is elevated).
     public static bool IsHandOver => IsElevated && Arguments.Elevated;
 
+    // True when the elevated window's "Reopen without administrator rights" started this instance (and it really is
+    // not elevated).
+    public static bool IsReopen => !IsElevated && Arguments.Reopened && !Arguments.Elevated;
+
     public static AppPreferences Preferences { get; private set; } = new();
 
     // Started by the updater (--after-update <the version it replaced>), or after its rollback (--update-failed <the
@@ -67,6 +71,11 @@ internal static class Startup
         if (Arguments.Elevated && !IsElevated)
         {
             AppLog.Write("start", "--elevated given but the process is not elevated; the hand-over is ignored");
+        }
+
+        if (Arguments.Reopened && (IsElevated || Arguments.Elevated))
+        {
+            AppLog.Write("start", "--reopened given to an elevated start; ignored");
         }
 
         Preferences = LoadPreferences();

@@ -23,6 +23,9 @@ internal enum UpdateError
     CannotWrite,
     Leftover,
     SwapFailed,
+
+    // The previous exe could not be put back under the exe's name. Detail is the exe path.
+    RollbackFailed,
     SaveFailed,
 }
 

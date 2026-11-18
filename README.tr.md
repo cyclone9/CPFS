@@ -6,7 +6,7 @@
 
 <p align="center"><em>Bilgisayarınızdaki klasör, her cihazın erişiminde.</em></p>
 
-| Sürüm | 0.9.0 (geliştirme aşamasında) |
+| Sürüm | 1.0.0 (geliştirme aşamasında) |
 |---|---|
 | Platform | Windows 10 ve 11 (Ev veya Pro sürümü) |
 | Gereksinimler | .NET Framework 4.8 (Windows 10 1903 ve sonrası ile Windows 11'de yerleşik gelir), Yönetici hakları |
@@ -43,7 +43,7 @@ CPFS çalıştıktan sonra Hakkında sayfası sonraki sürümleri kurabilir; bkz
 - Sistem, Açık ve Koyu temalı Windows 11 görünümü.
 - İngilizce, Farsça, Arapça ve Türkçe. Windows'un görüntü dili bunlardan biriyse CPFS onu kullanır; Tercihler'den başka bir dil seçebilirsiniz.
 - Kurulum, paylaşılan klasöre bir sürücü harfi, bir masaüstü kısayolu ve Dosya Gezgini'nin gezinti bölmesinde bir giriş verebilir. Harfi ve adları siz seçersiniz; üçünde de CPFS simgesi bulunur. Sürücü harfinde Gezgin, sizin adınız yerine diskin kendi adını gösterebilir. Gezinti bölmesi girişi, varsayılan olarak açık olan "Dosya Gezgini'nde göster" anahtarıdır.
-- Kurulum ya da Kaldırma Windows'ta değişiklik yapmadan önce, işaretini kaldırmazsanız CPFS bir geri yükleme noktası oluşturur. Windows son noktadan sonraki 24 saat içinde yenisini atlar; böyle olursa CPFS size söyler.
+- Kurulum ya da Kaldırma Windows'ta değişiklik yapmadan önce, işaretini kaldırmazsanız CPFS bir geri yükleme noktası oluşturur. Windows son 24 saat içinde bir tane oluşturduğu için yenisini çoğu zaman atlar. Bu durumda CPFS en yeni geri yükleme noktasını tarihiyle birlikte söyler ve Sistem Geri Yükleme'nin onu nerede listelediğini gösterir (Control Panel > Recovery > Open System Restore). Yeni nokta olmadan devam edip etmeyeceğinize siz karar verirsiniz.
 - Windows, macOS, Linux, Android ve iOS için bağlantı kılavuzu, telefonlar için QR kodlarıyla; `.local` adı, Wi-Fi veya LAN IP adresi ya da VPN adresi üzerinden. Windows adımları 1219 hatasını anar ve Bu bilgisayarın bağlantıları sayfasına yönlendirir.
 - Bu bilgisayarın bağlantıları, bu bilgisayarın bağlı olduğu SMB paylaşımlarını listeler ve bağlantıyı keser. Paylaşan bilgisayar için değil, bağlanan bilgisayar içindir.
 - İzleme, bağlı cihazları ve trafiklerini gösterir; o anda kopyalanan büyük aktarımları ("Şu anda kopyalananlar"), Son etkinliği ve başarısız oturum açma denemelerini de listeler. Son etkinlik, paylaşılan klasörde eklenen, değiştirilen, yeniden adlandırılan veya silinen her dosyayı gösterir; değişiklik herhangi bir cihazdan ya da bu bilgisayardan gelmiş olabilir. CPFS değişikliğin hangi cihazdan geldiğini söyleyemez.
@@ -95,13 +95,15 @@ Her bağlantıyı, Windows'un tuttuğu sunucu adı, paylaşım, varsa sürücü 
 
 Bağlantıyı kes önce sorar ve yalnızca o bağlantıyı sonlandırır. Bağlantı, oturum açılınca yeniden bağlanan eşlenmiş bir sürücüyse Bağlantıyı kes onu kayıttan da çıkarır; Dosya Gezgini ve `net use /delete` da öyle yapar, pencere bunu söyler. Geri getirmek için sürücüyü yeniden eşlersiniz. Bağlantıdaki dosyalar açıksa Windows reddeder. O zaman ikinci bir pencere, bu dosyalardaki kaydedilmemiş değişikliklerin kaybolabileceği konusunda uyarır ve bağlantıyı yalnızca onun "Yine de bağlantıyı kes" (Disconnect anyway) düğmesi zorla keser. "Bu sunucuya olan tüm bağlantıları kes" bir kez sorar ve hiçbir zaman zorlamaz. CPFS neyi kestiğini, parola olmadan, günlüğe yazar. Bu Bağlantıyı kes, İzleme'deki değildir; o, bir cihazın bu bilgisayarın paylaşımındaki oturumunu sonlandırır.
 
-Sayfa yalnızca yönetici hakları olmadan çalışan bir pencerede çalışır. Windows bağlantıları ve sürücü eşlemelerini oturum açma oturumu başına ayrı tutar; yönetici haklarıyla çalışan pencere aynı kullanıcının başka bir oturumundadır. Yanlış bağlantıları listeler ve kaldırırdı, bu yüzden orada sayfa yalnızca bir not gösterir, liste göstermez.
+Sayfa yalnızca yönetici hakları olmadan çalışan bir pencerede çalışır. Windows bağlantıları ve sürücü eşlemelerini oturum açma oturumu başına ayrı tutar; yönetici haklarıyla çalışan pencere aynı kullanıcının başka bir oturumundadır. Yanlış bağlantıları listeler ve kaldırırdı, bu yüzden orada sayfa yalnızca bir not gösterir, liste göstermez. Not, başka bir sayfada Yönetici olarak devam et'i seçtiğiniz için pencerenin yönetici haklarıyla çalıştığını açıklar. **Reopen without administrator rights** (Yönetici hakları olmadan yeniden aç) düğmesi CPFS'yi bu sayfada normal biçimde açar.
 
 ### Sunucu başına bir kullanıcı adı
 
 Windows aynı anda sunucu başına yalnızca bir kullanıcı adına izin verir. Bir sunucuya bir hesapla, ardından aynı sunucuya başka bir hesapla bağlanırsanız Windows 1219 hatasıyla reddeder. Windows yazdığınız ada bakar; ad yerine IP adresiyle bağlanmak başka bir sunucu sayılır. Bu, Microsoft'un bu hata için kendi önerdiği geçici çözümdür (KB 938120 destek makalesi).
 
 Başka bir Windows bilgisayardan bir CPFS paylaşımına bağlanırken 1219 hatasını alırsanız o bilgisayarda CPFS'yi açıp Bu bilgisayarın bağlantıları sayfasına gidin. O sunucuyla var olan bağlantıyı kesin, sonra istediğiniz hesapla yeniden bağlanın.
+
+Windows bir bağlantıyı sonlandırmayı yine reddederse sayfa denenebilecekleri şu sırayla listeler: o sunucuyu kullanan her pencereyi ve uygulamayı kapatın; sunucuya adıyla değil IP adresiyle bağlanın (Microsoft'un önerdiği çözüm, KB 938120); Windows'tan çıkıp yeniden oturum açın.
 
 ## Güncelleme
 
@@ -114,13 +116,13 @@ CPFS neyin yeni olduğunu gösterir ve onay ister. Sonra `Cpfs-<version>.exe` do
 - Dosyanın içindeki sürüm, yayımlanan sürümdür.
 - Yeni exe, CPFS değiştirmeden önce onu bir kez çalıştırdığında başlar.
 
-Bir denetim başarısız olursa hiçbir şey değiştirilmez. Eski exe, yenisi penceresini açana kadar yenisinin yanında durur; yenisi başlamazsa CPFS eskisini yerine koyar.
+Bir denetim başarısız olursa hiçbir şey değiştirilmez. Exe değiştirildikten sonra CPFS yeniden başlar; onay penceresi de bunu söyler. Eski exe, yenisi başlayana kadar yenisinin yanında durur; yenisi başlamazsa CPFS eskisini yerine koyar. Eskisini yerine koyamazsa CPFS, adı geri çevrilecek klasörü ve dosyayı söyler; örneğin `Cpfs.exe.cpfs-old` dosyası `Cpfs.exe` olur.
 
 SHA-256, bozuk bir indirmeye karşı korur. Ele geçirilmiş bir GitHub hesabına karşı korumaz, çünkü sağlama değeri aynı sürümden gelir; henüz bir imza da yoktur. Elle güncelleme, İndirme ve ilk çalıştırma bölümünde anlatıldığı gibi hâlâ çalışır.
 
 CPFS'nin kurduğu dosya "internetten indirildi" işaretini almaz, bu yüzden SmartScreen yeniden sormaz. Bu imzalama değildir: ilk indirmeniz yine SmartScreen'e takılır ve CPFS'nin kurduğu sürümler HTTPS'ye, GitHub'a ve sağlama değerine dayanır. CPFS yönetici hakları istediğinde Windows yine "Bilinmeyen yayımcı" (Unknown publisher) gösterir.
 
-Dosya adını ve klasörünü korur. `Cpfs-0.9.0.exe` güncellemeden sonra daha yeni bir sürüm taşıyabilir; Hakkında sayfası ve pencere başlığı gerçek sürümü gösterir. Kısayollar, sabitlemeler ve başlatma girişi çalışmaya devam eder.
+Dosya adını ve klasörünü korur. `Cpfs-1.0.0.exe` güncellemeden sonra daha yeni bir sürüm taşıyabilir; Hakkında sayfası ve pencere başlığı gerçek sürümü gösterir. Kısayollar, sabitlemeler ve başlatma girişi çalışmaya devam eder.
 
 CPFS, bir ağ sürücüsünde ya da yazamadığı bir klasörde (örneğin `C:\Program Files` altındaki bir klasör) exe dosyasını yerinde değiştiremez. Bunun yerine "Farklı kaydet" (Save as) önerir ve denetlenmiş dosyayı seçtiğiniz yere yazar; exe yazmak için hiçbir zaman yönetici hakları istemez. Bundan sonra başlatma girişi hâlâ eski dosyayı gösterir ve Tercihler "Bu kopyayı kullan"ı önerir.
 

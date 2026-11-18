@@ -136,7 +136,8 @@ internal static class UpdateUi
         }
         catch (UpdateException ex)
         {
-            AppLog.Write("update", "Update to " + offer.Version + " stopped: " + ex.Error + "; nothing was replaced");
+            AppLog.Write("update", "Update to " + offer.Version + " stopped: " + ex.Error
+                + (ex.Error == UpdateError.RollbackFailed ? "; the previous version is NOT back in place" : "; nothing was replaced"));
             return new UpdateUiResult(ex.Error == UpdateError.Cancelled ? InfoBarSeverity.Informational : InfoBarSeverity.Error, Failure(ex, offer));
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
@@ -160,7 +161,7 @@ internal static class UpdateUi
                 var loc = Loc.Instance;
                 var folder = System.IO.Path.GetDirectoryName(exe) ?? "";
                 var name = System.IO.Path.GetFileName(exe);
-                var message = t.Exception?.InnerException is UpdateException { Error: UpdateError.SwapFailed }
+                var message = t.Exception?.InnerException is UpdateException { Error: UpdateError.RollbackFailed }
                     ? loc.FormatValues("Update_Err_RollbackFailed", folder, name + UpdateRules.OldSuffix, name)
                     : loc.FormatValues("Update_Err_Unexpected", t.Exception?.InnerException?.GetType().Name ?? "?");
                 AppLog.Write("update", "Restart failed: " + (t.Exception?.InnerException?.GetType().Name ?? "?"));
@@ -255,7 +256,11 @@ internal static class UpdateUi
         {
             UpdateError.WrongVersion => loc.FormatValues("Update_Err_WrongVersion", offer.Version),
             UpdateError.Leftover => loc.FormatValues("Update_Err_Leftover", ex.Detail ?? "?"),
-            UpdateError.SwapFailed => loc.FormatValues("Update_Err_SwapFailed", ex.Detail ?? "?"),
+            UpdateError.SwapFailed when ex.Detail is null => loc["Update_Err_SwapReadBack"],
+            UpdateError.SwapFailed => loc.FormatValues("Update_Err_SwapFailed", ex.Detail),
+            UpdateError.RollbackFailed when ex.Detail is { } exe => loc.FormatValues("Update_Err_PutBackFailed",
+                System.IO.Path.GetDirectoryName(exe) ?? "", System.IO.Path.GetFileName(UpdateRules.OldPath(exe)), System.IO.Path.GetFileName(exe)),
+            UpdateError.RollbackFailed => loc.FormatValues("Update_Err_PutBackFailed", "?", "?", "?"),
             UpdateError.SaveFailed => loc.FormatValues("Update_Err_SaveFailed", ex.Detail ?? "?"),
             _ => loc["Update_Err_" + ex.Error.ToString()],
         };

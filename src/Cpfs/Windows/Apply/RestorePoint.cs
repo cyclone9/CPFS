@@ -1,6 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Management;
+using System.Threading;
+using Cpfs.Core.Apply;
 using Cpfs.Core.Text;
 
 namespace Cpfs.Windows.Apply;
@@ -17,7 +20,8 @@ internal enum RestorePointOutcome
     Unavailable,
 }
 
-internal sealed record RestorePointResult(RestorePointOutcome Outcome, DateTimeOffset? Newest, string? Error);
+// NewestName is the newest point's Description, as System Restore lists it.
+internal sealed record RestorePointResult(RestorePointOutcome Outcome, DateTimeOffset? Newest, string? Error, string? NewestName = null);
 
 // A System Restore point before CPFS changes Windows (owner decision 10): a second way back next to the backup in
 // config.json. It never switches System Protection on and never changes the frequency setting.
@@ -31,7 +35,8 @@ internal static class RestorePoint
     {
         try
         {
-            var (beforeSequence, _, _) = Newest();
+            var (beforeSequence, _, _, _) = Newest();
+            var callStart = DateTimeOffset.Now;
             uint code;
             using (var type = new ManagementClass(new ManagementScope(Scope), new ManagementPath("SystemRestore"), null))
             using (var args = type.GetMethodParameters("CreateRestorePoint"))
@@ -43,11 +48,34 @@ internal static class RestorePoint
                 code = Convert.ToUInt32(result?["ReturnValue"] ?? 0u, CultureInfo.InvariantCulture);
             }
 
-            var (afterSequence, newest, raw) = Newest();
+            var (afterSequence, newest, raw, name) = Newest();
             AppLog.Write("apply", "Restore point: return " + code.ToString(CultureInfo.InvariantCulture) + ", newest sequence "
-                + (beforeSequence?.ToString(CultureInfo.InvariantCulture) ?? "none") + " -> " + (afterSequence?.ToString(CultureInfo.InvariantCulture) ?? "none"));
-            if (afterSequence is { } a && (beforeSequence is null || a > beforeSequence))
+                + (beforeSequence?.ToString(CultureInfo.InvariantCulture) ?? "none") + " -> " + (afterSequence?.ToString(CultureInfo.InvariantCulture) ?? "none")
+                + ", call started " + CimDateTime.Iso(callStart));
+            var created = RestorePointRules.ShowsNewPoint(beforeSequence, afterSequence, newest, callStart);
+
+            // The list can lag behind a point the call did create (owner's laptop, 0.9.0 dev4).
+            if (!created && code == 0)
             {
+                var waited = Stopwatch.StartNew();
+                var reads = 0;
+                while (!created && waited.Elapsed < RestorePointRules.RereadLimit)
+                {
+                    Thread.Sleep(RestorePointRules.RereadStep);
+                    (afterSequence, newest, raw, name) = Newest();
+                    reads++;
+                    created = RestorePointRules.ShowsNewPoint(beforeSequence, afterSequence, newest, callStart);
+                }
+
+                AppLog.Write("apply", "Restore point: read the list again " + reads.ToString(CultureInfo.InvariantCulture) + " times over "
+                    + waited.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture) + " s: " + (created ? "a new point appeared" : "no new point")
+                    + ", newest sequence " + (afterSequence?.ToString(CultureInfo.InvariantCulture) ?? "none") + ", CreationTime " + (raw ?? "none"));
+            }
+
+            if (created)
+            {
+                AppLog.Write("apply", "Restore point: created, sequence " + (afterSequence?.ToString(CultureInfo.InvariantCulture) ?? "none")
+                    + ", CreationTime " + (raw ?? "none"));
                 return new RestorePointResult(RestorePointOutcome.Created, newest, null);
             }
 
@@ -57,8 +85,8 @@ internal static class RestorePoint
             }
 
             AppLog.Write("apply", "Restore point: skipped by Windows; newest existing point "
-                + (newest is { } n ? CimDateTime.Iso(n) + " (CreationTime " + raw + ")" : "none (System Protection may be off)"));
-            return new RestorePointResult(RestorePointOutcome.Skipped, newest, null);
+                + (newest is { } n ? CimDateTime.Iso(n) + " (CreationTime " + raw + ", Description \"" + name + "\")" : "none (System Protection may be off)"));
+            return new RestorePointResult(RestorePointOutcome.Skipped, newest, null, name);
         }
         catch (Exception ex) when (ex is ManagementException or UnauthorizedAccessException or System.Runtime.InteropServices.COMException)
         {
@@ -67,12 +95,14 @@ internal static class RestorePoint
         }
     }
 
-    private static (uint? Sequence, DateTimeOffset? Created, string? Raw) Newest()
+    // SystemRestore: SequenceNumber, CreationTime and Description (Learn, SystemRestore class).
+    private static (uint? Sequence, DateTimeOffset? Created, string? Raw, string? Name) Newest()
     {
         uint? sequence = null;
         DateTimeOffset? created = null;
         string? raw = null;
-        foreach (var point in Wmi.All(Scope, "SELECT SequenceNumber, CreationTime FROM SystemRestore"))
+        string? name = null;
+        foreach (var point in Wmi.All(Scope, "SELECT SequenceNumber, CreationTime, Description FROM SystemRestore"))
         {
             using (point)
             {
@@ -82,11 +112,12 @@ internal static class RestorePoint
                     sequence = n;
                     raw = StateReader.Prop(point, "CreationTime") as string;
                     created = CimDateTime.TryParse(raw, out var t) ? t : null;
+                    name = StateReader.Prop(point, "Description") as string;
                 }
             }
         }
 
-        return (sequence, created, raw);
+        return (sequence, created, raw, name);
     }
 }
 

@@ -6,7 +6,7 @@
 
 <p align="center"><em>Your PC's folder, within reach of any device.</em></p>
 
-| Version | 0.9.0 (in development) |
+| Version | 1.0.0 (in development) |
 |---|---|
 | Platform | Windows 10 and 11 (Home or Pro) |
 | Requires | .NET Framework 4.8 (built into Windows 10 1903 and later and Windows 11), Administrator rights |
@@ -43,7 +43,7 @@ Once CPFS is running, About can install later versions; see [Updating](#updating
 - A Windows 11 look with System, Light and Dark themes.
 - English, Persian, Arabic and Turkish. CPFS follows the Windows display language when it is one of these, and you can choose another in Preferences.
 - Setup can give the shared folder a drive letter, a desktop shortcut and an entry in File Explorer's navigation pane. You choose the letter and the names, and all three carry the CPFS icon. On the drive letter, Explorer may show the disk's own name instead of yours. The navigation pane entry is the "Show in File Explorer" switch, on by default.
-- Before Setup or Uninstall changes Windows, CPFS creates a restore point unless you untick it. Windows skips a new one within 24 hours of the last, and CPFS tells you when that happens.
+- Before Setup or Uninstall changes Windows, CPFS creates a restore point unless you untick it. Windows often skips a new one because it made one in the last 24 hours. CPFS then names the newest restore point, with its date, and says where System Restore lists it (Control Panel > Recovery > Open System Restore). You choose whether to continue without a new one.
 - A connect guide for Windows, macOS, Linux, Android and iOS, with QR codes for phones, over the `.local` name, the Wi-Fi or LAN IP address, or the VPN address. The Windows steps name error 1219 and point to This PC's connections.
 - This PC's connections lists the SMB shares this PC is connected to and disconnects them, for the PC that connects rather than the one that shares.
 - Monitor shows the connected devices and their traffic, the large transfers being copied now ("Being copied now"), Recent activity and failed sign-ins. Recent activity lists every file added, changed, renamed or deleted in the shared folder, whether from any device or from this PC. CPFS can't tell which device made a change.
@@ -95,13 +95,15 @@ It lists each connection with the server as Windows holds it, the share, the dri
 
 Disconnect asks first and ends only that connection. When the connection is a mapped drive that reconnects at sign-in, Disconnect also forgets it, as File Explorer and `net use /delete` do, and the dialog says so. You map it again to get it back. If files on the connection are open, Windows refuses. A second dialog then warns that unsaved changes in those files can be lost, and only its "Disconnect anyway" button forces the disconnect. "Disconnect all connections to this server" asks once and never forces. CPFS logs what it disconnected, without any password. This Disconnect is not the one in Monitor, which ends a device's session on the share of this PC.
 
-The page works only in a window without administrator rights. Windows keeps connections and drive mappings per sign-in session, and a window with administrator rights belongs to another session of the same user. It would list and remove the wrong connections, so there the page shows a note and no list.
+The page works only in a window without administrator rights. Windows keeps connections and drive mappings per sign-in session, and a window with administrator rights belongs to another session of the same user. It would list and remove the wrong connections, so there the page shows a note and no list. The note explains that the window has administrator rights because you chose Continue as administrator on another page. Its **Reopen without administrator rights** button opens CPFS normally on this page.
 
 ### One user name per server
 
 Windows allows only one user name per server at a time. If you connect to a server with one account and then to the same server with another, Windows refuses with error 1219. Windows goes by the name you typed, and connecting by the IP address instead of the name counts as another server. That is Microsoft's own workaround for this error (support article KB 938120).
 
 If you meet error 1219 while connecting to a CPFS share from another Windows PC, open CPFS on that PC and go to This PC's connections. Disconnect the existing connection to that server, then connect again with the account you want.
+
+If Windows still refuses to end a connection, the page lists what to try, in this order: close every window and app that uses that server; connect by the server's IP address instead of its name (Microsoft's workaround, KB 938120); sign out of Windows and back in.
 
 ## Updating
 
@@ -114,13 +116,13 @@ CPFS shows what is new and asks you to confirm. It then downloads `Cpfs-<version
 - The version inside the file is the one in the release.
 - The new exe starts when CPFS tries it once before replacing anything.
 
-If one check fails, nothing is replaced. The old exe stays beside the new one until the new one has opened its window, and CPFS puts it back if the new one doesn't start.
+If one check fails, nothing is replaced. After the exe is replaced, CPFS restarts, and the confirm dialog says so. The old exe stays beside the new one until the new one has started, and CPFS puts it back if the new one doesn't start. If putting it back fails, CPFS names the folder and the file to rename back, for example `Cpfs.exe.cpfs-old` to `Cpfs.exe`.
 
 The SHA-256 guards against a damaged download. It doesn't protect against a compromised GitHub account, because the checksum comes from the same release, and there is no signature yet. Updating by hand, as in Download and first run, still works.
 
 A file CPFS installs gets no "downloaded from the internet" mark, so SmartScreen doesn't ask again. This isn't signing: your first download still meets SmartScreen, and versions CPFS installs rest on HTTPS, GitHub and the checksum. Windows still shows "Unknown publisher" when CPFS asks for administrator rights.
 
-The file keeps its name and its folder. A `Cpfs-0.9.0.exe` can hold a newer version after an update, and About and the window title show the real one. Shortcuts, pins and the startup entry keep working.
+The file keeps its name and its folder. A `Cpfs-1.0.0.exe` can hold a newer version after an update, and About and the window title show the real one. Shortcuts, pins and the startup entry keep working.
 
 CPFS can't replace the exe in place on a network drive or in a folder it can't write to, such as one under `C:\Program Files`. It offers "Save as" instead and writes the checked file where you choose, and it never asks for administrator rights to write an exe. The startup entry still points to the old file after that, and Preferences offers "Use this copy".
 

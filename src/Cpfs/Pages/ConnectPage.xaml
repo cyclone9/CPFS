@@ -9,24 +9,18 @@
   <Page.Resources>
     <BooleanToVisibilityConverter x:Key="Visible" />
 
-    <!--  A neutral note: quiet secondary text with an info icon.  -->
+    <!--  Guide notices sit at the bottom of the card, full width, each in a box that can't be closed: an informational
+          one for a note, a caution one for a requirement the user must meet.  -->
     <DataTemplate DataType="{x:Type pages:NoteItem}">
-      <Grid Margin="0,8,0,0">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="Auto" />
-          <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <ui:SymbolIcon
-          Margin="0,0,8,0"
-          VerticalAlignment="Top"
-          FontSize="16"
-          Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-          Symbol="Info24" />
-        <TextBlock Grid.Column="1" Margin="0" Style="{StaticResource CardDescription}" Text="{Binding Text}" />
-      </Grid>
+      <ui:InfoBar
+        Margin="0,8,0,0"
+        AutomationProperties.Name="{Binding Text}"
+        IsClosable="False"
+        IsOpen="True"
+        Message="{Binding Text}"
+        Severity="Informational" />
     </DataTemplate>
 
-    <!--  A requirement the user must meet, not a step: a warning bar that can't be closed.  -->
     <DataTemplate DataType="{x:Type pages:WarningItem}">
       <ui:InfoBar
         Margin="0,8,0,0"
@@ -50,11 +44,25 @@
             Padding="12,8"
             Background="{DynamicResource ControlFillColorSecondaryBrush}"
             CornerRadius="4">
-            <TextBlock
+            <!--  One piece per run up to "/", "@" or "\": a line breaks only there. A piece wider than the box still wraps.  -->
+            <ItemsControl
               VerticalAlignment="Center"
+              AutomationProperties.HelpText="{Binding Value}"
               AutomationProperties.Name="{Binding Label}"
-              Style="{StaticResource DataValue}"
-              Text="{Binding Value}" />
+              FlowDirection="LeftToRight"
+              Focusable="False"
+              ItemsSource="{Binding Pieces}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Style="{StaticResource DataValue}" Text="{Binding}" TextWrapping="Wrap" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
           </Border>
           <ui:Button
             Grid.Column="1"
@@ -98,36 +106,36 @@
     </DataTemplate>
 
     <!--
-      One device's guide: the numbered steps, then its notes; for the phones the QR code beside the steps, or under
-      them when the window is narrow (FieldCardPanel). The code is always dark on white with its quiet zone, never
-      mirrored, and holds no password.
+      One device's guide: the numbered steps; for the phones the QR code beside the steps, or under them when the
+      window is narrow (FieldCardPanel); then its notices across the whole card. The code is always dark on white with
+      its quiet zone, never mirrored, and holds no password.
     -->
     <DataTemplate x:Key="GuideTemplate" DataType="{x:Type pages:GuideCard}">
       <Border Margin="0,16,0,0" Padding="20" Style="{StaticResource GroupCard}">
-        <local:FieldCardPanel AlignTop="True" FieldAutoWidth="True" MinHeaderEms="18">
-          <StackPanel>
+        <StackPanel>
+          <local:FieldCardPanel AlignTop="True" FieldAutoWidth="True" MinHeaderEms="18">
             <ItemsControl Focusable="False" ItemTemplate="{StaticResource StepTemplate}" ItemsSource="{Binding Steps}" />
-            <ItemsControl Focusable="False" ItemsSource="{Binding Notes}" />
-          </StackPanel>
-          <StackPanel Width="240" Visibility="{Binding HasQr, Converter={StaticResource Visible}}">
-            <Border
-              Padding="12"
-              HorizontalAlignment="Center"
-              Background="White"
-              CornerRadius="8">
-              <Image
-                Width="216"
-                Height="216"
-                AutomationProperties.Name="{Binding Qr.Name}"
-                FlowDirection="LeftToRight"
-                RenderOptions.EdgeMode="Aliased"
-                Source="{Binding Qr.Image}" />
-            </Border>
-            <TextBlock Margin="0,8,0,0" Style="{StaticResource CardDescription}" Text="{Binding Qr.Caption}" TextAlignment="Center" />
-            <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Connect_Qr_NoPassword], Source={x:Static local:Loc.Instance}}" TextAlignment="Center" />
-            <ContentControl Margin="0,4,0,0" Content="{Binding Qr.Value}" Focusable="False" />
-          </StackPanel>
-        </local:FieldCardPanel>
+            <StackPanel Width="240" Visibility="{Binding HasQr, Converter={StaticResource Visible}}">
+              <Border
+                Padding="12"
+                HorizontalAlignment="Center"
+                Background="White"
+                CornerRadius="8">
+                <Image
+                  Width="216"
+                  Height="216"
+                  AutomationProperties.Name="{Binding Qr.Name}"
+                  FlowDirection="LeftToRight"
+                  RenderOptions.EdgeMode="Aliased"
+                  Source="{Binding Qr.Image}" />
+              </Border>
+              <TextBlock Margin="0,8,0,0" Style="{StaticResource CardDescription}" Text="{Binding Qr.Caption}" TextAlignment="Center" />
+              <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Connect_Qr_NoPassword], Source={x:Static local:Loc.Instance}}" TextAlignment="Center" />
+              <ContentControl Margin="0,4,0,0" Content="{Binding Qr.Value}" Focusable="False" />
+            </StackPanel>
+          </local:FieldCardPanel>
+          <ItemsControl Focusable="False" ItemsSource="{Binding Notes}" />
+        </StackPanel>
       </Border>
     </DataTemplate>
 

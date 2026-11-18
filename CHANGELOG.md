@@ -19,6 +19,9 @@ This project uses [semantic versioning](https://semver.org/).
 - Update now in About: after a check finds a newer release, CPFS can download it from GitHub, check it against the release's SHA-256 checksum, size and version, start it once as a test, and replace the exe it runs from, keeping the previous one until the new version has opened. Only when you press the button, never from a window opened as administrator, and never for the background copy in Program Files. A copy on a network drive, or in a folder CPFS can't write to, gets Save as instead.
 - Setup no longer replaces a newer Auto-Private background copy with an older CPFS without asking, and tells you which version the copy still runs after an update. When that copy is the only change, the restore point starts unticked.
 - The READMEs describe the tray icon and starting with Windows, This PC's connections and error 1219, and Updating with what its SHA-256 check does and doesn't protect against.
+- Connections in a window opened as administrator now says why the list isn't shown and offers Reopen without administrator rights; the 1219 help lists Microsoft's remedies in order. On Connect, every note sits in a box at the bottom of the guide, values wrap only after "/", "@" or "\", and the iPhone QR code says once that it holds no password. When Windows skips a new restore point, CPFS names the newest one and says where System Restore lists it.
+- If the updater can't read the new file back after replacing the old one (an antivirus that locks or removes it, for example), it now puts the previous version back. If even that fails, it says so and names the file to rename, instead of saying the version you have stays.
+- A restore point that Windows creates but lists a few seconds late is no longer reported as skipped: CPFS reads the list again for up to 15 seconds.
 
 ## 0.8.0 - 2026-10-24
 

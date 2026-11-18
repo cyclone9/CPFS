@@ -47,6 +47,7 @@ internal sealed class SingleInstance : IDisposable
     private const uint AsfwAny = 0xFFFFFFFF;
 
     private static readonly TimeSpan HandOverWait = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan AfterAdminWait = TimeSpan.FromSeconds(15);
 
     private readonly Mutex _mutex;
     private readonly ShowEvent? _event;
@@ -60,15 +61,38 @@ internal sealed class SingleInstance : IDisposable
 
     // Null unless the outcome is First; a null instance with First means the mutex could not be used at all, and
     // CPFS starts without the single-instance guard rather than not at all.
-    public static SingleInstance? Acquire(bool handOver, out InstanceOutcome outcome)
+    // afterAdmin: started by the elevated window's "Reopen without administrator rights". That window's mutex denies
+    // this unelevated process until it closes, so the start retries for a while instead of reporting it as open.
+    public static SingleInstance? Acquire(bool handOver, bool afterAdmin, out InstanceOutcome outcome)
     {
         Mutex? mutex = null;
         var owned = false;
         var denied = false;
         try
         {
-            mutex = new Mutex(true, MutexName, out var createdNew);
-            owned = createdNew;
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            while (true)
+            {
+                try
+                {
+                    mutex = new Mutex(true, MutexName, out var created);
+                    owned = created;
+                    denied = false;
+                    break;
+                }
+                catch (UnauthorizedAccessException) when (afterAdmin && watch.Elapsed < AfterAdminWait)
+                {
+                    denied = true;
+                    Thread.Sleep(200);
+                }
+            }
+
+            if (afterAdmin)
+            {
+                AppLog.Write("instance", "Reopened without administrator rights: waited " + watch.ElapsedMilliseconds.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    + " ms for the elevated window to close, " + (owned ? "now the only window" : "another window is open"));
+            }
+
             if (!owned && handOver)
             {
                 AppLog.Write("instance", "Waiting up to 5 s for the window that asked for administrator rights to close");

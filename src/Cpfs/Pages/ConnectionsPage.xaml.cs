@@ -91,12 +91,22 @@ public partial class ConnectionsPage : Page
         if (Startup.IsElevated)
         {
             AdminInfo.IsOpen = true;
+            ReopenButton.Visibility = Visibility.Visible;
             ListArea.Visibility = Visibility.Collapsed;
             Bar.Visibility = Visibility.Collapsed;
             AppLog.Write("connections", "Elevated window: the list is not read");
+
+            // B7: one read-only probe to the log; its rows never reach the page or a cancel.
+            if (!_probed)
+            {
+                _probed = true;
+                _ = Task.Run(() => Probes.Probe("MSFT_SmbConnection (elevated)", SmbClient.ProbeSmbConnectionCim));
+            }
+
             return;
         }
 
+        ClearArea.Visibility = ServerClear.Shown ? Visibility.Visible : Visibility.Collapsed;
         await ReadAsync();
         if (!_probed)
         {
@@ -177,6 +187,8 @@ public partial class ConnectionsPage : Page
                 + ", account " + (u.Domain ?? "") + "\\" + (u.User ?? ""));
         }
 
+        ProbeConnected(uses);
+
         string? provider = null;
         try
         {
@@ -219,6 +231,56 @@ public partial class ConnectionsPage : Page
 
         var thisPc = new ThisPcNames(host, Environment.MachineName, domain, NetworkAddresses.Read());
         return (ClientConnections.Build(uses, remembered, provider, thisPc.Matches), savedError);
+    }
+
+    // B7: WNetOpenEnum(RESOURCE_CONNECTED) next to NetUseEnum, to the log only. A row only WNetOpenEnum has would be
+    // the evidence for showing it some day; until then it is never shown and never cancelled.
+    private static void ProbeConnected(List<SmbUse> uses)
+    {
+        try
+        {
+            var connected = SmbClient.ReadConnected();
+            AppLog.Write("probe", "WNetOpenEnum(RESOURCE_CONNECTED): " + connected.Count.ToString(CultureInfo.InvariantCulture) + " rows");
+            foreach (var r in connected)
+            {
+                AppLog.Write("probe", "  connected " + (r.Local ?? "-") + " " + r.Remote + ", provider " + (r.Provider ?? "-")
+                    + ", type " + r.Type.ToString(CultureInfo.InvariantCulture));
+            }
+
+            static string Key(string? local, string remote) => (local ?? "").ToUpperInvariant() + "|" + remote.TrimEnd('\\').ToUpperInvariant();
+            var a = new HashSet<string>(uses.Select(u => Key(u.Local, u.Remote)), StringComparer.Ordinal);
+            var b = new HashSet<string>(connected.Select(r => Key(r.Local, r.Remote)), StringComparer.Ordinal);
+            AppLog.Write("probe", "Only in NetUseEnum: " + string.Join(", ", a.Except(b)) + "; only in WNetOpenEnum: " + string.Join(", ", b.Except(a)));
+        }
+        catch (Win32Exception ex)
+        {
+            AppLog.Write("probe", "WNetOpenEnum(RESOURCE_CONNECTED) failed: " + ex.NativeErrorCode.ToString(CultureInfo.InvariantCulture) + " " + ex.Message);
+        }
+    }
+
+    // ---- Reopen without administrator rights (elevated window only) ----
+
+    private async void OnReopen(object sender, RoutedEventArgs e)
+    {
+        ReopenButton.IsEnabled = false;
+        ReadInfo.IsOpen = false;
+        try
+        {
+            await Task.Run(Reopen.AsDesktopUser);
+
+            // Closing releases the single-instance mutex the new window waits for.
+            Application.Current.Shutdown();
+        }
+        catch (Exception ex) when (State.IsExpected(ex) || ex is Core.Apply.StepUnsupportedException or System.Security.Principal.IdentityNotMappedException)
+        {
+            AppLog.Exception("connections", ex);
+            ReopenButton.IsEnabled = true;
+            var inner = ex is System.Reflection.TargetInvocationException { InnerException: { } i } ? i : ex;
+            ReadInfo.Severity = InfoBarSeverity.Error;
+            ReadInfo.Title = Loc.Instance["Connections_Reopen_Failed"];
+            ReadInfo.Message = UiErrors.ForUser(inner);
+            ReadInfo.IsOpen = true;
+        }
     }
 
     private void Render()
@@ -392,6 +454,135 @@ public partial class ConnectionsPage : Page
             SetBusy(false);
         }
     }
+
+    // ---- End connections to a typed server (design record 2026-11-19, 3.1; B9-B11) ----
+
+    private async void OnClearServer(object sender, RoutedEventArgs e)
+    {
+        if (_busy || !ServerClear.Shown)
+        {
+            return;
+        }
+
+        var loc = Loc.Instance;
+        ActionResult.IsOpen = false;
+        var error = ServerClear.Parse(ClearServerBox.Text, out var request);
+        ClearError.Text = error switch
+        {
+            ServerClearError.None => "",
+            ServerClearError.Empty => loc["Connections_Clear_ErrEmpty"],
+            ServerClearError.Device => loc["Connections_Clear_ErrDevice"],
+            ServerClearError.Wildcard => loc["Connections_Clear_ErrWildcard"],
+            ServerClearError.Path => loc["Connections_Clear_ErrPath"],
+            ServerClearError.NotSmb => loc["Connections_Clear_ErrNotSmb"],
+            ServerClearError.Share => loc["Connections_Clear_ErrShare"],
+            _ => loc["Connections_Clear_ErrServer"],
+        };
+        ClearError.Visibility = error == ServerClearError.None ? Visibility.Collapsed : Visibility.Visible;
+        if (request is null)
+        {
+            AppLog.Write("connections", "End connections: refused input (" + error + ")");
+            return;
+        }
+
+        // A listed server has its own Disconnect all, which shows each connection first.
+        var group = _groups.FirstOrDefault(g => string.Equals(g.Server, request.Server, StringComparison.OrdinalIgnoreCase));
+        if (group is not null)
+        {
+            AppLog.Write("connections", "End connections: " + request.Server + " is listed; pointed to Disconnect all");
+            ShowResult(InfoBarSeverity.Informational, loc.FormatValues("Connections_Clear_Listed", group.Server));
+            return;
+        }
+
+        var targets = ServerClear.Targets(request, Array.Empty<ClientConnection>());
+        var content = new StackPanel { MaxWidth = 520 };
+        content.Children.Add(DialogText(loc.FormatValues("Connections_Clear_ConfirmMsg", request.Server)));
+        foreach (var t in targets)
+        {
+            var line = DialogText(t.Remote, 4);
+            line.FlowDirection = FlowDirection.LeftToRight;
+            line.FontFamily = Theming.MonoFamily;
+            content.Children.Add(line);
+        }
+
+        if (!await ConfirmAsync(loc["Connections_Clear_ConfirmTitle"], content, loc["Connections_Clear_Confirm"], "Connections_Clear_ConfirmTitle"))
+        {
+            AppLog.Write("connections", "End connections cancelled for " + request.Server);
+            return;
+        }
+
+        SetBusy(true);
+        ClearButton.IsEnabled = false;
+        try
+        {
+            // Never forced first, and never forced in bulk (B10).
+            var results = await Task.Run(() => targets.Select(t => (Target: t, Code: Delete(t, force: false))).ToList());
+            for (var i = 0; i < results.Count; i++)
+            {
+                var (target, code) = results[i];
+                if (ServerClear.Judge(code) != ServerClearVerdict.OpenFiles)
+                {
+                    continue;
+                }
+
+                // Only this target, only after Windows refused for open files, only through the danger dialog's own button (B3).
+                SetBusy(false);
+                var forced = await ConfirmAsync(loc["Connections_Force_Title"], loc.FormatValues("Connections_Force_Msg", ShareOf(target), request.Server),
+                    loc["Connections_Force_Confirm"], "Connections_Force_Title", ControlAppearance.Danger);
+                SetBusy(true);
+                if (forced)
+                {
+                    results[i] = (target, await Task.Run(() => Delete(target, force: true)));
+                }
+                else
+                {
+                    AppLog.Write("connections", "End connections: forcing declined for " + target.Remote);
+                }
+            }
+
+            // The list read again, so a row Windows still holds shows up; logged by the read itself.
+            await ReadNowAsync();
+            var lines = new List<string> { Bidi.Embed(request.Server, loc.IsRtl) };
+            foreach (var (target, code) in results)
+            {
+                var verdict = ServerClear.Judge(code);
+                AppLog.Write("connections", "End connections: " + target.Remote + " -> code " + code.ToString(CultureInfo.InvariantCulture) + ", " + verdict);
+                lines.Add(verdict switch
+                {
+                    ServerClearVerdict.Ended => loc.FormatValues("Connections_Clear_Ended", target.Remote),
+                    ServerClearVerdict.NotHeld => loc.FormatValues("Connections_Clear_NotHeld", target.Remote),
+                    ServerClearVerdict.OpenFiles => loc.FormatValues("Connections_Clear_OpenFiles", target.Remote),
+                    _ => loc.FormatValues("Connections_Clear_Failed", target.Remote, new Win32Exception(code).Message),
+                });
+            }
+
+            // 2250 everywhere: Windows holds nothing CPFS can end by that name. Never "cleared" then.
+            var verdicts = results.Select(r => ServerClear.Judge(r.Code)).ToList();
+            var noneHeld = verdicts.All(v => v == ServerClearVerdict.NotHeld);
+            if (noneHeld)
+            {
+                lines.Add(loc["Connections_Clear_TryRemedies"]);
+            }
+
+            var ok = !noneHeld && verdicts.All(v => v is ServerClearVerdict.Ended or ServerClearVerdict.NotHeld);
+            ShowResult(ok ? InfoBarSeverity.Success : InfoBarSeverity.Warning, string.Join(Environment.NewLine, lines),
+                loc[noneHeld ? "Connections_Clear_NothingTitle" : "Connections_Clear_DoneTitle"]);
+        }
+        finally
+        {
+            ClearButton.IsEnabled = true;
+            SetBusy(false);
+        }
+    }
+
+    // Logged before the call: the name, that it was typed or added, forced or not. No password exists on this path (B6).
+    private static int Delete(ServerClearTarget target, bool force)
+    {
+        AppLog.Write("connections", "End connections: NetUseDel " + target.Remote + (target.Typed ? " (typed)" : " (added)") + (force ? ", forced" : ", not forced"));
+        return SmbClient.Delete(target, force);
+    }
+
+    private static string ShareOf(ServerClearTarget target) => ClientConnections.SplitUnc(target.Remote)?.Share ?? target.Remote;
 
     // One cancel, then the list read again; the verdict comes from the new list.
     private async Task<(DisconnectVerdict Verdict, int Code)> DisconnectAsync(ClientConnection row, bool force)

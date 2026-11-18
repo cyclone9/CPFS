@@ -662,8 +662,17 @@ internal static class RunAsUser
     private static readonly TimeSpan StartLimit = TimeSpan.FromSeconds(15);
     private static readonly TimeSpan RunLimit = TimeSpan.FromSeconds(30);
 
+    // ITaskSettings::Priority 4 is NORMAL_PRIORITY_CLASS; the default 7 is below normal, wrong for a window.
+    private const int PriorityNormal = 4;
+
     // Returns the task's last result: the exit code of the program it ran.
-    public static int Run(string account, string exe, string arguments)
+    public static int Run(string account, string exe, string arguments) => Execute(account, exe, arguments, wait: true);
+
+    // Starts the program as the user and returns once Task Scheduler reports it started; the task is deleted then and
+    // the program keeps running. No time limit ("PT0S"), so a window it opens isn't ended after a minute.
+    public static void Start(string account, string exe, string arguments) => Execute(account, exe, arguments, wait: false);
+
+    private static int Execute(string account, string exe, string arguments, bool wait)
     {
         var type = Type.GetTypeFromProgID("Schedule.Service", throwOnError: true)!;
         var service = Activator.CreateInstance(type)!;
@@ -687,7 +696,12 @@ internal static class RunAsUser
             Set(settings, "DisallowStartIfOnBatteries", false);
             Set(settings, "StopIfGoingOnBatteries", false);
             Set(settings, "AllowDemandStart", true);
-            Set(settings, "ExecutionTimeLimit", "PT1M");
+            Set(settings, "ExecutionTimeLimit", wait ? "PT1M" : "PT0S");
+            if (!wait)
+            {
+                Set(settings, "Priority", PriorityNormal);
+            }
+
             Set(settings, "Hidden", true);
             Release(settings);
 
@@ -711,7 +725,7 @@ internal static class RunAsUser
                 var state = Convert.ToInt32(Get(registered, "State"), CultureInfo.InvariantCulture);
                 var busy = state is StateRunning or StateQueued;
                 started |= busy || (DateTime)Get(registered, "LastRunTime")! != before;
-                if (started && !busy)
+                if (started && (!busy || !wait))
                 {
                     break;
                 }
@@ -722,7 +736,7 @@ internal static class RunAsUser
                 }
             }
 
-            return Convert.ToInt32(Get(registered, "LastTaskResult"), CultureInfo.InvariantCulture);
+            return wait ? Convert.ToInt32(Get(registered, "LastTaskResult"), CultureInfo.InvariantCulture) : 0;
         }
         finally
         {

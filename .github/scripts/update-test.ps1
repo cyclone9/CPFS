@@ -147,6 +147,14 @@ Unchanged $r 'failing probe' 'Error:ProbeFailed'
 $r = Invoke-Update 'second-rename' $good @{ CPFS_UPDATE_TEST_FAIL_SECOND_RENAME = '1' }
 Unchanged $r 'failing second rename (first undone)' 'Error:SwapFailed'
 
+# The new file can't be read back after the swap (an antivirus lock): A goes back, B is kept aside as .cpfs-failed.
+$r = Invoke-Update 'read-back' $good @{ CPFS_UPDATE_TEST_FAIL_READBACK = '1' }
+Check ($r.Exit -eq 0 -and $r.Outcome -eq 'Error:SwapFailed') 'failing read-back: outcome Error:SwapFailed' "$($r.Outcome), exit $($r.Exit)"
+Check ((Hash $r.Exe) -eq $hashA) 'failing read-back: the exe is A again'
+$failedFile = "$($r.Exe).cpfs-failed"
+Check ((Test-Path -LiteralPath $failedFile) -and (Hash $failedFile) -eq $hashB) 'failing read-back: B kept aside as .cpfs-failed'
+Check ((Files $r.Dir) -eq 'Cpfs.exe, Cpfs.exe.cpfs-failed') 'failing read-back: no old or staging file' (Files $r.Dir)
+
 # The folder denies this account "create files": the staging file is refused, the verified bytes go to Save as.
 $sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
 $r = Invoke-Update 'deny-write' $good @{} { param($d) & icacls $d /deny "*${sid}:(WD)" | Out-Host }

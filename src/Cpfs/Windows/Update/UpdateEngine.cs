@@ -95,7 +95,7 @@ internal static class UpdateEngine
             }
             else
             {
-                throw new UpdateException(UpdateError.SwapFailed, UpdateRules.OldPath(exe));
+                throw new UpdateException(UpdateError.RollbackFailed, exe);
             }
         }
 
@@ -378,6 +378,10 @@ internal static class UpdateEngine
         }
 
         AppLog.Write("update", "Renamed " + exe + " -> " + old);
+
+        // From here every failure puts the previous exe back (review E1); an antivirus may lock or remove the new file.
+        var placed = false;
+        string? windowsSaid;
         try
         {
 #if CPFS_UPDATE_TEST
@@ -387,23 +391,42 @@ internal static class UpdateEngine
             }
 #endif
             File.Move(staged, exe);
+            placed = true;
             AppLog.Write("update", "Renamed " + staged + " -> " + exe);
+#if CPFS_UPDATE_TEST
+            if (UpdateTestHooks.FailReadBack)
+            {
+                throw new IOException("test hook: the read-back fails");
+            }
+#endif
+            var now = Sha256Of(exe);
+            if (string.Equals(now, hash, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            AppLog.Write("update", "The file at " + exe + " reads as " + now + " after the swap: putting the previous one back");
+            windowsSaid = null;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex)
         {
-            AppLog.Write("update", "Rename " + staged + " -> " + exe + " failed: " + ex.GetType().Name);
-            Undo(exe, old, "after the second rename failed");
-            TryDelete(staged);
-            throw new UpdateException(UpdateError.SwapFailed, ex.Message);
+            AppLog.Write("update", (placed ? "Read-back of " + exe : "Rename " + staged + " -> " + exe) + " failed: " + ex.GetType().Name
+                + " 0x" + ex.HResult.ToString("X8", CultureInfo.InvariantCulture));
+            windowsSaid = ex.Message;
         }
 
-        var now = Sha256Of(exe);
-        if (!string.Equals(now, hash, StringComparison.Ordinal))
+        var back = placed ? RollBack(exe) : Undo(exe, old, "after the second rename failed");
+        if (!placed && File.Exists(staged))
         {
-            AppLog.Write("update", "The file at " + exe + " reads as " + now + " after the swap: putting the previous one back");
-            RollBack(exe);
-            throw new UpdateException(UpdateError.SwapFailed, exe);
+            TryDelete(staged);
         }
+
+        if (!back)
+        {
+            throw new UpdateException(UpdateError.RollbackFailed, exe);
+        }
+
+        throw new UpdateException(UpdateError.SwapFailed, windowsSaid);
     }
 
     // Step 9's start. Null when it could not be started (then the caller rolls back).

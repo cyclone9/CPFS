@@ -32,12 +32,20 @@ public static class Pages
     public const string Monitor = "Monitor";
     public const string Uninstall = "Uninstall";
 
+    public const string Connections = "Connections";
+
     public static readonly IReadOnlyList<string> Elevated = new[] { Setup, Monitor, Uninstall };
+
+    // Opened by "Reopen without administrator rights" (--reopened), only in an unelevated instance.
+    public static readonly IReadOnlyList<string> Unelevated = new[] { Connections };
 }
 
 public sealed class RelaunchArguments
 {
     public bool Elevated { get; internal set; }
+
+    // Started by the elevated window's "Reopen without administrator rights": wait for that window to close.
+    public bool Reopened { get; internal set; }
 
     public string? Page { get; internal set; }
 
@@ -66,6 +74,7 @@ public sealed class RelaunchArguments
 public static class RelaunchArgs
 {
     public const string ElevatedOption = "--elevated";
+    public const string ReopenedOption = "--reopened";
     public const string PageOption = "--page";
     public const string DesktopSidOption = "--desktop-sid";
     public const string DesktopOption = "--desktop";
@@ -103,6 +112,9 @@ public static class RelaunchArgs
         return args;
     }
 
+    // The de-elevating start: the flag and the page, nothing else. Preferences come from the user's own profile.
+    public static IReadOnlyList<string> BuildReopen() => new[] { ReopenedOption, PageOption, Pages.Connections };
+
     public static RelaunchArguments Parse(IReadOnlyList<string> args)
     {
         var result = new RelaunchArguments();
@@ -117,6 +129,12 @@ public static class RelaunchArgs
             if (string.Equals(option, ElevatedOption, StringComparison.Ordinal))
             {
                 result.Elevated = true;
+                continue;
+            }
+
+            if (string.Equals(option, ReopenedOption, StringComparison.Ordinal))
+            {
+                result.Reopened = true;
                 continue;
             }
 
@@ -136,7 +154,7 @@ public static class RelaunchArgs
             switch (option)
             {
                 case PageOption:
-                    result.Page = Accept(result, option, value, v => Pages.Elevated.Contains(v, StringComparer.Ordinal));
+                    result.Page = Accept(result, option, value, v => Pages.Elevated.Contains(v, StringComparer.Ordinal) || Pages.Unelevated.Contains(v, StringComparer.Ordinal));
                     break;
                 case DesktopSidOption:
                     result.DesktopSid = Accept(result, option, value, v => SidPattern.IsMatch(v));

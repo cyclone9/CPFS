@@ -151,6 +151,7 @@ public partial class MainWindow : FluentWindow
         Core.Elevation.Pages.Uninstall => typeof(Pages.UninstallPage),
         _ => typeof(Pages.SetupPage),
     }
+    : Startup.IsReopen && Startup.Arguments.Page == Core.Elevation.Pages.Connections ? typeof(Pages.ConnectionsPage)
     : typeof(Pages.SetupPage);
 
     // Shows another page, as if its navigation item had been clicked.

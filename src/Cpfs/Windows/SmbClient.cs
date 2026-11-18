@@ -20,9 +20,16 @@ internal static class SmbClient
     private const uint MaxPreferredLength = 0xFFFFFFFF;
 
     // winnetwk.h / wnnc.h values (mingw-w64 headers; Learn names the constants without their numbers).
+    private const uint ResourceConnected = 0x00000001;
     private const uint ResourceRemembered = 0x00000003;
+    private const uint ResourceTypeAny = 0x00000000;
     private const uint ResourceTypeDisk = 0x00000001;
     private const uint WnncNetLanman = 0x00020000;
+
+    // lmuseflg.h: USE_NOFORCE 0, USE_LOTS_OF_FORCE 2 (Learn names them without numbers). USE_FORCE (1) is never used:
+    // Learn doesn't say what happens to the open files.
+    private const uint UseNoForce = 0;
+    private const uint UseLotsOfForce = 2;
 
     // CONNECT_UPDATE_PROFILE 0x1 and CONNECT_TEMPORARY 0x4 (Learn, WNetAddConnection2W).
     private const uint ConnectUpdateProfile = 0x00000001;
@@ -75,10 +82,17 @@ internal static class SmbClient
     // WNetOpenEnumW: https://learn.microsoft.com/en-us/windows/win32/api/winnetwk/nf-winnetwk-wnetopenenumw
     // WNetEnumResourceW: https://learn.microsoft.com/en-us/windows/win32/api/winnetwk/nf-winnetwk-wnetenumresourcew
     // WNetCloseEnum: https://learn.microsoft.com/en-us/windows/win32/api/winnetwk/nf-winnetwk-wnetcloseenum
-    public static List<RememberedMapping> ReadRemembered()
+    public static List<RememberedMapping> ReadRemembered() =>
+        Enumerate(ResourceRemembered, ResourceTypeDisk).ConvertAll(r => new RememberedMapping(r.Local, r.Remote, r.Provider));
+
+    // WNetOpenEnum(RESOURCE_CONNECTED, RESOURCETYPE_ANY), for the log only (design record 2026-11-19, B7): every
+    // provider's connections, the SSHFS drive included. Never shown and never cancelled.
+    public static List<ConnectedResource> ReadConnected() => Enumerate(ResourceConnected, ResourceTypeAny);
+
+    private static List<ConnectedResource> Enumerate(uint scope, uint type)
     {
-        var result = new List<RememberedMapping>();
-        var status = WNetOpenEnumW(ResourceRemembered, ResourceTypeDisk, 0, IntPtr.Zero, out var handle);
+        var result = new List<ConnectedResource>();
+        var status = WNetOpenEnumW(scope, type, 0, IntPtr.Zero, out var handle);
         if (status != 0)
         {
             throw new Win32Exception(status);
@@ -121,7 +135,7 @@ internal static class SmbClient
                     var remote = Marshal.PtrToStringUni(r.RemoteName);
                     if (remote is not null)
                     {
-                        result.Add(new RememberedMapping(ClientConnections.LocalName(Marshal.PtrToStringUni(r.LocalName)), remote, Marshal.PtrToStringUni(r.Provider)));
+                        result.Add(new ConnectedResource(ClientConnections.LocalName(Marshal.PtrToStringUni(r.LocalName)), remote, Marshal.PtrToStringUni(r.Provider), r.Type));
                     }
                 }
             }
@@ -174,6 +188,25 @@ internal static class SmbClient
         return WNetCancelConnection2W(target.Name, target.UpdateProfile ? ConnectUpdateProfile : 0, force);
     }
 
+    // NetUseDel for "End connections to this server": https://learn.microsoft.com/en-us/windows/win32/api/lmuse/nf-lmuse-netusedel
+    // It reaches only the SMB client (no other provider), so the SSHFS drive is out of its reach, and the target is a
+    // deviceless \\server\share built in Core (B9). Forced only for the one target the user confirmed in the danger
+    // dialog (B10). Returns Windows' code.
+    public static int Delete(ServerClearTarget target, bool force)
+    {
+        if (target is null)
+        {
+            throw new ArgumentNullException(nameof(target));
+        }
+
+        if (!target.Remote.StartsWith(@"\\", StringComparison.Ordinal) || target.Remote.IndexOf(':') >= 0)
+        {
+            throw new ArgumentException("Not a deviceless remote name", nameof(target));
+        }
+
+        return NetUseDel(null, target.Remote, force ? UseLotsOfForce : UseNoForce);
+    }
+
     // WNetAddConnection2W, for the CI test only (the page never creates a connection):
     // https://learn.microsoft.com/en-us/windows/win32/api/winnetwk/nf-winnetwk-wnetaddconnection2w
     // The password goes to Windows as an unmanaged copy that is zeroed and freed at once; it never becomes a string.
@@ -223,22 +256,27 @@ internal static class SmbClient
     }
 
     // MSFT_SmbConnection: https://learn.microsoft.com/en-us/previous-versions/windows/desktop/smb/msft-smbconnection
+    // Credential is "the credential (domain + user name) that was used", an account name, not a secret (Learn). Which
+    // logon sessions the class returns is undocumented: the elevated window logs it (B7) and never shows or acts on it.
     public static string ProbeSmbConnectionCim()
     {
         var rows = new List<string>();
         using var searcher = new ManagementObjectSearcher(new ManagementScope(@"root\Microsoft\Windows\SMB"),
-            new ObjectQuery("SELECT UserName, Dialect FROM MSFT_SmbConnection"));
+            new ObjectQuery("SELECT ServerName, ShareName, UserName, Credential, Dialect, NumOpens FROM MSFT_SmbConnection"));
         using var results = searcher.Get();
         foreach (ManagementBaseObject o in results)
         {
             using (o)
             {
-                rows.Add(Convert.ToString(o["UserName"], CultureInfo.InvariantCulture) + " / " + Convert.ToString(o["Dialect"], CultureInfo.InvariantCulture));
+                rows.Add(@"\\" + Text(o, "ServerName") + @"\" + Text(o, "ShareName") + ", user " + Text(o, "UserName") + ", credential "
+                    + Text(o, "Credential") + ", dialect " + Text(o, "Dialect") + ", opens " + Text(o, "NumOpens"));
             }
         }
 
         return rows.Count.ToString(CultureInfo.InvariantCulture) + " rows" + (rows.Count == 0 ? "" : ": " + string.Join("; ", rows));
     }
+
+    private static string Text(ManagementBaseObject o, string name) => Convert.ToString(o[name], CultureInfo.InvariantCulture) ?? "";
 
     // Undocumented key (lookup C): value names and the first bytes as found, for the dev4 design.
     public static string ProbeStartupApproved()
@@ -297,6 +335,9 @@ internal static class SmbClient
         out int entriesRead, out int totalEntries, ref uint resumeHandle);
 
     [DllImport("netapi32.dll", CharSet = CharSet.Unicode)]
+    private static extern int NetUseDel(string? uncServerName, string useName, uint forceLevelFlags);
+
+    [DllImport("netapi32.dll", CharSet = CharSet.Unicode)]
     private static extern int NetSessionEnum(string? serverName, string? uncClientName, string? userName, int level, out IntPtr buffer,
         uint preferredMaximumLength, out int entriesRead, out int totalEntries, ref uint resumeHandle);
 
@@ -322,3 +363,6 @@ internal static class SmbClient
     [DllImport("mpr.dll", CharSet = CharSet.Unicode)]
     private static extern int WNetGetProviderNameW(uint netType, [Out] char[] providerName, ref int bufferSize);
 }
+
+// One row of WNetOpenEnum, of any provider. Type is the NETRESOURCE dwType.
+internal sealed record ConnectedResource(string? Local, string Remote, string? Provider, uint Type);

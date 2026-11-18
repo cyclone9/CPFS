@@ -381,6 +381,7 @@ internal static class CiApplyTest
         AutoPrivateChecks(o, config, leftPublic, temp);
         RenameChecks(config);
         ClientPhase(o, password);
+        ReopenStartCheck(o);
         StartChecks(o);
 
         // Re-running with the same answers changes nothing: the copy, the task and the pending rename are Keep.
@@ -750,24 +751,208 @@ internal static class CiApplyTest
                     target.Name + ": " + Code(cancel) + (still ? ", still listed" : ""));
             }
 
-            // An implicit UNC access (no WNetAddConnection): what NetUseEnum shows and what a non-forced cancel says.
-            try
-            {
-                o.WriteLine("Client: implicit access to " + unc + ": " + Directory.GetFileSystemEntries(unc).Length.ToString(CultureInfo.InvariantCulture) + " entries");
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                o.WriteLine("Client: implicit access to " + unc + " failed: " + ex.GetType().Name + ": " + ex.Message);
-            }
-
-            foreach (var u in LogUses(o, "after the implicit access").Where(u => string.IsNullOrEmpty(u.Local) && IsLoopback(u.Remote)))
-            {
-                o.WriteLine("Client: non-forced cancel of " + u.Remote + ": " + Code(SmbClient.Cancel(new DisconnectTarget(u.Remote, false), force: false)));
-            }
+            TypedClearChecks(o, unc, user, other, password);
         }
         finally
         {
             ClientCleanup(o, letter);
+        }
+    }
+
+    private static readonly string[] ClearChecks =
+    {
+        "the share is read by UNC as the test user over its IPC$ connection",
+        "B11: End connections ends a connection the list did not show",
+        "End connections without force refuses while a file is open, and the file stays readable",
+    };
+
+    // "End connections to this server" (design record 2026-11-19, section 6, steps 1-4) through the app's own Core
+    // targets and SmbClient.Delete. The share is read by UNC as the test user (its IPC$ connection carries the
+    // credentials), so the access really happens and is implicit; NetUseDel then goes to names the list may not show.
+    // B11 is decided here: PASS "proven" or SKIP "not proven" with the reason; only a proven run may show the button.
+    private static void TypedClearChecks(TextWriter o, string unc, string user, string other, SecureString password)
+    {
+        const string ipc = @"\\localhost\IPC$";
+        if (ServerClear.Parse(unc, out var request) != ServerClearError.None || request is null)
+        {
+            Check(false, ClearChecks[0], "the app refuses " + unc);
+            return;
+        }
+
+        var targets = ServerClear.Targets(request, Groups(SmbClient.ReadUses()).SelectMany(g => g.Connections));
+        var shareTarget = targets.FirstOrDefault(t => t.Typed);
+        var ipcTarget = targets[targets.Count - 1];
+        o.WriteLine("Clear: the app's targets for " + unc + ": " + string.Join(", ", targets.Select(t => t.Remote)));
+        if (shareTarget is null || !SameRemote(ipcTarget.Remote, ipc))
+        {
+            Check(false, ClearChecks[0], "unexpected targets");
+            return;
+        }
+
+        try
+        {
+            // Step 1: IPC$ as the test user, then the share by UNC with no connection of its own.
+            var connect = SmbClient.Add(null, ipc, user, password, remember: false);
+            o.WriteLine("Clear: connect " + ipc + " as " + user + ": " + Code(connect));
+            string read;
+            var readOk = false;
+            try
+            {
+                read = Directory.GetFileSystemEntries(unc).Length.ToString(CultureInfo.InvariantCulture) + " entries";
+                readOk = true;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                read = ex.GetType().Name + ": " + ex.Message;
+            }
+
+            o.WriteLine("Clear: UNC read of " + unc + ": " + read);
+            Check(connect == 0 && readOk, ClearChecks[0], Code(connect) + ", " + read);
+            var listed = LogUses(o, "after the UNC read").Any(u => string.IsNullOrEmpty(u.Local) && SameRemote(u.Remote, unc));
+            LogConnected(o);
+            o.WriteLine("Clear: " + unc + (listed ? " is listed by NetUseEnum" : " is not listed by NetUseEnum (implicit)"));
+            if (connect != 0 || !readOk)
+            {
+                Skip(ClearChecks[1], "not proven: the UNC read as the test user did not happen");
+                Skip(ClearChecks[2], "the UNC read as the test user did not happen");
+                return;
+            }
+
+            // Step 2: NetUseDel on IPC$, then another username: is something unlisted still held?
+            o.WriteLine("Clear: NetUseDel " + ipcTarget.Remote + ", not forced: " + Code(SmbClient.Delete(ipcTarget, force: false)));
+            var nothingListed = !LogUses(o, "after NetUseDel on IPC$").Any(u => IsLoopback(u.Remote));
+            LogConnected(o);
+            var second = SmbClient.Add(null, unc, other, password, remember: false);
+            o.WriteLine("Clear: connect " + unc + " as " + other + (nothingListed ? " with nothing listed: " : " with rows still listed: ") + Code(second)
+                + (second == ClientDisconnect.ErrorSessionCredentialConflict ? " (still refused for the username)" : " (not refused for the username)"));
+            CancelIfMade(o, second, new DisconnectTarget(unc, false));
+
+            // Step 3: NetUseDel on the share by its typed name, then the other username again. B11 is decided here.
+            var delShare = SmbClient.Delete(shareTarget, force: false);
+            o.WriteLine("Clear: NetUseDel " + shareTarget.Remote + ", not forced: " + Code(delShare));
+            LogUses(o, "after NetUseDel on the share");
+            var third = SmbClient.Add(null, unc, other, password, remember: false);
+            o.WriteLine("Clear: connect " + unc + " as " + other + " after NetUseDel on the share: " + Code(third));
+            CancelIfMade(o, third, new DisconnectTarget(unc, false));
+            var conflict = ClientDisconnect.ErrorSessionCredentialConflict;
+            if (!listed && nothingListed && second == conflict && delShare == 0 && third != conflict)
+            {
+                o.WriteLine("Clear: B11 proven");
+                Check(true, ClearChecks[1], "proven: unlisted, 1219 before, NetUseDel 0, then " + Code(third));
+            }
+            else
+            {
+                var why = (listed ? "the share was listed; " : "") + (nothingListed ? "" : "rows were still listed; ")
+                    + (second == conflict ? "" : "no 1219 with nothing listed (" + Code(second) + "); ")
+                    + "NetUseDel " + Code(delShare) + "; then " + Code(third);
+                o.WriteLine("Clear: B11 not proven: " + why);
+                Skip(ClearChecks[1], "not proven: " + why);
+            }
+
+            // Step 4: a file open by UNC; the unforced NetUseDel must not cost it.
+            o.WriteLine("Clear: connect " + ipc + " as " + user + " again: " + Code(SmbClient.Add(null, ipc, user, password, remember: false)));
+            try
+            {
+                using var file = new FileStream(Path.Combine(unc, MarkerName), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1);
+                var refused = SmbClient.Delete(shareTarget, force: false);
+                var readable = file.ReadByte() >= 0;
+                o.WriteLine("Clear: NetUseDel " + shareTarget.Remote + " with a file open, not forced: " + Code(refused) + "; the file " + (readable ? "stays readable" : "can't be read"));
+                Check(readable && (ClientDisconnect.IsOpenFiles(refused) || refused == ServerClear.NerrUseNotFound), ClearChecks[2],
+                    Code(refused) + (readable ? ", readable" : ", not readable"));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Check(false, ClearChecks[2], ex.GetType().Name + ": " + ex.Message);
+            }
+        }
+        finally
+        {
+            // Test cleanup only: the app never forces in bulk.
+            foreach (var t in targets)
+            {
+                o.WriteLine("Clear cleanup: " + t.Remote + ": " + Code(SmbClient.Delete(t, force: true)));
+            }
+        }
+    }
+
+    // The B7 probe's source, logged next to NetUseEnum.
+    private static void LogConnected(TextWriter o)
+    {
+        try
+        {
+            var rows = SmbClient.ReadConnected();
+            o.WriteLine("Client: WNetOpenEnum(RESOURCE_CONNECTED): " + rows.Count.ToString(CultureInfo.InvariantCulture) + " rows");
+            foreach (var r in rows)
+            {
+                o.WriteLine("  " + (r.Local ?? "-") + " " + r.Remote + ", provider " + (r.Provider ?? "-") + ", type " + r.Type.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            o.WriteLine("Client: WNetOpenEnum(RESOURCE_CONNECTED) failed: " + Code(ex.NativeErrorCode));
+        }
+    }
+
+    // The no-wait CPFS-RunAsUser start that "Reopen without administrator rights" uses, with a short-lived program in
+    // place of CPFS's window: it runs as the desktop user, the task is gone afterwards, and the program outlives it.
+    private static void ReopenStartCheck(TextWriter o)
+    {
+        const string check = "the no-wait RunAsUser start runs a program as the desktop user, deletes its task and leaves the program running";
+        var sid = DesktopUser.Current.Sid;
+        if (sid is null)
+        {
+            Skip(check, "no desktop user on this runner: " + DesktopUser.Current.Describe());
+            return;
+        }
+
+        var ping = Path.Combine(Environment.SystemDirectory, "PING.EXE");
+        var before = new HashSet<int>(System.Diagnostics.Process.GetProcessesByName("PING").Select(p => p.Id));
+        try
+        {
+            var account = new SecurityIdentifier(sid).Translate(typeof(NTAccount)).Value;
+            RunAsUser.Start(account, ping, "-n 8 127.0.0.1");
+            o.WriteLine("Reopen start: " + ping + " started as " + account);
+        }
+        catch (Exception ex) when (State.IsExpected(ex) || ex is StepUnsupportedException or IdentityNotMappedException)
+        {
+            Check(false, check, ex.GetType().Name + ": " + ex.Message);
+            return;
+        }
+
+        var taskGone = !RunAsUser.StaleExists();
+        System.Threading.Thread.Sleep(1500);
+        var started = System.Diagnostics.Process.GetProcessesByName("PING").Where(p => !before.Contains(p.Id)).ToList();
+        var alive = started.Where(Running).Select(p => p.Id.ToString(CultureInfo.InvariantCulture) + " in session " + p.SessionId.ToString(CultureInfo.InvariantCulture)).ToList();
+        o.WriteLine("Reopen start: task " + (taskGone ? "deleted" : "still registered") + "; running: " + (alive.Count == 0 ? "none" : string.Join(", ", alive)));
+        Check(taskGone && alive.Count > 0, check, (taskGone ? "task deleted" : "task still registered") + ", " + alive.Count.ToString(CultureInfo.InvariantCulture) + " running");
+        foreach (var p in started)
+        {
+            using (p)
+            {
+                try
+                {
+                    if (!p.HasExited)
+                    {
+                        p.Kill();
+                    }
+                }
+                catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+                {
+                    o.WriteLine("Reopen start: could not end " + p.Id.ToString(CultureInfo.InvariantCulture) + ": " + ex.Message);
+                }
+            }
+        }
+    }
+
+    private static bool Running(System.Diagnostics.Process p)
+    {
+        try
+        {
+            return !p.HasExited;
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            return false;
         }
     }
 

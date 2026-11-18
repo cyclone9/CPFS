@@ -297,7 +297,7 @@
   <data name="Connect_Ios_Step2" xml:space="preserve"><value>Dosyalar'da Gözat'a, sonra Diğer düğmesine (üç nokta) ve Sunucuya Bağlan'a dokunun; aşağıdaki adresi girin.</value></data>
   <data name="Connect_Ios_Step3" xml:space="preserve"><value>Registered User'ı seçin; {0} kullanıcı adını ve SMB parolasını girin.</value></data>
   <data name="Connect_Ios_Version" xml:space="preserve"><value>iOS veya iPadOS 13 ya da sonrası gerekir.</value></data>
-  <data name="Connect_Ios_Qr" xml:space="preserve"><value>Kullanıcı adınızı içeren sunucu adresi. Parola içinde yoktur.</value></data>
+  <data name="Connect_Ios_Qr" xml:space="preserve"><value>Kullanıcı adınızı içeren sunucu adresi.</value></data>
   <data name="Connect_Ios_Strict" xml:space="preserve"><value>Katı mod: Apple, iPhone ve iPad için SMB 3 şifrelemesini belgelemiyor. Bağlanamazsa Katı modu Kurulum'da kapatın.</value></data>
   <data name="Monitor_Admin_Title" xml:space="preserve"><value>İzleme için yönetici hakları gerekir</value></data>
   <data name="Monitor_Admin_Desc" xml:space="preserve"><value>Bağlı cihazlar, açık dosyalar, trafik sayaçları ve Güvenlik günlüğü için yönetici hakları gerekir. Windows bir kez izin ister ve hiçbir şey değişmez.</value></data>
@@ -1095,8 +1095,8 @@
   <data name="Nav_Connections" xml:space="preserve"><value>This PC's connections</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_Title" xml:space="preserve"><value>This PC's connections</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_Intro" xml:space="preserve"><value>Shared folders on other computers that this PC is connected to, as Windows keeps them for your account. Disconnect here ends only this PC's connection. It doesn't touch the shared folder CPFS sets up, or any files on the server.</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Admin_Title" xml:space="preserve"><value>Open CPFS without administrator rights to see this list</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Admin_Msg" xml:space="preserve"><value>Windows keeps a separate set of network connections for the administrator side of your account, so this window would show the wrong list. Close CPFS, then open it again without Run as administrator.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Admin_Title" xml:space="preserve"><value>This window is running as administrator</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Admin_Msg" xml:space="preserve"><value>You chose Continue as administrator on another page, so this window has administrator rights. Windows keeps connections made without those rights separate, so they can't be listed here. To see them, close this window and start CPFS again, or reopen it without administrator rights.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_List_Title" xml:space="preserve"><value>Connected shared folders</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_List_Desc" xml:space="preserve"><value>Grouped by server, named the way Windows keeps it. A server reached once by name and once by IP address appears twice, because Windows counts them as two servers.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_Refresh" xml:space="preserve"><value>Refresh the list</value><comment>UNTRANSLATED: English text</comment></data>
@@ -1284,6 +1284,8 @@
   <data name="Update_Err_Unexpected" xml:space="preserve"><value>The update stopped on an unexpected error ({0}). Copy the report below and send it when you ask for help.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Update_Err_BackgroundCopy" xml:space="preserve"><value>This is the background copy that Auto-Private runs. Setup's Apply is the only way to update it.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Update_Err_RollbackFailed" xml:space="preserve"><value>The new version didn't start, and CPFS couldn't put the previous one back. In the folder {0}, rename {1} to {2}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_SwapReadBack" xml:space="preserve"><value>CPFS put the new version in place, but the file didn't read back as the one it downloaded, so CPFS put the version you have back.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_PutBackFailed" xml:space="preserve"><value>CPFS couldn't finish the update, and it couldn't put the version you had back. In the folder {0}, rename {1} to {2}. If a file named {2} is already there, rename that file first.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Update_SaveAs_Title" xml:space="preserve"><value>Save the new version</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Update_SaveAs_WhyWrite" xml:space="preserve"><value>CPFS can't write to the folder it runs from, and it never asks for administrator rights to replace itself. It has downloaded the new version and checked it against its checksum. Choose a folder to save it in.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Update_SaveAs_Button" xml:space="preserve"><value>Save as…</value><comment>UNTRANSLATED: English text</comment></data>
@@ -1299,4 +1301,33 @@
   <data name="Plan_R_AutoExeNewer" xml:space="preserve"><value>The background copy is version {0}, newer than this one ({1}). Tick this to replace it with the older version anyway.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Summary_AutoPrivateCopy" xml:space="preserve"><value>Auto-Private still uses version {0}. This Apply updates it to the version you are running.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="App_UpdateTestBuild" xml:space="preserve"><value>{0} (update test build)</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Reopen" xml:space="preserve"><value>Reopen without administrator rights</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Reopen_Failed" xml:space="preserve"><value>CPFS couldn't reopen without administrator rights. Close this window and start CPFS again.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Reopen_NoUser" xml:space="preserve"><value>CPFS couldn't find the user signed in to this PC. Close this window and start CPFS again.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_Title" xml:space="preserve"><value>End connections to a server</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_Desc" xml:space="preserve"><value>Type the server the way you did when you connected, such as MyPC, MyPC.local or 192.168.1.20. You can also add one shared folder: \\MyPC\Share. Drives with a letter aren't changed.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_Label" xml:space="preserve"><value>Server</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_Button" xml:space="preserve"><value>End connections to this server</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_ErrEmpty" xml:space="preserve"><value>Type a server name or IP address.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_ErrDevice" xml:space="preserve"><value>Type a server, not a drive letter.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_ErrWildcard" xml:space="preserve"><value>Wildcards such as * and ? can't be used.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_ErrPath" xml:space="preserve"><value>Type only the server, or the server and one shared folder, such as \\MyPC\Share.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_ErrServer" xml:space="preserve"><value>That isn't a valid server name or IP address.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_ErrNotSmb" xml:space="preserve"><value>That name belongs to another kind of network drive. CPFS ends only shared-folder (SMB) connections.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_ErrShare" xml:space="preserve"><value>That isn't a valid shared folder name.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_Listed" xml:space="preserve"><value>{0} is in the list above. Use its Disconnect all, which shows each connection first.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_ConfirmTitle" xml:space="preserve"><value>End connections to this server?</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_ConfirmMsg" xml:space="preserve"><value>CPFS asks Windows to end your connections to {0}. Files on that server stay as they are, and nothing on this PC is deleted. If files are open, CPFS asks you again first, and unsaved changes in them may be lost.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_Confirm" xml:space="preserve"><value>End connections</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_Ended" xml:space="preserve"><value>{0}: ended.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_NotHeld" xml:space="preserve"><value>{0}: Windows has no connection by this name that CPFS can end.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_OpenFiles" xml:space="preserve"><value>{0}: files are open on it, so it stays connected.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_Failed" xml:space="preserve"><value>{0}: Windows refused: {1}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_DoneTitle" xml:space="preserve"><value>Connections to this server</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_NothingTitle" xml:space="preserve"><value>Nothing to end</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Clear_TryRemedies" xml:space="preserve"><value>If Windows still refuses another username, try the steps under "If Windows still refuses".</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Remedies_Title" xml:space="preserve"><value>If Windows still refuses</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Remedy_Close" xml:space="preserve"><value>Close every window and app that uses that server, then try again.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_RpSkippedNamedMsg" xml:space="preserve"><value>Windows most likely skipped a new restore point because it already made one in the last 24 hours. The newest is “{1}”, from {0}. Continue without a new one?</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Apply_RpWhere" xml:space="preserve"><value>Find it under Control Panel &gt; Recovery &gt; Open System Restore.</value><comment>UNTRANSLATED: English text</comment></data>
 </root>

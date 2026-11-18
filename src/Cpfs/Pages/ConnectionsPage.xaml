@@ -111,6 +111,16 @@
           IsOpen="False"
           Message="{Binding [Connections_Admin_Msg], Source={x:Static local:Loc.Instance}}"
           Severity="Informational" />
+        <!--  Starts this exe as the desktop user, then this elevated window closes (Windows.Reopen).  -->
+        <ui:Button
+          x:Name="ReopenButton"
+          Margin="0,0,0,16"
+          Appearance="Primary"
+          AutomationProperties.Name="{Binding [Connections_Reopen], Source={x:Static local:Loc.Instance}}"
+          Click="OnReopen"
+          Content="{Binding [Connections_Reopen], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon ArrowSync24}"
+          Visibility="Collapsed" />
         <ui:InfoBar x:Name="ReadInfo" Margin="0,0,0,8" IsClosable="False" IsOpen="False" />
         <ui:InfoBar x:Name="ActionResult" Margin="0,0,0,8" AutomationProperties.LiveSetting="Polite" IsClosable="True" IsOpen="False" />
 
@@ -142,8 +152,39 @@
               <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding [Connections_1219_WindowsSays], Source={x:Static local:Loc.Instance}}" />
               <TextBlock x:Name="WindowsMessage" Margin="0,4,0,12" Style="{StaticResource Body}" FontStyle="Italic" />
               <TextBlock Margin="0,0,0,8" Style="{StaticResource Body}" Text="{Binding [Connections_1219_Rule], Source={x:Static local:Loc.Instance}}" />
-              <TextBlock Margin="0,0,0,8" Style="{StaticResource Body}" Text="{Binding [Connections_1219_NothingListed], Source={x:Static local:Loc.Instance}}" />
+
+              <!--  B11: shown only once CI proved NetUseDel ends a connection the list did not show (ServerClear.Shown).  -->
+              <StackPanel x:Name="ClearArea" Margin="0,4,0,12" Visibility="Collapsed">
+                <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Connections_Clear_Title], Source={x:Static local:Loc.Instance}}" />
+                <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Connections_Clear_Desc], Source={x:Static local:Loc.Instance}}" />
+                <Grid Margin="0,8,0,0">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MaxWidth="360" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBox
+                    x:Name="ClearServerBox"
+                    AutomationProperties.HelpText="{Binding [Connections_Clear_Desc], Source={x:Static local:Loc.Instance}}"
+                    AutomationProperties.Name="{Binding [Connections_Clear_Label], Source={x:Static local:Loc.Instance}}"
+                    FlowDirection="LeftToRight"
+                    FontFamily="{x:Static local:Theming.MonoFamily}" />
+                  <ui:Button
+                    x:Name="ClearButton"
+                    Grid.Column="1"
+                    Margin="8,0,0,0"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="{Binding [Connections_Clear_Button], Source={x:Static local:Loc.Instance}}"
+                    Click="OnClearServer"
+                    Content="{Binding [Connections_Clear_Button], Source={x:Static local:Loc.Instance}}" />
+                </Grid>
+                <TextBlock x:Name="ClearError" Margin="0,4,0,0" Style="{StaticResource CardDescription}" Visibility="Collapsed" Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
+              </StackPanel>
+
+              <!--  Where clearing can't help: Microsoft's remedies, in this order (design record 2026-11-19, 3.2). No PC-wide kill.  -->
+              <TextBlock Margin="0,0,0,4" Style="{StaticResource CardTitle}" Text="{Binding [Connections_Remedies_Title], Source={x:Static local:Loc.Instance}}" />
+              <TextBlock Margin="0,0,0,8" Style="{StaticResource Body}" Text="{Binding [Connections_Remedy_Close], Source={x:Static local:Loc.Instance}}" />
               <TextBlock Margin="0,0,0,8" Style="{StaticResource Body}" Text="{Binding [Connections_1219_Ip], Source={x:Static local:Loc.Instance}}" />
+              <TextBlock Margin="0,0,0,8" Style="{StaticResource Body}" Text="{Binding [Connections_1219_NothingListed], Source={x:Static local:Loc.Instance}}" />
               <TextBlock Margin="0,0,0,12" Style="{StaticResource Body}" Text="{Binding [Connections_1219_Saved], Source={x:Static local:Loc.Instance}}" />
               <ui:Button
                 HorizontalAlignment="Left"

@@ -37,6 +37,9 @@ public sealed class ValueItem : GuideItem
 
     public string Value { get; init; } = "";
 
+    // The value in unbreakable pieces, so the box wraps only after "/", "@" or "\" (UncPieces.Wrap).
+    public IReadOnlyList<string> Pieces => UncPieces.Wrap(Value);
+
     public string CopyName { get; init; } = "";
 }
 

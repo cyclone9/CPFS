@@ -28,7 +28,9 @@ internal static class UpdateTestHooks
 
     public static bool FailSecondRename => Env("CPFS_UPDATE_TEST_FAIL_SECOND_RENAME");
 
-    public static bool FailStart => Env("CPFS_UPDATE_TEST_FAIL_START");
+    public static bool FailReadBack => Env("CPFS_UPDATE_TEST_FAIL_READBACK");
+
+    public static bool FailStart =>Env("CPFS_UPDATE_TEST_FAIL_START");
 
     // The new exe answers --after-update / --update-failed without a window: the runner has no one to look at it.
     public static bool Headless => Env("CPFS_UPDATE_TEST_HEADLESS");
