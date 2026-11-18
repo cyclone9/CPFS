@@ -6,7 +6,7 @@
 
 <p align="center"><em>Your PC's folder, within reach of any device.</em></p>
 
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 |---|---|
 | Platform | Windows 10 and 11 (Home or Pro) |
 | Requires | .NET Framework 4.8 (built into Windows 10 1903 and later and Windows 11), Administrator rights |
@@ -23,14 +23,14 @@ CPFS shares one folder on a Windows 10 or 11 PC with Windows, macOS, Linux, Andr
 
 ## Download and first run
 
-CPFS is one file, `Cpfs-1.0.0.exe`, on the [releases page](https://github.com/cyclone9/CPFS/releases) on GitHub. There is no installer: save the file anywhere and run it. CPFS asks for administrator rights only when Setup, Monitor or Uninstall need them. Connect, Shared folders on other PCs, Preferences and About work without.
+CPFS is one file, `Cpfs-1.0.1.exe`, on the [releases page](https://github.com/cyclone9/CPFS/releases) on GitHub. There is no installer: save the file anywhere and run it. CPFS asks for administrator rights only when Setup, Monitor or Uninstall need them. Connect, Shared folders on other PCs, Preferences and About work without.
 
 The file is not signed, so the first time you run it Windows SmartScreen shows "Windows protected your PC". Select More info, then Run anyway.
 
 To check that the file is the one that was published, compute its SHA-256 in PowerShell and compare it with the value on the release page:
 
 ```powershell
-Get-FileHash .\Cpfs-1.0.0.exe -Algorithm SHA256
+Get-FileHash .\Cpfs-1.0.1.exe -Algorithm SHA256
 ```
 
 CPFS needs Windows 10 or 11 and .NET Framework 4.8, which both include. It has been tested on Windows 11. Windows 10 is supported but has not been tested yet.
@@ -126,7 +126,7 @@ The SHA-256 guards against a damaged download. It doesn't protect against a comp
 
 A file CPFS installs gets no "downloaded from the internet" mark, so SmartScreen doesn't ask again. This isn't signing: your first download still meets SmartScreen, and versions CPFS installs rest on HTTPS, GitHub and the checksum. Windows still shows "Unknown publisher" when CPFS asks for administrator rights.
 
-The file keeps its name and its folder. A `Cpfs-1.0.0.exe` can hold a newer version after an update, and About and the window title show the real one. Shortcuts, pins and the startup entry keep working.
+The file keeps its name and its folder. A `Cpfs-1.0.1.exe` can hold a newer version after an update, and About and the window title show the real one. Shortcuts, pins and the startup entry keep working.
 
 CPFS can't replace the exe in place on a network drive or in a folder it can't write to, such as one under `C:\Program Files`. It offers "Save as" instead and writes the checked file where you choose, and it never asks for administrator rights to write an exe. The startup entry still points to the old file after that, and Preferences offers "Use this copy".
 

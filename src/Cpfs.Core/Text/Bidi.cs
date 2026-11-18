@@ -2,18 +2,22 @@ using System.Globalization;
 
 namespace Cpfs.Core.Text;
 
-// Keeps a value in its own direction inside translated prose. LRE/RLE ... PDF rather than the newer isolates
-// (U+2066-2069), because WPF's bidi implementation predates the isolates.
+// Keeps a value in its own direction inside translated prose. Embeddings (LRE/RLE ... PDF) rather than the newer
+// isolates (U+2066-2069), because WPF's bidi implementation predates the isolates; and where it can, LRM fencing
+// rather than an embedding, because WPF did not hold "CPFS 1.0.0-dev7" together inside an LRE ... PDF (dev8).
 public static class Bidi
 {
-    public const char Lre = '‪';
-    public const char Rle = '‫';
-    public const char Pdf = '‬';
-    public const char Lrm = '‎';
+    public const char Lre = '\u202A';
+    public const char Rle = '\u202B';
+    public const char Pdf = '\u202C';
+    public const char Lrm = '\u200E';
+    public const char Rlm = '\u200F';
 
-    // In right-to-left prose a value whose first strong character is left-to-right (a path, an address, a share name,
-    // "Türkçe") is embedded left-to-right; in left-to-right prose a right-to-left value (a Persian network name) is
-    // embedded right-to-left. Anything else is returned unchanged.
+    // In right-to-left prose a value whose first strong character is left-to-right or that has none (a path, an
+    // address, a date, a version, "Türkçe") is fenced as KeepLeftToRight does. A value that also holds right-to-left
+    // letters (D:\پوشه) keeps the LRE ... PDF embedding: marks alone can't lift those letters above the paragraph's
+    // level, so fencing would break the value's order wherever the embedding is honoured. In left-to-right prose a
+    // right-to-left value (a Persian network name) is embedded right-to-left. Anything else is returned unchanged.
     public static string Embed(string? value, bool uiIsRtl)
     {
         if (string.IsNullOrEmpty(value))
@@ -24,7 +28,7 @@ public static class Bidi
         var direction = FirstStrong(value!);
         if (uiIsRtl && direction != StrongDirection.RightToLeft)
         {
-            return Lre + value + Pdf;
+            return HasStrongRtl(value!) ? Lre + value + Pdf : Fence(value!);
         }
 
         if (!uiIsRtl && direction == StrongDirection.RightToLeft)
@@ -46,17 +50,31 @@ public static class Bidi
             return value ?? "";
         }
 
-        var chars = new System.Text.StringBuilder(value!.Length * 3 + 2);
+        return Fence(value!);
+    }
+
+    private static string Fence(string value)
+    {
+        var chars = new System.Text.StringBuilder(value.Length * 3 + 2);
         chars.Append(Lrm);
+        var previous = '\0';
         foreach (var c in value)
         {
             if (char.IsLetter(c) && !IsStrongRtl(c))
             {
                 chars.Append(c);
+                previous = c;
                 continue;
             }
 
-            if (chars[chars.Length - 1] != Lrm)
+            // A Windows error text can carry CRLF: a mark between CR and LF would make two line breaks of one.
+            if (c == '\n' && previous == '\r')
+            {
+                chars.Length--;
+            }
+
+            previous = c;
+            if (chars[chars.Length - 1] != Lrm && chars[chars.Length - 1] != '\r')
             {
                 chars.Append(Lrm);
             }
@@ -83,13 +101,26 @@ public static class Bidi
         var chars = new System.Text.StringBuilder(value!.Length);
         foreach (var c in value)
         {
-            if (c is not (Lre or Rle or Pdf or '‎' or '‏'))
+            if (c is not (Lre or Rle or Pdf or Lrm or Rlm))
             {
                 chars.Append(c);
             }
         }
 
         return chars.ToString();
+    }
+
+    private static bool HasStrongRtl(string value)
+    {
+        foreach (var c in value)
+        {
+            if (IsStrongRtl(c))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static StrongDirection FirstStrong(string value)

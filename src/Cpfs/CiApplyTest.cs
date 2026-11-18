@@ -679,6 +679,7 @@ internal static class CiApplyTest
         "the drive is mapped again, remembered, for the app's own Disconnect",
         "the app's Disconnect of a remembered drive (its letter, with the profile flag) succeeds and forgets it",
         "a deviceless connection is cancelled by its remote name",
+        "a non-forced disconnect of a deviceless connection never cuts off a file open through it (the file stays readable)",
     };
 
     private static void ClientPhase(TextWriter o, SecureString password)
@@ -741,6 +742,7 @@ internal static class CiApplyTest
             if (deviceless is null)
             {
                 Check(false, ClientChecks[7], "the deviceless connection was not listed before the cancel");
+                Skip(ClientChecks[8], "the deviceless connection was not listed");
             }
             else
             {
@@ -749,6 +751,7 @@ internal static class CiApplyTest
                 var still = SmbClient.ReadUses().Any(u => string.IsNullOrEmpty(u.Local) && SameRemote(u.Remote, unc));
                 Check(target is { UpdateProfile: false } && SameRemote(target.Name, unc) && cancel == 0 && !still, ClientChecks[7],
                     target.Name + ": " + Code(cancel) + (still ? ", still listed" : ""));
+                DevicelessOpenFileCheck(o, unc, user, password);
             }
 
             TypedClearChecks(o, unc, user, other, password);
@@ -756,6 +759,80 @@ internal static class CiApplyTest
         finally
         {
             ClientCleanup(o, letter);
+        }
+    }
+
+    // Review S9: the page's Disconnect of a row without a drive letter, while a file is open through it. Windows' answer is
+    // logged, not asserted (NetUseDel on Server 2025 answered 0 here, run 44408654318); what must hold is that the open file
+    // is never cut off. 2250 means the target held nothing, so nothing was tried: a SKIP with that reason, never a PASS.
+    private static void DevicelessOpenFileCheck(TextWriter o, string unc, string user, SecureString password)
+    {
+        var connect = SmbClient.Add(null, unc, user, password, remember: false);
+        o.WriteLine("Client: connect " + unc + " as " + user + " for the deviceless open-file check: " + Code(connect));
+        if (connect != 0)
+        {
+            Skip(ClientChecks[8], "the runner could not connect " + unc + " again: " + Code(connect));
+            return;
+        }
+
+        var row = Groups(SmbClient.ReadUses()).SelectMany(g => g.Connections)
+            .FirstOrDefault(c => c.DriveLetter is null && string.Equals(c.Server, "localhost", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(c.Share, TestShare, StringComparison.OrdinalIgnoreCase));
+        if (row is null)
+        {
+            Skip(ClientChecks[8], "the deviceless connection was not listed after connecting again");
+            return;
+        }
+
+        var target = ClientDisconnect.TargetFor(row);
+        try
+        {
+            using var file = new FileStream(Path.Combine(unc, MarkerName), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1);
+            var answer = SmbClient.Cancel(target, force: false);
+            bool readable;
+            string read;
+            try
+            {
+                readable = file.ReadByte() >= 0;
+                read = readable ? "stays readable" : "reads nothing";
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                readable = false;
+                read = "can't be read: " + ex.GetType().Name + ": " + ex.Message;
+            }
+
+            var listed = SmbClient.ReadUses().Any(u => string.IsNullOrEmpty(u.Local) && SameRemote(u.Remote, unc));
+            o.WriteLine("Client: cancel " + target.Name + " with a file open, not forced: " + Code(answer) + "; the file " + read
+                + "; the connection is " + (listed ? "still listed" : "no longer listed"));
+            o.WriteLine("Client: finding: " + (ClientDisconnect.IsOpenFiles(answer)
+                ? "Windows refused because of the open file"
+                : "Windows did not refuse (" + Code(answer) + ")"));
+            if (answer == ClientDisconnect.ErrorNotConnected)
+            {
+                Skip(ClientChecks[8], "the target held no connection, so nothing was tried: " + Code(answer)
+                    + "; the file " + (readable ? "stays readable" : "can't be read"));
+            }
+            else
+            {
+                Check(target is { UpdateProfile: false } && readable, ClientChecks[8],
+                    target.Name + ": " + Code(answer) + (readable ? ", readable" : ", not readable") + (listed ? ", still listed" : ", no longer listed"));
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Check(false, ClientChecks[8], "the file could not be opened through " + unc + ": " + ex.GetType().Name + ": " + ex.Message);
+        }
+        finally
+        {
+            // Back to the state the typed-clear checks expect: nothing to this share held. Test cleanup only.
+            var code = SmbClient.Cancel(target, force: false);
+            if (code != 0 && code != ClientDisconnect.ErrorNotConnected)
+            {
+                code = SmbClient.Cancel(target, force: true);
+            }
+
+            o.WriteLine("Client: cancel " + target.Name + " after the deviceless open-file check: " + Code(code));
         }
     }
 

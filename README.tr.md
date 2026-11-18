@@ -6,7 +6,7 @@
 
 <p align="center"><em>Bilgisayarınızdaki klasör, her cihazın erişiminde.</em></p>
 
-| Sürüm | 1.0.0 |
+| Sürüm | 1.0.1 |
 |---|---|
 | Platform | Windows 10 ve 11 (Ev veya Pro sürümü) |
 | Gereksinimler | .NET Framework 4.8 (Windows 10 1903 ve sonrası ile Windows 11'de yerleşik gelir), Yönetici hakları |
@@ -23,14 +23,14 @@ CPFS, bir Windows 10 veya 11 bilgisayarındaki tek bir klasörü Windows, macOS,
 
 ## İndirme ve ilk çalıştırma
 
-CPFS tek bir dosyadır: GitHub'daki [sürümler sayfasında](https://github.com/cyclone9/CPFS/releases) `Cpfs-1.0.0.exe`. Yükleyici yoktur; dosyayı istediğiniz yere kaydedip çalıştırın. CPFS yönetici haklarını yalnızca Kurulum, İzleme ya da Kaldırma gerektirdiğinde ister. Bağlan, Diğer bilgisayarlardaki paylaşımlar, Tercihler ve Hakkında bunlar olmadan çalışır.
+CPFS tek bir dosyadır: GitHub'daki [sürümler sayfasında](https://github.com/cyclone9/CPFS/releases) `Cpfs-1.0.1.exe`. Yükleyici yoktur; dosyayı istediğiniz yere kaydedip çalıştırın. CPFS yönetici haklarını yalnızca Kurulum, İzleme ya da Kaldırma gerektirdiğinde ister. Bağlan, Diğer bilgisayarlardaki paylaşımlar, Tercihler ve Hakkında bunlar olmadan çalışır.
 
 Dosya imzalı değildir; bu yüzden ilk çalıştırmada Windows SmartScreen "Windows bilgisayarınızı korudu" (Windows protected your PC) iletisini gösterir. Ek bilgi'yi (More info), ardından Yine de çalıştır'ı (Run anyway) seçin.
 
 Dosyanın yayımlanan dosya olduğunu doğrulamak için PowerShell'de SHA-256 değerini hesaplayın ve sürüm sayfasındaki değerle karşılaştırın:
 
 ```powershell
-Get-FileHash .\Cpfs-1.0.0.exe -Algorithm SHA256
+Get-FileHash .\Cpfs-1.0.1.exe -Algorithm SHA256
 ```
 
 CPFS için Windows 10 veya 11 ile .NET Framework 4.8 gerekir; ikisi de bunu içerir. CPFS Windows 11'de denendi. Windows 10 desteklenir ama henüz denenmedi.
@@ -126,7 +126,7 @@ SHA-256, bozuk bir indirmeye karşı korur. Ele geçirilmiş bir GitHub hesabın
 
 CPFS'nin kurduğu dosya "internetten indirildi" işaretini almaz, bu yüzden SmartScreen yeniden sormaz. Bu imzalama değildir: ilk indirmeniz yine SmartScreen'e takılır ve CPFS'nin kurduğu sürümler HTTPS'ye, GitHub'a ve sağlama değerine dayanır. CPFS yönetici hakları istediğinde Windows yine "Bilinmeyen yayımcı" (Unknown publisher) gösterir.
 
-Dosya adını ve klasörünü korur. `Cpfs-1.0.0.exe` güncellemeden sonra daha yeni bir sürüm taşıyabilir; Hakkında sayfası ve pencere başlığı gerçek sürümü gösterir. Kısayollar, sabitlemeler ve başlatma girişi çalışmaya devam eder.
+Dosya adını ve klasörünü korur. `Cpfs-1.0.1.exe` güncellemeden sonra daha yeni bir sürüm taşıyabilir; Hakkında sayfası ve pencere başlığı gerçek sürümü gösterir. Kısayollar, sabitlemeler ve başlatma girişi çalışmaya devam eder.
 
 CPFS, bir ağ sürücüsünde ya da yazamadığı bir klasörde (örneğin `C:\Program Files` altındaki bir klasör) exe dosyasını yerinde değiştiremez. Bunun yerine "Farklı kaydet" (Save as) önerir ve denetlenmiş dosyayı seçtiğiniz yere yazar; exe yazmak için hiçbir zaman yönetici hakları istemez. Bundan sonra başlatma girişi hâlâ eski dosyayı gösterir ve Tercihler "Bu kopyayı kullan"ı önerir.
 

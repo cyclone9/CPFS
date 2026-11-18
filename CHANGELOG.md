@@ -4,6 +4,10 @@ This project uses [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+## 1.0.1 - 2026-11-18
+
+- In Persian and Arabic, addresses, dates, versions and paths inside sentences keep their left-to-right order, as the window title already did.
+
 ## 1.0.0 - 2026-11-18
 
 This release adds a page for the shared folders your PC has opened on other computers, a tray icon, an in-app updater and new layouts for Setup, Monitor and Connect.
