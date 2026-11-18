@@ -135,7 +135,8 @@ public partial class MainWindow : FluentWindow
     // true, the default it sets for Page). Controls on a page swallow the wheel before it gets there: a TextBox's inner
     // ScrollViewer marks it handled even with nothing to scroll, and a focused closed ComboBox changes its selection.
     // So the wheel is routed here: an inner scroller that can still move in that direction keeps it, otherwise the
-    // page scrolls. Handling the preview event stops WPF from raising MouseWheel on the controls at all.
+    // page scrolls (a page's own PageScroller, or the NavigationView's). Handling the preview event stops WPF from
+    // raising MouseWheel on the controls at all.
     private void OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
         if (e.Handled || e.OriginalSource is not DependencyObject source)
@@ -154,6 +155,13 @@ public partial class MainWindow : FluentWindow
 
             if (d is Controls.ComboBox { IsDropDownOpen: true })
             {
+                return;
+            }
+
+            if (d is PageScroller own)
+            {
+                e.Handled = true;
+                own.RaiseEvent(new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta) { RoutedEvent = MouseWheelEvent, Source = own });
                 return;
             }
 

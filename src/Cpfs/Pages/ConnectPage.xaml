@@ -9,24 +9,27 @@
   <Page.Resources>
     <BooleanToVisibilityConverter x:Key="Visible" />
 
-    <DataTemplate DataType="{x:Type pages:StepItem}">
-      <TextBlock Margin="0,4,0,4" Style="{StaticResource Body}" Text="{Binding Text}" />
-    </DataTemplate>
-
+    <!--  A neutral note: quiet secondary text with an info icon.  -->
     <DataTemplate DataType="{x:Type pages:NoteItem}">
-      <Border
-        Margin="0,6,0,2"
-        Padding="12,8"
-        Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
-        CornerRadius="4">
-        <TextBlock Style="{StaticResource BadgeText}" Text="{Binding Text}" />
-      </Border>
+      <Grid Margin="0,8,0,0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <ui:SymbolIcon
+          Margin="0,0,8,0"
+          VerticalAlignment="Top"
+          FontSize="16"
+          Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+          Symbol="Info24" />
+        <TextBlock Grid.Column="1" Margin="0" Style="{StaticResource CardDescription}" Text="{Binding Text}" />
+      </Grid>
     </DataTemplate>
 
     <!--  A requirement the user must meet, not a step: a warning bar that can't be closed.  -->
     <DataTemplate DataType="{x:Type pages:WarningItem}">
       <ui:InfoBar
-        Margin="0,6,0,2"
+        Margin="0,8,0,0"
         AutomationProperties.Name="{Binding Text}"
         IsClosable="False"
         IsOpen="True"
@@ -36,15 +39,15 @@
 
     <!--  The value is data: monospace, left to right inside RTL text. The button copies exactly what is shown.  -->
     <DataTemplate DataType="{x:Type pages:ValueItem}">
-      <StackPanel Margin="0,6,0,2">
-        <TextBlock Margin="0,0,0,2" Style="{StaticResource CardDescription}" Text="{Binding Label}" />
+      <StackPanel Margin="0,8,0,0">
+        <TextBlock Margin="0,0,0,4" Style="{StaticResource CardDescription}" Text="{Binding Label}" />
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
           <Border
-            Padding="8,6"
+            Padding="12,8"
             Background="{DynamicResource ControlFillColorSecondaryBrush}"
             CornerRadius="4">
             <TextBlock
@@ -65,113 +68,167 @@
       </StackPanel>
     </DataTemplate>
 
-    <DataTemplate x:Key="GuideCardTemplate" DataType="{x:Type pages:GuideCard}">
-      <!--  Stretch: the cards of one row share the height of the tallest.  -->
-      <ui:Card VerticalAlignment="Stretch" VerticalContentAlignment="Top">
-        <StackPanel>
-          <!--  Name on the start side, the QR button (where the device can use a code) at the top of the end side.  -->
-          <Grid>
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="Auto" />
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <ui:SymbolIcon
-              Margin="0,0,12,0"
-              VerticalAlignment="Center"
-              FontSize="20"
-              Symbol="{Binding Icon}" />
-            <TextBlock
-              Grid.Column="1"
-              VerticalAlignment="Center"
-              FontSize="16"
-              Style="{StaticResource CardTitle}"
-              Text="{Binding Title}"
-              TextWrapping="Wrap" />
-            <ui:Button
-              Grid.Column="2"
-              Margin="8,0,0,0"
-              VerticalAlignment="Top"
-              AutomationProperties.Name="{Binding QrButtonName}"
-              Click="OnShowQr"
-              Content="{Binding [Connect_Qr_Show], Source={x:Static local:Loc.Instance}}"
-              Icon="{ui:SymbolIcon QrCode24}"
-              ToolTip="{Binding QrButtonName}"
-              Visibility="{Binding HasQr, Converter={StaticResource Visible}}" />
-          </Grid>
-          <ItemsControl Margin="0,8,0,0" Focusable="False" ItemsSource="{Binding Items}" />
+    <!--  A numbered step: a 24 px number circle, the text, and the values it needs right under it.  -->
+    <DataTemplate x:Key="StepTemplate" DataType="{x:Type pages:GuideStep}">
+      <Grid Margin="0,0,0,16">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Border
+          Width="24"
+          Height="24"
+          Margin="0,0,12,0"
+          VerticalAlignment="Top"
+          BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+          BorderThickness="1"
+          CornerRadius="12">
+          <TextBlock
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            FontSize="12"
+            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+            Text="{Binding Number}" />
+        </Border>
+        <StackPanel Grid.Column="1">
+          <TextBlock Margin="0,4,0,0" Style="{StaticResource Body}" Text="{Binding Text}" />
+          <ItemsControl Focusable="False" ItemsSource="{Binding Values}" />
         </StackPanel>
-      </ui:Card>
+      </Grid>
+    </DataTemplate>
+
+    <!--
+      One device's guide: the numbered steps, then its notes; for the phones the QR code beside the steps, or under
+      them when the window is narrow (FieldCardPanel). The code is always dark on white with its quiet zone, never
+      mirrored, and holds no password.
+    -->
+    <DataTemplate x:Key="GuideTemplate" DataType="{x:Type pages:GuideCard}">
+      <Border Margin="0,16,0,0" Padding="20" Style="{StaticResource GroupCard}">
+        <local:FieldCardPanel FieldAutoWidth="True" MinHeaderEms="18">
+          <StackPanel>
+            <ItemsControl Focusable="False" ItemTemplate="{StaticResource StepTemplate}" ItemsSource="{Binding Steps}" />
+            <ItemsControl Focusable="False" ItemsSource="{Binding Notes}" />
+          </StackPanel>
+          <StackPanel Width="240" Visibility="{Binding HasQr, Converter={StaticResource Visible}}">
+            <Border
+              Padding="12"
+              HorizontalAlignment="Center"
+              Background="White"
+              CornerRadius="8">
+              <Image
+                Width="216"
+                Height="216"
+                AutomationProperties.Name="{Binding Qr.Name}"
+                FlowDirection="LeftToRight"
+                RenderOptions.EdgeMode="Aliased"
+                Source="{Binding Qr.Image}" />
+            </Border>
+            <TextBlock Margin="0,8,0,0" Style="{StaticResource CardDescription}" Text="{Binding Qr.Caption}" TextAlignment="Center" />
+            <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Connect_Qr_NoPassword], Source={x:Static local:Loc.Instance}}" TextAlignment="Center" />
+            <ContentControl Margin="0,4,0,0" Content="{Binding Qr.Value}" Focusable="False" />
+          </StackPanel>
+        </local:FieldCardPanel>
+      </Border>
     </DataTemplate>
 
     <DataTemplate x:Key="AddressTemplate" DataType="{x:Type pages:AddressOption}">
-      <StackPanel Margin="0,2,0,2">
+      <StackPanel Margin="0,4">
         <TextBlock Style="{StaticResource DataValue}" Text="{Binding Host}" />
         <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Description}" />
       </StackPanel>
     </DataTemplate>
   </Page.Resources>
 
-  <StackPanel Margin="24,16,24,24">
+  <StackPanel Style="{StaticResource PageContent}">
     <TextBlock Style="{StaticResource PageTitle}" Text="{Binding [Nav_Connect], Source={x:Static local:Loc.Instance}}" />
-    <TextBlock Margin="0,0,0,12" Style="{StaticResource Body}" Text="{Binding [Connect_Intro], Source={x:Static local:Loc.Instance}}" />
+    <TextBlock Margin="0,0,0,16" Style="{StaticResource Body}" Text="{Binding [Connect_Intro], Source={x:Static local:Loc.Instance}}" />
 
-    <ui:InfoBar x:Name="ConfigInfo" Margin="0,0,0,4" IsClosable="False" IsOpen="False" />
-    <ui:InfoBar x:Name="RenameInfo" Margin="0,0,0,4" IsClosable="True" IsOpen="False" Severity="Warning" />
-    <ui:InfoBar x:Name="StrictInfo" Margin="0,0,0,4" IsClosable="True" IsOpen="False" Severity="Informational" />
+    <!--  Every bar that applies stays visible: nothing a user must know is hidden.  -->
+    <ui:InfoBar x:Name="ConfigInfo" Margin="0,0,0,8" IsClosable="False" IsOpen="False" />
+    <ui:InfoBar x:Name="RenameInfo" Margin="0,0,0,8" IsClosable="True" IsOpen="False" Severity="Warning" />
+    <ui:InfoBar x:Name="StrictInfo" Margin="0,0,0,8" IsClosable="True" IsOpen="False" Severity="Informational" />
 
-    <ui:Card Margin="0,0,0,4">
+    <!--  Connection details: the share address (the brand signature, its \\ in the accent), where it works, the address
+          chooser and Copy; then the username.  -->
+    <Border AutomationProperties.Name="{Binding [Connect_Details_Title], Source={x:Static local:Loc.Instance}}" Style="{StaticResource GroupCard}">
       <StackPanel>
-        <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Connect_Address_Title], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Connect_Address_Desc], Source={x:Static local:Loc.Instance}}" />
-        <Grid Margin="0,12,0,0">
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-          </Grid.ColumnDefinitions>
-          <ComboBox
-            x:Name="AddressBox"
-            AutomationProperties.Name="{Binding [Connect_Address_Title], Source={x:Static local:Loc.Instance}}"
-            ItemTemplate="{StaticResource AddressTemplate}"
-            SelectionChanged="OnAddressSelected" />
-          <ui:Button
-            x:Name="RefreshButton"
-            Grid.Column="1"
-            Margin="8,0,0,0"
-            VerticalAlignment="Center"
-            AutomationProperties.Name="{Binding [Connect_Address_Refresh], Source={x:Static local:Loc.Instance}}"
-            Click="OnRefresh"
-            Icon="{ui:SymbolIcon ArrowClockwise24}"
-            ToolTip="{Binding [Connect_Address_Refresh], Source={x:Static local:Loc.Instance}}" />
-        </Grid>
-        <TextBlock x:Name="WhereText" Margin="0,8,0,0" Style="{StaticResource CardValue}" />
+        <Border Style="{StaticResource SettingsRow}">
+          <local:FieldCardPanel FieldAutoWidth="True" MinHeaderEms="16">
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock
+                x:Name="AddressText"
+                AutomationProperties.Name="{Binding [Connect_Label_Unc], Source={x:Static local:Loc.Instance}}"
+                FontSize="20"
+                Style="{StaticResource Signature}">
+                <Run x:Name="AddressSlashes" Foreground="{DynamicResource CpfsSignatureBrush}" /><Run x:Name="AddressRest" />
+              </TextBlock>
+              <TextBlock x:Name="WhereText" Style="{StaticResource CardDescription}" />
+            </StackPanel>
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+              <ComboBox
+                x:Name="AddressBox"
+                MinWidth="160"
+                MaxWidth="280"
+                AutomationProperties.HelpText="{Binding [Connect_Address_Desc], Source={x:Static local:Loc.Instance}}"
+                AutomationProperties.Name="{Binding [Connect_Address_Title], Source={x:Static local:Loc.Instance}}"
+                ItemTemplate="{StaticResource AddressTemplate}"
+                SelectionChanged="OnAddressSelected" />
+              <ui:Button
+                x:Name="RefreshButton"
+                Margin="8,0,0,0"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="{Binding [Connect_Address_Refresh], Source={x:Static local:Loc.Instance}}"
+                Click="OnRefresh"
+                Icon="{ui:SymbolIcon ArrowClockwise24}"
+                ToolTip="{Binding [Connect_Address_Refresh], Source={x:Static local:Loc.Instance}}" />
+              <ui:Button
+                x:Name="CopyAddressButton"
+                Margin="8,0,0,0"
+                VerticalAlignment="Center"
+                Click="OnCopyAddress"
+                Content="{Binding [Common_Copy], Source={x:Static local:Loc.Instance}}" />
+            </StackPanel>
+          </local:FieldCardPanel>
+        </Border>
+        <Border Style="{StaticResource Hairline}" />
+        <Border Style="{StaticResource SettingsRow}">
+          <local:FieldCardPanel FieldAutoWidth="True" MinHeaderEms="16">
+            <TextBlock VerticalAlignment="Center" Style="{StaticResource CardValue}" Text="{Binding [Connect_Label_User], Source={x:Static local:Loc.Instance}}" />
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+              <TextBlock
+                x:Name="UserText"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="{Binding [Connect_Label_User], Source={x:Static local:Loc.Instance}}"
+                Style="{StaticResource DataValue}" />
+              <ui:Button
+                x:Name="CopyUserButton"
+                Margin="12,0,0,0"
+                VerticalAlignment="Center"
+                Click="OnCopyUser"
+                Content="{Binding [Common_Copy], Source={x:Static local:Loc.Instance}}" />
+            </StackPanel>
+          </local:FieldCardPanel>
+        </Border>
       </StackPanel>
-    </ui:Card>
+    </Border>
 
-    <ui:Card Margin="0,0,0,4">
-      <StackPanel>
-        <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Connect_Account_Title], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Connect_Account_Desc], Source={x:Static local:Loc.Instance}}" />
-        <ItemsControl x:Name="AccountItems" Margin="0,4,0,0" Focusable="False" />
-      </StackPanel>
-    </ui:Card>
-
-    <!--
-      One client card per column, two columns when both fit. The minimum card is 20 ems of text, about 40 characters
-      of a step and room for a code box with its copy button, plus the card's padding and border (14 + 14 + 2). At the
-      default window size the content area holds two.
-    -->
-    <ItemsControl x:Name="Guides" Focusable="False" ItemTemplate="{StaticResource GuideCardTemplate}">
-      <ItemsControl.ItemsPanel>
-        <ItemsPanelTemplate>
-          <local:ColumnsPanel
-            Gap="4"
-            ItemChrome="30"
-            LogName="Connect guide"
-            MaxColumns="2"
-            MinItemEms="20" />
-        </ItemsPanelTemplate>
-      </ItemsControl.ItemsPanel>
-    </ItemsControl>
+    <!--  Device tabs, phones first. One guide shows at a time; the last choice is kept in preferences.json.  -->
+    <TabControl
+      x:Name="Tabs"
+      Margin="0,24,0,0"
+      AutomationProperties.Name="{Binding [Connect_Tabs_Name], Source={x:Static local:Loc.Instance}}"
+      ContentTemplate="{StaticResource GuideTemplate}"
+      SelectionChanged="OnTabChanged">
+      <TabControl.ItemContainerStyle>
+        <Style BasedOn="{StaticResource {x:Type TabItem}}" TargetType="TabItem">
+          <Setter Property="AutomationProperties.Name" Value="{Binding Title}" />
+        </Style>
+      </TabControl.ItemContainerStyle>
+      <TabControl.ItemTemplate>
+        <DataTemplate DataType="{x:Type pages:GuideCard}">
+          <TextBlock Text="{Binding Title}" />
+        </DataTemplate>
+      </TabControl.ItemTemplate>
+    </TabControl>
   </StackPanel>
 </Page>

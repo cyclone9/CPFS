@@ -46,4 +46,21 @@ public class PreferencesTests
         Assert.False(prefs.CheckUpdatesAtStart);
         Assert.False(prefs.SaveActivityLog);
     }
+
+    [Fact]
+    public void ConnectDeviceIsKeptAndItsAbsenceIsTolerated()
+    {
+        var prefs = new AppPreferences { ConnectDevice = "android" };
+        Assert.Equal("android", AppPreferences.Parse(prefs.Serialize()).ConnectDevice);
+        Assert.Null(AppPreferences.Parse("{\"Theme\":\"Dark\"}").ConnectDevice);
+        Assert.Null(AppPreferences.Parse("{\"ConnectDevice\":3}").ConnectDevice);
+    }
+
+    [Theory]
+    [InlineData(null, 0)]
+    [InlineData("android", 1)]
+    [InlineData(" LINUX ", 4)]
+    [InlineData("symbian", 0)]
+    public void ConnectTabFallsBackToThePhones(string? saved, int index) =>
+        Assert.Equal(index, Cpfs.Core.Connect.GuideTabs.IndexOf(saved));
 }

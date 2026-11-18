@@ -64,4 +64,14 @@ public class LayoutTests
 
         Assert.Equal(new double[] { 130, 60, 120, 100 }, TableLayout.Arrange(new double[] { 130, 60, 120, 100 }, double.PositiveInfinity, 16, 140).Widths);
     }
+
+    [Theory]
+    [InlineData(4, 4, 4)]
+    [InlineData(3, 4, 2)]
+    [InlineData(2, 4, 2)]
+    [InlineData(1, 4, 1)]
+    [InlineData(4, 3, 3)]
+    [InlineData(2, 3, 1)]
+    public void EvenColumnsKeepEveryRowFull(int columns, int count, int expected) =>
+        Assert.Equal(expected, ColumnLayout.EvenColumns(columns, count));
 }

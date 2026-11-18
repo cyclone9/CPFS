@@ -9,8 +9,8 @@ using Microsoft.Win32;
 
 namespace Cpfs.Windows;
 
-// This PC's own SMB client side: the connections and saved drive mappings of the calling logon session. Reads only.
-// Called only from an unelevated process for the page: an elevated one would see the administrator session's
+// This PC's own SMB client side: the connections and saved drive mappings of the calling logon session, and cancelling
+// one after the user confirmed. Called only from an unelevated process for the page: an elevated one would see the administrator session's
 // connections, not the ones File Explorer uses.
 internal static class SmbClient
 {
@@ -23,6 +23,10 @@ internal static class SmbClient
     private const uint ResourceRemembered = 0x00000003;
     private const uint ResourceTypeDisk = 0x00000001;
     private const uint WnncNetLanman = 0x00020000;
+
+    // CONNECT_UPDATE_PROFILE 0x1 and CONNECT_TEMPORARY 0x4 (Learn, WNetAddConnection2W).
+    private const uint ConnectUpdateProfile = 0x00000001;
+    private const uint ConnectTemporary = 0x00000004;
 
     // NetUseEnum level 2: https://learn.microsoft.com/en-us/windows/win32/api/lmuse/nf-lmuse-netuseenum
     public static List<SmbUse> ReadUses()
@@ -158,6 +162,48 @@ internal static class SmbClient
         }
     }
 
+    // WNetCancelConnection2W: https://learn.microsoft.com/en-us/windows/win32/api/winnetwk/nf-winnetwk-wnetcancelconnection2w
+    // Returns Windows' code (0 is NO_ERROR); the caller judges success by reading the list again.
+    public static int Cancel(DisconnectTarget target, bool force)
+    {
+        if (target is null)
+        {
+            throw new ArgumentNullException(nameof(target));
+        }
+
+        return WNetCancelConnection2W(target.Name, target.UpdateProfile ? ConnectUpdateProfile : 0, force);
+    }
+
+    // WNetAddConnection2W, for the CI test only (the page never creates a connection):
+    // https://learn.microsoft.com/en-us/windows/win32/api/winnetwk/nf-winnetwk-wnetaddconnection2w
+    // The password goes to Windows as an unmanaged copy that is zeroed and freed at once; it never becomes a string.
+    public static int Add(string? localName, string remoteName, string user, System.Security.SecureString? password, bool remember)
+    {
+        var resource = new NetResource { Type = ResourceTypeDisk };
+        var local = localName is null ? IntPtr.Zero : Marshal.StringToHGlobalUni(localName);
+        var remote = Marshal.StringToHGlobalUni(remoteName);
+        var secret = password is null ? IntPtr.Zero : Marshal.SecureStringToGlobalAllocUnicode(password);
+        try
+        {
+            resource.LocalName = local;
+            resource.RemoteName = remote;
+            return WNetAddConnection2W(ref resource, secret, user, remember ? ConnectUpdateProfile : ConnectTemporary);
+        }
+        finally
+        {
+            if (secret != IntPtr.Zero)
+            {
+                Marshal.ZeroFreeGlobalAllocUnicode(secret);
+            }
+
+            Marshal.FreeHGlobal(remote);
+            if (local != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(local);
+            }
+        }
+    }
+
     // ---- dev1 probes: written to the log only, each failure a logged line. ----
 
     // NetSessionEnum level 10 (the server side): whether an unelevated process may read it. Code and count only.
@@ -266,6 +312,12 @@ internal static class SmbClient
 
     [DllImport("mpr.dll")]
     private static extern int WNetCloseEnum(IntPtr handle);
+
+    [DllImport("mpr.dll", CharSet = CharSet.Unicode)]
+    private static extern int WNetCancelConnection2W(string name, uint flags, [MarshalAs(UnmanagedType.Bool)] bool force);
+
+    [DllImport("mpr.dll", CharSet = CharSet.Unicode)]
+    private static extern int WNetAddConnection2W(ref NetResource netResource, IntPtr password, string userName, uint flags);
 
     [DllImport("mpr.dll", CharSet = CharSet.Unicode)]
     private static extern int WNetGetProviderNameW(uint netType, [Out] char[] providerName, ref int bufferSize);

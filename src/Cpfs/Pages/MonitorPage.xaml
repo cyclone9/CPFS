@@ -9,115 +9,6 @@
   <Page.Resources>
     <BooleanToVisibilityConverter x:Key="Visible" />
 
-    <!--  One label and value; fields sit in a WrapPanel, so a row folds onto more lines in a narrow window.  -->
-    <DataTemplate DataType="{x:Type pages:MonitorField}">
-      <StackPanel MinWidth="104" Margin="0,0,24,8">
-        <!--  Down and Up explain their direction in a tooltip, for the mouse and for screen readers.  -->
-        <TextBlock
-          Margin="0"
-          AutomationProperties.HelpText="{Binding Tip}"
-          Style="{StaticResource CardDescription}"
-          Text="{Binding Label}"
-          ToolTip="{Binding Tip}" />
-        <TextBlock Style="{StaticResource DataValue}" Text="{Binding Value}" Visibility="{Binding IsData, Converter={StaticResource Visible}}" />
-        <TextBlock Style="{StaticResource CardValue}" Text="{Binding Value}" Visibility="{Binding IsText, Converter={StaticResource Visible}}" />
-        <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding Detail}" TextWrapping="Wrap" Visibility="{Binding HasDetail, Converter={StaticResource Visible}}" />
-      </StackPanel>
-    </DataTemplate>
-
-    <ItemsPanelTemplate x:Key="Wrap">
-      <WrapPanel />
-    </ItemsPanelTemplate>
-
-    <DataTemplate DataType="{x:Type pages:MonitorRow}">
-      <Border
-        Margin="0,4,0,0"
-        Padding="12,8,12,0"
-        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
-        BorderThickness="1"
-        CornerRadius="4">
-        <!--
-          The device's data on the start side, its buttons in one column of equal widths on the end side; in a narrow
-          window the buttons go below the data. The two naming buttons never show together.
-        -->
-        <local:FieldCardPanel FieldAutoWidth="True" MinHeaderEms="16">
-          <StackPanel>
-            <TextBlock Style="{StaticResource CardTitle}" Margin="0,0,0,6" Text="{Binding Title}" TextWrapping="Wrap" Visibility="{Binding HasTitle, Converter={StaticResource Visible}}" />
-            <Border Style="{StaticResource Badge}" Margin="0,0,0,6" Visibility="{Binding HasBadge, Converter={StaticResource Visible}}">
-              <TextBlock Style="{StaticResource BadgeText}" Text="{Binding Badge}" />
-            </Border>
-            <ItemsControl Focusable="False" ItemsPanel="{StaticResource Wrap}" ItemsSource="{Binding Fields}" />
-          </StackPanel>
-          <StackPanel Margin="0,0,0,4" Visibility="{Binding HasActions, Converter={StaticResource Visible}}">
-            <ui:Button
-              Margin="0,0,0,4"
-              HorizontalAlignment="Stretch"
-              HorizontalContentAlignment="Left"
-              AutomationProperties.Name="{Binding NameActionName}"
-              Click="OnNameDevice"
-              Content="{Binding [Monitor_Device_Name], Source={x:Static local:Loc.Instance}}"
-              Icon="{ui:SymbolIcon Tag24}"
-              ToolTip="{Binding [Monitor_Device_NameTip], Source={x:Static local:Loc.Instance}}"
-              Visibility="{Binding CanName, Converter={StaticResource Visible}}" />
-            <ui:Button
-              Margin="0,0,0,4"
-              HorizontalAlignment="Stretch"
-              HorizontalContentAlignment="Left"
-              AutomationProperties.Name="{Binding NameActionName}"
-              Click="OnNameDevice"
-              Content="{Binding [Monitor_Device_Rename], Source={x:Static local:Loc.Instance}}"
-              Icon="{ui:SymbolIcon Rename24}"
-              ToolTip="{Binding [Monitor_Device_NameTip], Source={x:Static local:Loc.Instance}}"
-              Visibility="{Binding HasTitle, Converter={StaticResource Visible}}" />
-            <ui:Button
-              Margin="0,0,0,4"
-              HorizontalAlignment="Stretch"
-              HorizontalContentAlignment="Left"
-              AutomationProperties.Name="{Binding ForgetActionName}"
-              Click="OnForgetDevice"
-              Content="{Binding [Monitor_Device_Forget], Source={x:Static local:Loc.Instance}}"
-              Icon="{ui:SymbolIcon Delete24}"
-              Visibility="{Binding HasTitle, Converter={StaticResource Visible}}" />
-            <ui:Button
-              Margin="0,0,0,4"
-              HorizontalAlignment="Stretch"
-              HorizontalContentAlignment="Left"
-              AutomationProperties.Name="{Binding ActionName}"
-              Click="OnDisconnect"
-              Content="{Binding [Monitor_Session_Disconnect], Source={x:Static local:Loc.Instance}}"
-              Icon="{ui:SymbolIcon PlugDisconnected24}"
-              Visibility="{Binding CanDisconnect, Converter={StaticResource Visible}}" />
-          </StackPanel>
-        </local:FieldCardPanel>
-      </Border>
-    </DataTemplate>
-
-    <!--  Picked by type: Recent activity and the table sections have templates of their own; this one is for the server and devices.  -->
-    <DataTemplate DataType="{x:Type pages:MonitorSection}">
-      <ui:Card Margin="0,0,0,4">
-        <StackPanel>
-          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
-          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Description}" />
-          <Border Style="{StaticResource Badge}" Margin="0,8,0,0" Visibility="{Binding NeedsAdmin, Converter={StaticResource Visible}}">
-            <TextBlock Style="{StaticResource BadgeText}" Text="{Binding [Badge_NeedsAdmin], Source={x:Static local:Loc.Instance}}" />
-          </Border>
-          <TextBlock Margin="0,8,0,0" Style="{StaticResource ErrorText}" Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
-          <TextBlock Margin="0,8,0,0" Style="{StaticResource CardValue}" Text="{Binding Empty}" Visibility="{Binding IsEmpty, Converter={StaticResource Visible}}" />
-          <ItemsControl
-            Margin="0,8,0,0"
-            Focusable="False"
-            ItemsPanel="{StaticResource Wrap}"
-            ItemsSource="{Binding Fields}" />
-          <ItemsControl Focusable="False" ItemsSource="{Binding Rows}" />
-        </StackPanel>
-      </ui:Card>
-    </DataTemplate>
-
-    <!--
-      Failed sign-ins and Being copied now: one header row, then one row per entry, lined up by TableRowPanel. The
-      columns before the last are as wide as their widest entry and trim (full text in the tooltip) only when the
-      window is too narrow for them; the last column takes the rest, or goes under its row when too little is left.
-    -->
     <Style x:Key="TableHead" BasedOn="{StaticResource CardDescription}" TargetType="TextBlock">
       <Setter Property="Margin" Value="0" />
       <Setter Property="TextWrapping" Value="NoWrap" />
@@ -132,36 +23,93 @@
       <Setter Property="TextTrimming" Value="CharacterEllipsis" />
     </Style>
 
-    <DataTemplate DataType="{x:Type pages:TableSection}">
-      <ui:Card Margin="0,0,0,4">
-        <StackPanel>
-          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
-          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Description}" />
-          <Border Style="{StaticResource Badge}" Margin="0,8,0,0" Visibility="{Binding NeedsAdmin, Converter={StaticResource Visible}}">
-            <TextBlock Style="{StaticResource BadgeText}" Text="{Binding [Badge_NeedsAdmin], Source={x:Static local:Loc.Instance}}" />
-          </Border>
-          <TextBlock Margin="0,8,0,0" Style="{StaticResource ErrorText}" Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
-          <TextBlock Margin="0,8,0,0" Style="{StaticResource CardValue}" Text="{Binding Empty}" Visibility="{Binding IsEmpty, Converter={StaticResource Visible}}" />
-          <StackPanel Margin="0,12,0,0" local:TableRowPanel.IsScope="True" Visibility="{Binding HasItems, Converter={StaticResource Visible}}">
-            <ContentControl Margin="0,0,0,4" Content="{Binding Header}" Focusable="False" />
-            <ItemsControl Focusable="False" ItemsSource="{Binding Items}" />
+    <!--  A stat card: a label, a large number in tabular figures, and one line under it.  -->
+    <Style x:Key="StatCard" TargetType="ui:Card">
+      <Setter Property="Padding" Value="20,16" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+    </Style>
+
+    <!--
+      One connected device: who it is (name or address, then how it is connected and for how long), the account and SMB
+      version, whether it is active, then Disconnect and a "…" menu with the naming actions. Rows stay across refreshes
+      (MonitorPage.SyncRows), so only text that changed is redrawn. No per-device traffic: Windows' per-session byte
+      counters stay at 0 during a copy. The first row has no hairline above it.
+    -->
+    <DataTemplate x:Key="DeviceTemplate" DataType="{x:Type pages:MonitorRow}">
+      <StackPanel>
+        <Border x:Name="Line" Style="{StaticResource Hairline}" />
+        <Grid Margin="20,12" AutomationProperties.Name="{Binding Shown}">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <local:TableRowPanel MinLastEms="8">
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" Visibility="{Binding HasTitle, Converter={StaticResource Visible}}" />
+              <TextBlock Style="{StaticResource DataValue}" Text="{Binding Client}" />
+              <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding HostName}" Visibility="{Binding HasHostName, Converter={StaticResource Visible}}" />
+              <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Connection}" />
+            </StackPanel>
+            <StackPanel>
+              <TextBlock AutomationProperties.HelpText="{Binding [Monitor_Session_User], Source={x:Static local:Loc.Instance}}" Style="{StaticResource DataValue}" Text="{Binding User}" />
+              <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Dialect}" />
+            </StackPanel>
+            <StackPanel>
+              <StackPanel Style="{StaticResource StatusLabel}">
+                <Ellipse Style="{StaticResource StatusDot}" Tag="{Binding StatusKind}" />
+                <TextBlock Style="{StaticResource Body}" Text="{Binding Status}" />
+              </StackPanel>
+              <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Files}" />
+            </StackPanel>
+          </local:TableRowPanel>
+          <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" Orientation="Horizontal">
+            <ui:Button
+              AutomationProperties.Name="{Binding ActionName}"
+              Click="OnDisconnect"
+              Content="{Binding [Monitor_Session_Disconnect], Source={x:Static local:Loc.Instance}}"
+              Visibility="{Binding CanDisconnect, Converter={StaticResource Visible}}" />
+            <ui:Button
+              Margin="8,0,0,0"
+              AutomationProperties.Name="{Binding MoreActionName}"
+              Click="OnDeviceMenu"
+              Icon="{ui:SymbolIcon MoreHorizontal24}"
+              ToolTip="{Binding [Monitor_Device_More], Source={x:Static local:Loc.Instance}}"
+              Visibility="{Binding HasActions, Converter={StaticResource Visible}}">
+              <ui:Button.ContextMenu>
+                <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                  <MenuItem
+                    AutomationProperties.Name="{Binding NameActionName}"
+                    Click="OnNameDevice"
+                    Header="{Binding [Monitor_Device_Name], Source={x:Static local:Loc.Instance}}"
+                    ToolTip="{Binding [Monitor_Device_NameTip], Source={x:Static local:Loc.Instance}}"
+                    Visibility="{Binding CanName, Converter={StaticResource Visible}}" />
+                  <MenuItem
+                    AutomationProperties.Name="{Binding NameActionName}"
+                    Click="OnNameDevice"
+                    Header="{Binding [Monitor_Device_Rename], Source={x:Static local:Loc.Instance}}"
+                    ToolTip="{Binding [Monitor_Device_NameTip], Source={x:Static local:Loc.Instance}}"
+                    Visibility="{Binding CanRename, Converter={StaticResource Visible}}" />
+                  <MenuItem
+                    AutomationProperties.Name="{Binding ForgetActionName}"
+                    Click="OnForgetDevice"
+                    Header="{Binding [Monitor_Device_Forget], Source={x:Static local:Loc.Instance}}"
+                    Visibility="{Binding HasTitle, Converter={StaticResource Visible}}" />
+                </ContextMenu>
+              </ui:Button.ContextMenu>
+            </ui:Button>
           </StackPanel>
-        </StackPanel>
-      </ui:Card>
+        </Grid>
+      </StackPanel>
+      <DataTemplate.Triggers>
+        <DataTrigger Binding="{Binding (ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}}" Value="0">
+          <Setter TargetName="Line" Property="Visibility" Value="Collapsed" />
+        </DataTrigger>
+      </DataTemplate.Triggers>
     </DataTemplate>
 
-    <DataTemplate DataType="{x:Type pages:FailHeader}">
-      <local:TableRowPanel>
-        <TextBlock Style="{StaticResource TableHead}" Text="{Binding [Monitor_Fail_Time], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock Style="{StaticResource TableHead}" Text="{Binding [Monitor_Fail_User], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock Style="{StaticResource TableHead}" Text="{Binding [Monitor_Fail_From], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding [Monitor_Fail_Reason], Source={x:Static local:Loc.Instance}}" />
-      </local:TableRowPanel>
-    </DataTemplate>
-
-    <!--  Each cell names its column for screen readers, which read the cells one by one.  -->
+    <!--  Failed sign-ins: one header row, then one row per entry, lined up by TableRowPanel.  -->
     <DataTemplate DataType="{x:Type pages:FailRowView}">
-      <Border Padding="0,6" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+      <Border Padding="0,8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
         <local:TableRowPanel>
           <TextBlock
             AutomationProperties.HelpText="{Binding [Monitor_Fail_Time], Source={x:Static local:Loc.Instance}}"
@@ -183,50 +131,26 @@
       </Border>
     </DataTemplate>
 
-    <DataTemplate DataType="{x:Type pages:FileHeader}">
-      <local:TableRowPanel>
-        <TextBlock Style="{StaticResource TableHead}" Text="{Binding [Monitor_File_Client], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock Style="{StaticResource TableHead}" Text="{Binding [Monitor_File_User], Source={x:Static local:Loc.Instance}}" />
-        <TextBlock Style="{StaticResource TableHead}" Text="{Binding [Monitor_File_Path], Source={x:Static local:Loc.Instance}}" />
-      </local:TableRowPanel>
-    </DataTemplate>
-
-    <!--  The file's path on one line, trimmed, with the full path as its tooltip, as in Recent activity.  -->
+    <!--  Being copied now: the path (one line, trimmed, full path in the tooltip), then the device and account.  -->
     <DataTemplate DataType="{x:Type pages:FileRowView}">
-      <Border Padding="0,6" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
-        <local:TableRowPanel>
-          <TextBlock
-            AutomationProperties.HelpText="{Binding [Monitor_File_Client], Source={x:Static local:Loc.Instance}}"
-            Style="{StaticResource TableData}"
-            Text="{Binding Client}"
-            ToolTip="{Binding Client}" />
-          <TextBlock
-            AutomationProperties.HelpText="{Binding [Monitor_File_User], Source={x:Static local:Loc.Instance}}"
-            Style="{StaticResource TableData}"
-            Text="{Binding User}"
-            ToolTip="{Binding User}" />
-          <TextBlock
-            AutomationProperties.HelpText="{Binding [Monitor_File_Path], Source={x:Static local:Loc.Instance}}"
-            Style="{StaticResource TableData}"
-            Text="{Binding Path}"
-            ToolTip="{Binding Path}" />
-        </local:TableRowPanel>
+      <Border Padding="0,8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+        <StackPanel AutomationProperties.HelpText="{Binding [Monitor_File_Path], Source={x:Static local:Loc.Instance}}" ToolTip="{Binding Path}">
+          <TextBlock Style="{StaticResource TableData}" Text="{Binding Path}" />
+          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Who}" />
+        </StackPanel>
       </Border>
     </DataTemplate>
 
-    <!--
-      One row of Recent activity: Time and Change size to their widest entry (shared with the header through
-      ActivityTime and ActivityChange), Path takes the rest on one line, trimmed, with the full path as its tooltip.
-    -->
+    <!--  One row of Recent activity: Time (mono) and Change size to their widest entry, Path takes the rest.  -->
     <DataTemplate DataType="{x:Type pages:ActivityRowView}">
-      <Border Padding="0,6" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+      <Border Padding="0,8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" SharedSizeGroup="ActivityTime" />
             <ColumnDefinition Width="Auto" SharedSizeGroup="ActivityChange" />
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
-          <TextBlock Margin="0,0,16,0" Style="{StaticResource CardValue}" Text="{Binding Time}" TextWrapping="NoWrap" />
+          <TextBlock Margin="0,0,16,0" Style="{StaticResource DataValue}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Time}" TextWrapping="NoWrap" />
           <TextBlock Grid.Column="1" Margin="0,0,16,0" Style="{StaticResource CardValue}" Text="{Binding Change}" TextWrapping="NoWrap" />
           <StackPanel Grid.Column="2" AutomationProperties.HelpText="{Binding Tip}" ToolTip="{Binding Tip}">
             <TextBlock Style="{StaticResource DataValue}" Text="{Binding Path}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
@@ -241,73 +165,20 @@
         </Grid>
       </Border>
     </DataTemplate>
-
-    <DataTemplate DataType="{x:Type pages:ActivitySection}">
-      <ui:Card Margin="0,0,0,4">
-        <StackPanel>
-          <Grid>
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <StackPanel>
-              <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
-              <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Description}" />
-            </StackPanel>
-            <ui:Button
-              Grid.Column="1"
-              Margin="12,0,0,0"
-              VerticalAlignment="Top"
-              AutomationProperties.Name="{Binding [Monitor_Activity_Clear], Source={x:Static local:Loc.Instance}}"
-              Click="OnClearActivity"
-              Content="{Binding [Monitor_Activity_Clear], Source={x:Static local:Loc.Instance}}"
-              Icon="{ui:SymbolIcon Delete24}"
-              IsEnabled="{Binding HasItems}"
-              ToolTip="{Binding [Monitor_Activity_ClearTip], Source={x:Static local:Loc.Instance}}" />
-          </Grid>
-          <WrapPanel Margin="0,12,0,0">
-            <ui:ToggleSwitch
-              Margin="0,0,24,4"
-              VerticalAlignment="Center"
-              AutomationProperties.HelpText="{Binding LogHelp}"
-              AutomationProperties.Name="{Binding [Monitor_Activity_SaveLog], Source={x:Static local:Loc.Instance}}"
-              Click="OnActivityLogSwitch"
-              Content="{Binding [Monitor_Activity_SaveLog], Source={x:Static local:Loc.Instance}}"
-              IsChecked="{Binding SaveToLog, Mode=OneWay}" />
-            <ui:Button
-              Margin="0,0,0,4"
-              AutomationProperties.Name="{Binding [About_Log_Open], Source={x:Static local:Loc.Instance}}"
-              Click="OnOpenActivityLog"
-              Content="{Binding [About_Log_Open], Source={x:Static local:Loc.Instance}}"
-              Icon="{ui:SymbolIcon Open24}"
-              IsEnabled="{Binding CanOpenLog}" />
-          </WrapPanel>
-          <TextBlock Margin="0,2,0,0" Style="{StaticResource CardDescription}" Text="{Binding LogHelp}" />
-          <TextBlock Margin="0,8,0,0" Style="{StaticResource ErrorText}" Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
-          <TextBlock Margin="0,8,0,0" Style="{StaticResource CardValue}" Text="{Binding Empty}" Visibility="{Binding IsEmpty, Converter={StaticResource Visible}}" />
-          <StackPanel Margin="0,12,0,0" Grid.IsSharedSizeScope="True" Visibility="{Binding HasItems, Converter={StaticResource Visible}}">
-            <Grid Margin="0,0,0,4">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" SharedSizeGroup="ActivityTime" />
-                <ColumnDefinition Width="Auto" SharedSizeGroup="ActivityChange" />
-                <ColumnDefinition Width="*" />
-              </Grid.ColumnDefinitions>
-              <TextBlock Margin="0,0,16,0" Style="{StaticResource CardDescription}" Text="{Binding [Monitor_Activity_Time], Source={x:Static local:Loc.Instance}}" TextWrapping="NoWrap" />
-              <TextBlock Grid.Column="1" Margin="0,0,16,0" Style="{StaticResource CardDescription}" Text="{Binding [Monitor_Activity_Change], Source={x:Static local:Loc.Instance}}" TextWrapping="NoWrap" />
-              <TextBlock Grid.Column="2" Style="{StaticResource CardDescription}" Text="{Binding [Monitor_Activity_Path], Source={x:Static local:Loc.Instance}}" TextWrapping="NoWrap" />
-            </Grid>
-            <ItemsControl Focusable="False" ItemsSource="{Binding Items}" />
-          </StackPanel>
-        </StackPanel>
-      </ui:Card>
-    </DataTemplate>
   </Page.Resources>
 
-  <StackPanel Margin="24,16,24,24">
-    <TextBlock Style="{StaticResource PageTitle}" Text="{Binding [Nav_Monitor], Source={x:Static local:Loc.Instance}}" />
+  <StackPanel Style="{StaticResource PageContent}">
+    <!--  The title with a quiet "Updated n s ago" and a static dot; nothing pulses.  -->
+    <WrapPanel Margin="0,0,0,16">
+      <TextBlock Margin="0,0,16,0" VerticalAlignment="Center" Style="{StaticResource PageTitle}" Text="{Binding [Nav_Monitor], Source={x:Static local:Loc.Instance}}" />
+      <StackPanel x:Name="UpdatedLabel" VerticalAlignment="Center" Style="{StaticResource StatusLabel}" Visibility="Collapsed">
+        <Ellipse x:Name="UpdatedDot" Style="{StaticResource StatusDot}" />
+        <TextBlock x:Name="UpdatedText" Style="{StaticResource StatusText}" />
+      </StackPanel>
+    </WrapPanel>
 
     <StackPanel x:Name="AdminPanel">
-      <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon Shield24}">
+      <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Shield24}">
         <ui:CardControl.Header>
           <StackPanel>
             <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Monitor_Admin_Title], Source={x:Static local:Loc.Instance}}" />
@@ -322,13 +193,14 @@
           Content="{Binding [Setup_Admin_Button], Source={x:Static local:Loc.Instance}}"
           Icon="{ui:SymbolIcon Shield24}" />
       </ui:CardControl>
-      <ui:InfoBar x:Name="AdminResult" Margin="0,0,0,4" IsClosable="True" IsOpen="False" />
+      <ui:InfoBar x:Name="AdminResult" Margin="0,0,0,8" IsClosable="True" IsOpen="False" />
     </StackPanel>
 
+    <ui:InfoBar x:Name="ActionResult" Margin="0,0,0,8" IsClosable="True" IsOpen="False" />
+
     <StackPanel x:Name="MonitorPanel" Visibility="Collapsed">
-      <ui:InfoBar x:Name="ActionResult" Margin="0,0,0,4" IsClosable="True" IsOpen="False" />
       <!--  Until the first reading arrives (MonitorPage.RefreshAsync).  -->
-      <ui:Card x:Name="MonitorLoading" Margin="0,0,0,4">
+      <ui:Card x:Name="MonitorLoading" Margin="0,0,0,8">
         <StackPanel Orientation="Horizontal">
           <ui:ProgressRing Width="20" Height="20" IsIndeterminate="True" />
           <TextBlock
@@ -339,10 +211,182 @@
             Text="{Binding [Common_ReadingPc], Source={x:Static local:Loc.Instance}}" />
         </StackPanel>
       </ui:Card>
-      <ItemsControl
-        x:Name="Sections"
-        Focusable="False"
-        Visibility="Collapsed" />
+
+      <StackPanel x:Name="Readings" Visibility="Collapsed">
+        <!--  Four compact numbers from data CPFS already reads: 4 columns, 2 by 2 when narrow, 1 when very narrow.  -->
+        <local:ColumnsPanel
+          EvenRows="True"
+          Gap="8"
+          ItemChrome="40"
+          LogName="Monitor stats"
+          MaxColumns="4"
+          MinItemEms="11">
+          <ui:Card AutomationProperties.Name="{Binding [Monitor_Stat_Devices], Source={x:Static local:Loc.Instance}}" Style="{StaticResource StatCard}">
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding [Monitor_Stat_Devices], Source={x:Static local:Loc.Instance}}" />
+              <TextBlock x:Name="DevicesNumber" AutomationProperties.LiveSetting="Polite" Style="{StaticResource StatNumber}" />
+              <TextBlock x:Name="DevicesSub" Style="{StaticResource CardDescription}" />
+            </StackPanel>
+          </ui:Card>
+          <ui:Card
+            AutomationProperties.HelpText="{Binding [Monitor_DownTip], Source={x:Static local:Loc.Instance}}"
+            AutomationProperties.Name="{Binding [Monitor_Stat_Down], Source={x:Static local:Loc.Instance}}"
+            Style="{StaticResource StatCard}"
+            ToolTip="{Binding [Monitor_DownTip], Source={x:Static local:Loc.Instance}}">
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding [Monitor_Stat_Down], Source={x:Static local:Loc.Instance}}" />
+              <TextBlock x:Name="DownNumber" Style="{StaticResource StatNumber}" />
+              <TextBlock x:Name="DownSub" Style="{StaticResource CardDescription}" />
+            </StackPanel>
+          </ui:Card>
+          <ui:Card
+            AutomationProperties.HelpText="{Binding [Monitor_UpTip], Source={x:Static local:Loc.Instance}}"
+            AutomationProperties.Name="{Binding [Monitor_Stat_Up], Source={x:Static local:Loc.Instance}}"
+            Style="{StaticResource StatCard}"
+            ToolTip="{Binding [Monitor_UpTip], Source={x:Static local:Loc.Instance}}">
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding [Monitor_Stat_Up], Source={x:Static local:Loc.Instance}}" />
+              <TextBlock x:Name="UpNumber" Style="{StaticResource StatNumber}" />
+              <TextBlock x:Name="UpSub" Style="{StaticResource CardDescription}" />
+            </StackPanel>
+          </ui:Card>
+          <ui:Card AutomationProperties.Name="{Binding [Monitor_Stat_Fails], Source={x:Static local:Loc.Instance}}" Style="{StaticResource StatCard}">
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding [Monitor_Stat_Fails], Source={x:Static local:Loc.Instance}}" />
+              <TextBlock x:Name="FailsNumber" AutomationProperties.LiveSetting="Polite" Style="{StaticResource StatNumber}" />
+              <StackPanel Margin="0,4,0,0" Style="{StaticResource StatusLabel}">
+                <Ellipse x:Name="FailsDot" Style="{StaticResource StatusDot}" />
+                <TextBlock x:Name="FailsSub" Style="{StaticResource StatusText}" />
+              </StackPanel>
+            </StackPanel>
+          </ui:Card>
+        </local:ColumnsPanel>
+        <TextBlock x:Name="ServerNote" Margin="0,8,0,0" Style="{StaticResource CardDescription}" />
+        <TextBlock x:Name="ServerError" Margin="0,8,0,0" Style="{StaticResource ErrorText}" Visibility="Collapsed" />
+
+        <!--  Connected devices: the main block, one card, one row per device.  -->
+        <TextBlock Style="{StaticResource GroupTitle}" Text="{Binding [Monitor_Stat_Devices], Source={x:Static local:Loc.Instance}}" />
+        <Border x:Name="DevicesArea" Style="{StaticResource GroupCard}">
+          <StackPanel>
+            <Border Margin="20,12,20,0" HorizontalAlignment="Left" Style="{StaticResource Badge}" Visibility="{Binding NeedsAdmin, Converter={StaticResource Visible}}">
+              <TextBlock Style="{StaticResource BadgeText}" Text="{Binding [Badge_NeedsAdmin], Source={x:Static local:Loc.Instance}}" />
+            </Border>
+            <TextBlock Margin="20,12" Style="{StaticResource ErrorText}" Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
+            <TextBlock Margin="20,12" Style="{StaticResource CardValue}" Text="{Binding Empty}" Visibility="{Binding IsEmpty, Converter={StaticResource Visible}}" />
+            <ItemsControl
+              x:Name="DeviceList"
+              local:TableRowPanel.IsScope="True"
+              AlternationCount="2147483647"
+              Focusable="False"
+              ItemTemplate="{StaticResource DeviceTemplate}"
+              ItemsSource="{Binding Rows}" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </StackPanel>
+
+    <!--  Recent activity and Being copied now, side by side, stacked when narrow. Recent activity also works without
+          administrator rights; Being copied now needs them.  -->
+    <local:ColumnsPanel
+      x:Name="BottomColumns"
+      Margin="0,8,0,0"
+      Gap="16"
+      LogName="Monitor activity and files"
+      MaxColumns="2"
+      MinItemEms="22">
+      <StackPanel x:Name="ActivityArea" Grid.IsSharedSizeScope="True">
+        <Grid Margin="0,16,0,8">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <TextBlock VerticalAlignment="Center" Style="{StaticResource CardTitle}" Text="{Binding Title}" />
+          <WrapPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+            <ui:ToggleSwitch
+              Margin="0,0,12,0"
+              VerticalAlignment="Center"
+              AutomationProperties.HelpText="{Binding LogHelp}"
+              AutomationProperties.Name="{Binding [Monitor_Activity_SaveLog], Source={x:Static local:Loc.Instance}}"
+              Click="OnActivityLogSwitch"
+              Content="{Binding [Monitor_Activity_SaveLog], Source={x:Static local:Loc.Instance}}"
+              IsChecked="{Binding SaveToLog, Mode=OneWay}"
+              ToolTip="{Binding LogHelp}" />
+            <ui:Button
+              VerticalAlignment="Center"
+              Appearance="Transparent"
+              AutomationProperties.Name="{Binding [Monitor_Activity_Clear], Source={x:Static local:Loc.Instance}}"
+              Click="OnClearActivity"
+              Content="{Binding [Monitor_Activity_Clear], Source={x:Static local:Loc.Instance}}"
+              IsEnabled="{Binding HasItems}"
+              ToolTip="{Binding [Monitor_Activity_ClearTip], Source={x:Static local:Loc.Instance}}" />
+          </WrapPanel>
+        </Grid>
+        <ui:Card Padding="20,12">
+          <StackPanel>
+            <TextBlock Margin="0" Style="{StaticResource CardDescription}" Text="{Binding Description}" />
+            <WrapPanel Margin="0,4,0,0" Visibility="{Binding SaveToLog, Converter={StaticResource Visible}}">
+              <TextBlock Margin="0,0,8,0" VerticalAlignment="Center" Style="{StaticResource CardDescription}" Text="{Binding LogHelp}" />
+              <ui:Button
+                Margin="0,4,0,0"
+                Appearance="Transparent"
+                AutomationProperties.Name="{Binding [About_Log_Open], Source={x:Static local:Loc.Instance}}"
+                Click="OnOpenActivityLog"
+                Content="{Binding [About_Log_Open], Source={x:Static local:Loc.Instance}}"
+                Icon="{ui:SymbolIcon Open24}"
+                IsEnabled="{Binding CanOpenLog}" />
+            </WrapPanel>
+            <TextBlock Margin="0,8,0,0" Style="{StaticResource ErrorText}" Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
+            <TextBlock Margin="0,8,0,0" Style="{StaticResource CardValue}" Text="{Binding Empty}" Visibility="{Binding IsEmpty, Converter={StaticResource Visible}}" />
+            <StackPanel Margin="0,8,0,0" Visibility="{Binding HasItems, Converter={StaticResource Visible}}">
+              <Grid Margin="0,0,0,4">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" SharedSizeGroup="ActivityTime" />
+                  <ColumnDefinition Width="Auto" SharedSizeGroup="ActivityChange" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Margin="0,0,16,0" Style="{StaticResource TableHead}" Text="{Binding [Monitor_Activity_Time], Source={x:Static local:Loc.Instance}}" />
+                <TextBlock Grid.Column="1" Margin="0,0,16,0" Style="{StaticResource TableHead}" Text="{Binding [Monitor_Activity_Change], Source={x:Static local:Loc.Instance}}" />
+                <TextBlock Grid.Column="2" Style="{StaticResource TableHead}" Text="{Binding [Monitor_Activity_Path], Source={x:Static local:Loc.Instance}}" />
+              </Grid>
+              <ItemsControl Focusable="False" ItemsSource="{Binding Items}" />
+            </StackPanel>
+          </StackPanel>
+        </ui:Card>
+      </StackPanel>
+
+      <StackPanel x:Name="FilesArea">
+        <TextBlock Margin="0,16,0,8" Style="{StaticResource CardTitle}" Text="{Binding Title}" />
+        <ui:Card Padding="20,12">
+          <StackPanel>
+            <TextBlock Margin="0" Style="{StaticResource CardDescription}" Text="{Binding Description}" />
+            <Border Margin="0,8,0,0" Style="{StaticResource Badge}" Visibility="{Binding NeedsAdmin, Converter={StaticResource Visible}}">
+              <TextBlock Style="{StaticResource BadgeText}" Text="{Binding [Badge_NeedsAdmin], Source={x:Static local:Loc.Instance}}" />
+            </Border>
+            <TextBlock Margin="0,8,0,0" Style="{StaticResource ErrorText}" Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Visible}}" />
+            <TextBlock Margin="0,8,0,0" Style="{StaticResource CardValue}" Text="{Binding Empty}" Visibility="{Binding IsEmpty, Converter={StaticResource Visible}}" />
+            <ItemsControl Margin="0,8,0,0" Focusable="False" ItemsSource="{Binding Items}" Visibility="{Binding HasItems, Converter={StaticResource Visible}}" />
+          </StackPanel>
+        </ui:Card>
+      </StackPanel>
+    </local:ColumnsPanel>
+
+    <!--  Failed sign-ins: the table only when there is at least one; the 24-hour count is in the stat row.  -->
+    <StackPanel x:Name="FailsArea" Visibility="Collapsed">
+      <TextBlock Style="{StaticResource GroupTitle}" Text="{Binding Title}" />
+      <ui:Card Padding="20,12">
+        <StackPanel>
+          <TextBlock Margin="0" Style="{StaticResource CardDescription}" Text="{Binding Description}" />
+          <StackPanel Margin="0,12,0,0" local:TableRowPanel.IsScope="True">
+            <local:TableRowPanel Margin="0,0,0,4">
+              <TextBlock Style="{StaticResource TableHead}" Text="{Binding [Monitor_Fail_Time], Source={x:Static local:Loc.Instance}}" />
+              <TextBlock Style="{StaticResource TableHead}" Text="{Binding [Monitor_Fail_User], Source={x:Static local:Loc.Instance}}" />
+              <TextBlock Style="{StaticResource TableHead}" Text="{Binding [Monitor_Fail_From], Source={x:Static local:Loc.Instance}}" />
+              <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding [Monitor_Fail_Reason], Source={x:Static local:Loc.Instance}}" />
+            </local:TableRowPanel>
+            <ItemsControl Focusable="False" ItemsSource="{Binding Items}" />
+          </StackPanel>
+        </StackPanel>
+      </ui:Card>
     </StackPanel>
   </StackPanel>
 </Page>

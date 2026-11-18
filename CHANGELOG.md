@@ -7,6 +7,10 @@ This project uses [semantic versioning](https://semver.org/).
 - The CyClone homepage moved to cyclone9.dev. The README, the licence and the About page now link there.
 - New video and cover image in the READMEs, in English and Persian.
 - New page, Connections from this PC: lists the shared folders this PC is connected to on other computers, grouped by server, with the drive letter, account, state and whether the drive reconnects at sign-in. It only reads, and it works only in a window opened without administrator rights.
+- This PC's connections can now disconnect a connection or every connection to one server, after you confirm. Windows is never told to force it unless it refused because files are open and you confirmed a second time. Disconnecting a drive also removes it from the next sign-in. A new section explains Windows' one-user-name-per-server rule (error 1219) and opens Credential Manager, and the Windows guide on Connect mentions the error.
+- New look for Setup and Uninstall: Setup opens with a card that says whether sharing is on, as far as CPFS could read it, with the share address and Copy and Open folder; its fields sit in three groups; both pages keep the summary, Show details and the main button in a bar at the bottom. Plan and progress states are shown as a dot with a word instead of coloured boxes, and Uninstall moved to the bottom of the menu.
+- New look for Monitor: four numbers at the top (devices, data down and up, failed sign-ins in 24 hours), one list of connected devices with the naming actions under a "…" button, and Recent activity beside Being copied now. Failed sign-ins are listed only when there is one. Recent activity also works without administrator rights.
+- New look for Connect: the share address and username at the top, one tab per kind of device (the last one is remembered), numbered steps, and the QR code shown beside the iPhone and Android steps instead of in a dialog.
 
 ## 0.8.0 - 2026-10-24
 

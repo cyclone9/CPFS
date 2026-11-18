@@ -44,12 +44,22 @@ public sealed class QrItem
 {
     public ImageSource? Image { get; init; }
 
-    // The text the code holds, shown under it in the dialog with a copy button.
-    public string Text { get; init; } = "";
-
     public string Name { get; init; } = "";
 
     public string Caption { get; init; } = "";
+
+    // The text the code holds, shown under it with a copy button.
+    public ValueItem? Value { get; init; }
+}
+
+// A numbered step with the values it needs.
+public sealed class GuideStep
+{
+    public string Number { get; init; } = "";
+
+    public string Text { get; init; } = "";
+
+    public List<ValueItem> Values { get; } = new();
 }
 
 public sealed class GuideCard
@@ -58,14 +68,41 @@ public sealed class GuideCard
 
     public SymbolRegular Icon { get; init; }
 
+    // Built in reading order; Steps and Notes are made from it (Arrange).
     public List<GuideItem> Items { get; } = new();
+
+    public List<GuideStep> Steps { get; } = new();
+
+    // Notes and warnings, after the steps.
+    public List<GuideItem> Notes { get; } = new();
 
     // Set before the card is shown; only the phones get one, and not until CPFS is set up.
     public QrItem? Qr { get; set; }
 
     public bool HasQr => Qr is not null;
 
-    public string QrButtonName => Loc.Instance.Format("Connect_Qr_ShowName", Title);
+    // Each value goes under the step before it; notes and warnings go after the steps, unnumbered.
+    public GuideCard Arrange()
+    {
+        var loc = Loc.Instance;
+        foreach (var item in Items)
+        {
+            switch (item)
+            {
+                case StepItem step:
+                    Steps.Add(new GuideStep { Number = Cpfs.Core.Text.Formats.Count(Steps.Count + 1, loc.Culture), Text = step.Text });
+                    break;
+                case ValueItem value when Steps.Count > 0:
+                    Steps[Steps.Count - 1].Values.Add(value);
+                    break;
+                default:
+                    Notes.Add(item);
+                    break;
+            }
+        }
+
+        return this;
+    }
 }
 
 public sealed class AddressOption
@@ -98,8 +135,8 @@ public sealed class AddressOption
     public override string ToString() => Host + ", " + Description;
 }
 
-// The connect guide: every address of this PC, and for each kind of device the steps, the values to copy and, for
-// phones, a QR code. Needs no administrator rights and changes nothing; the password appears nowhere.
+// The connect guide: every address of this PC, the share address and username, and for each kind of device (one tab
+// each) the numbered steps, the values to copy and, for phones, a QR code shown beside the steps. Needs no administrator rights and changes nothing; the password appears nowhere.
 public partial class ConnectPage : Page
 {
     private ConfigDocument? _config;
@@ -112,8 +149,8 @@ public partial class ConnectPage : Page
     // WindowsChanges.Count when the last reading began.
     private int _readAt = -1;
 
-    // Device-independent pixels: about 6 cm on a 100 % display, easy for a phone camera to read from the screen.
-    private const double QrDialogSize = 280;
+    private string _unc = "";
+    private string _user = "";
 
     public ConnectPage()
     {
@@ -228,67 +265,25 @@ public partial class ConnectPage : Page
         }
     }
 
-    // The QR code in a dialog of its own, large enough to scan from the screen, with the text it holds below it.
-    private async void OnShowQr(object sender, RoutedEventArgs e)
+    private void OnCopyAddress(object sender, RoutedEventArgs e) => Feedback.Copy(sender, Loc.Instance["Connect_Label_Unc"], _unc);
+
+    private void OnCopyUser(object sender, RoutedEventArgs e) => Feedback.Copy(sender, Loc.Instance["Connect_Label_User"], _user);
+
+    // The tab the user picked is kept for the next time; reading it back tolerates an unknown or missing value.
+    private void OnTabChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is not FrameworkElement { DataContext: GuideCard { Qr: { } qr } card })
+        if (_syncing || !ReferenceEquals(e.OriginalSource, Tabs) || Tabs.SelectedIndex < 0 || Tabs.SelectedIndex >= GuideTabs.Ids.Count)
         {
             return;
         }
 
-        var loc = Loc.Instance;
-        AppLog.Write("connect", "QR code shown: " + card.Title);
-        // With the button row's own 8 px, 20 px between the copy row and Close.
-        var panel = new StackPanel { MaxWidth = QrDialogSize + 80, Margin = new Thickness(0, 0, 0, 12) };
-
-        // Never mirrored in right-to-left layouts: a mirrored QR code may not scan.
-        var image = new System.Windows.Controls.Image
+        var id = GuideTabs.Ids[Tabs.SelectedIndex];
+        if (!string.Equals(Startup.Preferences.ConnectDevice, id, StringComparison.Ordinal))
         {
-            Source = qr.Image,
-            Width = QrDialogSize,
-            Height = QrDialogSize,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            FlowDirection = FlowDirection.LeftToRight,
-        };
-        RenderOptions.SetEdgeMode(image, EdgeMode.Aliased);
-        System.Windows.Automation.AutomationProperties.SetName(image, qr.Name);
-        panel.Children.Add(image);
-
-        var caption = new System.Windows.Controls.TextBlock { Text = qr.Caption, Margin = new Thickness(0, 8, 0, 0), TextAlignment = TextAlignment.Center };
-        caption.SetResourceReference(StyleProperty, "CardDescription");
-        panel.Children.Add(caption);
-
-        var label = loc["Connect_Qr_TextLabel"];
-        var labelBlock = new System.Windows.Controls.TextBlock { Text = label, Margin = new Thickness(0, 12, 0, 2) };
-        labelBlock.SetResourceReference(StyleProperty, "CardDescription");
-        panel.Children.Add(labelBlock);
-
-        var value = new System.Windows.Controls.TextBlock { Text = qr.Text, VerticalAlignment = VerticalAlignment.Center };
-        value.SetResourceReference(StyleProperty, "DataValue");
-        System.Windows.Automation.AutomationProperties.SetName(value, label);
-        var valueBox = new Border { Padding = new Thickness(8, 6, 8, 6), CornerRadius = new CornerRadius(4), Child = value };
-        valueBox.SetResourceReference(Border.BackgroundProperty, "ControlFillColorSecondaryBrush");
-        var copyName = loc.Format("Common_CopyName", label);
-        var copy = new Wpf.Ui.Controls.Button
-        {
-            Icon = new SymbolIcon { Symbol = SymbolRegular.Copy24 },
-            Margin = new Thickness(8, 0, 0, 0),
-            VerticalAlignment = VerticalAlignment.Center,
-            ToolTip = copyName,
-        };
-        System.Windows.Automation.AutomationProperties.SetName(copy, copyName);
-        copy.Click += (s, _) => Feedback.Copy(s, label, qr.Text);
-        var row = new Grid();
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        Grid.SetColumn(copy, 1);
-        row.Children.Add(valueBox);
-        row.Children.Add(copy);
-        panel.Children.Add(row);
-
-        var box = ApplyUi.NewChoice(this, loc.Format("Connect_Qr_Title", card.Title), panel);
-        box.AddButton(loc["Common_Close"], Wpf.Ui.Controls.MessageBoxButton.Close, ControlAppearance.Secondary, isCancel: true);
-        await box.ShowLoggedAsync("connect", "Connect_Qr_Title");
+            Startup.Preferences.ConnectDevice = id;
+            Startup.SavePreferences();
+            AppLog.Write("connect", "Device tab " + id);
+        }
     }
 
     private void Render()
@@ -343,8 +338,14 @@ public partial class ConnectPage : Page
         if (AddressBox.SelectedItem is not AddressOption option)
         {
             WhereText.Text = "";
-            AccountItems.ItemsSource = null;
-            Guides.ItemsSource = null;
+            AddressSlashes.Text = "";
+            AddressRest.Text = "";
+            UserText.Text = "";
+            _unc = "";
+            _user = "";
+            CopyAddressButton.IsEnabled = false;
+            CopyUserButton.IsEnabled = false;
+            Tabs.ItemsSource = null;
             return;
         }
 
@@ -354,24 +355,30 @@ public partial class ConnectPage : Page
             installed ? user! : loc["Connect_Placeholder_User"],
             Environment.MachineName,
             strict);
-        WhereText.Text = option.Address.ThroughVpn ? loc["Connect_Where_Vpn"] : loc["Connect_Where_Lan"];
+        WhereText.Text = loc.Format("Connect_Where_Line", option.Address.ThroughVpn ? loc["Connect_Where_Vpn"] : loc["Connect_Where_Lan"], option.Description);
+        _unc = v.Unc;
+        _user = v.User;
+        AddressSlashes.Text = _unc.StartsWith(@"\\", StringComparison.Ordinal) ? @"\\" : "";
+        AddressRest.Text = _unc.Substring(AddressSlashes.Text.Length);
+        UserText.Text = _user;
+        CopyAddressButton.IsEnabled = installed;
+        CopyUserButton.IsEnabled = installed;
+        System.Windows.Automation.AutomationProperties.SetName(CopyAddressButton, loc.Format("Common_CopyName", loc["Connect_Label_Unc"]));
+        System.Windows.Automation.AutomationProperties.SetName(CopyUserButton, loc.Format("Common_CopyName", loc["Connect_Label_User"]));
 
-        AccountItems.ItemsSource = new List<GuideItem>
+        // Placeholder values make no usable QR code, so none is drawn until CPFS is set up. The order is GuideTabs.Ids.
+        var selected = Tabs.SelectedIndex >= 0 ? Tabs.SelectedIndex : GuideTabs.IndexOf(Startup.Preferences.ConnectDevice);
+        _syncing = true;
+        Tabs.ItemsSource = new List<GuideCard>
         {
-            Value("Connect_Label_Share", v.Share),
-            Value("Connect_Label_User", v.User),
-            Value("Connect_Label_Domain", v.Domain),
+            Ios(v, installed).Arrange(),
+            Android(v, installed).Arrange(),
+            Windows(v).Arrange(),
+            Mac(v).Arrange(),
+            Linux(v).Arrange(),
         };
-
-        // Placeholder values make no usable QR code, so none is drawn until CPFS is set up.
-        Guides.ItemsSource = new List<GuideCard>
-        {
-            Ios(v, installed),
-            Android(v, installed),
-            Windows(v),
-            Mac(v),
-            Linux(v),
-        };
+        Tabs.SelectedIndex = selected;
+        _syncing = false;
     }
 
     private static GuideCard Windows(ConnectValues v)
@@ -384,6 +391,7 @@ public partial class ConnectPage : Page
         card.Items.Add(Step("Connect_Win_Step3"));
         card.Items.Add(Step("Connect_Win_Step4"));
         card.Items.Add(Value("Connect_Label_NetUse", v.NetUse));
+        card.Items.Add(Step("Connect_Win_Step5"));
         if (v.Strict)
         {
             card.Items.Add(Note("Connect_Win_Strict"));
@@ -494,9 +502,9 @@ public partial class ConnectPage : Page
             card.Qr = new QrItem
             {
                 Image = QrImages.Create(text),
-                Text = text,
                 Name = loc.FormatValues("Connect_Qr_Name", text),
                 Caption = loc[captionKey],
+                Value = Value("Connect_Qr_TextLabel", text),
             };
         }
         catch (QrCapacityException ex)

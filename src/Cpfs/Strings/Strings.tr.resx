@@ -1094,9 +1094,9 @@
   <data name="AutoResult_AlreadyRunning" xml:space="preserve"><value>başlamadı, çünkü zaten çalışıyordu.</value></data>
   <data name="AutoResult_ProgramNotFound" xml:space="preserve"><value>Windows başlatamadı: Program Files\CPFS içindeki CPFS kopyası yok. Kurulum'u yeniden çalıştırın.</value></data>
   <data name="AutoResult_Other" xml:space="preserve"><value>{0} koduyla sona erdi.</value></data>
-  <data name="Nav_Connections" xml:space="preserve"><value>Connections from this PC</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Nav_Connections" xml:space="preserve"><value>This PC's connections</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_Title" xml:space="preserve"><value>Connections from this PC</value><comment>UNTRANSLATED: English text</comment></data>
-  <data name="Connections_Intro" xml:space="preserve"><value>The shared folders on other computers that this PC is connected to, as Windows keeps them for your account. This page only reads; it doesn't touch CPFS's own shared folder.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Intro" xml:space="preserve"><value>The shared folders on other computers that this PC is connected to, as Windows keeps them for your account. Disconnecting here ends only this PC's connection; it never touches CPFS's own shared folder or the files on the server.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_Admin_Title" xml:space="preserve"><value>Open CPFS without administrator rights to see this list</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_Admin_Msg" xml:space="preserve"><value>Windows keeps a separate set of network connections for the administrator side of your account, so this window would show the wrong list. Close CPFS and open it again the normal way, not with Run as administrator.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_List_Title" xml:space="preserve"><value>Connected shared folders</value><comment>UNTRANSLATED: English text</comment></data>
@@ -1119,4 +1119,94 @@
   <data name="Connections_State_Disconnected" xml:space="preserve"><value>Disconnected</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_State_Saved" xml:space="preserve"><value>Saved but not connected</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Connections_Label_Reconnects" xml:space="preserve"><value>Reconnects at sign-in</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Empty_Desc" xml:space="preserve"><value>When this PC opens a shared folder on another computer, it shows up here.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Col_Share" xml:space="preserve"><value>Share</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Col_Drive" xml:space="preserve"><value>Drive</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Disconnect" xml:space="preserve"><value>Disconnect</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_DisconnectAll" xml:space="preserve"><value>Disconnect all</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_DisconnectName" xml:space="preserve"><value>Disconnect {0} on {1}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_DisconnectAllName" xml:space="preserve"><value>Disconnect all connections to {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_SignInShort" xml:space="preserve"><value>Sign-in connection</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_RefreshShort" xml:space="preserve"><value>Refresh</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Count_None" xml:space="preserve"><value>No connections</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Count_One" xml:space="preserve"><value>{0} connection to {1} server</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Count_OneServer" xml:space="preserve"><value>{0} connections to {1} server</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Count_Many" xml:space="preserve"><value>{0} connections to {1} servers</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_1219_Title" xml:space="preserve"><value>Windows refuses a second user name</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_1219_Desc" xml:space="preserve"><value>What to do when Windows says a server is already connected under another user name (error 1219).</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_1219_WindowsSays" xml:space="preserve"><value>Windows' message:</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_1219_Rule" xml:space="preserve"><value>Windows allows one user name per server at a time. To sign in to a server as someone else, first disconnect every connection to it with Disconnect all on that server above, then connect again.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_1219_NothingListed" xml:space="preserve"><value>If nothing is listed for that server and Windows still refuses, Windows holds a connection it opened on its own. Signing out of Windows and in again ends it.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_1219_Ip" xml:space="preserve"><value>Windows goes by the server name you type. Connecting by the server's IP address instead of its name counts as connecting to a different server, so it can use another user name. Microsoft gives this as its own workaround for this error.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_1219_Saved" xml:space="preserve"><value>Windows can also keep a saved user name and password for a server. Credential Manager shows the saved ones. CPFS only opens it; it never reads or changes what is saved there.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_OpenCredMan" xml:space="preserve"><value>Open Credential Manager</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_CredManFailed" xml:space="preserve"><value>Couldn't open Credential Manager: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Disconnect_Title" xml:space="preserve"><value>Disconnect this connection?</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Disconnect_Msg" xml:space="preserve"><value>This PC's connection to {0} on {1} (account {2}) ends. Programs that use files on it lose access. Nothing on the server changes.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Disconnect_MsgDrive" xml:space="preserve"><value>Drive {2}, which shows {0} on {1} (account {3}), is disconnected. Programs that use files on it lose access. Nothing on the server changes.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Disconnect_MsgDriveSaved" xml:space="preserve"><value>Drive {2}, which shows {0} on {1} (account {3}), is disconnected. It is set to reconnect at sign-in; disconnecting also removes it until you map it again. Programs that use files on it lose access. Nothing on the server changes.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Disconnect_MsgSignIn" xml:space="preserve"><value>The sign-in connection to {0} (account {1}) ends. The next time this PC opens a folder on that server, Windows asks for a user name again. Nothing on the server changes.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Disconnect_Confirm" xml:space="preserve"><value>Disconnect</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Force_Title" xml:space="preserve"><value>Files are open on this connection</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Force_Msg" xml:space="preserve"><value>Windows says files or folders on {0} on {1} are open. Disconnecting anyway closes them, and changes not yet saved in them can be lost. Save your work and close those files first if you can.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Force_Confirm" xml:space="preserve"><value>Disconnect anyway</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_KeptOpen" xml:space="preserve"><value>{0} on {1} stays connected.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Done" xml:space="preserve"><value>{0} on {1} was disconnected.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_StillListed" xml:space="preserve"><value>Windows accepted the request, but {0} on {1} is still listed.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_Failed" xml:space="preserve"><value>Couldn't disconnect {0} on {1}: {2}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_StillThere" xml:space="preserve"><value>It is still listed.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_All_Title" xml:space="preserve"><value>Disconnect everything on this server?</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_All_Msg" xml:space="preserve"><value>Each connection to {0} below is disconnected, one after another. Drives are also removed, so they don't reconnect at sign-in. A connection with open files is left as it is and reported. Nothing on the server changes.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_All_Line" xml:space="preserve"><value>Share {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_All_LineDrive" xml:space="preserve"><value>Share {0}, drive {1}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_All_Confirm" xml:space="preserve"><value>Disconnect all</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_All_OpenFiles" xml:space="preserve"><value>Files are open on {0}, so it stays connected. Its own Disconnect can close it anyway.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connections_All_Done" xml:space="preserve"><value>{0} of {1} connections disconnected</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Common_Copy" xml:space="preserve"><value>Copy</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Group_Share" xml:space="preserve"><value>What to share</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Group_Who" xml:space="preserve"><value>Who can connect</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Group_Quick" xml:space="preserve"><value>Quick access</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Status_On" xml:space="preserve"><value>Sharing is on</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Status_NotRunning" xml:space="preserve"><value>Set up, but sharing is off</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Status_NotRunning_Desc" xml:space="preserve"><value>The share or the Server service isn't running. Show details lists what Apply would put back.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Status_Unknown" xml:space="preserve"><value>CPFS is set up</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Status_Unknown_Desc" xml:space="preserve"><value>Whether sharing is on can't be read without administrator rights.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Status_Unknown_DescAdmin" xml:space="preserve"><value>CPFS couldn't read whether sharing is on. Show details says what couldn't be read.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Status_AddressName" xml:space="preserve"><value>Share address</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Status_Copy" xml:space="preserve"><value>Copy the share address</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Status_OpenFolder" xml:space="preserve"><value>Open folder</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Setup_Status_OpenFailed" xml:space="preserve"><value>Couldn't open the folder</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Status_Net_Private" xml:space="preserve"><value>Private network</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Status_Net_Public" xml:space="preserve"><value>A Public network: devices on it can't connect</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Status_Net_None" xml:space="preserve"><value>No network connected</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Status_Encrypt_On" xml:space="preserve"><value>Encryption required</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Status_Encrypt_Off" xml:space="preserve"><value>Encryption not required</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Status_Firewall_Private" xml:space="preserve"><value>Firewall: Private networks only</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Status_Firewall_Changed" xml:space="preserve"><value>Firewall rule missing or changed</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Updated" xml:space="preserve"><value>Updated {0} s ago</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Stat_Devices" xml:space="preserve"><value>Connected devices</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Stat_Down" xml:space="preserve"><value>Down, to devices</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Stat_Up" xml:space="preserve"><value>Up, from devices</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Stat_Fails" xml:space="preserve"><value>Failed sign-ins, 24 h</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Stat_ViaVpn" xml:space="preserve"><value>{0} through the VPN</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Stat_NoneViaVpn" xml:space="preserve"><value>None through the VPN</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Stat_Now" xml:space="preserve"><value>{0} now</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Stat_AtLeast" xml:space="preserve"><value>{0} or more</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Stat_FailsNone" xml:space="preserve"><value>None</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Stat_FailsSee" xml:space="preserve"><value>Listed below</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Files_TitleShort" xml:space="preserve"><value>Being copied now</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Device_Connection" xml:space="preserve"><value>{0} · connected for {1}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Device_Lan" xml:space="preserve"><value>On the local network</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Device_Smb" xml:space="preserve"><value>SMB {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Device_NoFiles" xml:space="preserve"><value>No open files</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Device_OneFile" xml:space="preserve"><value>{0} open file</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Device_Files" xml:space="preserve"><value>{0} open files</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Device_More" xml:space="preserve"><value>More actions</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_Device_MoreName" xml:space="preserve"><value>More actions for {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Monitor_File_Who" xml:space="preserve"><value>{0}, signed in as {1}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Details_Title" xml:space="preserve"><value>Connection details</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Where_Line" xml:space="preserve"><value>{0} {1}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Qr_NoPassword" xml:space="preserve"><value>The code has no password.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Tabs_Name" xml:space="preserve"><value>Devices</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Connect_Win_Step5" xml:space="preserve"><value>If Windows says that multiple connections to a server by the same user, using more than one user name, are not allowed (error 1219), that PC is already connected to this one under another user name. Open CPFS on that PC and use This PC's connections to disconnect, or sign out of Windows there and in again.</value><comment>UNTRANSLATED: English text</comment></data>
 </root>

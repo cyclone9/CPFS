@@ -85,6 +85,7 @@ public partial class UninstallPage : Page
         }
 
         PlanArea.Visibility = Visibility.Visible;
+        Bar.Visibility = Visibility.Visible;
         await ReadAsync();
     }
 
@@ -130,6 +131,16 @@ public partial class UninstallPage : Page
         }
 
         DetailsExpander.Visibility = nothing && _steps.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+
+        // The bar belongs to the elevated plan: unelevated, the page has only the admin card.
+        Bar.Visibility = !nothing && PlanArea.Visibility == Visibility.Visible ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    // The bar's Show details opens the full plan and scrolls to it.
+    private void OnShowDetails(object sender, RoutedEventArgs e)
+    {
+        DetailsExpander.IsExpanded = true;
+        DetailsExpander.BringIntoView();
     }
 
     // False when the reading failed, so the plan on screen is not from it.
@@ -282,6 +293,7 @@ public partial class UninstallPage : Page
 
         var loc = Loc.Instance;
         ApplyUi.FillSummary(SummaryBody, _summary);
+        ApplyUi.FillFirstLine(BarSummary, _summary);
         var decisions = SetupPage.AskViews(_plan);
         Decisions.ItemsSource = decisions;
         DecisionsCard.Visibility = decisions.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -569,5 +581,8 @@ public partial class UninstallPage : Page
         bar.Title = title;
         bar.Message = message;
         bar.IsOpen = true;
+
+        // The main button sits in the fixed bar, so a result above it may be out of view.
+        bar.BringIntoView();
     }
 }

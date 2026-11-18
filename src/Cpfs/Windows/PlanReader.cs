@@ -371,6 +371,25 @@ internal static class PlanReader
         return key?.GetValue("Start") is int start ? start : null;
     }
 
+    // Whether the Server service runs now, for the Setup status card; null when Windows refuses the query or the
+    // service doesn't exist. ServiceController.Status:
+    // https://learn.microsoft.com/en-us/dotnet/api/system.serviceprocess.servicecontroller.status?view=netframework-4.8
+    internal static bool? ServerRunning()
+    {
+        try
+        {
+            using var controller = new System.ServiceProcess.ServiceController("LanmanServer");
+            var status = controller.Status;
+            AppLog.Write("plan", "Server service: " + status);
+            return status == System.ServiceProcess.ServiceControllerStatus.Running;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            AppLog.Write("plan", "Server service state: " + ex.GetType().Name + ": " + ex.Message);
+            return null;
+        }
+    }
+
     private static Dictionary<string, Reading<int?>> Hardening()
     {
         var result = new Dictionary<string, Reading<int?>>(StringComparer.OrdinalIgnoreCase);

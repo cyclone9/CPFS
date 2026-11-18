@@ -130,37 +130,53 @@ internal static class ApplyUi
             return;
         }
 
-        var loc = Loc.Instance;
         var body = panel.TryFindResource("Body") as Style;
         foreach (var line in summary.Lines)
         {
             var text = new System.Windows.Controls.TextBlock { Style = body, TextWrapping = TextWrapping.Wrap };
-            var format = loc[line.Key];
-            var at = 0;
-            foreach (System.Text.RegularExpressions.Match m in Placeholder.Matches(format))
-            {
-                if (m.Index > at)
-                {
-                    text.Inlines.Add(new System.Windows.Documents.Run(format.Substring(at, m.Index - at)));
-                }
-
-                var i = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
-                var arg = i < line.Args.Count ? line.Args[i] : null;
-                text.Inlines.Add(arg switch
-                {
-                    int n => new System.Windows.Documents.Run(Formats(n)),
-                    null => new System.Windows.Documents.Run(m.Value),
-                    var value => new System.Windows.Documents.Bold(new System.Windows.Documents.Run(Bidi.Embed(value.ToString() ?? "", loc.IsRtl))),
-                });
-                at = m.Index + m.Length;
-            }
-
-            if (at < format.Length)
-            {
-                text.Inlines.Add(new System.Windows.Documents.Run(format.Substring(at)));
-            }
-
+            AddLine(text.Inlines, line);
             panel.Children.Add(ListLine(text, body));
+        }
+    }
+
+    // The summary's first sentence, for the fixed action bar; the whole list stays in the summary card.
+    public static void FillFirstLine(System.Windows.Controls.TextBlock target, PlanSummary? summary)
+    {
+        target.Inlines.Clear();
+        if (summary is { Lines.Count: > 0 })
+        {
+            AddLine(target.Inlines, summary.Lines[0]);
+        }
+
+        target.Visibility = target.Inlines.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private static void AddLine(System.Windows.Documents.InlineCollection inlines, SummaryLine line)
+    {
+        var loc = Loc.Instance;
+        var format = loc[line.Key];
+        var at = 0;
+        foreach (System.Text.RegularExpressions.Match m in Placeholder.Matches(format))
+        {
+            if (m.Index > at)
+            {
+                inlines.Add(new System.Windows.Documents.Run(format.Substring(at, m.Index - at)));
+            }
+
+            var i = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+            var arg = i < line.Args.Count ? line.Args[i] : null;
+            inlines.Add(arg switch
+            {
+                int n => new System.Windows.Documents.Run(Formats(n)),
+                null => new System.Windows.Documents.Run(m.Value),
+                var value => new System.Windows.Documents.Bold(new System.Windows.Documents.Run(Bidi.Embed(value.ToString() ?? "", loc.IsRtl))),
+            });
+            at = m.Index + m.Length;
+        }
+
+        if (at < format.Length)
+        {
+            inlines.Add(new System.Windows.Documents.Run(format.Substring(at)));
         }
     }
 

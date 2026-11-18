@@ -3,11 +3,20 @@
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   xmlns:local="clr-namespace:Cpfs">
 
-  <!--  Every text sets a theme brush: a page sets no foreground of its own, so text would stay black on dark.  -->
+  <!--  Spacing is on a 4 px grid. Every text sets a theme brush: a page sets no foreground of its own, so text would
+        stay black on dark.  -->
   <Style x:Key="PageTitle" TargetType="TextBlock">
     <Setter Property="Margin" Value="0,0,0,16" />
     <Setter Property="FontFamily" Value="{DynamicResource CpfsTitleFontFamily}" />
     <Setter Property="FontSize" Value="28" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+  </Style>
+
+  <!--  A titled group of settings rows, as in Windows 11 Settings: 24 above, 8 below.  -->
+  <Style x:Key="GroupTitle" TargetType="TextBlock">
+    <Setter Property="Margin" Value="0,24,0,8" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="TextWrapping" Value="Wrap" />
     <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
@@ -19,9 +28,11 @@
     <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
   </Style>
 
+  <!--  12 px for Latin; 13 px with a 20 px line for Persian and Arabic (Theming.ApplyTextMetrics).  -->
   <Style x:Key="CardDescription" TargetType="TextBlock">
     <Setter Property="Margin" Value="0,4,0,0" />
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="{DynamicResource CpfsDescriptionFontSize}" />
+    <Setter Property="LineHeight" Value="{DynamicResource CpfsDescriptionLineHeight}" />
     <Setter Property="TextWrapping" Value="Wrap" />
     <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
   </Style>
@@ -46,18 +57,120 @@
     <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
   </Style>
 
+  <!--  An informational tag ("This PC", "VPN", "Needs administrator rights"): neutral, outlined, no fill.  -->
   <Style x:Key="Badge" TargetType="Border">
-    <Setter Property="Padding" Value="8,2" />
-    <Setter Property="Margin" Value="0,2,0,2" />
+    <Setter Property="Padding" Value="8,0" />
     <Setter Property="HorizontalAlignment" Value="Left" />
     <Setter Property="CornerRadius" Value="4" />
-    <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
     <Setter Property="BorderThickness" Value="1" />
   </Style>
 
   <Style x:Key="BadgeText" TargetType="TextBlock">
     <Setter Property="FontSize" Value="12" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+  </Style>
+
+  <!--  A status label: an 8 px dot and secondary text. Colour only where the user must look: a decision (Ask) and a
+        step Windows refused or did in part are caution, a failure or an item that can't be planned is critical, a
+        step done is success. Everything else (Keep included) is a neutral dot. The words always carry the meaning.
+        The dot's Tag is the state's name.  -->
+  <Style x:Key="StatusDot" TargetType="Ellipse">
+    <Setter Property="Width" Value="8" />
+    <Setter Property="Height" Value="8" />
+    <Setter Property="Margin" Value="0,0,8,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Fill" Value="{DynamicResource SystemFillColorNeutralBrush}" />
+    <Style.Triggers>
+      <Trigger Property="Tag" Value="Ask">
+        <Setter Property="Fill" Value="{DynamicResource SystemFillColorCautionBrush}" />
+      </Trigger>
+      <Trigger Property="Tag" Value="Caution">
+        <Setter Property="Fill" Value="{DynamicResource SystemFillColorCautionBrush}" />
+      </Trigger>
+      <Trigger Property="Tag" Value="Unsupported">
+        <Setter Property="Fill" Value="{DynamicResource SystemFillColorCautionBrush}" />
+      </Trigger>
+      <Trigger Property="Tag" Value="Partial">
+        <Setter Property="Fill" Value="{DynamicResource SystemFillColorCautionBrush}" />
+      </Trigger>
+      <Trigger Property="Tag" Value="Skipped">
+        <Setter Property="Fill" Value="{DynamicResource SystemFillColorCautionBrush}" />
+      </Trigger>
+      <Trigger Property="Tag" Value="Failed">
+        <Setter Property="Fill" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+      </Trigger>
+      <Trigger Property="Tag" Value="CannotPlan">
+        <Setter Property="Fill" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+      </Trigger>
+      <Trigger Property="Tag" Value="Done">
+        <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+      </Trigger>
+      <Trigger Property="Tag" Value="Success">
+        <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <Style x:Key="StatusText" TargetType="TextBlock">
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="FontSize" Value="{DynamicResource CpfsDescriptionFontSize}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+  </Style>
+
+  <Style x:Key="StatusLabel" TargetType="StackPanel">
+    <Setter Property="Orientation" Value="Horizontal" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+  </Style>
+
+  <!--  The hairline between the rows of one card.  -->
+  <Style x:Key="Hairline" TargetType="Border">
+    <Setter Property="Height" Value="1" />
+    <Setter Property="Background" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+  </Style>
+
+  <!--  One row of a grouped card: padding 12 x 20, at least 64 high.  -->
+  <Style x:Key="SettingsRow" TargetType="Border">
+    <Setter Property="Padding" Value="20,12" />
+    <Setter Property="MinHeight" Value="64" />
+  </Style>
+
+  <!--  A card that holds hairline-divided rows: the rows bring their own padding.  -->
+  <Style x:Key="GroupCard" TargetType="Border">
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+  </Style>
+
+  <!--  The fixed bar at the bottom of Setup and Uninstall: the summary sentence, Show details, the one main button.  -->
+  <Style x:Key="ActionBar" TargetType="Border">
+    <Setter Property="Padding" Value="32,12" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+    <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorSecondaryBrush}" />
+  </Style>
+
+  <!--  The page content inside a page's own scroller: 24 top, 32 at the sides.  -->
+  <Style x:Key="PageContent" TargetType="StackPanel">
+    <Setter Property="Margin" Value="32,24,32,24" />
+  </Style>
+
+  <!--  The share address: monospace, left to right, its leading \\ in the accent (Theming.SignatureBrushKey).  -->
+  <Style x:Key="Signature" TargetType="TextBlock" BasedOn="{StaticResource DataValue}">
+    <Setter Property="FontSize" Value="16" />
+  </Style>
+
+  <!--  A large number in the Monitor's stat row: tabular figures, so a changing value doesn't jitter.  -->
+  <Style x:Key="StatNumber" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{DynamicResource CpfsTitleFontFamily}" />
+    <Setter Property="FontSize" Value="28" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+    <Setter Property="NumberSubstitution.Substitution" Value="European" />
     <Setter Property="TextWrapping" Value="Wrap" />
     <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
   </Style>

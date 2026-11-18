@@ -72,31 +72,15 @@
               <TextBlock Style="{StaticResource CardTitle}" Text="{Binding Title}" />
               <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Summary}" Visibility="{Binding HasSummary, Converter={StaticResource Visible}}" />
             </StackPanel>
-            <Border
+            <StackPanel
               Grid.Column="1"
               Margin="12,0,8,0"
               VerticalAlignment="Center"
+              Style="{StaticResource StatusLabel}"
               Visibility="{Binding HasBadge, Converter={StaticResource Visible}}">
-              <Border.Style>
-                <Style BasedOn="{StaticResource Badge}" TargetType="Border">
-                  <Style.Triggers>
-                    <DataTrigger Binding="{Binding BadgeKind}" Value="Ok">
-                      <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBackgroundBrush}" />
-                      <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorSuccessBrush}" />
-                    </DataTrigger>
-                    <DataTrigger Binding="{Binding BadgeKind}" Value="Missing">
-                      <Setter Property="Background" Value="{DynamicResource SystemFillColorNeutralBackgroundBrush}" />
-                      <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorNeutralBrush}" />
-                    </DataTrigger>
-                    <DataTrigger Binding="{Binding BadgeKind}" Value="Failed">
-                      <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}" />
-                      <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}" />
-                    </DataTrigger>
-                  </Style.Triggers>
-                </Style>
-              </Border.Style>
-              <TextBlock Style="{StaticResource BadgeText}" Text="{Binding Badge}" />
-            </Border>
+              <Ellipse Style="{StaticResource StatusDot}" Tag="{Binding BadgeKind}" />
+              <TextBlock Style="{StaticResource StatusText}" Text="{Binding Badge}" />
+            </StackPanel>
           </Grid>
         </ui:CardExpander.Header>
         <StackPanel>

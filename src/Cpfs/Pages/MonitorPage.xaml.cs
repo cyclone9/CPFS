@@ -38,47 +38,6 @@ public abstract class Observable : INotifyPropertyChanged
     protected void Changed(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
-public sealed class MonitorField : Observable
-{
-    private string _label = "";
-    private string _value = "";
-    private string _detail = "";
-    private string? _tip;
-    private bool _isData;
-
-    public string Label { get => _label; set => Set(ref _label, value); }
-
-    public string Value { get => _value; set => Set(ref _value, value); }
-
-    // A secondary line under the value, such as a device's network name under its IP.
-    public string Detail
-    {
-        get => _detail;
-        set
-        {
-            Set(ref _detail, value);
-            Changed(nameof(HasDetail));
-        }
-    }
-
-    public bool HasDetail => Detail.Length > 0;
-
-    // Null for no tooltip.
-    public string? Tip { get => _tip; set => Set(ref _tip, value); }
-
-    public bool IsData
-    {
-        get => _isData;
-        set
-        {
-            Set(ref _isData, value);
-            Changed(nameof(IsText));
-        }
-    }
-
-    public bool IsText => !IsData;
-}
-
 // A row kept by its key across refreshes, so its controls stay and only changed text is redrawn.
 public abstract class KeyedRow : Observable
 {
@@ -92,8 +51,16 @@ public abstract class KeyedRow : Observable
 
 public sealed class MonitorRow : KeyedRow
 {
-    private string _badge = "";
     private string _actionName = "";
+    private string _moreActionName = "";
+    private string _client = "";
+    private string _hostName = "";
+    private string _connection = "";
+    private string _user = "";
+    private string _dialect = "";
+    private string _status = "";
+    private string _statusKind = "";
+    private string _files = "";
     private string _title = "";
     private string _nameActionName = "";
     private string _forgetActionName = "";
@@ -130,11 +97,58 @@ public sealed class MonitorRow : KeyedRow
             Set(ref _title, value);
             Changed(nameof(HasTitle));
             Changed(nameof(CanName));
+            Changed(nameof(CanRename));
             Changed(nameof(HasActions));
+            Changed(nameof(Shown));
         }
     }
 
     public bool HasTitle => Title.Length > 0;
+
+    public bool CanRename => HasTitle;
+
+    // The device's IP address as the server sees it.
+    public string Client
+    {
+        get => _client;
+        set
+        {
+            Set(ref _client, value);
+            Changed(nameof(Shown));
+        }
+    }
+
+    // The name, or the address when it has none: the row's name for screen readers.
+    public string Shown => HasTitle ? Title : Client;
+
+    // A name found by reverse lookup; empty when none.
+    public string HostName
+    {
+        get => _hostName;
+        set
+        {
+            Set(ref _hostName, value);
+            Changed(nameof(HasHostName));
+        }
+    }
+
+    public bool HasHostName => HostName.Length > 0;
+
+    // How it is connected and for how long.
+    public string Connection { get => _connection; set => Set(ref _connection, value); }
+
+    public string User { get => _user; set => Set(ref _user, value); }
+
+    public string Dialect { get => _dialect; set => Set(ref _dialect, value); }
+
+    public string Status { get => _status; set => Set(ref _status, value); }
+
+    // The status dot's state name (Styles.xaml, StatusDot).
+    public string StatusKind { get => _statusKind; set => Set(ref _statusKind, value); }
+
+    public string Files { get => _files; set => Set(ref _files, value); }
+
+    public string MoreActionName { get => _moreActionName; set => Set(ref _moreActionName, value); }
 
     public bool CanName => Session is not null && !HasTitle;
 
@@ -142,25 +156,11 @@ public sealed class MonitorRow : KeyedRow
 
     public string ForgetActionName { get => _forgetActionName; set => Set(ref _forgetActionName, value); }
 
-    public string Badge
-    {
-        get => _badge;
-        set
-        {
-            Set(ref _badge, value);
-            Changed(nameof(HasBadge));
-        }
-    }
-
-    public bool HasBadge => Badge.Length > 0;
-
     public bool CanDisconnect => Session is not null;
 
     public bool HasActions => Session is not null || HasTitle;
 
     public string ActionName { get => _actionName; set => Set(ref _actionName, value); }
-
-    public ObservableCollection<MonitorField> Fields { get; } = new();
 }
 
 public class MonitorSection : Observable
@@ -201,34 +201,20 @@ public class MonitorSection : Observable
 
     public bool IsEmpty => Empty.Length > 0;
 
-    public ObservableCollection<MonitorField> Fields { get; } = new();
-
     public ObservableCollection<MonitorRow> Rows { get; } = new();
 }
 
-// A table under one header row: failed sign-ins (FailHeader, FailRowView) and Being copied now (FileHeader,
-// FileRowView). The header and row templates line their columns up through TableRowPanel.
+// A list of rows: failed sign-ins (FailRowView) and Being copied now (FileRowView).
 public sealed class TableSection : MonitorSection
 {
-    public TableSection(object header)
+    public TableSection()
     {
-        Header = header;
         Items.CollectionChanged += (_, _) => Changed(nameof(HasItems));
     }
-
-    public object Header { get; }
 
     public ObservableCollection<KeyedRow> Items { get; } = new();
 
     public bool HasItems => Items.Count > 0;
-}
-
-public sealed class FailHeader
-{
-}
-
-public sealed class FileHeader
-{
 }
 
 public sealed class FailRowView : KeyedRow
@@ -255,8 +241,7 @@ public sealed class FailRowView : KeyedRow
 public sealed class FileRowView : KeyedRow
 {
     private string _path = "";
-    private string _user = "";
-    private string _client = "";
+    private string _who = "";
 
     internal FileRowView(string key)
         : base(key)
@@ -265,9 +250,8 @@ public sealed class FileRowView : KeyedRow
 
     public string Path { get => _path; set => Set(ref _path, value); }
 
-    public string User { get => _user; set => Set(ref _user, value); }
-
-    public string Client { get => _client; set => Set(ref _client, value); }
+    // The device (its name or address) and the account that has the file open.
+    public string Who { get => _who; set => Set(ref _who, value); }
 }
 
 // Recent activity: a table of changes with one header row, a Clear button and the switch for the activity log.
@@ -361,11 +345,10 @@ public partial class MonitorPage : Page
 
     private readonly DispatcherTimer _timer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(2) };
     private readonly DispatcherTimer _activityTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(500) };
-    private readonly MonitorSection _server = new();
     private readonly MonitorSection _sessions = new();
-    private readonly TableSection _files = new(new FileHeader());
+    private readonly TableSection _files = new();
     private readonly ActivitySection _activitySection = new();
-    private readonly TableSection _fails = new(new FailHeader());
+    private readonly TableSection _fails = new();
 
     // Recent activity lives in memory for as long as the app runs, and goes to activity-log.txt only when the user
     // switched that on.
@@ -391,13 +374,27 @@ public partial class MonitorPage : Page
     private int _tick;
     private bool _reading;
 
+    // When the last reading arrived, for "Updated n s ago".
+    private TimeSpan? _readAt;
+
     public MonitorPage()
     {
         InitializeComponent();
-        Sections.ItemsSource = new[] { _server, _sessions, _files, _activitySection, _fails };
+        DevicesArea.DataContext = _sessions;
+        ActivityArea.DataContext = _activitySection;
+        FilesArea.DataContext = _files;
+        FailsArea.DataContext = _fails;
         AdminPanel.Visibility = Startup.IsElevated ? Visibility.Collapsed : Visibility.Visible;
         MonitorPanel.Visibility = Startup.IsElevated ? Visibility.Visible : Visibility.Collapsed;
-        _timer.Tick += async (_, _) => await RefreshAsync();
+
+        // Without administrator rights only Recent activity can be read: it watches the shared folder, which needs none.
+        FilesArea.Visibility = Startup.IsElevated ? Visibility.Visible : Visibility.Collapsed;
+        BottomColumns.MaxColumns = Startup.IsElevated ? 2 : 1;
+        _timer.Tick += async (_, _) =>
+        {
+            RenderUpdated();
+            await RefreshAsync();
+        };
         _activityTimer.Tick += async (_, _) => await ActivityTickAsync();
         _hostNames.Resolved += (_, _) => Render();
         IsVisibleChanged += OnVisibleChanged;
@@ -415,6 +412,15 @@ public partial class MonitorPage : Page
     {
         if (!Startup.IsElevated)
         {
+            if (IsVisible)
+            {
+                await StartWatchingAsync();
+            }
+            else
+            {
+                StopWatching();
+            }
+
             return;
         }
 
@@ -585,9 +591,11 @@ public partial class MonitorPage : Page
                 _failed = failed;
             }
 
+            _readAt = _clock.Elapsed;
             Render();
+            RenderUpdated();
             MonitorLoading.Visibility = Visibility.Collapsed;
-            Sections.Visibility = Visibility.Visible;
+            Readings.Visibility = Visibility.Visible;
         }
         finally
         {
@@ -598,9 +606,7 @@ public partial class MonitorPage : Page
     private void Render()
     {
         var loc = Loc.Instance;
-        _server.Title = loc["Monitor_Server_Title"];
-        _server.Description = ServerDescription();
-        _sessions.Description = loc["Monitor_Sessions_Desc"];
+        _files.Title = loc["Monitor_Files_TitleShort"];
         _files.Description = loc.Format("Monitor_Files_Desc", MaxFiles);
         _fails.Title = loc["Monitor_Fails_Title"];
         _fails.Description = loc["Monitor_Fails_Desc"];
@@ -609,49 +615,62 @@ public partial class MonitorPage : Page
         var cur = _current;
         if (cur is null)
         {
-            _sessions.Title = loc.Format("Monitor_Sessions_Title", 0);
-            _files.Title = loc.Format("Monitor_Files_Title", 0);
             return;
         }
 
         var seconds = _previous is null ? 0 : (cur.Timestamp - _previous.Timestamp) / (double)Stopwatch.Frequency;
 
-        RenderServer(cur, seconds);
         RenderSessions(cur);
+        RenderServer(cur, seconds);
         RenderFiles(cur);
         RenderFails();
     }
 
+    // "Updated n s ago" with a static dot; a reading that is late turns the dot to caution.
+    private void RenderUpdated()
+    {
+        if (_readAt is not { } at)
+        {
+            return;
+        }
+
+        var ago = (long)Math.Max(0, (_clock.Elapsed - at).TotalSeconds);
+        UpdatedText.Text = Loc.Instance.Format("Monitor_Updated", Formats(ago));
+        UpdatedDot.Tag = ago > 10 ? "Caution" : "Success";
+        UpdatedLabel.Visibility = Visibility.Visible;
+    }
+
+    // The stat row: devices (with how many came through the VPN), Down and Up from the server totals with the current
+    // rate, and failed sign-ins in the last 24 hours.
     private void RenderServer(MonitorSnapshot cur, double seconds)
     {
         var loc = Loc.Instance;
-        Status(_server, cur.Server);
+        var sessions = cur.Sessions.Status == ReadStatus.Ok ? cur.Sessions.Value ?? new List<SessionInfo>() : null;
+        DevicesNumber.Text = sessions is null ? loc["Monitor_NoValue"] : Formats(sessions.Count);
+        var vpn = sessions?.Count(x => x.Vpn) ?? 0;
+        DevicesSub.Text = sessions is null ? "" : vpn > 0 ? loc.Format("Monitor_Stat_ViaVpn", Formats(vpn)) : loc["Monitor_Stat_NoneViaVpn"];
+
         var totals = cur.Server.Value;
         var before = _previous?.Server.Value;
-        SetFields(_server.Fields, totals is null ? new List<(string, string, bool)>() : new List<(string, string, bool)>
-        {
-            ("Monitor_Server_Down", TotalAndRate(totals.Down, MonitorMath.Rate(before?.Down, totals.Down, seconds)), true),
-            ("Monitor_Server_Up", TotalAndRate(totals.Up, MonitorMath.Rate(before?.Up, totals.Up, seconds)), true),
-            ("Monitor_Server_LogonErrors", totals.LogonErrors is { } n ? Formats(n) : loc["Monitor_NoValue"], true),
-        });
-        if (totals is not null)
-        {
-            _server.Fields[0].Tip = loc["Monitor_DownTip"];
-            _server.Fields[1].Tip = loc["Monitor_UpTip"];
-        }
-        _server.Empty = cur.Server.Status == ReadStatus.Missing ? loc["Monitor_Server_Unavailable"] : "";
-    }
+        DownNumber.Text = Size(totals?.Down);
+        UpNumber.Text = Size(totals?.Up);
+        DownSub.Text = totals is null ? "" : loc.Format("Monitor_Stat_Now", Rate(MonitorMath.Rate(before?.Down, totals.Down, seconds)));
+        UpSub.Text = totals is null ? "" : loc.Format("Monitor_Stat_Now", Rate(MonitorMath.Rate(before?.Up, totals.Up, seconds)));
 
-    // The totals cover every device; with exactly one connected, its current traffic is all from that one.
-    private string ServerDescription()
-    {
-        var loc = Loc.Instance;
-        if (_sessions.Rows.Count == 1 && _sessions.Rows[0] is { Session: { } only } row)
-        {
-            return loc.FormatValues("Monitor_Server_DescOne", row.HasTitle ? row.Title : only.Client);
-        }
+        // The totals cover every device; with exactly one connected, its current traffic is all from that one.
+        ServerNote.Text = _sessions.Rows.Count == 1 && _sessions.Rows[0] is { Session: not null } only
+            ? loc.FormatValues("Monitor_Server_DescOne", only.Shown)
+            : loc["Monitor_Server_Desc"];
 
-        return loc["Monitor_Server_Desc"];
+        var error = cur.Server.Status switch
+        {
+            ReadStatus.Missing => loc["Monitor_Server_Unavailable"],
+            ReadStatus.Failed => loc.FormatValues("Monitor_ReadFailed", cur.Server.Error),
+            ReadStatus.NeedsAdmin => loc["Badge_NeedsAdmin"],
+            _ => "",
+        };
+        ServerError.Text = error;
+        ServerError.Visibility = error.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void RenderSessions(MonitorSnapshot cur)
@@ -659,7 +678,6 @@ public partial class MonitorPage : Page
         var loc = Loc.Instance;
         Status(_sessions, cur.Sessions);
         var list = cur.Sessions.Value ?? new List<SessionInfo>();
-        _sessions.Title = loc.Format("Monitor_Sessions_Title", list.Count);
         _sessions.Empty = cur.Sessions.Status == ReadStatus.Ok && list.Count == 0 ? loc["Monitor_Sessions_None"] : "";
         var macs = cur.Macs.Value;
         SyncRows(_sessions.Rows, list, s => s.Id.ToString(CultureInfo.InvariantCulture), k => new MonitorRow(k), (row, s) =>
@@ -676,26 +694,20 @@ public partial class MonitorPage : Page
             row.DeviceAddress = mac ?? address;
             row.Title = _deviceNames?.Get(row.DeviceKey) ?? "";
             row.Session = s;
-            row.Badge = s.Vpn ? loc["Monitor_Session_Vpn"] : "";
-            var shown = row.HasTitle ? row.Title : s.Client;
-            row.ActionName = loc.FormatValues("Monitor_Session_DisconnectName", shown);
+            row.Client = s.Client;
+            row.HostName = _hostNames.Get(address) ?? "";
+            row.Connection = loc.Format("Monitor_Device_Connection", loc[s.Vpn ? "Monitor_Session_Vpn" : "Monitor_Device_Lan"], Duration(s.SecondsExists));
+            row.User = s.User;
+            row.Dialect = s.Dialect.Length == 0 ? loc["Monitor_NoValue"] : loc.Format("Monitor_Device_Smb", s.Dialect);
+            var active = MonitorMath.IsActive(s.SecondsIdle, s.OpenFiles);
+            row.Status = active ? loc["Monitor_Session_Active"] : loc.Format("Monitor_Session_IdleFor", Duration(s.SecondsIdle));
+            row.StatusKind = active ? "Success" : "";
+            row.Files = s.OpenFiles == 0 ? loc["Monitor_Device_NoFiles"] : loc.Format(s.OpenFiles == 1 ? "Monitor_Device_OneFile" : "Monitor_Device_Files", Formats(s.OpenFiles));
+            row.ActionName = loc.FormatValues("Monitor_Session_DisconnectName", row.Shown);
+            row.MoreActionName = loc.FormatValues("Monitor_Device_MoreName", row.Shown);
             row.NameActionName = row.HasTitle ? loc.FormatValues("Monitor_Device_RenameName", row.Title) : loc.FormatValues("Monitor_Device_NameName", s.Client);
             row.ForgetActionName = loc.FormatValues("Monitor_Device_ForgetName", row.Title);
-            var fields = new List<(string, string, bool)>
-            {
-                ("Monitor_Session_Client", s.Client, true),
-                ("Monitor_Session_User", s.User, true),
-                ("Monitor_Session_Dialect", s.Dialect.Length == 0 ? loc["Monitor_NoValue"] : s.Dialect, true),
-                ("Monitor_Session_Files", Formats(s.OpenFiles), false),
-                ("Monitor_Session_Connected", Duration(s.SecondsExists), false),
-                ("Monitor_Session_Status", MonitorMath.IsActive(s.SecondsIdle, s.OpenFiles) ? loc["Monitor_Session_Active"] : loc.Format("Monitor_Session_IdleFor", Duration(s.SecondsIdle)), false),
-            };
-
-            SetFields(row.Fields, fields, _hostNames.Get(address));
         });
-
-        // Rows are known only now; the server card's note names the one device.
-        _server.Description = ServerDescription();
     }
 
     private void RenderFiles(MonitorSnapshot cur)
@@ -703,15 +715,13 @@ public partial class MonitorPage : Page
         var loc = Loc.Instance;
         Status(_files, cur.Files);
         var all = cur.Files.Value ?? new List<OpenFileInfo>();
-        _files.Title = loc.Format("Monitor_Files_Title", all.Count);
         _files.Empty = cur.Files.Status == ReadStatus.Ok && all.Count == 0 ? loc["Monitor_Files_None"] : "";
         var shown = all.Count > MaxFiles ? all.GetRange(0, MaxFiles) : all;
         SyncRows(_files.Items, shown, f => f.Id.ToString(CultureInfo.InvariantCulture), k => new FileRowView(k), (row, f) =>
         {
             var view = (FileRowView)row;
             view.Path = f.Path;
-            view.User = f.User;
-            view.Client = f.Client;
+            view.Who = loc.FormatValues("Monitor_File_Who", DeviceOf(f.Client), f.User);
         });
     }
 
@@ -890,7 +900,14 @@ public partial class MonitorPage : Page
 
         Status(_fails, _failed);
         var list = _failed.Value ?? new List<FailedLogon>();
-        _fails.Empty = _failed.Status == ReadStatus.Ok && list.Count == 0 ? loc["Monitor_Fails_None"] : "";
+        var read = _failed.Status == ReadStatus.Ok;
+        FailsNumber.Text = !read ? loc["Monitor_NoValue"] : list.Count >= MaxFailedLogons ? loc.Format("Monitor_Stat_AtLeast", Formats(list.Count)) : Formats(list.Count);
+        FailsSub.Text = !read ? (_failed.Status == ReadStatus.NeedsAdmin ? loc["Badge_NeedsAdmin"] : loc.FormatValues("Monitor_ReadFailed", _failed.Error))
+            : list.Count == 0 ? loc["Monitor_Stat_FailsNone"] : loc["Monitor_Stat_FailsSee"];
+        FailsDot.Tag = !read ? "" : list.Count == 0 ? "Success" : "Caution";
+
+        // The table only when there is at least one failure.
+        FailsArea.Visibility = read && list.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         foreach (var f in list)
         {
             if (_loggedFails.Add(f.Key))
@@ -971,24 +988,28 @@ public partial class MonitorPage : Page
         return -1;
     }
 
-    private static void SetFields(ObservableCollection<MonitorField> fields, List<(string LabelKey, string Value, bool IsData)> values, string? firstDetail = null)
+    // The device's name when the owner gave one, otherwise its address.
+    private string DeviceOf(string client)
     {
-        while (fields.Count > values.Count)
+        foreach (var row in _sessions.Rows)
         {
-            fields.RemoveAt(fields.Count - 1);
+            if (string.Equals(row.Client, client, StringComparison.OrdinalIgnoreCase))
+            {
+                return row.Shown;
+            }
         }
 
-        for (var i = 0; i < values.Count; i++)
-        {
-            if (i == fields.Count)
-            {
-                fields.Add(new MonitorField());
-            }
+        return client;
+    }
 
-            fields[i].Label = Loc.Instance[values[i].LabelKey];
-            fields[i].Value = values[i].Value;
-            fields[i].IsData = values[i].IsData;
-            fields[i].Detail = i == 0 ? firstDetail ?? "" : "";
+    // The "…" button opens its menu of naming actions, by mouse and by keyboard.
+    private void OnDeviceMenu(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { ContextMenu: { } menu } button)
+        {
+            menu.PlacementTarget = button;
+            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            menu.IsOpen = true;
         }
     }
 

@@ -22,6 +22,9 @@ public sealed class ColumnsPanel : Panel
     public static readonly DependencyProperty MaxColumnsProperty = DependencyProperty.Register(
         nameof(MaxColumns), typeof(int), typeof(ColumnsPanel), new FrameworkPropertyMetadata(2, FrameworkPropertyMetadataOptions.AffectsMeasure));
 
+    public static readonly DependencyProperty EvenRowsProperty = DependencyProperty.Register(
+        nameof(EvenRows), typeof(bool), typeof(ColumnsPanel), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsMeasure));
+
     public static readonly DependencyProperty GapProperty = DependencyProperty.Register(
         nameof(Gap), typeof(double), typeof(ColumnsPanel), new FrameworkPropertyMetadata(4.0, FrameworkPropertyMetadataOptions.AffectsMeasure));
 
@@ -52,6 +55,13 @@ public sealed class ColumnsPanel : Panel
         set => SetValue(MaxColumnsProperty, value);
     }
 
+    // Only column counts that fill every row (ColumnLayout.EvenColumns), counting the visible children.
+    public bool EvenRows
+    {
+        get => (bool)GetValue(EvenRowsProperty);
+        set => SetValue(EvenRowsProperty, value);
+    }
+
     public double Gap
     {
         get => (double)GetValue(GapProperty);
@@ -74,6 +84,16 @@ public sealed class ColumnsPanel : Panel
         var children = InternalChildren;
         var bounded = !double.IsInfinity(availableSize.Width);
         _columns = bounded ? ColumnLayout.Columns(availableSize.Width, MinItemWidth, Gap, MaxColumns) : 1;
+        if (EvenRows)
+        {
+            var visible = 0;
+            foreach (UIElement child in children)
+            {
+                visible += child.Visibility == Visibility.Collapsed ? 0 : 1;
+            }
+
+            _columns = ColumnLayout.EvenColumns(_columns, visible);
+        }
         var itemWidth = bounded ? ColumnLayout.ItemWidth(availableSize.Width, _columns, Gap) : double.PositiveInfinity;
         if (LogName is not null && _columns != _loggedColumns)
         {

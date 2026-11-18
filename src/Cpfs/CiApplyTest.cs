@@ -10,6 +10,7 @@ using System.Security.Principal;
 using System.Text;
 using Cpfs.Core.Apply;
 using Cpfs.Core.Config;
+using Cpfs.Core.Connections;
 using Cpfs.Core.Drives;
 using Cpfs.Core.Planning;
 using Cpfs.Windows;
@@ -376,6 +377,7 @@ internal static class CiApplyTest
 
         AutoPrivateChecks(o, config, leftPublic, temp);
         RenameChecks(config);
+        ClientPhase(o, password);
 
         // Re-running with the same answers changes nothing: the copy, the task and the pending rename are Keep.
         var again = Planner.Setup(Read(TestUser, folder, TestShare), answers with { Password = PasswordEntry.Empty, Choices = new Dictionary<string, bool>() },
@@ -557,6 +559,237 @@ internal static class CiApplyTest
         Check(config.TrackedComputerNames.Any(n => string.Equals(n, _testName, StringComparison.OrdinalIgnoreCase)), "config.json records the name in Tracked.ComputerNames");
         Check(string.Equals(config.BackupHostName, _originalName, StringComparison.OrdinalIgnoreCase), "Backup.HostName is the original name", config.BackupHostName ?? "null");
     }
+
+    // The SMB client side of Connections from this PC, against the runner's own share, while it exists: the list, error
+    // 1219, a remembered drive, the open-files refusal and both kinds of cancel. The password goes to Windows through
+    // WNetAddConnection2W only. Every test connection is removed again before Uninstall, whatever happened.
+    private static readonly string[] ClientChecks =
+    {
+        "the client list shows the test connection and its account",
+        "Connections groups it under localhost with the This PC tag",
+        "a second user name for the same server gives error 1219",
+        "a remembered drive mapping appears under HKCU\\Network and in the saved list",
+        "a non-forced disconnect with a file open is refused (2401 or 2404)",
+        "a disconnect without the profile flag leaves the saved mapping",
+        "a disconnect with the profile flag removes the saved mapping",
+        "a deviceless connection is cancelled by its remote name",
+    };
+
+    private static void ClientPhase(TextWriter o, SecureString password)
+    {
+        var unc = @"\\localhost\" + TestShare;
+        var user = Environment.MachineName + "\\" + TestUser;
+        var other = Environment.MachineName + "\\CpfsCiOther";
+        var first = SmbClient.Add(null, unc, user, password, remember: false);
+        o.WriteLine("Client: connect " + unc + " as " + user + ": " + Code(first));
+        if (first != 0)
+        {
+            foreach (var check in ClientChecks)
+            {
+                Skip(check, "the runner could not connect to its own share: " + Code(first));
+            }
+
+            return;
+        }
+
+        char? letter = null;
+        try
+        {
+            var uses = LogUses(o, "after connecting");
+            var use = uses.FirstOrDefault(u => u.Local is null && SameRemote(u.Remote, unc));
+            Check(use is not null && string.Equals(use.User, TestUser, StringComparison.OrdinalIgnoreCase), ClientChecks[0],
+                use is null ? "not listed" : (use.Domain ?? "") + "\\" + (use.User ?? "") + ", status " + use.Status.ToString(CultureInfo.InvariantCulture));
+            var groups = Groups(uses);
+            var local = groups.FirstOrDefault(g => string.Equals(g.Server, "localhost", StringComparison.OrdinalIgnoreCase));
+            Check(local is { IsThisPc: true } && local.Connections.Any(c => string.Equals(c.Share, TestShare, StringComparison.OrdinalIgnoreCase)), ClientChecks[1],
+                local is null ? "no localhost group" : local.Connections.Count.ToString(CultureInfo.InvariantCulture) + " rows");
+
+            var conflict = SmbClient.Add(null, unc, other, password, remember: false);
+            o.WriteLine("Client: connect " + unc + " as " + other + ": " + Code(conflict));
+            Check(conflict == ClientDisconnect.ErrorSessionCredentialConflict, ClientChecks[2], Code(conflict));
+            CancelIfMade(o, conflict, new DisconnectTarget(unc, false));
+
+            // Logged, not asserted: Microsoft documents the IP address as a different server name (KB 938120).
+            var byIp = SmbClient.Add(null, @"\\127.0.0.1\" + TestShare, other, password, remember: false);
+            o.WriteLine("Client: connect \\\\127.0.0.1\\" + TestShare + " as " + other + " while localhost is held as " + user + ": " + Code(byIp)
+                + (byIp == ClientDisconnect.ErrorSessionCredentialConflict ? " (Windows treats them as the same server)" : " (not 1219: Windows treats them as different servers)"));
+            CancelIfMade(o, byIp, new DisconnectTarget(@"\\127.0.0.1\" + TestShare, false));
+
+            letter = FreeClientLetter();
+            if (letter is not { } l)
+            {
+                for (var i = 3; i <= 6; i++)
+                {
+                    Skip(ClientChecks[i], "no free drive letter on the runner");
+                }
+            }
+            else
+            {
+                DriveChecks(o, l, unc, user, password);
+            }
+
+            var cancel = SmbClient.Cancel(new DisconnectTarget(unc, false), force: false);
+            var still = SmbClient.ReadUses().Any(u => u.Local is null && SameRemote(u.Remote, unc));
+            Check(cancel == 0 && !still, ClientChecks[7], Code(cancel) + (still ? ", still listed" : ""));
+
+            // An implicit UNC access (no WNetAddConnection): what NetUseEnum shows and what a non-forced cancel says.
+            try
+            {
+                o.WriteLine("Client: implicit access to " + unc + ": " + Directory.GetFileSystemEntries(unc).Length.ToString(CultureInfo.InvariantCulture) + " entries");
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                o.WriteLine("Client: implicit access to " + unc + " failed: " + ex.GetType().Name + ": " + ex.Message);
+            }
+
+            foreach (var u in LogUses(o, "after the implicit access").Where(u => u.Local is null && IsLoopback(u.Remote)))
+            {
+                o.WriteLine("Client: non-forced cancel of " + u.Remote + ": " + Code(SmbClient.Cancel(new DisconnectTarget(u.Remote, false), force: false)));
+            }
+        }
+        finally
+        {
+            ClientCleanup(o, letter);
+        }
+    }
+
+    private static void DriveChecks(TextWriter o, char letter, string unc, string user, SecureString password)
+    {
+        var device = letter + ":";
+        var map = SmbClient.Add(device, unc, user, password, remember: true);
+        o.WriteLine("Client: map " + device + " to " + unc + ", remembered: " + Code(map));
+        var saved = NetworkKeyExists(letter) && SmbClient.ReadRemembered().Any(m => string.Equals(m.Local, device, StringComparison.OrdinalIgnoreCase));
+        Check(map == 0 && saved, ClientChecks[3], Code(map) + (saved ? "" : ", not saved"));
+        if (map != 0)
+        {
+            for (var i = 4; i <= 6; i++)
+            {
+                Skip(ClientChecks[i], "the drive mapping failed: " + Code(map));
+            }
+
+            return;
+        }
+
+        var row = Groups(SmbClient.ReadUses()).SelectMany(g => g.Connections).FirstOrDefault(c => string.Equals(c.DriveLetter, device, StringComparison.OrdinalIgnoreCase));
+        o.WriteLine("Client: the drive's row: " + (row is null ? "missing" : "reconnects at sign-in " + row.ReconnectsAtSignIn));
+        var target = row is null ? new DisconnectTarget(device, true) : ClientDisconnect.TargetFor(row);
+        int refused;
+        using (new FileStream(Path.Combine(device + "\\", MarkerName), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+        {
+            refused = SmbClient.Cancel(target, force: false);
+        }
+
+        var listed = SmbClient.ReadUses().Any(u => string.Equals(u.Local, device, StringComparison.OrdinalIgnoreCase));
+        Check(ClientDisconnect.IsOpenFiles(refused) && listed, ClientChecks[4], Code(refused) + (listed ? "" : ", no longer listed"));
+
+        var keep = SmbClient.Cancel(new DisconnectTarget(device, false), force: false);
+        var kept = NetworkKeyExists(letter);
+        Check(keep == 0 && kept, ClientChecks[5], Code(keep) + (kept ? "" : ", the saved mapping is gone"));
+
+        // The drive is now saved but not connected; Learn names ERROR_NOT_CONNECTED among the answers, so the registry
+        // and the saved list decide.
+        var forget = SmbClient.Cancel(new DisconnectTarget(device, true), force: false);
+        var gone = !NetworkKeyExists(letter) && !SmbClient.ReadRemembered().Any(m => string.Equals(m.Local, device, StringComparison.OrdinalIgnoreCase));
+        Check(gone, ClientChecks[6], Code(forget) + (gone ? "" : ", still saved"));
+    }
+
+    // Test cleanup only (the app never forces in bulk): every connection to this runner by localhost or 127.0.0.1, and
+    // the test drive's saved mapping, non-forced first, then forced.
+    private static void ClientCleanup(TextWriter o, char? letter)
+    {
+        foreach (var u in SmbClient.ReadUses().Where(u => IsLoopback(u.Remote)))
+        {
+            var target = u.Local is { Length: > 0 } local ? new DisconnectTarget(local, true) : new DisconnectTarget(u.Remote, false);
+            var code = SmbClient.Cancel(target, force: false);
+            if (code != 0)
+            {
+                code = SmbClient.Cancel(target, force: true);
+            }
+
+            o.WriteLine("Client cleanup: " + target.Name + ": " + Code(code));
+        }
+
+        if (letter is { } l && NetworkKeyExists(l))
+        {
+            o.WriteLine("Client cleanup: forget " + l + ": " + Code(SmbClient.Cancel(new DisconnectTarget(l + ":", true), force: true)));
+        }
+
+        var left = SmbClient.ReadUses().Where(u => IsLoopback(u.Remote)).Select(u => (u.Local ?? "-") + " " + u.Remote).ToList();
+        if (letter is { } k && NetworkKeyExists(k))
+        {
+            left.Add("HKCU\\Network\\" + k);
+        }
+
+        Check(left.Count == 0, "every test connection is gone before Uninstall", string.Join(", ", left));
+    }
+
+    private static List<Cpfs.Core.Connections.SmbUse> LogUses(TextWriter o, string when)
+    {
+        var uses = SmbClient.ReadUses();
+        o.WriteLine("Client: NetUseEnum " + when + ": " + uses.Count.ToString(CultureInfo.InvariantCulture) + " uses");
+        foreach (var u in uses)
+        {
+            o.WriteLine("  " + (u.Local ?? "-") + " " + u.Remote + ", status " + u.Status.ToString(CultureInfo.InvariantCulture) + ", type "
+                + u.AssignmentType.ToString(CultureInfo.InvariantCulture) + ", open " + u.OpenCount.ToString(CultureInfo.InvariantCulture)
+                + ", account " + (u.Domain ?? "") + "\\" + (u.User ?? ""));
+        }
+
+        return uses;
+    }
+
+    private static IReadOnlyList<Cpfs.Core.Connections.ClientConnectionGroup> Groups(List<Cpfs.Core.Connections.SmbUse> uses)
+    {
+        string? provider = null;
+        try
+        {
+            provider = SmbClient.LanmanProviderName();
+        }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            Console.Out.WriteLine("Client: WNetGetProviderName: " + ex.Message);
+        }
+
+        var thisPc = new Cpfs.Core.Connections.ThisPcNames(NetworkAddresses.HostName(), Environment.MachineName, null, NetworkAddresses.Read());
+        return Cpfs.Core.Connections.ClientConnections.Build(uses, SmbClient.ReadRemembered(), provider, thisPc.Matches);
+    }
+
+    private static void CancelIfMade(TextWriter o, int code, DisconnectTarget target)
+    {
+        if (code == 0)
+        {
+            o.WriteLine("Client: cancel " + target.Name + ": " + Code(SmbClient.Cancel(target, force: false)));
+        }
+    }
+
+    private static bool SameRemote(string a, string b) => string.Equals(a.TrimEnd('\\'), b.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsLoopback(string remote) =>
+        Cpfs.Core.Connections.ClientConnections.SplitUnc(remote) is { } unc
+        && (string.Equals(unc.Server, "localhost", StringComparison.OrdinalIgnoreCase) || unc.Server == "127.0.0.1");
+
+    // A letter for the test mapping: not a drive, not a DOS Devices mapping, not saved under HKCU\Network, and not the
+    // letter Setup used.
+    private static char? FreeClientLetter()
+    {
+        var used = new HashSet<char>(Environment.GetLogicalDrives().Select(d => char.ToUpperInvariant(d[0])));
+        for (var c = 'Z'; c >= 'H'; c--)
+        {
+            if (c != _letter && !used.Contains(c) && DosDrives.Read(c) is null && !NetworkKeyExists(c))
+            {
+                return c;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool NetworkKeyExists(char letter)
+    {
+        using var key = Registry.CurrentUser.OpenSubKey("Network\\" + letter);
+        return key is not null;
+    }
+
+    private static string Code(int code) => code == 0 ? "0" : code.ToString(CultureInfo.InvariantCulture) + " " + new System.ComponentModel.Win32Exception(code).Message;
 
     private static List<string> PublicNames() => PlanReader.Networks().Where(n => n.Category == 0).Select(n => n.Name).ToList();
 

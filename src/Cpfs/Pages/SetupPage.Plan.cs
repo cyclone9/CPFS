@@ -145,13 +145,15 @@ public partial class SetupPage
         // The old reading no longer matches the new config; a form event raised before the new one arrives must not
         // plan from it (seen after an Apply: the summary briefly offered the changes just made).
         _snapshot = null;
+        _status = null;
         _config = config;
         _configIgnored = false;
         _letters = letters;
         RenderMode();
         var desktopSid = Startup.IsElevated ? DesktopUser.Current.Sid : null;
         var watch = System.Diagnostics.Stopwatch.StartNew();
-        var (snapshot, protectedFolders) = await Task.Run(() => (PlanReader.ReadStatic(letters, desktopSid), PlanReader.ProtectedFolders()));
+        var (snapshot, protectedFolders, serverRunning) = await Task.Run(() => (PlanReader.ReadStatic(letters, desktopSid), PlanReader.ProtectedFolders(),
+            PlanReader.ServerRunning()));
         _protected = protectedFolders;
         _configIgnored = ConfigTrust.Ignored(snapshot.DataFolder);
         if (_configIgnored)
@@ -172,6 +174,7 @@ public partial class SetupPage
 
         _snapshot = snapshot;
         _snapshotFor = null;
+        ComputeStatus(snapshot, serverRunning);
         FillComputerName(snapshot);
         RenderMode();
         AppLog.Write("plan", "Plan state ready in " + StateReader.Ms(watch) + (Startup.IsElevated ? " (elevated)" : " (not elevated)"));
@@ -407,7 +410,6 @@ public partial class SetupPage
     {
         var loc = Loc.Instance;
         var first = IsFirstInstall;
-        WelcomeCard.Visibility = first ? Visibility.Visible : Visibility.Collapsed;
         PasswordDesc.Text = first ? loc.Format("Setup_Form_Password_DescFirst", Validators.MinPasswordLength) : loc["Setup_Form_Password_DescKeep"];
         SummaryTitle.Text = loc[first ? "Setup_Summary_TitleFirst" : "Setup_Summary_Title"];
         var button = loc[first ? "Setup_Plan_SetUp" : "Setup_Plan_Apply"];
@@ -535,6 +537,7 @@ public partial class SetupPage
         Decisions.ItemsSource = decisions;
         DecisionsCard.Visibility = decisions.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         ApplyUi.FillSummary(SummaryBody, _summary);
+        ApplyUi.FillFirstLine(BarSummary, _summary);
         UpdateApplyState();
     }
 

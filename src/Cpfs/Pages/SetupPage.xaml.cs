@@ -9,8 +9,9 @@ using Wpf.Ui.Controls;
 
 namespace Cpfs.Pages;
 
-// The Setup page: a few fields, Your decisions, one summary sentence and one button, with the full plan under Show
-// details (SetupPage.Plan.cs) and Apply (SetupPage.Apply.cs). The PC state as CPFS reads it is on the Advanced page.
+// The Setup page: the status card (SetupPage.Status.cs), a few fields, Your decisions, and a fixed bar with one
+// summary sentence, Show details and one button; the full plan is under Show details (SetupPage.Plan.cs) and Apply
+// (SetupPage.Apply.cs). The PC state as CPFS reads it is on the Advanced page.
 // Windows changes only through Apply, after the user confirmed.
 public partial class SetupPage : Page
 {
@@ -34,6 +35,7 @@ public partial class SetupPage : Page
             if (e.PropertyName == nameof(Loc.Culture))
             {
                 RenderAdminCard();
+                RenderStatus();
                 RenderPlan();
             }
         };
@@ -55,6 +57,7 @@ public partial class SetupPage : Page
         _loaded = true;
         RenderAdminCard();
         RenderBrand();
+        RenderStatus();
         await ReadAsync();
     }
 
@@ -160,5 +163,8 @@ public partial class SetupPage : Page
         bar.Title = title;
         bar.Message = message;
         bar.IsOpen = true;
+
+        // The main button sits in the fixed bar, so a result above it may be out of view.
+        bar.BringIntoView();
     }
 }

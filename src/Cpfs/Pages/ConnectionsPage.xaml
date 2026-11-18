@@ -5,107 +5,183 @@
   xmlns:local="clr-namespace:Cpfs"
   xmlns:pages="clr-namespace:Cpfs.Pages"
   xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+  ScrollViewer.CanContentScroll="False"
   Foreground="{DynamicResource TextFillColorPrimaryBrush}">
   <Page.Resources>
     <BooleanToVisibilityConverter x:Key="Visible" />
 
-    <ItemsPanelTemplate x:Key="Wrap">
-      <WrapPanel />
-    </ItemsPanelTemplate>
-
-    <!--  A value that is data (a drive letter, an account): monospace, left to right inside RTL text.  -->
-    <DataTemplate DataType="{x:Type pages:ConnectionDataField}">
-      <StackPanel Margin="0,4,24,4">
-        <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Label}" />
-        <TextBlock AutomationProperties.Name="{Binding Label}" Style="{StaticResource DataValue}" Text="{Binding Value}" />
-      </StackPanel>
-    </DataTemplate>
-
-    <DataTemplate DataType="{x:Type pages:ConnectionWordField}">
-      <StackPanel Margin="0,4,24,4">
-        <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Label}" />
-        <TextBlock AutomationProperties.Name="{Binding Label}" Style="{StaticResource Body}" Text="{Binding Value}" />
-      </StackPanel>
-    </DataTemplate>
-
+    <!--  The column header and every row share TableRowPanel columns: Share, Drive, Account, then State takes the rest.  -->
     <DataTemplate x:Key="RowTemplate" DataType="{x:Type pages:ConnectionRowItem}">
-      <Border
-        Margin="0,8,0,0"
-        Padding="12,8"
-        Background="{DynamicResource ControlFillColorSecondaryBrush}"
-        CornerRadius="4">
-        <StackPanel>
-          <TextBlock Style="{StaticResource DataValue}" Text="{Binding Share}" />
-          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding Note}" Visibility="{Binding HasNote, Converter={StaticResource Visible}}" />
-          <ItemsControl
-            Margin="0,4,0,0"
-            Focusable="False"
-            ItemsPanel="{StaticResource Wrap}"
-            ItemsSource="{Binding Fields}" />
-        </StackPanel>
-      </Border>
+      <StackPanel>
+        <Border Style="{StaticResource Hairline}" />
+        <Grid Margin="20,12" AutomationProperties.HelpText="{Binding HelpText}" AutomationProperties.Name="{Binding Share}">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <local:TableRowPanel VerticalAlignment="Center">
+            <TextBlock VerticalAlignment="Center" Style="{StaticResource DataValue}" Text="{Binding Share}" ToolTip="{Binding HelpText}" />
+            <Grid VerticalAlignment="Center">
+              <TextBlock Style="{StaticResource DataValue}" Text="{Binding Drive}" Visibility="{Binding DriveIsData, Converter={StaticResource Visible}}" />
+              <TextBlock Style="{StaticResource Body}" Text="{Binding Drive}" Visibility="{Binding DriveIsWords, Converter={StaticResource Visible}}" />
+            </Grid>
+            <Grid VerticalAlignment="Center">
+              <TextBlock Style="{StaticResource DataValue}" Text="{Binding Account}" Visibility="{Binding AccountIsData, Converter={StaticResource Visible}}" />
+              <TextBlock Style="{StaticResource CardValue}" Text="{Binding Account}" Visibility="{Binding AccountIsWords, Converter={StaticResource Visible}}" />
+            </Grid>
+            <StackPanel VerticalAlignment="Center">
+              <StackPanel Style="{StaticResource StatusLabel}">
+                <Ellipse Style="{StaticResource StatusDot}" Tag="{Binding StateKind}" />
+                <TextBlock Style="{StaticResource Body}" Text="{Binding State}" />
+              </StackPanel>
+              <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Connections_Label_Reconnects], Source={x:Static local:Loc.Instance}}" Visibility="{Binding Reconnects, Converter={StaticResource Visible}}" />
+            </StackPanel>
+          </local:TableRowPanel>
+          <ui:Button
+            Grid.Column="1"
+            Margin="12,0,0,0"
+            VerticalAlignment="Center"
+            AutomationProperties.Name="{Binding ActionName}"
+            Click="OnDisconnect"
+            Content="{Binding [Connections_Disconnect], Source={x:Static local:Loc.Instance}}"
+            Tag="{Binding}" />
+        </Grid>
+      </StackPanel>
     </DataTemplate>
 
     <DataTemplate x:Key="GroupTemplate" DataType="{x:Type pages:ConnectionGroupItem}">
-      <ui:Card Margin="0,0,0,4">
-        <StackPanel>
-          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Connections_Label_Server], Source={x:Static local:Loc.Instance}}" />
-          <WrapPanel>
-            <TextBlock
-              Margin="0,0,12,0"
+      <Border Margin="0,0,0,16" AutomationProperties.Name="{Binding Server}" Style="{StaticResource GroupCard}">
+        <StackPanel local:TableRowPanel.IsScope="True">
+          <Grid Margin="20,12">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <WrapPanel VerticalAlignment="Center">
+              <TextBlock
+                Margin="0,0,12,0"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="{Binding [Connections_Label_Server], Source={x:Static local:Loc.Instance}}"
+                FontSize="16"
+                Style="{StaticResource DataValue}"
+                Text="{Binding Server}" />
+              <Border VerticalAlignment="Center" Style="{StaticResource Badge}" Visibility="{Binding IsThisPc, Converter={StaticResource Visible}}">
+                <TextBlock Style="{StaticResource BadgeText}" Text="{Binding [Connections_ThisPc], Source={x:Static local:Loc.Instance}}" />
+              </Border>
+            </WrapPanel>
+            <ui:Button
+              Grid.Column="1"
+              Margin="12,0,0,0"
               VerticalAlignment="Center"
-              AutomationProperties.Name="{Binding [Connections_Label_Server], Source={x:Static local:Loc.Instance}}"
-              FontSize="16"
-              Style="{StaticResource DataValue}"
-              Text="{Binding Server}" />
-            <Border VerticalAlignment="Center" Style="{StaticResource Badge}" Visibility="{Binding IsThisPc, Converter={StaticResource Visible}}">
-              <TextBlock Style="{StaticResource BadgeText}" Text="{Binding [Connections_ThisPc], Source={x:Static local:Loc.Instance}}" />
-            </Border>
-          </WrapPanel>
+              AutomationProperties.Name="{Binding ActionName}"
+              Click="OnDisconnectAll"
+              Content="{Binding [Connections_DisconnectAll], Source={x:Static local:Loc.Instance}}"
+              Tag="{Binding}" />
+          </Grid>
+          <Border Style="{StaticResource Hairline}" />
+          <local:TableRowPanel Margin="20,8">
+            <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding [Connections_Col_Share], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding [Connections_Col_Drive], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding [Connections_Label_Account], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding [Connections_Label_State], Source={x:Static local:Loc.Instance}}" />
+          </local:TableRowPanel>
           <ItemsControl Focusable="False" ItemTemplate="{StaticResource RowTemplate}" ItemsSource="{Binding Rows}" />
         </StackPanel>
-      </ui:Card>
+      </Border>
     </DataTemplate>
   </Page.Resources>
 
-  <StackPanel Margin="24,16,24,24">
-    <TextBlock Style="{StaticResource PageTitle}" Text="{Binding [Connections_Title], Source={x:Static local:Loc.Instance}}" />
-    <TextBlock Margin="0,0,0,12" Style="{StaticResource Body}" Text="{Binding [Connections_Intro], Source={x:Static local:Loc.Instance}}" />
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
 
-    <!--  An elevated window would list the administrator session's connections, not the ones File Explorer uses.  -->
-    <ui:InfoBar
-      x:Name="AdminInfo"
-      Title="{Binding [Connections_Admin_Title], Source={x:Static local:Loc.Instance}}"
-      Margin="0,0,0,4"
-      IsClosable="False"
-      IsOpen="False"
-      Message="{Binding [Connections_Admin_Msg], Source={x:Static local:Loc.Instance}}"
-      Severity="Informational" />
-    <ui:InfoBar x:Name="ReadInfo" Margin="0,0,0,4" IsClosable="False" IsOpen="False" />
+    <local:PageScroller>
+      <StackPanel Style="{StaticResource PageContent}">
+        <TextBlock Style="{StaticResource PageTitle}" Text="{Binding [Connections_Title], Source={x:Static local:Loc.Instance}}" />
+        <TextBlock Margin="0,0,0,16" Style="{StaticResource Body}" Text="{Binding [Connections_Intro], Source={x:Static local:Loc.Instance}}" />
 
-    <ui:Card x:Name="ListCard" Margin="0,0,0,4">
+        <!--  An elevated window would list the administrator session's connections, not the ones File Explorer uses.  -->
+        <ui:InfoBar
+          x:Name="AdminInfo"
+          Title="{Binding [Connections_Admin_Title], Source={x:Static local:Loc.Instance}}"
+          Margin="0,0,0,8"
+          IsClosable="False"
+          IsOpen="False"
+          Message="{Binding [Connections_Admin_Msg], Source={x:Static local:Loc.Instance}}"
+          Severity="Informational" />
+        <ui:InfoBar x:Name="ReadInfo" Margin="0,0,0,8" IsClosable="False" IsOpen="False" />
+        <ui:InfoBar x:Name="ActionResult" Margin="0,0,0,8" AutomationProperties.LiveSetting="Polite" IsClosable="True" IsOpen="False" />
+
+        <StackPanel x:Name="ListArea">
+          <ui:Card x:Name="EmptyCard" Margin="0,0,0,16" Visibility="Collapsed">
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Connections_Empty], Source={x:Static local:Loc.Instance}}" />
+              <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Connections_Empty_Desc], Source={x:Static local:Loc.Instance}}" />
+            </StackPanel>
+          </ui:Card>
+
+          <ItemsControl x:Name="Groups" Focusable="False" ItemTemplate="{StaticResource GroupTemplate}" />
+
+          <!--  Error 1219: Windows' own words, the one-user-name rule and the ways out, in Microsoft's terms.  -->
+          <ui:CardExpander
+            x:Name="ConflictHelp"
+            Margin="0,0,0,8"
+            AutomationProperties.HelpText="{Binding [Connections_1219_Desc], Source={x:Static local:Loc.Instance}}"
+            AutomationProperties.Name="{Binding [Connections_1219_Title], Source={x:Static local:Loc.Instance}}"
+            Focusable="False"
+            Icon="{ui:SymbolIcon PersonQuestionMark24}">
+            <ui:CardExpander.Header>
+              <StackPanel>
+                <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Connections_1219_Title], Source={x:Static local:Loc.Instance}}" />
+                <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Connections_1219_Desc], Source={x:Static local:Loc.Instance}}" />
+              </StackPanel>
+            </ui:CardExpander.Header>
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardDescription}" Margin="0" Text="{Binding [Connections_1219_WindowsSays], Source={x:Static local:Loc.Instance}}" />
+              <TextBlock x:Name="WindowsMessage" Margin="0,4,0,12" Style="{StaticResource Body}" FontStyle="Italic" />
+              <TextBlock Margin="0,0,0,8" Style="{StaticResource Body}" Text="{Binding [Connections_1219_Rule], Source={x:Static local:Loc.Instance}}" />
+              <TextBlock Margin="0,0,0,8" Style="{StaticResource Body}" Text="{Binding [Connections_1219_NothingListed], Source={x:Static local:Loc.Instance}}" />
+              <TextBlock Margin="0,0,0,8" Style="{StaticResource Body}" Text="{Binding [Connections_1219_Ip], Source={x:Static local:Loc.Instance}}" />
+              <TextBlock Margin="0,0,0,12" Style="{StaticResource Body}" Text="{Binding [Connections_1219_Saved], Source={x:Static local:Loc.Instance}}" />
+              <ui:Button
+                HorizontalAlignment="Left"
+                AutomationProperties.Name="{Binding [Connections_OpenCredMan], Source={x:Static local:Loc.Instance}}"
+                Click="OnOpenCredentialManager"
+                Content="{Binding [Connections_OpenCredMan], Source={x:Static local:Loc.Instance}}"
+                Icon="{ui:SymbolIcon Key24}" />
+            </StackPanel>
+          </ui:CardExpander>
+        </StackPanel>
+      </StackPanel>
+    </local:PageScroller>
+
+    <Border x:Name="Bar" Grid.Row="1" Style="{StaticResource ActionBar}">
       <Grid>
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*" />
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <StackPanel>
-          <TextBlock Style="{StaticResource CardTitle}" Text="{Binding [Connections_List_Title], Source={x:Static local:Loc.Instance}}" />
-          <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Connections_List_Desc], Source={x:Static local:Loc.Instance}}" />
-          <TextBlock x:Name="EmptyText" Margin="0,8,0,0" Style="{StaticResource CardValue}" Text="{Binding [Connections_Empty], Source={x:Static local:Loc.Instance}}" Visibility="Collapsed" />
+        <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+          <ui:ProgressRing
+            x:Name="Busy"
+            Width="16"
+            Height="16"
+            Margin="0,0,8,0"
+            IsIndeterminate="True"
+            Visibility="Collapsed" />
+          <TextBlock x:Name="CountText" VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" Style="{StaticResource CardValue}" />
         </StackPanel>
         <ui:Button
           x:Name="RefreshButton"
           Grid.Column="1"
-          Margin="8,0,0,0"
-          VerticalAlignment="Top"
+          Margin="12,0,0,0"
           AutomationProperties.Name="{Binding [Connections_Refresh], Source={x:Static local:Loc.Instance}}"
           Click="OnRefresh"
-          Icon="{ui:SymbolIcon ArrowClockwise24}"
-          ToolTip="{Binding [Connections_Refresh], Source={x:Static local:Loc.Instance}}" />
+          Content="{Binding [Connections_RefreshShort], Source={x:Static local:Loc.Instance}}"
+          Icon="{ui:SymbolIcon ArrowClockwise24}" />
       </Grid>
-    </ui:Card>
-
-    <ItemsControl x:Name="Groups" Focusable="False" ItemTemplate="{StaticResource GroupTemplate}" />
-  </StackPanel>
+    </Border>
+  </Grid>
 </Page>

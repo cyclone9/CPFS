@@ -47,6 +47,10 @@ public static class Theming
     // Page titles and large text (WPF-UI's Subtitle and Title sizes): Segoe UI Variable's Display optical size.
     public const string TitleFontResourceKey = "CpfsTitleFontFamily";
 
+    // The leading \\ of this PC's share address (the brand signature): the brand accent, or the text colour in high
+    // contrast.
+    public const string SignatureBrushKey = "CpfsSignatureBrush";
+
     // WPF knows Segoe UI Variable only by its named instances; "Segoe UI Variable" alone silently becomes Segoe UI.
     private const string VariableText = "Segoe UI Variable Text";
     private const string VariableDisplay = "Segoe UI Variable Display";
@@ -188,6 +192,8 @@ public static class Theming
         var app = Application.Current;
         app.Resources[FontResourceKey] = FamilyOf(CurrentFont);
         app.Resources[TitleFontResourceKey] = TitleFamilyOf(CurrentFont);
+        app.Resources[SignatureBrushKey] = Frozen(Tangerine);
+        ApplyTextMetrics();
         foreach (var type in new[] { typeof(System.Windows.Controls.ToolTip), typeof(System.Windows.Controls.ContextMenu) })
         {
             var style = new Style(type, app.TryFindResource(type) as Style);
@@ -211,6 +217,7 @@ public static class Theming
         var font = CurrentFont;
         Application.Current.Resources[FontResourceKey] = FamilyOf(font);
         Application.Current.Resources[TitleFontResourceKey] = TitleFamilyOf(font);
+        ApplyTextMetrics();
         AppLog.Write("font", "Applied " + font + " for language " + culture.Name + "; resolved " + Describe());
     }
 
@@ -221,11 +228,28 @@ public static class Theming
         {
             // High contrast keeps the system colours; a brand accent would break the user's contrast choice.
             ApplicationAccentColorManager.ApplySystemAccent();
+            Application.Current.Resources[SignatureBrushKey] = Application.Current.TryFindResource("TextFillColorPrimaryBrush") ?? SystemColors.WindowTextBrush;
             return;
         }
 
         var accent = theme == ApplicationTheme.Dark ? Tangerine : DeepTangerine;
         ApplicationAccentColorManager.Apply(accent, accent, accent, accent);
+        Application.Current.Resources[SignatureBrushKey] = Frozen(accent);
+    }
+
+    private static SolidColorBrush Frozen(Color color)
+    {
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        return brush;
+    }
+
+    // Descriptions: 12 px for Latin scripts; Vazirmatn needs 13 px and a 20 px line to read well (proposal item 7).
+    private static void ApplyTextMetrics()
+    {
+        var rtl = Loc.Instance.IsRtl;
+        Application.Current.Resources["CpfsDescriptionFontSize"] = rtl ? 13.0 : 12.0;
+        Application.Current.Resources["CpfsDescriptionLineHeight"] = rtl ? 20.0 : double.NaN;
     }
 
     private static void OnThemeChanged(ApplicationTheme theme, Color systemAccent)

@@ -62,14 +62,15 @@
           Icon="{ui:SymbolIcon DesktopArrowRight24}"
           NavigationCacheMode="Enabled"
           TargetPageType="{x:Type pages:ConnectionsPage}" />
+      </ui:NavigationView.MenuItems>
+      <ui:NavigationView.FooterMenuItems>
+        <!--  The one destructive page sits apart from the daily ones, above Preferences.  -->
         <ui:NavigationViewItem
           AutomationProperties.Name="{Binding [Nav_Uninstall], Source={x:Static local:Loc.Instance}}"
           Content="{Binding [Nav_Uninstall], Source={x:Static local:Loc.Instance}}"
           Icon="{ui:SymbolIcon Delete24}"
           NavigationCacheMode="Enabled"
           TargetPageType="{x:Type pages:UninstallPage}" />
-      </ui:NavigationView.MenuItems>
-      <ui:NavigationView.FooterMenuItems>
         <ui:NavigationViewItem
           AutomationProperties.Name="{Binding [Nav_Preferences], Source={x:Static local:Loc.Instance}}"
           Content="{Binding [Nav_Preferences], Source={x:Static local:Loc.Instance}}"

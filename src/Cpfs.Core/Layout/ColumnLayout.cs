@@ -17,6 +17,25 @@ public static class ColumnLayout
         return Math.Max(1, Math.Min(maxColumns, fit));
     }
 
+    // Fewer columns, so every row is full: four stat cards go 4, then 2 by 2, never 3 and 1.
+    public static int EvenColumns(int columns, int count)
+    {
+        if (count <= 0 || columns <= 1)
+        {
+            return Math.Max(1, columns);
+        }
+
+        for (var c = Math.Min(columns, count); c > 1; c--)
+        {
+            if (count % c == 0)
+            {
+                return c;
+            }
+        }
+
+        return 1;
+    }
+
     public static double ItemWidth(double available, int columns, double gap) =>
         columns <= 1 ? Math.Max(0, available) : Math.Max(0, (available - gap * (columns - 1)) / columns);
 }

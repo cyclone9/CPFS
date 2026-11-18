@@ -25,6 +25,9 @@ public sealed class AppPreferences
     // Monitor also writes Recent activity to activity-log.txt. Off unless the user switches it on: it holds file names.
     public bool SaveActivityLog { get; set; }
 
+    // The Connect page's last device tab (Cpfs.Core.Connect.GuideTabs); null shows the first.
+    public string? ConnectDevice { get; set; }
+
     // Unknown or malformed content gives the defaults rather than an error: preferences are never worth a failed start.
     // Fields a newer or older version wrote (0.6.0 dev4's AlwaysShowDetails) are ignored.
     public static AppPreferences Parse(string? json)
@@ -71,6 +74,11 @@ public sealed class AppPreferences
             prefs.SaveActivityLog = true;
         }
 
+        if (Text(Config.ConfigJson.Get(root, "ConnectDevice")) is { Length: > 0 } device)
+        {
+            prefs.ConnectDevice = device;
+        }
+
         if (Config.ConfigJson.GetObject(root, "Fonts") is { } fonts)
         {
             foreach (var pair in fonts)
@@ -103,6 +111,7 @@ public sealed class AppPreferences
             [nameof(Fonts)] = fonts,
             [nameof(CheckUpdatesAtStart)] = CheckUpdatesAtStart,
             [nameof(SaveActivityLog)] = SaveActivityLog,
+            [nameof(ConnectDevice)] = ConnectDevice,
         };
         return root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
     }

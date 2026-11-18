@@ -1,65 +1,79 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Cpfs.Core.Connections;
+using Cpfs.Core.Text;
 using Cpfs.Windows;
 using Wpf.Ui.Controls;
 
 namespace Cpfs.Pages;
 
-public abstract class ConnectionField
-{
-    public string Label { get; init; } = "";
-
-    public string Value { get; init; } = "";
-}
-
-public sealed class ConnectionDataField : ConnectionField
-{
-}
-
-public sealed class ConnectionWordField : ConnectionField
-{
-}
-
 public sealed class ConnectionRowItem
 {
+    public ClientConnection Source { get; init; } = null!;
+
     public string Share { get; init; } = "";
 
-    public string Note { get; init; } = "";
+    public string Drive { get; init; } = "";
 
-    public bool HasNote => Note.Length > 0;
+    public bool DriveIsData { get; init; }
 
-    public List<ConnectionField> Fields { get; } = new();
+    public bool DriveIsWords => !DriveIsData;
+
+    public string Account { get; init; } = "";
+
+    public bool AccountIsData { get; init; }
+
+    public bool AccountIsWords => !AccountIsData;
+
+    public string State { get; init; } = "";
+
+    // The status dot's state name (Styles.xaml, StatusDot).
+    public string StateKind { get; init; } = "";
+
+    public bool Reconnects { get; init; }
+
+    public string HelpText { get; init; } = "";
+
+    public string ActionName { get; init; } = "";
 }
 
 public sealed class ConnectionGroupItem
 {
+    public ClientConnectionGroup Source { get; init; } = null!;
+
     public string Server { get; init; } = "";
 
     public bool IsThisPc { get; init; }
 
+    public string ActionName { get; init; } = "";
+
     public List<ConnectionRowItem> Rows { get; } = new();
 }
 
-// Connections from this PC: the shared folders this PC uses on other computers (the SMB client side), read for the
-// signed-in user's own logon session. Read-only, and only in an unelevated window (see SmbClient).
+// Connections from this PC: the shared folders this PC uses on other computers (the SMB client side) for the signed-in
+// user's own logon session, and Disconnect for them. Only in an unelevated window (see SmbClient). Nothing here reaches
+// CPFS's own share: the page calls only SMB client functions.
 public partial class ConnectionsPage : Page
 {
     private static bool _probed;
 
     private IReadOnlyList<ClientConnectionGroup> _groups = Array.Empty<ClientConnectionGroup>();
     private string? _savedError;
-    private bool _reading;
+    private bool _busy;
 
     public ConnectionsPage()
     {
         InitializeComponent();
+        ApplyUi.AttachKeys(ConflictHelp);
         Loaded += OnLoaded;
         Loc.Instance.PropertyChanged += (_, e) =>
         {
@@ -72,11 +86,13 @@ public partial class ConnectionsPage : Page
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
+        // Windows' own wording of error 1219, in the Windows display language.
+        WindowsMessage.Text = Bidi.Embed(new Win32Exception(ClientDisconnect.ErrorSessionCredentialConflict).Message, Loc.Instance.IsRtl);
         if (Startup.IsElevated)
         {
             AdminInfo.IsOpen = true;
-            ListCard.Visibility = Visibility.Collapsed;
-            Groups.Visibility = Visibility.Collapsed;
+            ListArea.Visibility = Visibility.Collapsed;
+            Bar.Visibility = Visibility.Collapsed;
             AppLog.Write("connections", "Elevated window: the list is not read");
             return;
         }
@@ -89,17 +105,41 @@ public partial class ConnectionsPage : Page
         }
     }
 
-    private async void OnRefresh(object sender, RoutedEventArgs e) => await ReadAsync();
-
-    private async Task ReadAsync()
+    private async void OnRefresh(object sender, RoutedEventArgs e)
     {
-        if (_reading)
+        ActionResult.IsOpen = false;
+        await ReadAsync();
+    }
+
+    private void SetBusy(bool busy)
+    {
+        _busy = busy;
+        RefreshButton.IsEnabled = !busy;
+        Groups.IsEnabled = !busy;
+        Busy.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    // False when the list could not be read; the page then shows why.
+    private async Task<bool> ReadAsync()
+    {
+        if (_busy)
         {
-            return;
+            return false;
         }
 
-        _reading = true;
-        RefreshButton.IsEnabled = false;
+        SetBusy(true);
+        try
+        {
+            return await ReadNowAsync();
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    private async Task<bool> ReadNowAsync()
+    {
         try
         {
             var (groups, savedError) = await Task.Run(Read);
@@ -107,6 +147,7 @@ public partial class ConnectionsPage : Page
             _savedError = savedError;
             ReadInfo.IsOpen = false;
             Render();
+            return true;
         }
         catch (Exception ex) when (State.IsExpected(ex))
         {
@@ -117,11 +158,7 @@ public partial class ConnectionsPage : Page
             ReadInfo.Title = Loc.Instance["Connections_ReadFailed_Title"];
             ReadInfo.Message = UiErrors.ForUser(ex);
             ReadInfo.IsOpen = true;
-        }
-        finally
-        {
-            RefreshButton.IsEnabled = true;
-            _reading = false;
+            return false;
         }
     }
 
@@ -146,7 +183,7 @@ public partial class ConnectionsPage : Page
             provider = SmbClient.LanmanProviderName();
             AppLog.Write("connections", "SMB provider name: " + provider);
         }
-        catch (System.ComponentModel.Win32Exception ex)
+        catch (Win32Exception ex)
         {
             AppLog.Write("connections", "WNetGetProviderName failed: " + ex.NativeErrorCode.ToString(CultureInfo.InvariantCulture) + " " + ex.Message);
         }
@@ -163,7 +200,7 @@ public partial class ConnectionsPage : Page
                     + ", shown " + ClientConnections.KeepRemembered(m, provider, uses));
             }
         }
-        catch (System.ComponentModel.Win32Exception ex)
+        catch (Win32Exception ex)
         {
             AppLog.Write("connections", "WNetOpenEnum(RESOURCE_REMEMBERED) failed: " + ex.NativeErrorCode.ToString(CultureInfo.InvariantCulture) + " " + ex.Message);
             savedError = ex.Message;
@@ -195,27 +232,42 @@ public partial class ConnectionsPage : Page
             ReadInfo.IsOpen = true;
         }
 
-        EmptyText.Visibility = _groups.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        EmptyCard.Visibility = _groups.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        var (key, connections, servers) = ClientDisconnect.CountLine(_groups);
+        CountText.Text = _groups.Count == 0 ? loc["Connections_Count_None"]
+            : loc.Format(key, Formats.Count(connections, loc.Culture), Formats.Count(servers, loc.Culture));
+
         var items = new List<ConnectionGroupItem>();
         foreach (var g in _groups)
         {
-            var group = new ConnectionGroupItem { Server = g.Server, IsThisPc = g.IsThisPc };
+            var group = new ConnectionGroupItem
+            {
+                Source = g,
+                Server = g.Server,
+                IsThisPc = g.IsThisPc,
+                ActionName = loc.FormatValues("Connections_DisconnectAllName", g.Server),
+            };
             foreach (var c in g.Connections)
             {
-                var row = new ConnectionRowItem { Share = c.Share, Note = c.IsSignIn ? loc["Connections_SignIn"] : "" };
-                row.Fields.Add(c.DriveLetter is null
-                    ? new ConnectionWordField { Label = loc["Connections_Label_Drive"], Value = loc["Connections_NoDrive"] }
-                    : new ConnectionDataField { Label = loc["Connections_Label_Drive"], Value = c.DriveLetter });
-                row.Fields.Add(c.Account is null
-                    ? new ConnectionWordField { Label = loc["Connections_Label_Account"], Value = loc["Connections_AccountUnknown"] }
-                    : new ConnectionDataField { Label = loc["Connections_Label_Account"], Value = c.Account });
-                row.Fields.Add(new ConnectionWordField { Label = loc["Connections_Label_State"], Value = StateText(c.State) });
-                row.Fields.Add(new ConnectionWordField
+                group.Rows.Add(new ConnectionRowItem
                 {
-                    Label = loc["Connections_Label_Reconnects"],
-                    Value = c.ReconnectsAtSignIn ? loc["Common_Yes"] : loc["Common_No"],
+                    Source = c,
+                    Share = c.Share,
+                    Drive = c.DriveLetter ?? loc[c.IsSignIn ? "Connections_SignInShort" : "Connections_NoDrive"],
+                    DriveIsData = c.DriveLetter is not null,
+                    Account = c.Account ?? loc["Connections_AccountUnknown"],
+                    AccountIsData = c.Account is not null,
+                    State = StateText(c.State),
+                    StateKind = c.State switch
+                    {
+                        ClientConnectionState.Connected => "Success",
+                        ClientConnectionState.Disconnected => "Caution",
+                        _ => "",
+                    },
+                    Reconnects = c.ReconnectsAtSignIn,
+                    HelpText = c.IsSignIn ? loc["Connections_SignIn"] : "",
+                    ActionName = loc.FormatValues("Connections_DisconnectName", c.Share, g.Server),
                 });
-                group.Rows.Add(row);
             }
 
             items.Add(group);
@@ -231,6 +283,222 @@ public partial class ConnectionsPage : Page
         ClientConnectionState.SavedNotConnected => Loc.Instance["Connections_State_Saved"],
         _ => Loc.Instance["Connections_State_Disconnected"],
     };
+
+    // ---- Disconnect ----
+
+    private async void OnDisconnect(object sender, RoutedEventArgs e)
+    {
+        if (_busy || (sender as FrameworkElement)?.Tag is not ConnectionRowItem item)
+        {
+            return;
+        }
+
+        var row = item.Source;
+        var loc = Loc.Instance;
+        ActionResult.IsOpen = false;
+        if (!await ConfirmAsync(loc["Connections_Disconnect_Title"], MessageFor(row), loc["Connections_Disconnect_Confirm"], "Connections_Disconnect_Title"))
+        {
+            AppLog.Write("connections", "Disconnect cancelled for " + Describe(row));
+            return;
+        }
+
+        SetBusy(true);
+        try
+        {
+            var verdict = await DisconnectAsync(row, force: false);
+            if (verdict.Verdict == DisconnectVerdict.OpenFiles)
+            {
+                // Only after Windows refused for open files, and only through this second dialog's own button (B3).
+                SetBusy(false);
+                var forced = await ConfirmAsync(loc["Connections_Force_Title"], loc.FormatValues("Connections_Force_Msg", row.Share, row.Server),
+                    loc["Connections_Force_Confirm"], "Connections_Force_Title", ControlAppearance.Danger);
+                SetBusy(true);
+                if (!forced)
+                {
+                    AppLog.Write("connections", "Forced disconnect declined for " + Describe(row));
+                    ShowResult(InfoBarSeverity.Informational, loc.FormatValues("Connections_KeptOpen", row.Share, row.Server));
+                    return;
+                }
+
+                verdict = await DisconnectAsync(row, force: true);
+            }
+
+            ShowVerdict(row, verdict.Verdict, verdict.Code);
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    private async void OnDisconnectAll(object sender, RoutedEventArgs e)
+    {
+        if (_busy || (sender as FrameworkElement)?.Tag is not ConnectionGroupItem item)
+        {
+            return;
+        }
+
+        var group = item.Source;
+        var loc = Loc.Instance;
+        ActionResult.IsOpen = false;
+        var targets = ClientDisconnect.AllFor(group);
+        var content = new StackPanel { MaxWidth = 520 };
+        content.Children.Add(DialogText(loc.FormatValues("Connections_All_Msg", group.Server)));
+        foreach (var (row, _) in targets)
+        {
+            content.Children.Add(DialogText(row.DriveLetter is { } letter
+                ? loc.FormatValues("Connections_All_LineDrive", row.Share, letter)
+                : loc.FormatValues("Connections_All_Line", row.Share), 4));
+        }
+
+        if (!await ConfirmAsync(loc["Connections_All_Title"], content, loc["Connections_All_Confirm"], "Connections_All_Title"))
+        {
+            AppLog.Write("connections", "Disconnect all cancelled for " + group.Server);
+            return;
+        }
+
+        SetBusy(true);
+        try
+        {
+            // Never forced in bulk: a row with open files is reported and keeps its own Disconnect.
+            var codes = await Task.Run(() => targets.Select(t => (t.Row, Code: Cancel(t.Row, t.Target, force: false))).ToList());
+            var read = await ReadNowAsync();
+            var done = 0;
+            var notes = new List<string>();
+            foreach (var (row, code) in codes)
+            {
+                var verdict = read ? ClientDisconnect.Judge(code, ClientDisconnect.IsGone(row, _groups)) : DisconnectVerdict.Failed;
+                AppLog.Write("connections", "Disconnect all: " + Describe(row) + " -> code " + code.ToString(CultureInfo.InvariantCulture) + ", " + verdict);
+                switch (verdict)
+                {
+                    case DisconnectVerdict.Done:
+                        done++;
+                        break;
+                    case DisconnectVerdict.OpenFiles:
+                        notes.Add(loc.FormatValues("Connections_All_OpenFiles", row.Share));
+                        break;
+                    default:
+                        notes.Add(loc.FormatValues("Connections_Failed", row.Share, row.Server, WindowsText(code)));
+                        break;
+                }
+            }
+
+            var title = loc.Format("Connections_All_Done", Formats.Count(done, loc.Culture), Formats.Count(codes.Count, loc.Culture));
+            notes.Insert(0, Bidi.Embed(group.Server, loc.IsRtl));
+            ShowResult(done == codes.Count ? InfoBarSeverity.Success : InfoBarSeverity.Warning, string.Join(Environment.NewLine, notes), title);
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    // One cancel, then the list read again; the verdict comes from the new list.
+    private async Task<(DisconnectVerdict Verdict, int Code)> DisconnectAsync(ClientConnection row, bool force)
+    {
+        var target = ClientDisconnect.TargetFor(row);
+        var code = await Task.Run(() => Cancel(row, target, force));
+        var read = await ReadNowAsync();
+        var verdict = read ? ClientDisconnect.Judge(code, ClientDisconnect.IsGone(row, _groups)) : DisconnectVerdict.Failed;
+        AppLog.Write("connections", "Disconnect " + Describe(row) + (force ? " (forced)" : "") + " -> code "
+            + code.ToString(CultureInfo.InvariantCulture) + ", " + verdict);
+        return (verdict, code);
+    }
+
+    // Logged before the call, so a forgotten drive can be mapped again from the log. Never a password: there is none here.
+    private static int Cancel(ClientConnection row, DisconnectTarget target, bool force)
+    {
+        AppLog.Write("connections", "Disconnecting " + Describe(row) + ": cancel " + target.Name + (target.UpdateProfile ? " and forget it" : "")
+            + (force ? ", forced" : ", not forced"));
+        return SmbClient.Cancel(target, force);
+    }
+
+    private static string Describe(ClientConnection row) =>
+        @"\\" + row.Server + @"\" + row.Share + " (drive " + (row.DriveLetter ?? "none") + ", account " + (row.Account ?? "unknown")
+        + ", reconnects at sign-in " + row.ReconnectsAtSignIn + ", state " + row.State + ")";
+
+    private void ShowVerdict(ClientConnection row, DisconnectVerdict verdict, int code)
+    {
+        var loc = Loc.Instance;
+        switch (verdict)
+        {
+            case DisconnectVerdict.Done:
+                ShowResult(InfoBarSeverity.Success, loc.FormatValues("Connections_Done", row.Share, row.Server));
+                break;
+            case DisconnectVerdict.StillListed:
+                ShowResult(InfoBarSeverity.Warning, loc.FormatValues("Connections_StillListed", row.Share, row.Server));
+                break;
+            case DisconnectVerdict.OpenFiles:
+                ShowResult(InfoBarSeverity.Warning, loc.FormatValues("Connections_All_OpenFiles", row.Share));
+                break;
+            default:
+                ShowResult(InfoBarSeverity.Error, loc.FormatValues("Connections_Failed", row.Share, row.Server, WindowsText(code)));
+                break;
+        }
+    }
+
+    private static string WindowsText(int code) => code == 0 ? Loc.Instance["Connections_StillThere"] : new Win32Exception(code).Message;
+
+    private void ShowResult(InfoBarSeverity severity, string message, string title = "")
+    {
+        ActionResult.Severity = severity;
+        ActionResult.Title = title;
+        ActionResult.Message = message;
+        ActionResult.IsOpen = true;
+        ActionResult.BringIntoView();
+    }
+
+    private static string MessageFor(ClientConnection row)
+    {
+        var loc = Loc.Instance;
+        var account = row.Account ?? loc["Connections_AccountUnknown"];
+        if (row.IsSignIn)
+        {
+            return loc.FormatValues("Connections_Disconnect_MsgSignIn", row.Server, account);
+        }
+
+        if (row.DriveLetter is { } letter)
+        {
+            return loc.FormatValues(row.ReconnectsAtSignIn ? "Connections_Disconnect_MsgDriveSaved" : "Connections_Disconnect_MsgDrive",
+                row.Share, row.Server, letter, account);
+        }
+
+        return loc.FormatValues("Connections_Disconnect_Msg", row.Share, row.Server, account);
+    }
+
+    // A dialog that changes Windows: no default button; Enter, Esc and the X never confirm, and every close is logged.
+    private async Task<bool> ConfirmAsync(string title, object message, string action, string logName, ControlAppearance appearance = ControlAppearance.Primary)
+    {
+        var box = ApplyUi.NewChoice(this, title, message is string text ? DialogText(text) : message);
+        box.AddButton(action, Wpf.Ui.Controls.MessageBoxButton.Primary, appearance);
+        box.AddButton(Loc.Instance["Common_Cancel"], Wpf.Ui.Controls.MessageBoxButton.Close, ControlAppearance.Secondary, isCancel: true);
+        return DialogCloses.Confirms(await box.ShowLoggedAsync("connections", logName));
+    }
+
+    private static System.Windows.Controls.TextBlock DialogText(string text, double bottom = 8) =>
+        new() { Text = text, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, bottom) };
+
+    // Opens Credential Manager; CPFS never reads or changes the credential store. Canonical name from Learn, "Canonical
+    // Names of Control Panel Items": https://learn.microsoft.com/en-us/windows/win32/shell/controlpanel-canonical-names
+    private void OnOpenCredentialManager(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            using (Process.Start(new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "control.exe"), "/name Microsoft.CredentialManager")
+            {
+                UseShellExecute = false,
+            }))
+            {
+            }
+
+            AppLog.Write("connections", "Credential Manager opened");
+        }
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or FileNotFoundException)
+        {
+            AppLog.Write("connections", "Credential Manager: " + ex.GetType().Name + ": " + ex.Message);
+            ShowResult(InfoBarSeverity.Error, Loc.Instance.FormatValues("Connections_CredManFailed", ex.Message));
+        }
+    }
 
     // dev1 probes for the 0.9.0 design: written to the log only, once per run, from the unelevated window.
     internal static class Probes
