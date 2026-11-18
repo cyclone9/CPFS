@@ -4,6 +4,8 @@ This project uses [semantic versioning](https://semver.org/).
 
 ## Unreleased
 
+- The READMEs link the VirusTotal report for the 1.0.1 exe.
+
 ## 1.0.1 - 2026-11-18
 
 - In Persian and Arabic, addresses, dates, versions and paths inside sentences keep their left-to-right order, as the window title already did.

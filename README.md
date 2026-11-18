@@ -33,6 +33,8 @@ To check that the file is the one that was published, compute its SHA-256 in Pow
 Get-FileHash .\Cpfs-1.0.1.exe -Algorithm SHA256
 ```
 
+VirusTotal has a [report for this file](https://www.virustotal.com/gui/file/f6b50af20f2c7fdad7c9dc94ef052be5ca97cbfb114e181b70f22966ff3723b6). It covers only the file with SHA-256 `f6b50af20f2c7fdad7c9dc94ef052be5ca97cbfb114e181b70f22966ff3723b6`, so it says nothing about any other file. Some antivirus engines flag unsigned programs.
+
 CPFS needs Windows 10 or 11 and .NET Framework 4.8, which both include. It has been tested on Windows 11. Windows 10 is supported but has not been tested yet.
 
 Once CPFS is running, About can install later versions; see [Updating](#updating).

@@ -33,6 +33,8 @@ Dosyanın yayımlanan dosya olduğunu doğrulamak için PowerShell'de SHA-256 de
 Get-FileHash .\Cpfs-1.0.1.exe -Algorithm SHA256
 ```
 
+Bu dosya için bir [VirusTotal raporu](https://www.virustotal.com/gui/file/f6b50af20f2c7fdad7c9dc94ef052be5ca97cbfb114e181b70f22966ff3723b6) var. Rapor yalnızca SHA-256 değeri `f6b50af20f2c7fdad7c9dc94ef052be5ca97cbfb114e181b70f22966ff3723b6` olan dosyayı kapsar; başka bir dosya hakkında bir şey söylemez. Bazı antivirüs motorları imzasız programları işaretleyebilir.
+
 CPFS için Windows 10 veya 11 ile .NET Framework 4.8 gerekir; ikisi de bunu içerir. CPFS Windows 11'de denendi. Windows 10 desteklenir ama henüz denenmedi.
 
 CPFS çalıştıktan sonra Hakkında sayfası sonraki sürümleri kurabilir; bkz. [Güncelleme](#güncelleme).

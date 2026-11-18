@@ -35,6 +35,8 @@
 Get-FileHash .\Cpfs-1.0.1.exe -Algorithm SHA256
 ```
 
+تقرير VirusTotal لهذا الملف متاح [هنا](https://www.virustotal.com/gui/file/f6b50af20f2c7fdad7c9dc94ef052be5ca97cbfb114e181b70f22966ff3723b6). يخص التقرير الملف الذي قيمة SHA-256 له `f6b50af20f2c7fdad7c9dc94ef052be5ca97cbfb114e181b70f22966ff3723b6` فقط، ولا يدل على شيء في أي ملف آخر. وقد تضع بعض محركات مكافحة الفيروسات علامة على البرامج غير الموقَّعة.
+
 يحتاج CPFS إلى Windows 10 أو 11 وإلى .NET Framework 4.8، وهو موجود في كليهما. جرى اختبار CPFS على Windows 11. أما Windows 10 فهو مدعوم لكنه لم يُختبر بعد.
 
 بعد تشغيل CPFS يستطيع «حول» تثبيت الإصدارات اللاحقة؛ انظر [التحديث](#التحديث).
