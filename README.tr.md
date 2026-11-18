@@ -15,7 +15,7 @@
 
 <p align="center"><a href="assets/cpfs-video-en.mp4"><img src="assets/cpfs-video-en.jpg" alt="CPFS videosu" width="720"></a></p>
 
-<p align="center">CPFS'ye 29 saniyelik bir bakış. Videoyu açmak için görsele tıklayın.</p>
+<p align="center">CPFS'ye 30 saniyelik bir bakış. Videoyu açmak için görsele tıklayın.</p>
 
 ## CPFS ne yapar
 

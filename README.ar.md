@@ -17,7 +17,7 @@
 
 <p align="center"><a href="assets/cpfs-video-en.mp4"><img src="assets/cpfs-video-en.jpg" alt="فيديو CPFS" width="720"></a></p>
 
-<p align="center" dir="rtl">نظرة سريعة مدتها 29 ثانية على CPFS. انقر على الصورة لفتح الفيديو.</p>
+<p align="center" dir="rtl">نظرة سريعة مدتها 30 ثانية على CPFS. انقر على الصورة لفتح الفيديو.</p>
 
 ## ما الذي يفعله CPFS
 

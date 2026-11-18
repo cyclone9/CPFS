@@ -5,6 +5,7 @@ This project uses [semantic versioning](https://semver.org/).
 ## Unreleased
 
 - The CyClone homepage moved to cyclone9.dev. The README, the licence and the About page now link there.
+- New video and cover image in the READMEs, in English and Persian.
 
 ## 0.8.0 - 2026-10-24
 

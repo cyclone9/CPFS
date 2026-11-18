@@ -17,7 +17,7 @@
 
 <p align="center"><a href="assets/cpfs-video-fa.mp4"><img src="assets/cpfs-video-fa.jpg" alt="ویدیوی CPFS" width="720"></a></p>
 
-<p align="center" dir="rtl">نگاهی ۲۹ ثانیه‌ای به CPFS. برای باز کردن ویدیو روی تصویر کلیک کنید.</p>
+<p align="center" dir="rtl">نگاهی ۳۰ ثانیه‌ای به CPFS. برای باز کردن ویدیو روی تصویر کلیک کنید.</p>
 
 ## کاری که CPFS انجام می‌دهد
 

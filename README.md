@@ -15,7 +15,7 @@
 
 <p align="center"><a href="assets/cpfs-video-en.mp4"><img src="assets/cpfs-video-en.jpg" alt="CPFS video" width="720"></a></p>
 
-<p align="center">A 29-second look at CPFS. Click the image to open the video.</p>
+<p align="center">A 30-second look at CPFS. Click the image to open the video.</p>
 
 ## What CPFS does
 
