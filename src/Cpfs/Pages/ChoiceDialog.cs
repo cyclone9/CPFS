@@ -45,6 +45,9 @@ internal sealed class ChoiceDialog : Wpf.Ui.Controls.MessageBox
         return ClosedBy;
     }
 
+    // Closes it from code (a finished step): ClosedBy stays Window, which never confirms anything.
+    public void CloseFromCode() => OnButtonClick(Wpf.Ui.Controls.MessageBoxButton.Close);
+
     public Wpf.Ui.Controls.Button AddButton(string text, Wpf.Ui.Controls.MessageBoxButton result, ControlAppearance appearance, bool isDefault = false, bool isCancel = false)
     {
         var button = new Wpf.Ui.Controls.Button

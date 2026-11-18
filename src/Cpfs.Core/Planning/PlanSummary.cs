@@ -122,6 +122,15 @@ public sealed class PlanSummary
 
         QuickAccess(plan, answers, config, facts);
 
+        // After an update the background copy is still the old version until this Apply.
+        foreach (var item in plan.Items)
+        {
+            if (item.Key == "auto.exe" && item.Action == PlanAction.Change && item.ReasonArgs.Count > 0)
+            {
+                facts.Add(SummaryLine.Of("Summary_AutoPrivateCopy", item.ReasonArgs[0]));
+            }
+        }
+
         // A network left Public is a safety notice: shown whatever else the summary says. So is the standing permission
         // Auto-Private gives.
         var notices = new List<SummaryLine>();

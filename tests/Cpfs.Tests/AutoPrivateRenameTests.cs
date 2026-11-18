@@ -128,6 +128,29 @@ public class AutoPrivateRenameTests
         Assert.Equal(PlanAction.RemoveIfOurs, Item(old, "auto.script").Action);
     }
 
+    // Updater design, section 4: an older exe asks before it replaces a newer copy; an older copy says its version.
+    [Fact]
+    public void ANewerCopyIsAnUntickedAskAndAnOlderOneCarriesItsVersion()
+    {
+        var newer = Setup(Machine(Wanted(), new AutoPrivateFiles(true, false, false, false, "0.9.1", "0.9.0")), PlannerTests.Fixture(), a => a with { AutoPrivate = true });
+        var ask = Item(newer, "auto.exe");
+        Assert.Equal(PlanAction.Ask, ask.Action);
+        Assert.False(ask.Ticked);
+        Assert.Equal(new[] { "0.9.1", "0.9.0" }, ask.ReasonArgs);
+
+        var ticked = Setup(Machine(Wanted(), new AutoPrivateFiles(true, false, false, false, "0.9.1", "0.9.0")), PlannerTests.Fixture(),
+            a => a with { AutoPrivate = true, Choices = new Dictionary<string, bool> { ["auto.exe"] = true } });
+        Assert.True(Item(ticked, "auto.exe").Ticked);
+
+        var older = Setup(Machine(Wanted(), new AutoPrivateFiles(true, false, false, false, "0.9.0", "0.9.1")), PlannerTests.Fixture(), a => a with { AutoPrivate = true });
+        Assert.Equal(PlanAction.Change, Item(older, "auto.exe").Action);
+        Assert.Equal(new[] { "0.9.0" }, Item(older, "auto.exe").ReasonArgs);
+
+        var sameVersion = Setup(Machine(Wanted(), new AutoPrivateFiles(true, false, false, false, "0.9.0-dev5", "0.9.0-dev5")), PlannerTests.Fixture(), a => a with { AutoPrivate = true });
+        Assert.Equal(PlanAction.Change, Item(sameVersion, "auto.exe").Action);
+        Assert.Empty(Item(sameVersion, "auto.exe").ReasonArgs);
+    }
+
     [Fact]
     public void SwitchedOffTheTaskGoesBeforeTheCopyAndAnUnrecordedCopyStays()
     {

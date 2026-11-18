@@ -6,10 +6,13 @@
 #          file sets another Version, VersionPrefix or a VersionSuffix.
 #        .github/scripts/release-check.sh notes X.Y.Z <sha256-file>
 #          Prints the release notes: the "## X.Y.Z" section of CHANGELOG.md, then the checksum line.
+#        .github/scripts/release-check.sh checksum X.Y.Z <dir>
+#          Writes <dir>/Cpfs-X.Y.Z.exe.sha256 as the one line "<sha256>  Cpfs-X.Y.Z.exe" and prints it. The release
+#          and the CI update test both use this, and CPFS's updater accepts exactly this line.
 set -euo pipefail
 
-mode="${1:?usage: release-check.sh check|notes X.Y.Z [sha256-file]}"
-ver="${2:?usage: release-check.sh check|notes X.Y.Z [sha256-file]}"
+mode="${1:?usage: release-check.sh check|notes|checksum X.Y.Z [sha256-file|dir]}"
+ver="${2:?usage: release-check.sh check|notes|checksum X.Y.Z [sha256-file|dir]}"
 
 if ! [[ "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echo "::error::$ver is not MAJOR.MINOR.PATCH. Releases are published as Latest, so a pre-release suffix is refused."
@@ -70,8 +73,18 @@ case "$mode" in
     # shellcheck disable=SC2016 # the backticks are a Markdown code fence
     printf '%s\n\nSHA-256:\n\n```\n%s\n```\n' "$body" "$sum"
     ;;
+  checksum)
+    dir="${3:?usage: release-check.sh checksum X.Y.Z <dir>}"
+    exe="Cpfs-$ver.exe"
+    if [ ! -f "$dir/$exe" ]; then echo "::error::$dir/$exe is missing"; exit 1; fi
+    # Hashed from stdin and written by printf, so the line is the same with GNU sha256sum on Linux and in Git Bash.
+    hash="$(sha256sum < "$dir/$exe" | cut -c1-64)"
+    if ! [[ "$hash" =~ ^[0-9a-f]{64}$ ]]; then echo "::error::sha256sum gave no hash for $exe"; exit 1; fi
+    printf '%s  %s\n' "$hash" "$exe" > "$dir/$exe.sha256"
+    cat "$dir/$exe.sha256"
+    ;;
   *)
-    echo "usage: release-check.sh check|notes X.Y.Z [sha256-file]" >&2
+    echo "usage: release-check.sh check|notes|checksum X.Y.Z [sha256-file|dir]" >&2
     exit 1
     ;;
 esac

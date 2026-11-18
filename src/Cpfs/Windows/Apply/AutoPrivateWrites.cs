@@ -369,7 +369,22 @@ internal static class AutoPrivateCopy
     public static AutoPrivateFiles ReadFiles()
     {
         var exists = File.Exists(Path);
-        return new AutoPrivateFiles(exists, exists && IsCurrent(), File.Exists(LegacyScript), File.Exists(OldPath));
+        return new AutoPrivateFiles(exists, exists && IsCurrent(), File.Exists(LegacyScript), File.Exists(OldPath),
+            exists ? CopyVersion() : null, AppLog.VersionNumber());
+    }
+
+    // The copy's product version without "+<commit>"; Users may read Program Files, so this works unelevated too.
+    public static string? CopyVersion()
+    {
+        try
+        {
+            return File.Exists(Path) ? Core.Text.VersionText.Number(System.Diagnostics.FileVersionInfo.GetVersionInfo(Path).ProductVersion) : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            AppLog.Write("auto-private", "The copy's version could not be read: " + ex.GetType().Name);
+            return null;
+        }
     }
 
     public static AutoPrivateFolderInfo ReadFolder()

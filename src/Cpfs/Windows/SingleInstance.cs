@@ -125,8 +125,17 @@ internal sealed class SingleInstance : IDisposable
         _wait = ThreadPool.RegisterWaitForSingleObject(_event, (_, _) => show(), null, Timeout.Infinite, false);
     }
 
+    private bool _disposed;
+
+    // Twice is harmless: the updater releases it early, and Program's using releases it again at exit.
     public void Dispose()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
         _wait?.Unregister(null);
         _event?.Dispose();
         try

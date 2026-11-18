@@ -1254,4 +1254,56 @@
   <data name="Err_RunForeign" xml:space="preserve"><value>The startup entry named CPFS changed after the plan was read and is no longer CPFS's own, so it was left as it is.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Err_RunHiveNotLoaded" xml:space="preserve"><value>Windows can't reach the desktop user's settings because that user isn't signed in, so Start with Windows can't be checked or changed.</value><comment>UNTRANSLATED: English text</comment></data>
   <data name="Monitor_Stat_Since" xml:space="preserve"><value>since the file sharing service started</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Update_Now" xml:space="preserve"><value>Update now</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Update_AdminOff" xml:space="preserve"><value>CPFS doesn't update itself from a window that runs as administrator. Close this window and start CPFS normally to update.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Update_NotOffered" xml:space="preserve"><value>CPFS can't install this release itself. You can download it from its release page.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="About_Update_WhatsNew" xml:space="preserve"><value>What's new</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_ConfirmTitle" xml:space="preserve"><value>Update CPFS to version {0}?</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_ConfirmDownload" xml:space="preserve"><value>CPFS downloads version {0} ({1}) from its release on GitHub and compares it with the SHA-256 checksum published there.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_ConfirmLimit" xml:space="preserve"><value>The checksum shows that the download isn't damaged. It doesn't show who made the file, because CPFS isn't signed yet.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_ConfirmInPlace" xml:space="preserve"><value>CPFS then replaces {0} and restarts. It keeps the version you have now until the new one has started. The copy in Program Files changes only when you press Apply in Setup.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_ConfirmSaveAs" xml:space="preserve"><value>This copy of CPFS runs from a network drive, so CPFS doesn't replace it and doesn't restart. After the check, you choose where to save the new version. The copy in Program Files changes only when you press Apply in Setup.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_ConfirmFrom" xml:space="preserve"><value>Download: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_ConfirmTo" xml:space="preserve"><value>File: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_ConfirmButton" xml:space="preserve"><value>Update now</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_ConfirmSaveButton" xml:space="preserve"><value>Download</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_ProgressTitle" xml:space="preserve"><value>Updating CPFS</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Step_Download" xml:space="preserve"><value>Downloading version {0}…</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Step_DownloadBytes" xml:space="preserve"><value>Downloading version {0}: {1} of {2}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Step_Check" xml:space="preserve"><value>Checking the download…</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Step_Probe" xml:space="preserve"><value>Starting the new version once to check that it runs…</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Step_Swap" xml:space="preserve"><value>Replacing the file…</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Step_Restart" xml:space="preserve"><value>Restarting CPFS…</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_Title" xml:space="preserve"><value>Update not finished</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_Cancelled" xml:space="preserve"><value>The update was cancelled. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_Network" xml:space="preserve"><value>CPFS couldn't download the update. Check the internet connection and try again. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_RateLimited" xml:space="preserve"><value>GitHub asks to wait before the next download. Try again later. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_WrongHost" xml:space="preserve"><value>The download was redirected to a server CPFS doesn't download from. Nothing was replaced. You can get the release from its page.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_Missing" xml:space="preserve"><value>The release doesn't have the file CPFS needs. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_TooLarge" xml:space="preserve"><value>The download is larger than a CPFS release can be. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_Damaged" xml:space="preserve"><value>The download doesn't match its checksum, so it may be damaged. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_WrongVersion" xml:space="preserve"><value>The downloaded file isn't version {0}. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_ProbeFailed" xml:space="preserve"><value>Windows or your antivirus didn't let the new version start. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_CannotWrite" xml:space="preserve"><value>CPFS can't write to the folder it runs from. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_Leftover" xml:space="preserve"><value>A file from an earlier update is still in use: {0}. Select Exit in the CPFS tray icon's menu and try again. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_SwapFailed" xml:space="preserve"><value>CPFS couldn't put the new version in place, so the version you have stays. Windows said: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_SaveFailed" xml:space="preserve"><value>CPFS couldn't save the file there. Choose another folder. Windows said: {0}</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_Unexpected" xml:space="preserve"><value>The update stopped on an unexpected error ({0}). Copy the report below and send it when you ask for help.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_BackgroundCopy" xml:space="preserve"><value>This is the background copy that Auto-Private runs. Setup's Apply is the only way to update it.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Err_RollbackFailed" xml:space="preserve"><value>The new version didn't start, and CPFS couldn't put the previous one back. In the folder {0}, rename {1} to {2}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_SaveAs_Title" xml:space="preserve"><value>Save the new version</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_SaveAs_WhyWrite" xml:space="preserve"><value>CPFS can't write to the folder it runs from, and it never asks for administrator rights to replace itself. It has downloaded the new version and checked it against its checksum. Choose a folder to save it in.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_SaveAs_Button" xml:space="preserve"><value>Save as…</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_SaveAs_Filter" xml:space="preserve"><value>Programs (*.exe)|*.exe</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_NotSaved" xml:space="preserve"><value>The new version wasn't saved. Nothing was replaced.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_Saved" xml:space="preserve"><value>Version {0} is saved as {1}. Start CPFS from that file. Your shortcuts and the Start with Windows entry still open the old file. In Preferences, you can point the Start with Windows entry at the new one.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_ShowInFolder" xml:space="preserve"><value>Show in folder</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_DoneTitle" xml:space="preserve"><value>CPFS updated</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_DoneMessage" xml:space="preserve"><value>CPFS is now version {0}.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_DoneAutoPrivate" xml:space="preserve"><value>Auto-Private still uses version {0}. The copy in Program Files changes only when you press Apply in Setup.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_FailedTitle" xml:space="preserve"><value>Update not installed</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Update_FailedMessage" xml:space="preserve"><value>Version {0} didn't start, so CPFS put back the version you had. Nothing else changed.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Plan_R_AutoExeNewer" xml:space="preserve"><value>The background copy is version {0}, newer than this one ({1}). Tick this to replace it with the older version anyway.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="Summary_AutoPrivateCopy" xml:space="preserve"><value>Auto-Private still uses version {0}. This Apply updates it to the version you are running.</value><comment>UNTRANSLATED: English text</comment></data>
+  <data name="App_UpdateTestBuild" xml:space="preserve"><value>{0} (update test build)</value><comment>UNTRANSLATED: English text</comment></data>
 </root>

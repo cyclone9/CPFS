@@ -22,8 +22,15 @@ public sealed record TaskTriggerInfo(int Type, string? Subscription, string? Del
 public sealed record TaskActionInfo(int Type, string? Path, string? Arguments);
 
 // The exe copy the task runs in Program Files\CPFS (and whether it is the same build as the running exe), the 0.2.x
-// set-private.ps1 in ProgramData\CPFS, and the copy the dev3 build put there (OldExe).
-public sealed record AutoPrivateFiles(bool ExeExists, bool ExeIsCurrent, bool LegacyScript, bool OldExe = false);
+// set-private.ps1 in ProgramData\CPFS, and the copy the dev3 build put there (OldExe). CopyVersion is the copy's
+// product version and RunningVersion the running exe's, both without "+<commit>" (null when unread).
+public sealed record AutoPrivateFiles(bool ExeExists, bool ExeIsCurrent, bool LegacyScript, bool OldExe = false,
+    string? CopyVersion = null, string? RunningVersion = null)
+{
+    // An older exe never replaces a newer copy without asking (updater design, section 4).
+    public bool CopyIsNewer => ExeExists && !ExeIsCurrent && RunningVersion is not null
+        && Updates.UpdateRules.IsDowngrade(CopyVersion, RunningVersion);
+}
 
 // Program Files\CPFS. Locked: owned by Administrators, inheritance off, nobody but SYSTEM and Administrators can write.
 // HasOtherEntries: anything in it besides Cpfs.exe.

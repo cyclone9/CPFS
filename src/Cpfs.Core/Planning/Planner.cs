@@ -69,7 +69,7 @@ public static class Planner
         R.RuleCreate, R.RuleChange, R.RuleDuplicate, R.RuleRemove, R.RuleLegacy, R.VpnNone, R.VpnAdapter, R.VpnAdapterPublic,
         R.BuiltInDisable, R.BuiltInPortUnknown, R.BuiltInNone,
         R.NetworkPublic, R.NetworkPrivate,
-        R.AutoCreate, R.AutoRemove, R.AutoOff, R.LegacyTask, R.StaleTask, R.AutoTaskChange, R.AutoExeCreate, R.AutoExeUpdate, R.AutoExeRemove,
+        R.AutoCreate, R.AutoRemove, R.AutoOff, R.LegacyTask, R.StaleTask, R.AutoTaskChange, R.AutoExeCreate, R.AutoExeUpdate, R.AutoExeNewer, R.AutoExeRemove,
         R.AutoScript, R.AutoSkip, R.AutoFolderCreate, R.AutoFolderLock, R.AutoFolderForeign, R.AutoExeOld,
         R.AutoFolderRemove, R.AutoFolderKeepForeign, R.AutoFolderKeepNotEmpty,
         R.DriveCreate, R.DriveGone, R.DriveForeign, R.DriveSession, R.DriveOldSession, R.DriveOldRemove, R.DriveOldForeign, R.DriveOff,
@@ -175,6 +175,7 @@ public static class Planner
         public const string AutoTaskChange = "Plan_R_AutoTaskChange";
         public const string AutoExeCreate = "Plan_R_AutoExeCreate";
         public const string AutoExeUpdate = "Plan_R_AutoExeUpdate";
+        public const string AutoExeNewer = "Plan_R_AutoExeNewer";
         public const string AutoExeRemove = "Plan_R_AutoExeRemove";
         public const string AutoScript = "Plan_R_AutoScript";
         public const string AutoSkip = "Plan_R_AutoSkip";
@@ -1151,9 +1152,18 @@ public static class Planner
             {
                 Add("auto.exe", PlanSection.AutoPrivate, PlanAction.Create, Data(_s.AutoPrivateExe), Word(W.Absent), Word(W.Exists), R.AutoExeCreate);
             }
+            else if (files.CopyIsNewer)
+            {
+                // Unticked: the task keeps running the newer copy unless the user asks for this older one.
+                AskItem("auto.exe", PlanSection.AutoPrivate, Data(_s.AutoPrivateExe), Word(W.Exists), null, R.AutoExeNewer,
+                    files.CopyVersion ?? "?", files.RunningVersion ?? "?");
+            }
             else if (!files.ExeIsCurrent)
             {
-                Add("auto.exe", PlanSection.AutoPrivate, PlanAction.Change, Data(_s.AutoPrivateExe), Word(W.Exists), null, R.AutoExeUpdate);
+                // The copy's version rides along when it differs, so the summary can say which one Auto-Private still runs.
+                var other = files.CopyVersion is { } copy && !string.Equals(copy, files.RunningVersion, StringComparison.Ordinal);
+                Add("auto.exe", PlanSection.AutoPrivate, PlanAction.Change, Data(_s.AutoPrivateExe), Word(W.Exists), null, R.AutoExeUpdate,
+                    other ? new[] { files.CopyVersion! } : Array.Empty<string>());
             }
             else
             {

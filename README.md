@@ -23,7 +23,7 @@ CPFS shares one folder on a Windows 10 or 11 PC with Windows, macOS, Linux, Andr
 
 ## Download and first run
 
-CPFS is one file, `Cpfs-0.8.0.exe`, on the [releases page](https://github.com/cyclone9/CPFS/releases) on GitHub. There is no installer: save the file anywhere and run it. CPFS asks for administrator rights only when Setup, Monitor or Uninstall need them. Connect, Preferences and About work without.
+CPFS is one file, `Cpfs-0.8.0.exe`, on the [releases page](https://github.com/cyclone9/CPFS/releases) on GitHub. There is no installer: save the file anywhere and run it. CPFS asks for administrator rights only when Setup, Monitor or Uninstall need them. Connect, This PC's connections, Preferences and About work without.
 
 The file is not signed, so the first time you run it Windows SmartScreen shows "Windows protected your PC". Select More info, then Run anyway.
 
@@ -35,18 +35,22 @@ Get-FileHash .\Cpfs-0.8.0.exe -Algorithm SHA256
 
 CPFS needs Windows 10 or 11 and .NET Framework 4.8, which both include. It has been tested on Windows 11. Windows 10 is supported but has not been tested yet.
 
+Once CPFS is running, About can install later versions; see [Updating](#updating).
+
 ## Features
 
-- Pages for Setup, Monitor, Connect and Uninstall.
+- Pages for Setup, Monitor, Connect, This PC's connections and Uninstall.
 - A Windows 11 look with System, Light and Dark themes.
 - English, Persian, Arabic and Turkish. CPFS follows the Windows display language when it is one of these, and you can choose another in Preferences.
 - Setup can give the shared folder a drive letter, a desktop shortcut and an entry in File Explorer's navigation pane. You choose the letter and the names, and all three carry the CPFS icon. On the drive letter, Explorer may show the disk's own name instead of yours. The navigation pane entry is the "Show in File Explorer" switch, on by default.
 - Before Setup or Uninstall changes Windows, CPFS creates a restore point unless you untick it. Windows skips a new one within 24 hours of the last, and CPFS tells you when that happens.
-- A connect guide for Windows, macOS, Linux, Android and iOS, with QR codes for phones, over the `.local` name, the Wi-Fi or LAN IP address, or the VPN address.
+- A connect guide for Windows, macOS, Linux, Android and iOS, with QR codes for phones, over the `.local` name, the Wi-Fi or LAN IP address, or the VPN address. The Windows steps name error 1219 and point to This PC's connections.
+- This PC's connections lists the SMB shares this PC is connected to and disconnects them, for the PC that connects rather than the one that shares.
 - Monitor shows the connected devices and their traffic, the large transfers being copied now ("Being copied now"), Recent activity and failed sign-ins. Recent activity lists every file added, changed, renamed or deleted in the shared folder, whether from any device or from this PC. CPFS can't tell which device made a change.
 - An optional "Save to a log file" switch for Recent activity, off by default.
 - An optional Auto-Private switch and an optional change of the computer name, both described below.
-- A "Check for updates" button in About, and an optional check when CPFS starts, off by default. It asks GitHub only and downloads nothing.
+- An optional tray icon that shows whether sharing is on, and an optional start with Windows.
+- A "Check for updates" button in About, and an optional check when CPFS starts, off by default. The check asks GitHub only. CPFS downloads a new version only when you press "Update now"; see Updating.
 - Uninstall, which restores the original Windows settings.
 - No deleting of your files. CPFS never deletes, moves or overwrites anything in the shared folder on its own.
 - Existing installs made with the earlier CPFS scripts are picked up.
@@ -68,6 +72,61 @@ That includes café, hotel and airport Wi-Fi. CPFS can't tell a safe network fro
 Devices find this PC by its computer name followed by `.local`. The Computer name field under More options in Setup shows the current name, and nothing is renamed unless you change it. Use letters, digits and hyphens, up to 15 characters, and not only digits.
 
 Windows takes a new name only after a restart. CPFS doesn't rename a PC that is joined to a domain. On a PC joined to Entra ID, which an organisation may manage, it renames only if you tick the item that asks. The original name is kept in the backup, and Uninstall offers it back, again after a restart.
+
+## Tray icon and starting with Windows
+
+The tray icon is off by default. Switch it on in Preferences. It shows whether sharing is on and whether this PC is on a Private or a Public network, which is the usual reason a phone can't connect. Its menu opens CPFS, opens the shared folder or exits the tray, and selecting the icon opens CPFS. It shows no notifications. Failed sign-ins can't be read without administrator rights, so they stay in Monitor.
+
+The tray never runs as administrator. It exits if it is started with administrator rights, so it isn't available on a PC with User Account Control switched off or in the built-in Administrator account. A CPFS window with administrator rights can switch the tray off but not on. To switch it on, open CPFS without administrator rights.
+
+While the tray runs, minimizing a CPFS window without administrator rights sends it to the tray, and the icon brings it back. A window with administrator rights minimizes as usual. Closing a window exits CPFS, and the tray stays.
+
+Start with Windows is a switch in Preferences, available while the tray is on. It adds a value named `CPFS` under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` that starts the tray, not the window, from the exe you switched it on from. It is listed in Settings > Apps > Startup, where you can manage it too. Switching the tray off also switches start with Windows off. If that exe is later moved or deleted, Preferences shows where Windows would start it from and offers "Use this copy".
+
+A running tray keeps the exe file in use. Exit the tray, from its menu or with the switch in Preferences, before you delete or move the exe.
+
+Uninstall removes the startup value and closes the tray.
+
+## This PC's connections
+
+This page is for a PC that connects to other servers. Connect shows how other devices reach this PC. This PC's connections shows the SMB shares this PC is connected to, so it is the other direction.
+
+It lists each connection with the server as Windows holds it, the share, the drive letter if there is one, the account and the state. It marks drives that reconnect at sign-in and also lists saved drives that aren't connected now. Drives that don't use SMB, such as one from SSHFS-Win, aren't listed. CPFS's own drive letter isn't a connection, so it isn't listed either. The page never asks for a user name or a password.
+
+Disconnect asks first and ends only that connection. When the connection is a mapped drive that reconnects at sign-in, Disconnect also forgets it, as File Explorer and `net use /delete` do, and the dialog says so. You map it again to get it back. If files on the connection are open, Windows refuses. A second dialog then warns that unsaved changes in those files can be lost, and only its "Disconnect anyway" button forces the disconnect. "Disconnect all connections to this server" asks once and never forces. CPFS logs what it disconnected, without any password. This Disconnect is not the one in Monitor, which ends a device's session on the share of this PC.
+
+The page works only in a window without administrator rights. Windows keeps connections and drive mappings per sign-in session, and a window with administrator rights belongs to another session of the same user. It would list and remove the wrong connections, so there the page shows a note and no list.
+
+### One user name per server
+
+Windows allows only one user name per server at a time. If you connect to a server with one account and then to the same server with another, Windows refuses with error 1219. Windows goes by the name you typed, and connecting by the IP address instead of the name counts as another server. That is Microsoft's own workaround for this error (support article KB 938120).
+
+If you meet error 1219 while connecting to a CPFS share from another Windows PC, open CPFS on that PC and go to This PC's connections. Disconnect the existing connection to that server, then connect again with the account you want.
+
+## Updating
+
+When a newer version exists, About offers "Update now". CPFS never updates by itself, and nothing is downloaded until you press the button for that version. The button works only in a window without administrator rights. In a window with administrator rights it stays disabled and the link to the release page remains. The tray and the background task never download anything.
+
+CPFS shows what is new and asks you to confirm. It then downloads `Cpfs-<version>.exe` and its `.sha256` from that release on GitHub over HTTPS, without sending credentials. It replaces the exe only when all of this holds:
+
+- The version is a plain release number higher than the running one.
+- The SHA-256 of the download matches the published `.sha256`.
+- The version inside the file is the one in the release.
+- The new exe starts when CPFS tries it once before replacing anything.
+
+If one check fails, nothing is replaced. The old exe stays beside the new one until the new one has opened its window, and CPFS puts it back if the new one doesn't start.
+
+The SHA-256 guards against a damaged download. It doesn't protect against a compromised GitHub account, because the checksum comes from the same release, and there is no signature yet. Updating by hand, as in Download and first run, still works.
+
+A file CPFS installs gets no "downloaded from the internet" mark, so SmartScreen doesn't ask again. This isn't signing: your first download still meets SmartScreen, and versions CPFS installs rest on HTTPS, GitHub and the checksum. Windows still shows "Unknown publisher" when CPFS asks for administrator rights.
+
+The file keeps its name and its folder. A `Cpfs-0.9.0.exe` can hold a newer version after an update, and About and the window title show the real one. Shortcuts, pins and the startup entry keep working.
+
+CPFS can't replace the exe in place on a network drive or in a folder it can't write to, such as one under `C:\Program Files`. It offers "Save as" instead and writes the checked file where you choose, and it never asks for administrator rights to write an exe. The startup entry still points to the old file after that, and Preferences offers "Use this copy".
+
+An update doesn't change the copy in `C:\Program Files\CPFS`. That copy changes only when you press Apply in Setup, and until then Auto-Private keeps using the older one. CPFS tells you so after an update.
+
+While it works, CPFS puts temporary files beside the exe, named after it with the endings `.cpfs-old`, `.cpfs-failed` and `.cpfs-update.exe`. It deletes them at the next start. If an update is cut off at the wrong moment and the exe is missing, rename the `.cpfs-old` file back to the exe's name.
 
 ## Security hardening
 
@@ -168,6 +227,7 @@ Uninstall puts back the Windows settings Setup changed and removes what CPFS cre
 | Drive, drive name and icon | Removes the drive mapping and the name and icon CPFS set, or puts back the name and icon the letter had before. File Explorer may show the drive until the next restart. Anything CPFS didn't set stays. |
 | Desktop shortcut | Removed while it still points to the shared folder. |
 | File Explorer entry | Removed while it still opens the shared folder, as described below. |
+| Start with Windows | Removes the `CPFS` value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, in the hive of the user who ran Setup, and closes the tray. A value of that name that CPFS didn't write stays. Other Windows accounts keep their own. |
 | `C:\ProgramData\CPFS` | Removed last, with `config.json` and `cpfs.ico`. Settings files that Setup set aside (`config-ignored-<date>.json`) are first copied to your Documents folder as `CPFS-config-ignored-<date>.json`; if a copy fails, the folder stays. |
 
 The File Explorer entry consists of the keys `HKCU\Software\Classes\CLSID\{07C33AB4-B371-467B-9DC1-1AA530E251C6}` and `HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{07C33AB4-B371-467B-9DC1-1AA530E251C6}`, and a `{07C33AB4-B371-467B-9DC1-1AA530E251C6}` value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel`, all in the hive of the user who ran Setup. The drive icon, `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\DriveIcons\<letter>\DefaultIcon`, is removed, or the icon the letter had before is put back. An icon CPFS didn't set stays.
@@ -177,10 +237,12 @@ The File Explorer entry consists of the keys `HKCU\Software\Classes\CLSID\{07C33
 - `C:\ProgramData\CPFS`: `config.json` with your answers and the backup of the original settings, `config-ignored-<date>.json` (a settings file CPFS couldn't trust, which Setup renames and no longer reads), `cpfs.ico`, the CPFS icon used by the drive, the shortcut and the File Explorer entry, and, with Auto-Private on, `auto-private.log` (the networks it switched) and `auto-private-run.log` (one line for each run of the task). Only SYSTEM and Administrators can write here.
 - `C:\Program Files\CPFS\Cpfs.exe`: the copy the Auto-Private task runs, present only while Auto-Private is on. Only SYSTEM and Administrators can change it.
 - `%LOCALAPPDATA%\CPFS`, in the profile of the user who runs CPFS:
-  - `preferences.json`: your choices in the app, such as theme, language and font.
+  - `preferences.json`: your choices in the app, such as theme, language and font, whether the tray icon is on (`TrayIcon`) and the device tab you last chose on Connect (`ConnectDevice`).
   - `devices.json`: the names you gave connected devices.
   - `cpfs-log.txt`: the app's log.
   - `activity-log.txt` and `activity-log.old.txt`: Recent activity, only while "Save to a log file" is on. At 5 MB the file becomes `activity-log.old.txt`. It holds file names, so Copy report never includes it. Uninstall doesn't remove it, because it is your own log.
+- `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, value `CPFS`: the startup entry of Start with Windows, present only while that switch is on.
+- Beside the exe, only during an update: files ending in `.cpfs-old`, `.cpfs-failed` and `.cpfs-update.exe`.
 - `Documents\CPFS-config-backup-<date>-<time>.json`: the copy of `config.json` that Uninstall saves before it changes anything. Uninstall leaves it in place.
 - `Documents\CPFS-config-ignored-<date>.json`: the copy of a set-aside settings file that Uninstall saves before it removes the data folder. Uninstall leaves it in place.
 

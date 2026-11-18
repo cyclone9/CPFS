@@ -45,7 +45,11 @@ jobs:
           $log = Join-Path $env:LOCALAPPDATA 'CPFS\cpfs-log.txt'
           if (Test-Path -LiteralPath $log) { Write-Host '--- log ---'; Get-Content -LiteralPath $log }
           Write-Host "Exit code $($p.ExitCode)"
-          exit $p.ExitCode
+          if ($p.ExitCode -ne 0) { exit $p.ExitCode }
+          # This exe is the normal build, uploaded below: the updater's test hooks must not be in it.
+          if (-not (Select-String -LiteralPath $out -SimpleMatch -Quiet 'Update test hooks: absent')) {
+            Write-Host '::error::the self-test does not report the update test hooks as absent'; exit 1
+          }
 
       # The runner's processes are elevated, and the tray icon must refuse to run elevated: exit code 20
       # (Cpfs.Core.Planning.TrayExit.Elevated), before it reads any preference.
@@ -127,6 +131,26 @@ jobs:
           } else {
             Write-Host 'SKIP: no network was switched on this runner, so there is no auto-private.log to read'
           }
+
+      # The in-app updater on two test-hook builds in their own folders (A, and B as 99.0.0): A replaces itself while
+      # running and B starts; every bad release, a refused folder, a failing rename and a failing start leave A as it
+      # was. The normal exe above is not touched.
+      - name: Update test (swap, rollback, refusals)
+        shell: pwsh
+        run: pwsh -NoProfile -File .github/scripts/update-test.ps1
+
+      # The real latest release through the real request and redirect code: downloaded and checked, never installed.
+      # It needs GitHub's network and its rate limit, so it does not gate; a SKIP says why and is not a pass.
+      - name: Update download from the real latest release (not gating)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:RUNNER_TEMP 'cpfs-update-test\src-a\src\Cpfs\bin\Release\net48\Cpfs.exe'
+          $out = Join-Path $env:RUNNER_TEMP 'update-real-out.txt'
+          $p = Start-Process -FilePath $exe -ArgumentList '--ci-update-real' -NoNewWindow -Wait -PassThru -RedirectStandardOutput $out
+          Get-Content -LiteralPath $out
+          if ($p.ExitCode -eq 78) { Write-Host "::warning::SKIP, not a pass: $(Get-Content -LiteralPath $out -Raw)"; exit 0 }
+          exit $p.ExitCode
 
       - name: Upload the exe
         uses: actions/upload-artifact@v7.0.2

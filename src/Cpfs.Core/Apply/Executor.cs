@@ -169,6 +169,26 @@ public static class ApplyList
         return first;
     }
 
+    // When the only change Setup would make is replacing the Auto-Private copy (after an update), its restore point
+    // starts unticked (owner decision, 2026-11-18); the user can still tick it.
+    public static bool RestorePointByDefault(Plan plan)
+    {
+        var run = 0;
+        var onlyCopy = true;
+        foreach (var entry in Setup(plan))
+        {
+            if (entry.Deferred)
+            {
+                continue;
+            }
+
+            run++;
+            onlyCopy &= string.Equals(entry.Item.Key, "auto.exe", StringComparison.Ordinal) && entry.Item.Action != PlanAction.RemoveIfOurs;
+        }
+
+        return !(run > 0 && onlyCopy);
+    }
+
     // Uninstall keeps the planner's order: the data folder is removed last.
     public static IReadOnlyList<ApplyEntry> Uninstall(Plan plan)
     {

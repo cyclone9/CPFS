@@ -1,0 +1,52 @@
+{
+  "url": "https://api.github.com/repos/{REPO}/releases/422876644",
+  "assets_url": "https://api.github.com/repos/{REPO}/releases/422876644/assets",
+  "upload_url": "https://uploads.github.com/repos/{REPO}/releases/422876644/assets{?name,label}",
+  "html_url": "https://github.com/{REPO}/releases/tag/v0.8.0",
+  "id": 422876644,
+  "node_id": "RE_kwDOVU1pgM4ZNJXk",
+  "tag_name": "v0.8.0",
+  "target_commitish": "main",
+  "name": "CPFS 0.8.0",
+  "draft": false,
+  "immutable": false,
+  "prerelease": false,
+  "created_at": "2026-10-24T17:25:37Z",
+  "updated_at": "2026-10-24T17:27:06Z",
+  "published_at": "2026-10-24T17:27:06Z",
+  "assets": [
+    {
+      "url": "https://api.github.com/repos/{REPO}/releases/assets/672865167",
+      "id": 672865167,
+      "node_id": "RA_kwDOVU1pgM4oGxuP",
+      "name": "Cpfs-0.8.0.exe",
+      "label": "",
+      "content_type": "application/octet-stream",
+      "state": "uploaded",
+      "size": 10072576,
+      "digest": "sha256:78fe59ade10f30b298f57f941a6cb341eb1ba671e4992f162e045cfe54c79624",
+      "download_count": 2,
+      "created_at": "2026-10-24T17:27:05Z",
+      "updated_at": "2026-10-24T17:27:06Z",
+      "browser_download_url": "https://github.com/{REPO}/releases/download/v0.8.0/Cpfs-0.8.0.exe"
+    },
+    {
+      "url": "https://api.github.com/repos/{REPO}/releases/assets/672865168",
+      "id": 672865168,
+      "node_id": "RA_kwDOVU1pgM4oGxuQ",
+      "name": "Cpfs-0.8.0.exe.sha256",
+      "label": "",
+      "content_type": "application/octet-stream",
+      "state": "uploaded",
+      "size": 81,
+      "digest": "sha256:eceae89465d7ceb5ee4a47939931d5d33959b84f06aa4215028e8f3dbed8b013",
+      "download_count": 1,
+      "created_at": "2026-10-24T17:27:05Z",
+      "updated_at": "2026-10-24T17:27:05Z",
+      "browser_download_url": "https://github.com/{REPO}/releases/download/v0.8.0/Cpfs-0.8.0.exe.sha256"
+    }
+  ],
+  "tarball_url": "https://api.github.com/repos/{REPO}/tarball/v0.8.0",
+  "zipball_url": "https://api.github.com/repos/{REPO}/zipball/v0.8.0",
+  "body": "First public release. CPFS shares one folder on a Windows PC with your phones and other devices, through its own SMB account.\n\n- One exe for Windows 10 and 11 (Home or Pro). There is no installer. The file is not signed, so Windows SmartScreen asks you to confirm the first run; the README explains the step and how to check the SHA-256.\n- Setup is one page. You pick the folder and a password for the SMB account, and CPFS shows a plan of what it will change before it changes anything. It creates a System Restore point first, unless you untick it.\n- Setup hardens the Windows settings it touches and never makes one weaker than Windows' default. The firewall rules open port 445 only on Private networks and on the VPN adapter.\n- Quick access: a drive letter, a desktop shortcut and a File Explorer entry for the shared folder, all with the CPFS icon. You choose the letter and the names.\n- Optional Auto-Private marks new networks as Private. It is off by default. The computer name can also be changed, which takes effect after a restart.\n- Connect has a guide for Windows, macOS, Linux, Android and iPhone/iPad, for every address of the PC (`.local`, LAN and VPN). Phones get QR codes. No password appears anywhere in the guide or the codes.\n- Monitor shows connected devices and their traffic, files being copied now, recent activity (with an optional log file) and failed sign-ins. Disconnect closes a device's session.\n- Uninstall puts back exactly what Setup changed and never deletes your files. SMB 1, the Guest account and anonymous access stay off afterwards.\n- English, Persian, Arabic and Turkish, with right-to-left layout and a light, dark or system theme.\n- An update check, from a button in About or optionally at start. It only asks GitHub and downloads nothing.\n- Installs made with the earlier CPFS scripts (0.2.x) are read and continued.\n\nSHA-256:\n\n```\n78fe59ade10f30b298f57f941a6cb341eb1ba671e4992f162e045cfe54c79624  Cpfs-0.8.0.exe\n```\n"
+}

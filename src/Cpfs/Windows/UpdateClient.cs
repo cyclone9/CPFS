@@ -8,7 +8,8 @@ using Cpfs.Core.Updates;
 namespace Cpfs.Windows;
 
 // The update check's one request: GET of GitHub's latest release for cyclone9/CPFS, with only the User-Agent GitHub
-// requires and its Accept type. No cookies, no credentials, no other data; nothing is downloaded but this answer.
+// requires and its Accept type. No cookies, no credentials, no other data. The check downloads nothing but this answer;
+// the exe is fetched only by Update.UpdateEngine, after the user pressed "Update now".
 internal static class UpdateClient
 {
     private const int TimeoutMs = 10000;
@@ -34,8 +35,17 @@ internal static class UpdateClient
         string? error = null;
         try
         {
-            // TLS 1.2 or newer only. SecurityProtocolType.Tls13 is 12288 [Learn: SecurityProtocolType, .NET Framework 4.8].
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | (SecurityProtocolType)12288;
+#if CPFS_UPDATE_TEST
+            if (Update.UpdateTestHooks.SourceDir is { } dir)
+            {
+                body = File.ReadAllText(Path.Combine(dir, Update.UpdateTestHooks.LatestFile), Encoding.UTF8);
+                status = 200;
+                var fake = UpdateCheck.FromResponse(status, body, version);
+                AppLog.Write("update", "Update check (" + why + ", test source " + dir + "): " + fake.Status + " " + (fake.Version ?? "") + ", offer " + fake.Refusal);
+                return fake;
+            }
+#endif
+            Update.UpdateNet.UseModernTls();
             var request = (HttpWebRequest)WebRequest.Create(UpdateCheck.ApiUrl);
             request.Method = "GET";
             request.UserAgent = UpdateCheck.UserAgent(version);
@@ -69,7 +79,8 @@ internal static class UpdateClient
 
         var result = UpdateCheck.FromResponse(status, body, version);
         AppLog.Write("update", "Update check (" + why + "): " + result.Status + (result.Version is null ? "" : " " + result.Version)
-            + (status is null ? "" : ", HTTP " + status) + (error is null ? "" : ", " + error));
+            + (status is null ? "" : ", HTTP " + status) + (error is null ? "" : ", " + error)
+            + (result.Status == UpdateStatus.Newer ? ", install " + (result.Offer is null ? "not offered: " + result.Refusal : "offered") : ""));
         return result;
     });
 

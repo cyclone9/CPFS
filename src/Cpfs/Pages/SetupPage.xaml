@@ -574,6 +574,7 @@
               x:Name="RestorePointBox"
               Margin="0,8,0,0"
               AutomationProperties.Name="{Binding [Apply_RestorePoint], Source={x:Static local:Loc.Instance}}"
+              Click="OnRestorePointClick"
               Content="{Binding [Apply_RestorePoint], Source={x:Static local:Loc.Instance}}"
               IsChecked="True" />
           </StackPanel>

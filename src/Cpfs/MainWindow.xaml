@@ -92,7 +92,10 @@
       </ui:NavigationView.FooterMenuItems>
     </ui:NavigationView>
 
-    <!--  The start-up update check's note, only when a newer release exists (MainWindow.CheckForUpdateAtStart).  -->
+    <!--
+      The start-up update check's note, only when a newer release exists (MainWindow.CheckForUpdateAtStart), or the
+      result of an update after the restart (MainWindow.ShowUpdateOutcome).
+    -->
     <StackPanel
       x:Name="UpdateNote"
       Grid.Row="1"
@@ -108,6 +111,7 @@
         IsOpen="True"
         Severity="Informational" />
       <ui:Button
+        x:Name="UpdateOpenButton"
         Margin="0,4,0,0"
         HorizontalAlignment="Right"
         AutomationProperties.Name="{Binding [Update_OpenRelease], Source={x:Static local:Loc.Instance}}"

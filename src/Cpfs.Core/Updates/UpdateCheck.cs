@@ -17,10 +17,13 @@ public enum UpdateStatus
     Failed,
 }
 
-public sealed record UpdateResult(UpdateStatus Status, string? Version = null, string? ReleaseUrl = null);
+// Offer: set when a Newer release also passes the stricter rules for installing (UpdateRules.ReadOffer); otherwise
+// Refusal says why only the release page is offered.
+public sealed record UpdateResult(UpdateStatus Status, string? Version = null, string? ReleaseUrl = null, UpdateOffer? Offer = null,
+    UpdateRefusal Refusal = UpdateRefusal.None);
 
 // The update check: one GET of GitHub's public "latest release" for cyclone9/CPFS, and what its answer means. It
-// only ever offers to open the release page; nothing is downloaded or installed.
+// downloads nothing; installing is UpdateRules' business, and only after the user presses "Update now".
 public static class UpdateCheck
 {
     public const string ApiUrl = "https://api.github.com/repos/cyclone9/CPFS/releases/latest";
@@ -59,9 +62,13 @@ public static class UpdateCheck
             return new UpdateResult(UpdateStatus.Failed);
         }
 
-        return latest.CompareTo(running) > 0
-            ? new UpdateResult(UpdateStatus.Newer, latest.ToString(), url)
-            : new UpdateResult(UpdateStatus.Latest, latest.ToString());
+        if (latest.CompareTo(running) <= 0)
+        {
+            return new UpdateResult(UpdateStatus.Latest, latest.ToString());
+        }
+
+        var offer = UpdateRules.ReadOffer(body, runningVersion, out var refusal);
+        return new UpdateResult(UpdateStatus.Newer, latest.ToString(), url, offer, refusal);
     }
 
     // Only a page of this repository on github.com is ever opened.

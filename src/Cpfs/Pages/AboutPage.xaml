@@ -136,7 +136,10 @@
       </Grid>
     </ui:Card>
 
-    <!--  Goes online only when pressed: one request to GitHub's public releases list, nothing downloaded.  -->
+    <!--
+      Check: one request to GitHub's public releases list, nothing downloaded. Update now downloads only after it is
+      pressed and confirmed, and only in an unelevated window (updater design, U1 and U2).
+    -->
     <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon ArrowSync24}">
       <ui:CardControl.Header>
         <StackPanel>
@@ -148,13 +151,51 @@
             AutomationProperties.LiveSetting="Polite"
             Style="{StaticResource Body}"
             Visibility="Collapsed" />
-          <ui:Button
-            x:Name="OpenReleaseButton"
+          <WrapPanel Margin="0,4,0,0">
+            <ui:Button
+              x:Name="UpdateNowButton"
+              Margin="0,4,8,0"
+              Appearance="Primary"
+              AutomationProperties.Name="{Binding [About_Update_Now], Source={x:Static local:Loc.Instance}}"
+              Click="OnUpdateNow"
+              Content="{Binding [About_Update_Now], Source={x:Static local:Loc.Instance}}"
+              Icon="{ui:SymbolIcon ArrowDownload24}"
+              Visibility="Collapsed" />
+            <ui:Button
+              x:Name="OpenReleaseButton"
+              Margin="0,4,8,0"
+              AutomationProperties.Name="{Binding [Update_OpenRelease], Source={x:Static local:Loc.Instance}}"
+              Click="OnOpenRelease"
+              Content="{Binding [Update_OpenRelease], Source={x:Static local:Loc.Instance}}"
+              Icon="{ui:SymbolIcon Open24}"
+              Visibility="Collapsed" />
+          </WrapPanel>
+          <TextBlock
+            x:Name="UpdateNote"
             Margin="0,8,0,0"
-            AutomationProperties.Name="{Binding [Update_OpenRelease], Source={x:Static local:Loc.Instance}}"
-            Click="OnOpenRelease"
-            Content="{Binding [Update_OpenRelease], Source={x:Static local:Loc.Instance}}"
-            Icon="{ui:SymbolIcon Open24}"
+            Style="{StaticResource CardDescription}"
+            Visibility="Collapsed" />
+          <!--  The release notes as plain text: no Markdown, no links, left to right (UpdateRules.CleanNotes).  -->
+          <Expander
+            x:Name="WhatsNew"
+            Margin="0,8,0,0"
+            Header="{Binding [About_Update_WhatsNew], Source={x:Static local:Loc.Instance}}"
+            Visibility="Collapsed">
+            <TextBox
+              x:Name="WhatsNewText"
+              AutomationProperties.Name="{Binding [About_Update_WhatsNew], Source={x:Static local:Loc.Instance}}"
+              FontFamily="{DynamicResource CpfsUiFontFamily}"
+              FontSize="13"
+              Style="{StaticResource LicenceText}" />
+          </Expander>
+          <ui:InfoBar x:Name="UpdateInfo" Margin="0,8,0,0" IsClosable="True" IsOpen="False" />
+          <ui:Button
+            x:Name="ShowSavedButton"
+            Margin="0,4,0,0"
+            AutomationProperties.Name="{Binding [Update_ShowInFolder], Source={x:Static local:Loc.Instance}}"
+            Click="OnShowSaved"
+            Content="{Binding [Update_ShowInFolder], Source={x:Static local:Loc.Instance}}"
+            Icon="{ui:SymbolIcon FolderOpen24}"
             Visibility="Collapsed" />
         </StackPanel>
       </ui:CardControl.Header>

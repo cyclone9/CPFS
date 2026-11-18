@@ -16,6 +16,9 @@ This project uses [semantic versioning](https://semver.org/).
 - A window opened as administrator can now turn the tray icon off, but still not on.
 - Minimize to tray: while the tray icon runs, minimizing a window opened without administrator rights hides it from the taskbar, and Open CPFS in the tray brings it back. A window opened as administrator always minimizes to the taskbar.
 - Monitor's four numbers are cards in one row when the window is wide enough, with "since the service started" and the current rate as their captions. On Connect, the share address has its own row and wraps only after a backslash, the username has a Copy button, the device tabs show the chosen one with an accent underline, and the steps start at the top beside the QR code.
+- Update now in About: after a check finds a newer release, CPFS can download it from GitHub, check it against the release's SHA-256 checksum, size and version, start it once as a test, and replace the exe it runs from, keeping the previous one until the new version has opened. Only when you press the button, never from a window opened as administrator, and never for the background copy in Program Files. A copy on a network drive, or in a folder CPFS can't write to, gets Save as instead.
+- Setup no longer replaces a newer Auto-Private background copy with an older CPFS without asking, and tells you which version the copy still runs after an update. When that copy is the only change, the restore point starts unticked.
+- The READMEs describe the tray icon and starting with Windows, This PC's connections and error 1219, and Updating with what its SHA-256 check does and doesn't protect against.
 
 ## 0.8.0 - 2026-10-24
 

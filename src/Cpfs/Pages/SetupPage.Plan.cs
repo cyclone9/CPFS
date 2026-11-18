@@ -538,8 +538,29 @@ public partial class SetupPage
         DecisionsCard.Visibility = decisions.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         ApplyUi.FillSummary(SummaryBody, _summary);
         ApplyUi.FillFirstLine(BarSummary, _summary);
+        DefaultRestorePoint();
         UpdateApplyState();
     }
+
+    // Until the user ticks or unticks it, the box follows the plan: unticked when the only change is Auto-Private's copy.
+    private bool _restorePointTouched;
+
+    private void DefaultRestorePoint()
+    {
+        if (_restorePointTouched || _plan is null)
+        {
+            return;
+        }
+
+        var want = Core.Apply.ApplyList.RestorePointByDefault(_plan);
+        if (RestorePointBox.IsChecked != want)
+        {
+            RestorePointBox.IsChecked = want;
+            AppLog.Write("plan", "Restore point " + (want ? "ticked" : "unticked") + " by default: " + (want ? "the plan changes more than the background copy" : "the only change is the background copy"));
+        }
+    }
+
+    private void OnRestorePointClick(object sender, RoutedEventArgs e) => _restorePointTouched = true;
 
     // The plan's items by section, in the sections' order, each group with its count of keep and other items.
     internal static List<PlanGroupView> Groups(Plan plan)

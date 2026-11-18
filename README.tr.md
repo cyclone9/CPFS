@@ -23,7 +23,7 @@ CPFS, bir Windows 10 veya 11 bilgisayarındaki tek bir klasörü Windows, macOS,
 
 ## İndirme ve ilk çalıştırma
 
-CPFS tek bir dosyadır: GitHub'daki [sürümler sayfasında](https://github.com/cyclone9/CPFS/releases) `Cpfs-0.8.0.exe`. Yükleyici yoktur; dosyayı istediğiniz yere kaydedip çalıştırın. CPFS yönetici haklarını yalnızca Kurulum, İzleme ya da Kaldırma gerektirdiğinde ister. Bağlan, Tercihler ve Hakkında bunlar olmadan çalışır.
+CPFS tek bir dosyadır: GitHub'daki [sürümler sayfasında](https://github.com/cyclone9/CPFS/releases) `Cpfs-0.8.0.exe`. Yükleyici yoktur; dosyayı istediğiniz yere kaydedip çalıştırın. CPFS yönetici haklarını yalnızca Kurulum, İzleme ya da Kaldırma gerektirdiğinde ister. Bağlan, Bu bilgisayarın bağlantıları, Tercihler ve Hakkında bunlar olmadan çalışır.
 
 Dosya imzalı değildir; bu yüzden ilk çalıştırmada Windows SmartScreen "Windows bilgisayarınızı korudu" (Windows protected your PC) iletisini gösterir. Ek bilgi'yi (More info), ardından Yine de çalıştır'ı (Run anyway) seçin.
 
@@ -35,18 +35,22 @@ Get-FileHash .\Cpfs-0.8.0.exe -Algorithm SHA256
 
 CPFS için Windows 10 veya 11 ile .NET Framework 4.8 gerekir; ikisi de bunu içerir. CPFS Windows 11'de denendi. Windows 10 desteklenir ama henüz denenmedi.
 
+CPFS çalıştıktan sonra Hakkında sayfası sonraki sürümleri kurabilir; bkz. [Güncelleme](#güncelleme).
+
 ## Özellikler
 
-- Kurulum, İzleme, Bağlanma ve Kaldırma sayfaları.
+- Kurulum, İzleme, Bağlanma, Bu bilgisayarın bağlantıları ve Kaldırma sayfaları.
 - Sistem, Açık ve Koyu temalı Windows 11 görünümü.
 - İngilizce, Farsça, Arapça ve Türkçe. Windows'un görüntü dili bunlardan biriyse CPFS onu kullanır; Tercihler'den başka bir dil seçebilirsiniz.
 - Kurulum, paylaşılan klasöre bir sürücü harfi, bir masaüstü kısayolu ve Dosya Gezgini'nin gezinti bölmesinde bir giriş verebilir. Harfi ve adları siz seçersiniz; üçünde de CPFS simgesi bulunur. Sürücü harfinde Gezgin, sizin adınız yerine diskin kendi adını gösterebilir. Gezinti bölmesi girişi, varsayılan olarak açık olan "Dosya Gezgini'nde göster" anahtarıdır.
 - Kurulum ya da Kaldırma Windows'ta değişiklik yapmadan önce, işaretini kaldırmazsanız CPFS bir geri yükleme noktası oluşturur. Windows son noktadan sonraki 24 saat içinde yenisini atlar; böyle olursa CPFS size söyler.
-- Windows, macOS, Linux, Android ve iOS için bağlantı kılavuzu, telefonlar için QR kodlarıyla; `.local` adı, Wi-Fi veya LAN IP adresi ya da VPN adresi üzerinden.
+- Windows, macOS, Linux, Android ve iOS için bağlantı kılavuzu, telefonlar için QR kodlarıyla; `.local` adı, Wi-Fi veya LAN IP adresi ya da VPN adresi üzerinden. Windows adımları 1219 hatasını anar ve Bu bilgisayarın bağlantıları sayfasına yönlendirir.
+- Bu bilgisayarın bağlantıları, bu bilgisayarın bağlı olduğu SMB paylaşımlarını listeler ve bağlantıyı keser. Paylaşan bilgisayar için değil, bağlanan bilgisayar içindir.
 - İzleme, bağlı cihazları ve trafiklerini gösterir; o anda kopyalanan büyük aktarımları ("Şu anda kopyalananlar"), Son etkinliği ve başarısız oturum açma denemelerini de listeler. Son etkinlik, paylaşılan klasörde eklenen, değiştirilen, yeniden adlandırılan veya silinen her dosyayı gösterir; değişiklik herhangi bir cihazdan ya da bu bilgisayardan gelmiş olabilir. CPFS değişikliğin hangi cihazdan geldiğini söyleyemez.
 - Son etkinlik için isteğe bağlı "Günlük dosyasına kaydet" anahtarı; varsayılan olarak kapalıdır.
 - İsteğe bağlı bir Otomatik Özel anahtarı ve bilgisayar adını değiştirme seçeneği; ikisi de aşağıda anlatılıyor.
-- Hakkında sayfasında "Güncellemeleri denetle" düğmesi ve CPFS açılırken isteğe bağlı denetim; varsayılan olarak kapalıdır. Yalnızca GitHub'a sorar, hiçbir şey indirmez.
+- Paylaşımın açık olup olmadığını gösteren isteğe bağlı bir sistem tepsisi simgesi ve isteğe bağlı olarak Windows ile başlatma.
+- Hakkında sayfasında "Güncellemeleri denetle" düğmesi ve CPFS açılırken isteğe bağlı denetim; varsayılan olarak kapalıdır. Denetim yalnızca GitHub'a sorar. CPFS yeni bir sürümü yalnızca "Şimdi güncelle"ye bastığınızda indirir; bkz. Güncelleme.
 - Özgün Windows ayarlarını geri yükleyen Kaldırma.
 - Dosyalarınız silinmez. CPFS, paylaşılan klasördeki hiçbir şeyi kendiliğinden silmez, taşımaz ya da üzerine yazmaz.
 - Önceki CPFS betikleriyle yapılmış kurulumlar algılanır.
@@ -68,6 +72,61 @@ Kafe, otel ve havalimanı Wi-Fi ağları da buna dahildir. CPFS güvenli bir ağ
 Cihazlar bu bilgisayarı bilgisayar adı ve ardından `.local` ile bulur. Kurulum'da "Diğer seçenekler" altındaki Bilgisayar adı alanı geçerli adı gösterir; siz değiştirmedikçe hiçbir şey yeniden adlandırılmaz. Harf, rakam ve kısa çizgi kullanın, en çok 15 karakter olsun ve yalnızca rakamlardan oluşmasın.
 
 Windows yeni adı ancak yeniden başlatmadan sonra alır. CPFS, bir etki alanına katılmış bilgisayarı yeniden adlandırmaz. Bir kuruluşun yönetebileceği Entra ID'ye katılmış bilgisayarda, bunu soran öğeyi işaretlerseniz yeniden adlandırır. Özgün ad yedekte tutulur; Kaldırma onu geri vermeyi önerir, bu da yeniden başlatmadan sonra geçerli olur.
+
+## Sistem tepsisi simgesi ve Windows ile başlatma
+
+Sistem tepsisi simgesi varsayılan olarak kapalıdır; Tercihler'den açarsınız. Paylaşımın açık olup olmadığını ve bu bilgisayarın Özel ya da Genel bir ağda olup olmadığını gösterir; Genel ağ, telefonun bağlanamamasının olağan nedenidir. Menüsü CPFS'yi açar, paylaşılan klasörü açar ya da simgeden çıkar; simgeyi seçmek de CPFS'yi açar. Bildirim göstermez: başarısız oturum açmaları okumak yönetici hakları gerektirir, bu yüzden bunlar İzleme'de kalır.
+
+Simge hiçbir zaman yönetici olarak çalışmaz. Yönetici haklarıyla başlatılırsa kapanır; bu yüzden Kullanıcı Hesabı Denetimi'nin kapalı olduğu bir bilgisayarda ya da yerleşik Administrator hesabında kullanılamaz. Yönetici haklarıyla çalışan bir CPFS penceresi simgeyi kapatabilir ama açamaz. Açmak için CPFS'yi yönetici hakları olmadan açın.
+
+Simge çalışırken, yönetici hakları olmadan çalışan bir CPFS penceresini küçültmek onu sistem tepsisine gönderir ve simge onu geri getirir. Yönetici haklarıyla çalışan pencere her zamanki gibi küçülür. Pencereyi kapatmak CPFS'den çıkar, simge kalır.
+
+Windows ile başlat, Tercihler'de yalnızca simge açıkken kullanılabilen bir anahtardır. `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` altına `CPFS` adlı bir değer ekler; bu değer pencereyi değil simgeyi, anahtarı açtığınız exe dosyasından başlatır. Ayarlar > Uygulamalar > Başlangıç (Settings > Apps > Startup) altında da listelenir ve oradan da yönetebilirsiniz. Simgeyi kapatmak Windows ile başlatmayı da kapatır. O exe sonradan taşınır ya da silinirse Tercihler, Windows'un onu nereden başlatacağını gösterir ve "Bu kopyayı kullan"ı (Use this copy) önerir.
+
+Çalışan simge exe dosyasını kullanımda tutar. exe dosyasını silmeden ya da taşımadan önce simgeden çıkın; menüsünden ya da Tercihler'deki anahtarla.
+
+Kaldırma, başlatma değerini siler ve simgeyi kapatır.
+
+## Bu bilgisayarın bağlantıları
+
+Bu sayfa, başka sunuculara bağlanan bir bilgisayar içindir. Bağlan, diğer cihazların bu bilgisayara nasıl ulaştığını gösterir. Bu bilgisayarın bağlantıları ise bu bilgisayarın bağlı olduğu SMB paylaşımlarını gösterir; yani ters yöndür.
+
+Her bağlantıyı, Windows'un tuttuğu sunucu adı, paylaşım, varsa sürücü harfi, hesap ve durumla listeler. Oturum açılınca yeniden bağlanan sürücüleri işaretler, şu an bağlı olmayan kayıtlı sürücüleri de listeler. SMB kullanmayan sürücüler, örneğin SSHFS-Win'den biri, listelenmez. CPFS'nin kendi sürücü harfi bir bağlantı olmadığı için o da listelenmez. Sayfa hiçbir zaman kullanıcı adı ya da parola istemez.
+
+Bağlantıyı kes önce sorar ve yalnızca o bağlantıyı sonlandırır. Bağlantı, oturum açılınca yeniden bağlanan eşlenmiş bir sürücüyse Bağlantıyı kes onu kayıttan da çıkarır; Dosya Gezgini ve `net use /delete` da öyle yapar, pencere bunu söyler. Geri getirmek için sürücüyü yeniden eşlersiniz. Bağlantıdaki dosyalar açıksa Windows reddeder. O zaman ikinci bir pencere, bu dosyalardaki kaydedilmemiş değişikliklerin kaybolabileceği konusunda uyarır ve bağlantıyı yalnızca onun "Yine de bağlantıyı kes" (Disconnect anyway) düğmesi zorla keser. "Bu sunucuya olan tüm bağlantıları kes" bir kez sorar ve hiçbir zaman zorlamaz. CPFS neyi kestiğini, parola olmadan, günlüğe yazar. Bu Bağlantıyı kes, İzleme'deki değildir; o, bir cihazın bu bilgisayarın paylaşımındaki oturumunu sonlandırır.
+
+Sayfa yalnızca yönetici hakları olmadan çalışan bir pencerede çalışır. Windows bağlantıları ve sürücü eşlemelerini oturum açma oturumu başına ayrı tutar; yönetici haklarıyla çalışan pencere aynı kullanıcının başka bir oturumundadır. Yanlış bağlantıları listeler ve kaldırırdı, bu yüzden orada sayfa yalnızca bir not gösterir, liste göstermez.
+
+### Sunucu başına bir kullanıcı adı
+
+Windows aynı anda sunucu başına yalnızca bir kullanıcı adına izin verir. Bir sunucuya bir hesapla, ardından aynı sunucuya başka bir hesapla bağlanırsanız Windows 1219 hatasıyla reddeder. Windows yazdığınız ada bakar; ad yerine IP adresiyle bağlanmak başka bir sunucu sayılır. Bu, Microsoft'un bu hata için kendi önerdiği geçici çözümdür (KB 938120 destek makalesi).
+
+Başka bir Windows bilgisayardan bir CPFS paylaşımına bağlanırken 1219 hatasını alırsanız o bilgisayarda CPFS'yi açıp Bu bilgisayarın bağlantıları sayfasına gidin. O sunucuyla var olan bağlantıyı kesin, sonra istediğiniz hesapla yeniden bağlanın.
+
+## Güncelleme
+
+Daha yeni bir sürüm olduğunda Hakkında sayfası "Şimdi güncelle" (Update now) düğmesini gösterir. CPFS kendi kendini hiçbir zaman güncellemez; o sürümün düğmesine basana kadar hiçbir şey indirilmez. Düğme yalnızca yönetici hakları olmadan çalışan bir pencerede çalışır. Yönetici haklarıyla çalışan pencerede devre dışı kalır, sürüm sayfasının bağlantısı durur. Sistem tepsisi simgesi ve arka plan görevi hiçbir şey indirmez.
+
+CPFS neyin yeni olduğunu gösterir ve onay ister. Sonra `Cpfs-<version>.exe` dosyasını ve `.sha256` dosyasını GitHub'daki o sürümden, HTTPS üzerinden ve hiçbir kimlik bilgisi göndermeden indirir. exe dosyasını yalnızca şunların hepsi doğruysa değiştirir:
+
+- Sürüm, çalışan sürümden yüksek, sade bir sürüm numarasıdır.
+- İndirilen dosyanın SHA-256 değeri yayımlanan `.sha256` ile eşleşir.
+- Dosyanın içindeki sürüm, yayımlanan sürümdür.
+- Yeni exe, CPFS değiştirmeden önce onu bir kez çalıştırdığında başlar.
+
+Bir denetim başarısız olursa hiçbir şey değiştirilmez. Eski exe, yenisi penceresini açana kadar yenisinin yanında durur; yenisi başlamazsa CPFS eskisini yerine koyar.
+
+SHA-256, bozuk bir indirmeye karşı korur. Ele geçirilmiş bir GitHub hesabına karşı korumaz, çünkü sağlama değeri aynı sürümden gelir; henüz bir imza da yoktur. Elle güncelleme, İndirme ve ilk çalıştırma bölümünde anlatıldığı gibi hâlâ çalışır.
+
+CPFS'nin kurduğu dosya "internetten indirildi" işaretini almaz, bu yüzden SmartScreen yeniden sormaz. Bu imzalama değildir: ilk indirmeniz yine SmartScreen'e takılır ve CPFS'nin kurduğu sürümler HTTPS'ye, GitHub'a ve sağlama değerine dayanır. CPFS yönetici hakları istediğinde Windows yine "Bilinmeyen yayımcı" (Unknown publisher) gösterir.
+
+Dosya adını ve klasörünü korur. `Cpfs-0.9.0.exe` güncellemeden sonra daha yeni bir sürüm taşıyabilir; Hakkında sayfası ve pencere başlığı gerçek sürümü gösterir. Kısayollar, sabitlemeler ve başlatma girişi çalışmaya devam eder.
+
+CPFS, bir ağ sürücüsünde ya da yazamadığı bir klasörde (örneğin `C:\Program Files` altındaki bir klasör) exe dosyasını yerinde değiştiremez. Bunun yerine "Farklı kaydet" (Save as) önerir ve denetlenmiş dosyayı seçtiğiniz yere yazar; exe yazmak için hiçbir zaman yönetici hakları istemez. Bundan sonra başlatma girişi hâlâ eski dosyayı gösterir ve Tercihler "Bu kopyayı kullan"ı önerir.
+
+Güncelleme `C:\Program Files\CPFS` içindeki kopyayı değiştirmez. O kopya yalnızca Kurulum'da Uygula'ya (Apply) bastığınızda değişir; o zamana kadar Otomatik Özel eski kopyayı kullanmaya devam eder. CPFS bunu güncellemeden sonra size söyler.
+
+CPFS çalışırken exe dosyasının yanına, onun adını taşıyan ve `.cpfs-old`, `.cpfs-failed` ve `.cpfs-update.exe` ile biten geçici dosyalar koyar. Bir sonraki başlangıçta bunları siler. Bir güncelleme yanlış anda kesilirse ve exe dosyası yoksa `.cpfs-old` dosyasını exe dosyasının adına geri çevirin.
 
 ## Güvenlik sertleştirmesi
 
@@ -168,6 +227,7 @@ Kaldırma, Kurulum'un değiştirdiği Windows ayarlarını geri getirir ve CPFS'
 | Sürücü, sürücü adı ve simge | Sürücü eşlemesini ve CPFS'nin koyduğu adı ve simgeyi kaldırır ya da harfin önceden sahip olduğu ad ve simgeyi geri koyar. Dosya Gezgini sürücüyü bir sonraki yeniden başlatmaya kadar gösterebilir. CPFS'nin koymadığı her şey kalır. |
 | Masaüstü kısayolu | Hâlâ paylaşılan klasörü gösteriyorsa kaldırılır. |
 | Dosya Gezgini girişi | Hâlâ paylaşılan klasörü açıyorsa, aşağıda anlatıldığı gibi kaldırılır. |
+| Windows ile başlatma | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` altındaki `CPFS` değerini, Kurulum'u çalıştıran kullanıcının kovanında siler ve simgeyi kapatır. Bu adı taşıyan ama CPFS'nin yazmadığı bir değer kalır. Bilgisayardaki diğer Windows hesapları kendi değerlerini korur. |
 | `C:\ProgramData\CPFS` | En son, `config.json` ve `cpfs.ico` ile birlikte kaldırılır. Kurulum'un kenara ayırdığı ayar dosyaları (`config-ignored-<date>.json`) önce Belgeler klasörünüze `CPFS-config-ignored-<date>.json` adıyla kopyalanır; kopyalama başarısız olursa klasör kalır. |
 
 Dosya Gezgini girişi `HKCU\Software\Classes\CLSID\{07C33AB4-B371-467B-9DC1-1AA530E251C6}` ve `HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{07C33AB4-B371-467B-9DC1-1AA530E251C6}` anahtarlarından, ayrıca `HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel` altındaki `{07C33AB4-B371-467B-9DC1-1AA530E251C6}` değerinden oluşur; hepsi Kurulum'u çalıştıran kullanıcının kovanındadır. Sürücü simgesi (`HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\DriveIcons\<letter>\DefaultIcon`) silinir ya da harfin önceden sahip olduğu simge geri konur. CPFS'nin koymadığı bir simge yerinde kalır.
@@ -177,10 +237,12 @@ Dosya Gezgini girişi `HKCU\Software\Classes\CLSID\{07C33AB4-B371-467B-9DC1-1AA5
 - `C:\ProgramData\CPFS`: yanıtlarınızı ve özgün ayarların yedeğini içeren `config.json`; CPFS'nin güvenemediği, Kurulum'un yeniden adlandırıp artık okumadığı ayar dosyası `config-ignored-<date>.json`; sürücünün, kısayolun ve Dosya Gezgini girişinin kullandığı CPFS simgesi `cpfs.ico`; Otomatik Özel açıkken de `auto-private.log` (değiştirdiği ağlar) ve `auto-private-run.log` (görevin her çalışması için bir satır). Buraya yalnızca SYSTEM ve Yöneticiler yazabilir.
 - `C:\Program Files\CPFS\Cpfs.exe`: Otomatik Özel görevinin çalıştırdığı kopya; yalnızca Otomatik Özel açıkken bulunur. Yalnızca SYSTEM ve Yöneticiler değiştirebilir.
 - CPFS'yi çalıştıran kullanıcının profilindeki `%LOCALAPPDATA%\CPFS` klasörü:
-  - `preferences.json`: uygulamadaki seçimleriniz; tema, dil ve yazı tipi gibi.
+  - `preferences.json`: uygulamadaki seçimleriniz; tema, dil ve yazı tipi gibi, ayrıca tepsi simgesinin açık olup olmadığı (`TrayIcon`) ve Bağlan'da en son seçtiğiniz cihaz sekmesi (`ConnectDevice`).
   - `devices.json`: bağlı cihazlara verdiğiniz adlar.
   - `cpfs-log.txt`: uygulamanın kendi günlüğü.
   - `activity-log.txt` ve `activity-log.old.txt`: Son etkinlik; yalnızca "Günlük dosyasına kaydet" açıkken yazılır. Dosya 5 MB'a ulaşınca `activity-log.old.txt` olur. Dosya adları içerdiği için Raporu kopyala'ya hiçbir zaman eklenmez. Kaldırma onu silmez, çünkü size ait bir günlüktür.
+- `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` altındaki `CPFS` değeri: Windows ile başlatmanın başlangıç girişi; yalnızca o anahtar açıkken bulunur.
+- exe dosyasının yanında, yalnızca bir güncelleme sırasında: `.cpfs-old`, `.cpfs-failed` ve `.cpfs-update.exe` ile biten dosyalar.
 - `Documents\CPFS-config-backup-<date>-<time>.json`: Kaldırma'nın bir şey değiştirmeden önce kaydettiği `config.json` kopyası. Kaldırma onu yerinde bırakır.
 - `Documents\CPFS-config-ignored-<date>.json`: Kaldırma'nın veri klasörünü kaldırmadan önce kaydettiği, kenara ayrılmış ayar dosyasının kopyası. Kaldırma onu yerinde bırakır.
 

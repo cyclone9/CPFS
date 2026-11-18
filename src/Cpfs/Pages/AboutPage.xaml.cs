@@ -81,6 +81,7 @@ public partial class AboutPage : Page
         var loc = Loc.Instance;
         CheckUpdatesButton.IsEnabled = false;
         OpenReleaseButton.Visibility = Visibility.Collapsed;
+        ShowOffer(null);
         UpdateResultText.Text = loc["About_Update_Checking"];
         UpdateResultText.Visibility = Visibility.Visible;
         try
@@ -89,10 +90,84 @@ public partial class AboutPage : Page
             _releaseUrl = result.ReleaseUrl;
             UpdateResultText.Text = UpdateText(result);
             OpenReleaseButton.Visibility = result.Status == Core.Updates.UpdateStatus.Newer ? Visibility.Visible : Visibility.Collapsed;
+            ShowOffer(result.Status == Core.Updates.UpdateStatus.Newer ? result : null);
         }
         finally
         {
+            CheckUpdatesButton.IsEnabled = !UpdateUi.IsRunning;
+        }
+    }
+
+    private Core.Updates.UpdateOffer? _offer;
+    private string? _savedPath;
+
+    // "Update now" for the version just shown, only when that release passes the install rules; never in an
+    // administrator window (U2), where one sentence says why.
+    private void ShowOffer(Core.Updates.UpdateResult? result)
+    {
+        var loc = Loc.Instance;
+        _offer = result?.Offer;
+        UpdateNowButton.Visibility = _offer is null ? Visibility.Collapsed : Visibility.Visible;
+        UpdateNowButton.IsEnabled = _offer is not null && !Startup.IsElevated && !UpdateUi.IsRunning;
+        var note = result is null ? null : Startup.IsElevated && _offer is not null ? loc["About_Update_AdminOff"] : _offer is null ? loc["About_Update_NotOffered"] : null;
+        UpdateNote.Text = note ?? "";
+        UpdateNote.Visibility = note is null ? Visibility.Collapsed : Visibility.Visible;
+        WhatsNewText.Text = _offer?.Notes ?? "";
+        WhatsNew.IsExpanded = false;
+        WhatsNew.Visibility = string.IsNullOrEmpty(_offer?.Notes) ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private async void OnUpdateNow(object sender, RoutedEventArgs e)
+    {
+        if (_offer is not { } offer || Startup.IsElevated || UpdateUi.IsRunning)
+        {
+            return;
+        }
+
+        UpdateNowButton.IsEnabled = false;
+        CheckUpdatesButton.IsEnabled = false;
+        UpdateInfo.IsOpen = false;
+        ShowSavedButton.Visibility = Visibility.Collapsed;
+        try
+        {
+            if (await UpdateUi.RunAsync(this, offer) is { } result)
+            {
+                UpdateInfo.Severity = result.Severity;
+                UpdateInfo.Title = "";
+                UpdateInfo.Message = result.Message;
+                UpdateInfo.IsOpen = true;
+                _savedPath = result.SavedPath;
+                ShowSavedButton.Visibility = _savedPath is null ? Visibility.Collapsed : Visibility.Visible;
+            }
+        }
+        finally
+        {
+            UpdateNowButton.IsEnabled = !Startup.IsElevated;
             CheckUpdatesButton.IsEnabled = true;
+        }
+    }
+
+    // Explorer opens the folder with the saved file selected; the file itself is not started.
+    private void OnShowSaved(object sender, RoutedEventArgs e)
+    {
+        if (_savedPath is not { } path || !File.Exists(path))
+        {
+            return;
+        }
+
+        try
+        {
+            using (Process.Start(new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"), "/select,\"" + path + "\"")
+            {
+                UseShellExecute = false,
+            }))
+            {
+            }
+        }
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or FileNotFoundException)
+        {
+            AppLog.Write("update", "Show in folder failed: " + ex.GetType().Name);
+            Feedback.Show(sender, false, ex.Message);
         }
     }
 
@@ -104,7 +179,7 @@ public partial class AboutPage : Page
         _ => Loc.Instance["Update_Failed"],
     };
 
-    // Opens the page in the default browser; the app itself goes online only for the update check.
+    // Opens the page in the default browser; the app itself goes online only for the update check and an update.
     public static void OpenInBrowser(object? sender, string url)
     {
         try

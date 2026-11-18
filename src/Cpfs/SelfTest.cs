@@ -26,6 +26,13 @@ internal static class SelfTest
         {
             output.WriteLine("CPFS self-test " + AppLog.VersionText());
             output.WriteLine("Windows " + AppLog.WindowsBuild() + ", .NET Framework " + AppLog.FrameworkRelease() + ", elevated " + AppLog.IsElevated());
+
+            // release.yml fails on "present" (updater design, U8).
+#if CPFS_UPDATE_TEST
+            output.WriteLine("Update test hooks: present");
+#else
+            output.WriteLine("Update test hooks: absent");
+#endif
             LoadLibraries(output);
             Strings(output);
             Startup.Init(Array.Empty<string>());

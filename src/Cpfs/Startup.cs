@@ -19,12 +19,45 @@ internal static class Startup
 
     public static AppPreferences Preferences { get; private set; } = new();
 
+    // Started by the updater (--after-update <the version it replaced>), or after its rollback (--update-failed <the
+    // version that did not start>). Ignored in an elevated process: the updater never starts one.
+    public static string? AfterUpdateFrom { get; private set; }
+
+    public static string? UpdateFailedVersion { get; private set; }
+
+    public static bool IsUpdateRestart => AfterUpdateFrom is not null || UpdateFailedVersion is not null;
+
     public static string PreferencesPath { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CPFS", "preferences.json");
 
     public static void Init(string[] args)
     {
         IsElevated = AppLog.IsElevated();
+        args = Core.Updates.UpdateRules.TakeRestartOptions(args, out var afterUpdate, out var updateFailed);
+        var refuse = IsElevated;
+#if CPFS_UPDATE_TEST
+        // The CI runner runs everything elevated; its headless restart is a test build's only exception.
+        refuse &= !Windows.Update.UpdateTestHooks.Headless;
+#endif
+        if ((afterUpdate ?? updateFailed) is not null && refuse)
+        {
+            AppLog.Write("start", "Update restart options ignored in an elevated process");
+        }
+        else
+        {
+            AfterUpdateFrom = afterUpdate;
+            UpdateFailedVersion = updateFailed;
+            if (afterUpdate is not null)
+            {
+                AppLog.Write("update", "Started after update from " + afterUpdate);
+            }
+
+            if (updateFailed is not null)
+            {
+                AppLog.Write("update", "Started again after version " + updateFailed + " failed to start; it was rolled back");
+            }
+        }
+
         Arguments = RelaunchArgs.Parse(args);
         if (Arguments.Rejected.Count > 0)
         {

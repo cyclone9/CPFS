@@ -50,11 +50,60 @@ public partial class MainWindow : FluentWindow
             Theming.Init(this);
             Theming.ApplyFont();
             RootNavigation.Navigate(StartPage());
-            CheckForUpdateAtStart();
+            if (!ShowUpdateOutcome())
+            {
+                CheckForUpdateAtStart();
+            }
         };
     }
 
     private string? _updateUrl;
+
+    // After the updater restarted CPFS: "Updated to V" (with a word about Auto-Private's copy when it is another
+    // version), or, after a rollback, that the new version did not start. False when neither applies.
+    private bool ShowUpdateOutcome()
+    {
+        var loc = Loc.Instance;
+        string message;
+        if (Startup.AfterUpdateFrom is not null)
+        {
+            var version = AppLog.VersionNumber();
+            message = loc.FormatValues("Update_DoneMessage", version);
+            var copy = Windows.Apply.AutoPrivateCopy.CopyVersion();
+            if (copy is not null && !string.Equals(copy, version, StringComparison.Ordinal))
+            {
+                message += Environment.NewLine + loc.FormatValues("Update_DoneAutoPrivate", copy);
+            }
+
+            UpdateBar.Title = loc["Update_DoneTitle"];
+            UpdateBar.Severity = InfoBarSeverity.Success;
+        }
+        else if (Startup.UpdateFailedVersion is { } failed)
+        {
+            message = loc.FormatValues("Update_FailedMessage", failed);
+            UpdateBar.Title = loc["Update_FailedTitle"];
+            UpdateBar.Severity = InfoBarSeverity.Warning;
+        }
+        else
+        {
+            return false;
+        }
+
+        UpdateBar.Message = message;
+        UpdateOpenButton.Visibility = Visibility.Collapsed;
+        HideUpdateNoteOnClose();
+        UpdateNote.Visibility = Visibility.Visible;
+        return true;
+    }
+
+    private void HideUpdateNoteOnClose() =>
+        System.ComponentModel.DependencyPropertyDescriptor.FromProperty(InfoBar.IsOpenProperty, typeof(InfoBar)).AddValueChanged(UpdateBar, (_, _) =>
+        {
+            if (!UpdateBar.IsOpen)
+            {
+                UpdateNote.Visibility = Visibility.Collapsed;
+            }
+        });
 
     // Only when the user switched it on, once per start, and not again in the elevated window the first one opened.
     private async void CheckForUpdateAtStart()
@@ -72,13 +121,7 @@ public partial class MainWindow : FluentWindow
 
         _updateUrl = result.ReleaseUrl;
         UpdateBar.Message = Pages.AboutPage.UpdateText(result);
-        System.ComponentModel.DependencyPropertyDescriptor.FromProperty(InfoBar.IsOpenProperty, typeof(InfoBar)).AddValueChanged(UpdateBar, (_, _) =>
-        {
-            if (!UpdateBar.IsOpen)
-            {
-                UpdateNote.Visibility = Visibility.Collapsed;
-            }
-        });
+        HideUpdateNoteOnClose();
         UpdateNote.Visibility = Visibility.Visible;
     }
 
@@ -93,7 +136,11 @@ public partial class MainWindow : FluentWindow
     // "CPFS 0.5.0-dev3", without the commit (About shows that).
     private void UpdateTitle()
     {
-        var title = Loc.Instance.FormatValues(Startup.IsElevated ? "App_TitleAdminVersion" : "App_TitleVersion", AppLog.VersionNumber());
+        var version = AppLog.VersionNumber();
+#if CPFS_UPDATE_TEST
+        version = Loc.Instance.FormatValues("App_UpdateTestBuild", version);
+#endif
+        var title = Loc.Instance.FormatValues(Startup.IsElevated ? "App_TitleAdminVersion" : "App_TitleVersion", version);
         Title = title;
         AppTitleBar.Title = title;
     }
@@ -236,5 +283,11 @@ public partial class MainWindow : FluentWindow
         AppLog.Write("start", "First frame " + (StartToFirstFrame?.TotalMilliseconds.ToString("N0", CultureInfo.InvariantCulture) ?? "?")
             + " ms from process start, " + Program.SinceMain.Elapsed.TotalMilliseconds.ToString("N0", CultureInfo.InvariantCulture) + " ms from Main");
         AppLog.Write("backdrop", DescribeBackdrop());
+
+        // The previous version waits for this before it exits; without it, it would roll back only on a non-zero exit.
+        if (Startup.AfterUpdateFrom is not null)
+        {
+            Windows.Update.UpdateEngine.SignalStarted();
+        }
     }
 }

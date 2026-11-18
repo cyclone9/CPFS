@@ -35,6 +35,12 @@ internal static class Program
             return RunAutoPrivate();
         }
 
+        // Run by the previous version on a staged update (updater design, step 7): no log, no window, only its code.
+        if (args.Length == 2 && string.Equals(args[0], Core.Updates.UpdateRules.ProbeVerb, StringComparison.Ordinal))
+        {
+            return RunUpdateProbe(args[1]);
+        }
+
         // The tray icon (design 2.2): matched exactly, and kept apart from the window so no WPF type is loaded for it.
         if (args.Length == 1 && string.Equals(args[0], Windows.TrayControl.Verb, StringComparison.Ordinal))
         {
@@ -61,14 +67,42 @@ internal static class Program
             return CiApplyTest.Run();
         }
 
-        Startup.Init(args);
+#if CPFS_UPDATE_TEST
+        if (Array.IndexOf(args, Windows.Update.UpdateTestHooks.CiVerb) >= 0)
+        {
+            return Windows.Update.UpdateTestHooks.RunCi(args);
+        }
 
-        // --selftest and --ci-apply-test returned above: headless runs never wait for or block on another window.
-        using var instance = Windows.SingleInstance.Acquire(Startup.IsHandOver, out var outcome);
+        if (Array.IndexOf(args, Windows.Update.UpdateTestHooks.CiRealVerb) >= 0)
+        {
+            return Windows.Update.UpdateTestHooks.RunReal();
+        }
+
+        args = Windows.Update.UpdateTestHooks.TakeSource(args);
+#endif
+        Startup.Init(args);
+#if CPFS_UPDATE_TEST
+        if (Windows.Update.UpdateTestHooks.Headless && (Startup.AfterUpdateFrom is not null || Startup.UpdateFailedVersion is not null))
+        {
+            return Windows.Update.UpdateTestHooks.HeadlessStart();
+        }
+#endif
+
+        // --selftest and --ci-apply-test returned above: headless runs never wait for or block on another window. A start
+        // by the updater waits for the previous version's window like a hand-over.
+        using var instance = Windows.SingleInstance.Acquire(Startup.IsHandOver || Startup.IsUpdateRestart, out var outcome);
         if (outcome != Windows.InstanceOutcome.First)
         {
             App.ShowSecondStartMessage(outcome);
             return 0;
+        }
+
+        Instance = instance;
+
+        // Files a previous update left beside this exe (updater design, step 11); never from an elevated window.
+        if (!Startup.IsElevated)
+        {
+            System.Threading.Tasks.Task.Run(() => Windows.Update.UpdateEngine.CleanLeftoversAtStart(Startup.AfterUpdateFrom is not null));
         }
 
         // So the icon comes back after the user chose Exit in its menu. Never from an elevated window (design B2), and
@@ -84,6 +118,12 @@ internal static class Program
         instance?.Listen(() => app.Dispatcher.BeginInvoke(new Action(App.BringToFront)));
         return app.Run();
     }
+
+    // The window's single-instance guard, released by the updater just before it starts the new version.
+    internal static Windows.SingleInstance? Instance { get; private set; }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static int RunUpdateProbe(string expected) => Windows.Update.UpdateProbe.Run(expected);
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static int RunUserSession(string[] args) => UserSession.Run(args);

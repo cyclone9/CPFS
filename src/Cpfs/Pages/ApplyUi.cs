@@ -436,7 +436,7 @@ internal static class ApplyUi
 
     // WPF-UI 4.3.0's MessageBox sets its height once, when it loads. After its content grows or shrinks, the window
     // is measured again at its current width, as the library does on load, so it neither clips nor leaves a gap.
-    private static void FitHeight(Window box)
+    internal static void FitHeight(Window box)
     {
         if (box.IsLoaded && VisualTreeHelper.GetChildrenCount(box) > 0 && VisualTreeHelper.GetChild(box, 0) is UIElement root)
         {
