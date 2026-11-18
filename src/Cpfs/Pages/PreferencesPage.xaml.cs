@@ -49,7 +49,12 @@ public partial class PreferencesPage : Page
         Refill();
         _syncing = true;
         UpdatesSwitch.IsChecked = Startup.Preferences.CheckUpdatesAtStart;
+        TraySwitch.IsChecked = Startup.Preferences.TrayIcon;
         _syncing = false;
+
+        // Design B2: an elevated window never starts the tray, and its preferences may be another account's.
+        TraySwitch.IsEnabled = !Startup.IsElevated;
+        TrayElevatedNote.Visibility = Startup.IsElevated ? Visibility.Visible : Visibility.Collapsed;
         Loc.Instance.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(Loc.Culture))
@@ -70,6 +75,39 @@ public partial class PreferencesPage : Page
         Startup.Preferences.CheckUpdatesAtStart = UpdatesSwitch.IsChecked == true;
         Startup.SavePreferences();
         AppLog.Write("prefs", "Check for updates at start " + (Startup.Preferences.CheckUpdatesAtStart ? "on" : "off"));
+    }
+
+    // Saves first: the tray reads preferences.json at its start and exits when the switch there is off.
+    private async void OnTraySwitch(object sender, RoutedEventArgs e)
+    {
+        if (_syncing || Startup.IsElevated)
+        {
+            return;
+        }
+
+        var on = TraySwitch.IsChecked == true;
+        Startup.Preferences.TrayIcon = on;
+        TrayInfo.IsOpen = false;
+        AppLog.Write("prefs", "Tray icon " + (on ? "on" : "off"));
+        var error = Startup.SavePreferences();
+        if (!on)
+        {
+            Windows.TrayControl.Stop("switched off in Preferences");
+            return;
+        }
+
+        if (error is null)
+        {
+            // A tray told to exit a moment ago may still hold its mutex.
+            error = await System.Threading.Tasks.Task.Run(() => Windows.TrayControl.StartIfMissing("switched on in Preferences", System.TimeSpan.FromSeconds(3)));
+        }
+
+        if (error is not null)
+        {
+            TrayInfo.Title = Loc.Instance["Pref_Tray_StartFailed"];
+            TrayInfo.Message = error;
+            TrayInfo.IsOpen = true;
+        }
     }
 
     private void Refill()

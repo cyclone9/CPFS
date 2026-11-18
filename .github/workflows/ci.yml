@@ -47,6 +47,16 @@ jobs:
           Write-Host "Exit code $($p.ExitCode)"
           exit $p.ExitCode
 
+      # The runner's processes are elevated, and the tray icon must refuse to run elevated: exit code 20
+      # (Cpfs.Core.Planning.TrayExit.Elevated), before it reads any preference.
+      - name: Tray refuses to run elevated
+        shell: pwsh
+        run: |
+          $exe = Join-Path $PWD 'src\Cpfs\bin\Release\net48\Cpfs.exe'
+          $p = Start-Process -FilePath $exe -ArgumentList '--tray' -Wait -PassThru
+          Write-Host "Exit code $($p.ExitCode)"
+          if ($p.ExitCode -ne 20) { Write-Host 'Expected 20: refused because elevated'; exit 1 }
+
       # Changes the runner and undoes it: Setup with test values (an account with a random password that is never
       # printed, a share, firewall rules, security settings), checks, Uninstall, and checks everything is back.
       # Cpfs.exe refuses this verb outside GitHub Actions and on a domain member.

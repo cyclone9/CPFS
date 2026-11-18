@@ -31,6 +31,9 @@
     <ProjectReference Include="..\Cpfs.Core\Cpfs.Core.csproj" />
     <Reference Include="System.Management" />
     <Reference Include="System.ServiceProcess" />
+    <!-- The tray icon uses NotifyIcon from the Framework's own assemblies; nothing is embedded. -->
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
   </ItemGroup>
 
   <ItemGroup>

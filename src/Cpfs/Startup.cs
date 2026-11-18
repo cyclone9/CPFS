@@ -59,7 +59,8 @@ internal static class Startup
         }
     }
 
-    public static void SavePreferences()
+    // Returns the error for the user, or null when saved. Most callers only log it.
+    public static string? SavePreferences()
     {
         try
         {
@@ -77,10 +78,12 @@ internal static class Startup
             }
 
             AppLog.Write("prefs", "Saved " + PreferencesPath);
+            return null;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException or ArgumentException or NotSupportedException)
         {
             AppLog.Write("prefs", "Could not save " + PreferencesPath + ": " + ex.GetType().Name + ": " + ex.Message);
+            return ex.Message;
         }
     }
 

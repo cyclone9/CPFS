@@ -48,7 +48,8 @@ internal static class AppLog
             as System.Reflection.AssemblyInformationalVersionAttribute)?.InformationalVersion
         ?? typeof(AppLog).Assembly.GetName().Version?.ToString());
 
-    public static void Start()
+    // Only finds the file, without the start lines: the tray writes one line of its own.
+    public static void Open()
     {
         string? firstError = null;
         var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -58,6 +59,12 @@ internal static class AppLog
         }
 
         StartError = firstError;
+    }
+
+    public static void Start()
+    {
+        Open();
+        var firstError = StartError;
 
         Write("start", "==== CPFS " + VersionText() + ", log " + (FilePath ?? "(no file)")
             + ", process " + System.Diagnostics.Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture));

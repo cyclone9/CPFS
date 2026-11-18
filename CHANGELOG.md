@@ -11,6 +11,7 @@ This project uses [semantic versioning](https://semver.org/).
 - New look for Setup and Uninstall: Setup opens with a card that says whether sharing is on, as far as CPFS could read it, with the share address and Copy and Open folder; its fields sit in three groups; both pages keep the summary, Show details and the main button in a bar at the bottom. Plan and progress states are shown as a dot with a word instead of coloured boxes, and Uninstall moved to the bottom of the menu.
 - New look for Monitor: four numbers at the top (devices, data down and up, failed sign-ins in 24 hours), one list of connected devices with the naming actions under a "…" button, and Recent activity beside Being copied now. Failed sign-ins are listed only when there is one. Recent activity also works without administrator rights.
 - New look for Connect: the share address and username at the top, one tab per kind of device (the last one is remembered), numbered steps, and the QR code shown beside the iPhone and Android steps instead of in a dialog.
+- Optional tray icon, off by default and switched on in Preferences: it says whether sharing is on and whether this PC is on a Private or a Public network, and its menu opens CPFS or the shared folder. It runs as its own process and never with administrator rights, so it can't be switched from a window opened as administrator.
 
 ## 0.8.0 - 2026-10-24
 

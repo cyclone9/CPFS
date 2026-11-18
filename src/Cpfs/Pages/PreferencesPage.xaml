@@ -99,5 +99,35 @@
         Checked="OnUpdatesSwitch"
         Unchecked="OnUpdatesSwitch" />
     </ui:CardControl>
+
+    <!--  The tray icon is its own unelevated process; an elevated window can't switch it. "Start with Windows" goes under it.  -->
+    <StackPanel x:Name="TrayGroup">
+      <ui:CardControl Margin="0,0,0,4" Icon="{ui:SymbolIcon DesktopPulse24}">
+        <ui:CardControl.Header>
+          <StackPanel>
+            <TextBlock x:Name="TrayLabel" Style="{StaticResource CardTitle}" Text="{Binding [Pref_Tray_Title], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock Style="{StaticResource CardDescription}" Text="{Binding [Pref_Tray_Desc], Source={x:Static local:Loc.Instance}}" />
+            <TextBlock
+              x:Name="TrayElevatedNote"
+              Style="{StaticResource CardDescription}"
+              Text="{Binding [Pref_Tray_Elevated], Source={x:Static local:Loc.Instance}}"
+              Visibility="Collapsed" />
+          </StackPanel>
+        </ui:CardControl.Header>
+        <ui:ToggleSwitch
+          x:Name="TraySwitch"
+          AutomationProperties.HelpText="{Binding [Pref_Tray_Desc], Source={x:Static local:Loc.Instance}}"
+          AutomationProperties.LabeledBy="{Binding ElementName=TrayLabel}"
+          Checked="OnTraySwitch"
+          Unchecked="OnTraySwitch" />
+      </ui:CardControl>
+
+      <ui:InfoBar
+        x:Name="TrayInfo"
+        Margin="0,0,0,4"
+        IsClosable="True"
+        IsOpen="False"
+        Severity="Error" />
+    </StackPanel>
   </StackPanel>
 </Page>

@@ -18,7 +18,8 @@ internal enum ConfigState
 // script or editor is not disturbed and nothing is written.
 internal static class ConfigFile
 {
-    public static ConfigState TryRead(out ConfigDocument? config, out string? error)
+    // log: false for the tray, which reads every minute and logs only changes.
+    public static ConfigState TryRead(out ConfigDocument? config, out string? error, bool log = true)
     {
         config = null;
         error = null;
@@ -44,7 +45,11 @@ internal static class ConfigFile
             or ConfigFormatException or DecoderFallbackException)
         {
             error = UiErrors.ForUser(ex);
-            AppLog.Write("config", "Could not read " + StateReader.ConfigPath + ": " + Core.Apply.StepErrors.ForLog(ex));
+            if (log)
+            {
+                AppLog.Write("config", "Could not read " + StateReader.ConfigPath + ": " + Core.Apply.StepErrors.ForLog(ex));
+            }
+
             return ConfigState.Unreadable;
         }
     }
@@ -52,7 +57,7 @@ internal static class ConfigFile
     // True only when config.json is known to be absent: ProgramData lists no CPFS folder, or that folder lists no
     // config.json. File.Exists says false on access denied too, so it can't tell "absent" from "can't see"; a listing
     // that fails is unknown, never absent.
-    public static bool KnownMissing()
+    public static bool KnownMissing(bool log = true)
     {
         try
         {
@@ -63,7 +68,11 @@ internal static class ConfigFile
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
         {
-            AppLog.Write("config", "Could not list " + StateReader.DataFolder + ": " + ex.GetType().Name + ": " + ex.Message);
+            if (log)
+            {
+                AppLog.Write("config", "Could not list " + StateReader.DataFolder + ": " + ex.GetType().Name + ": " + ex.Message);
+            }
+
             return false;
         }
     }

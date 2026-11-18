@@ -25,6 +25,9 @@ public sealed class AppPreferences
     // Monitor also writes Recent activity to activity-log.txt. Off unless the user switches it on: it holds file names.
     public bool SaveActivityLog { get; set; }
 
+    // Shows the tray icon (Cpfs.exe --tray), which runs without administrator rights. Off unless the user switches it on.
+    public bool TrayIcon { get; set; }
+
     // The Connect page's last device tab (Cpfs.Core.Connect.GuideTabs); null shows the first.
     public string? ConnectDevice { get; set; }
 
@@ -74,6 +77,11 @@ public sealed class AppPreferences
             prefs.SaveActivityLog = true;
         }
 
+        if (Config.ConfigJson.Get(root, "TrayIcon") is JsonValue tray && tray.GetValueKind() == JsonValueKind.True)
+        {
+            prefs.TrayIcon = true;
+        }
+
         if (Text(Config.ConfigJson.Get(root, "ConnectDevice")) is { Length: > 0 } device)
         {
             prefs.ConnectDevice = device;
@@ -112,6 +120,7 @@ public sealed class AppPreferences
             [nameof(CheckUpdatesAtStart)] = CheckUpdatesAtStart,
             [nameof(SaveActivityLog)] = SaveActivityLog,
             [nameof(ConnectDevice)] = ConnectDevice,
+            [nameof(TrayIcon)] = TrayIcon,
         };
         return root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
     }

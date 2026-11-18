@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using Cpfs.Core.Planning;
@@ -104,15 +103,7 @@ public partial class SetupPage
 
         try
         {
-            // A quoted path must not end in a backslash (it would escape the quote); a drive root has no spaces to quote.
-            var argument = folder.TrimEnd('\\').EndsWith(":", StringComparison.Ordinal) ? folder.TrimEnd('\\') + "\\" : "\"" + folder.TrimEnd('\\') + "\"";
-            using (Process.Start(new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"), argument)
-            {
-                UseShellExecute = false,
-            }))
-            {
-            }
-
+            Windows.FolderOpener.Open(folder);
             AppLog.Write("setup", "Opened the shared folder in File Explorer");
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or FileNotFoundException)

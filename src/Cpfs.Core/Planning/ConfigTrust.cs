@@ -32,6 +32,11 @@ public static class ConfigTrust
         return d.IsLink || !folderTrusted || !IsTrustedOwner(file);
     }
 
+    // Stricter than !Ignored: a folder that could not be read is not trusted either. For a value that leaves CPFS's
+    // own pages and is acted on outside them (the tray's "Open the shared folder").
+    public static bool Trusted(Reading<DataFolderInfo> folder) =>
+        folder is { IsOk: true, Value: { Exists: true, IsLink: false, ConfigOwner: not null } } && !Ignored(folder);
+
     // The config to plan from: the one read, or none when it must be ignored.
     public static Config.ConfigDocument? Usable(Config.ConfigDocument? config, Reading<DataFolderInfo> folder) =>
         config is not null && Ignored(folder) ? null : config;

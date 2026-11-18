@@ -35,6 +35,12 @@ internal static class Program
             return RunAutoPrivate();
         }
 
+        // The tray icon (design 2.2): matched exactly, and kept apart from the window so no WPF type is loaded for it.
+        if (args.Length == 1 && string.Equals(args[0], Windows.TrayControl.Verb, StringComparison.Ordinal))
+        {
+            return RunTray();
+        }
+
         AppLog.Start();
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             AppLog.Write("unhandled", "AppDomain, terminating " + e.IsTerminating + ": " + (e.ExceptionObject?.ToString() ?? "null"));
@@ -65,6 +71,12 @@ internal static class Program
             return 0;
         }
 
+        // So the icon comes back after the user chose Exit in its menu. Never from an elevated window (design B2).
+        if (!Startup.IsElevated && Startup.Preferences.TrayIcon)
+        {
+            Windows.TrayControl.StartIfMissing("window start", TimeSpan.Zero);
+        }
+
         var app = new App();
         app.InitializeComponent();
         app.LogButtonStyle();
@@ -74,6 +86,13 @@ internal static class Program
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static int RunUserSession(string[] args) => UserSession.Run(args);
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static int RunTray()
+    {
+        Core.Text.TextKey.English = Loc.Instance.EnglishText;
+        return TrayVerb.Run();
+    }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static int RunAutoPrivate()
